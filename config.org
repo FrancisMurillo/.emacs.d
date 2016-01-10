@@ -164,8 +164,6 @@
     Some buffer configurations
 
     #+BEGIN_SRC emacs-lisp
-      (indent-tabs-mode nil)
-
       (global-whitespace-mode t)
       (global-auto-revert-mode t)
     #+END_SRC
@@ -258,13 +256,25 @@
         (nyan-mode t))
     #+END_SRC
 
+*** org
+    org-mode my buddy
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package org
+        :init
+        (add-to-list 'org-modules 'org-drill)
+        :pin org
+        :ensure t
+        :config
+        (require 'org-drill))
+    #+END_SRC
+
 *** projectile
     Must have a project finder when using a project.
 
     #+BEGIN_SRC emacs-lisp
       (use-package projectile
         :ensure t
-        :defer t
         :config
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native)
@@ -275,21 +285,23 @@
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp
-      (use-package async
-        :ensure t
-        :config
+        (use-package async
+      :ensure t)
+
         (use-package helm
-          :ensure t
-          :bind (("M-x" . helm-M-x))
-          :config
-          (require 'helm-config)
-          (helm-mode t)
-          (use-package helm-projectile
-        :ensure t
-        :config
-        (setq projectile-completion-system 'helm)
-        (helm-projectile-on)
-        )))
+      :ensure t
+      :bind (
+         ("M-x" . helm-M-x))
+      :config
+      (require 'helm-config)
+      (helm-mode t))
+
+        (use-package helm-projectile
+      :ensure t
+      :config
+      (setq projectile-completion-system 'helm)
+      (helm-projectile-on))
+
     #+END_SRC
 
 *** autocomplete
@@ -303,6 +315,24 @@
         (ac-config-default))
     #+END_SRC
 
+*** yasnippet
+    Snippet system along with autocomplete is awesome
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package yasnippet
+      :ensure t
+      :defer t)
+    #+END_SRC
+
+*** emmet
+    I do a lot of HTML editing, YASnippet can do but emmet is better
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package emmet
+        :ensure t
+        :defer t)
+    #+END_SRC
+
 *** flycheck
     Syntax checking is very important
 
@@ -310,6 +340,14 @@
         (use-package flycheck
           :ensure t
           :defer t)
+    #+END_SRC
+*** js3
+    A great mode for progressive nodejs
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package js3-mode
+        :ensure t
+        :defer t)
     #+END_SRC
 
 * Reference

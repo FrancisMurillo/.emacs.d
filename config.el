@@ -36,6 +36,8 @@
 (setq inhibit-startup-screen t)
 (setq initial-scratch-message nil)
 
+(set-language-environment "UTF-8")
+
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
 
 (setq delete-old-versions -1)
@@ -58,10 +60,12 @@
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
 
-(toggle-truncate-lines -1)
 (global-whitespace-mode t)
+(global-auto-revert-mode t)
 
 (set-frame-font "DejaVu Sans Mono-8" t t)
+
+(load-theme 'tsdh-dark)
 
 (use-package winner
   :ensure t
@@ -112,39 +116,50 @@
 
 (use-package nyan-mode
   :ensure t
-  :defer t
   :config
   (nyan-mode t))
 
+(use-package org
+  :init
+  (add-to-list 'org-modules 'org-drill)
+  :pin org
+  :ensure t
+  :config
+  (require 'org-drill))
+
 (use-package projectile
   :ensure t
-  :defer t
   :config
   (projectile-global-mode t)
   (setq projectile-indexing-method 'native)
   )
 
 (use-package async
-  :ensure t
-  :config
+:ensure t)
+
   (use-package helm
 :ensure t
-:bind (("M-x" . helm-M-x))
+:bind (
+   ("M-x" . helm-M-x))
 :config
 (require 'helm-config)
-(add-hook 'isearch-mode-hook 'helm-mode)
-(use-package helm-projectile
-  :ensure t
-  :config
-  (setq projectile-completion-system 'helm)
-  (helm-projectile-on)
-  )))
+(helm-mode t))
+
+  (use-package helm-projectile
+:ensure t
+:config
+(setq projectile-completion-system 'helm)
+(helm-projectile-on))
 
 (use-package auto-complete
   :ensure t
   :defer t
   :config
   (ac-config-default))
+
+(use-package yasnippet
+:ensure t
+:defer t)
 
 (use-package flycheck
   :ensure t
