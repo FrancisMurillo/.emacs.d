@@ -1,7 +1,15 @@
 #+TITLE: Francis Murillo's Emacs configuration
 
 * Introduction
-** Hello
+** If I forget
+   No words can describe my awe with Emacs and continue to do so. A text editor with a lisp interpreter, it's concept is so simple and sublime. What joy.
+
+   I remember starting Emacs seriously at around August of 2015. Before then, I picked it up lightly and thought(not use) about it; but what really drove me to use it is.
+   - Growth :: I was using an IDE before and somebody told me that GUIs change but the shell remains the same. I found myself over time exploring keyboard shortcuts, better terminals and Emacs(or maybe vi).
+   - Lightweight :: I had a crappy laptop that always needed to be plugged, had a lot dead pixels, and closes when it overheats; I needed something that would work with what I had.
+   - Linux :: Moving from Windows to Linux forced me to reevaluate the software I used. Adopting a new philosophy and OS pushed me in the right direction
+
+	I just want to say I'm a happy Emacs user and I find comfort and joy in hearing other people talk and share about it.
 ** About my configuration
 * Configuration
 ** Heading
