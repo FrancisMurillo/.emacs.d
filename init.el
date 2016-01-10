@@ -15,6 +15,7 @@
 ;; FIXME: Can loading org not be hard coded?
 (load-library "org")
 
+
 (setq package-enable-at-startup nil)
 (org-babel-load-file 
  (expand-file-name "config.org" user-emacs-directory))
