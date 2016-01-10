@@ -1,5 +1,10 @@
-* Meow
+#+TITLE: Francis Murillo's Emacs configuration
 
+* Introduction
+** Hello
+** About my configuration
+* Configuration
+** Heading
 #+BEGIN_SRC emacs-lisp
 (setq x 1)
 #+END_SRC
