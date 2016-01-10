@@ -12,6 +12,13 @@
    Whatever the reason might have been. I just want to say I'm a happy Emacs user and I find comfort and joy in hearing other people talk and share about it.
 ** About my configuration
    
+   I use org-babel as my configuration file once I heard you can do so. Splitting the configuration to multiple files was the plan but the way it weaves nicely to documentation immediately drew me in.
+
+   You can load this with =(org-babel-load-file "/path/to/file")= if you need to reload any changes.
+
+
+   This is my =init.el= to allow org-babel to read from it. My only problem is having the static org-mode in the elisp folder, you have to copy the elisp folder as well to make the configuration work as is.
+
 #+BEGIN_SRC emacs-lisp :tangle no
 ; This sets up the load path so that we can override it
 (package-initialize nil)
