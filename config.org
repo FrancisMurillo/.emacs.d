@@ -109,6 +109,18 @@
       (setq inhibit-startup-screen t)
       (setq initial-scratch-message nil)
     #+END_SRC
+*** Environment
+    Some environment configuration
+
+    #+BEGIN_SRC emacs-lisp
+      (set-language-environment "UTF-8")
+    #+END_SRC
+
+    How about changing some options
+
+    #+BEGIN_SRC
+      (fset 'yes-or-no-p 'y-or-n-p)
+    #+END_SRC
 
 *** Backups
     Backups are good, just annoying when things are good
@@ -120,7 +132,7 @@
    Version control is good, like wise.
 
    #+BEGIN_SRC emacs-lisp
-     (setq delete-old-versions -1) ;; Keep backups
+     (setq delete-old-versions -1)
      (setq version-conrol t)
      (setq vc-make-backup-files t)
    #+END_SRC
@@ -148,13 +160,14 @@
       (menu-bar-mode -1)
       (scroll-bar-mode -1)
     #+END_SRC
-
 *** Buffer
     Some buffer configurations
 
     #+BEGIN_SRC emacs-lisp
-      (toggle-truncate-lines -1)
+      (indent-tabs-mode nil)
+
       (global-whitespace-mode t)
+      (global-auto-revert-mode t)
     #+END_SRC
 
 *** Font
@@ -162,6 +175,13 @@
 
     #+BEGIN_SRC emacs-lisp
     (set-frame-font "DejaVu Sans Mono-8" t t)
+    #+END_SRC
+
+*** Theme
+    Emacs theme for me. I prefer the default tsdh-dark
+
+    #+BEGIN_SRC emacs-lisp
+      (load-theme 'tsdh-dark)
     #+END_SRC
 
 ** Builtin Modes
@@ -216,7 +236,7 @@
         )
     #+END_SRC
 
-** Minor Modes
+** External Modes
 *** guru
     Want to make sure I never hit those evil keys
 
@@ -234,7 +254,6 @@
     #+BEGIN_SRC emacs-lisp
       (use-package nyan-mode
         :ensure t
-        :defer t
         :config
         (nyan-mode t))
     #+END_SRC

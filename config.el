@@ -38,7 +38,7 @@
 
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
 
-(setq delete-old-versions -1) ;; Keep backups
+(setq delete-old-versions -1)
 (setq version-conrol t)
 (setq vc-make-backup-files t)
 
@@ -128,12 +128,12 @@
   :ensure t
   :config
   (use-package helm
-    :ensure t
-    :bind (("M-x" . helm-M-x))
-    :config
-    (require 'helm-config)
-    (helm-mode t)
-    (use-package helm-projectile
+:ensure t
+:bind (("M-x" . helm-M-x))
+:config
+(require 'helm-config)
+(add-hook 'isearch-mode-hook 'helm-mode)
+(use-package helm-projectile
   :ensure t
   :config
   (setq projectile-completion-system 'helm)
