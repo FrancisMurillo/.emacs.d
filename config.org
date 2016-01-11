@@ -134,8 +134,12 @@
    #+BEGIN_SRC emacs-lisp
      (setq delete-old-versions -1)
      (setq version-conrol t)
+     (setq backup-by-copying t)
      (setq vc-make-backup-files t)
+     ;; FIXME: Hard coded path?
+     (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
    #+END_SRC
+
 *** History
     Save minibuffer history
 
@@ -151,6 +155,7 @@
           search-ring
           regexp-search-ring))
     #+END_SRC
+
 *** Window
     Window/Frame configuration. I prefer no clutter in my screen so I disable majority of the niceties.
 
@@ -172,14 +177,14 @@
     I like fixed font specially DejaVu Mono
 
     #+BEGIN_SRC emacs-lisp
-    (set-frame-font "DejaVu Sans Mono-8" t t)
+      (set-frame-font "DejaVu Sans Mono-6" t t)
     #+END_SRC
 
 *** Theme
     Emacs theme for me. I prefer the default tsdh-dark
 
     #+BEGIN_SRC emacs-lisp
-      (load-theme 'tsdh-dark)
+      (load-theme 'tsdh-light)
     #+END_SRC
 
 ** Builtin Modes
@@ -285,18 +290,20 @@
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp
-        (use-package async
+                (use-package async
       :ensure t)
 
-        (use-package helm
+                (use-package helm
       :ensure t
       :bind (
-         ("M-x" . helm-M-x))
+                 ("M-x" . helm-M-x))
       :config
       (require 'helm-config)
+      (setq helm-mode-fuzzy-match t)
+      (setq helm-completion-in-region-fuzzy-match t)
       (helm-mode t))
 
-        (use-package helm-projectile
+      (use-package helm-projectile
       :ensure t
       :config
       (setq projectile-completion-system 'helm)
@@ -309,10 +316,11 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package auto-complete
-        :ensure t
-        :defer t
-        :config
-        (ac-config-default))
+    	:ensure t
+    	:config
+    	(require 'auto-complete-config)
+    	(ac-config-default)
+    	(setq popup-use-optimized-column-computation nil))
     #+END_SRC
 
 *** yasnippet
@@ -328,7 +336,7 @@
     I do a lot of HTML editing, YASnippet can do but emmet is better
 
     #+BEGIN_SRC emacs-lisp
-      (use-package emmet
+      (use-package emmet-mode
         :ensure t
         :defer t)
     #+END_SRC
@@ -350,5 +358,6 @@
         :defer t)
     #+END_SRC
 
+* Scripts
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration

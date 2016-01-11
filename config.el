@@ -42,7 +42,10 @@
 
 (setq delete-old-versions -1)
 (setq version-conrol t)
+(setq backup-by-copying t)
 (setq vc-make-backup-files t)
+;; FIXME: Hard coded path?
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
 
 (savehist-mode 1)
 
@@ -63,9 +66,9 @@
 (global-whitespace-mode t)
 (global-auto-revert-mode t)
 
-(set-frame-font "DejaVu Sans Mono-8" t t)
+(set-frame-font "DejaVu Sans Mono-6" t t)
 
-(load-theme 'tsdh-dark)
+(load-theme 'tsdh-light)
 
 (use-package winner
   :ensure t
@@ -137,15 +140,17 @@
 (use-package async
 :ensure t)
 
-  (use-package helm
+          (use-package helm
 :ensure t
 :bind (
-   ("M-x" . helm-M-x))
+           ("M-x" . helm-M-x))
 :config
 (require 'helm-config)
+(setq helm-mode-fuzzy-match t)
+(setq helm-completion-in-region-fuzzy-match t)
 (helm-mode t))
 
-  (use-package helm-projectile
+(use-package helm-projectile
 :ensure t
 :config
 (setq projectile-completion-system 'helm)
@@ -153,14 +158,23 @@
 
 (use-package auto-complete
   :ensure t
-  :defer t
   :config
-  (ac-config-default))
+  (require 'auto-complete-config)
+  (ac-config-default)
+  (setq popup-use-optimized-column-computation nil))
 
 (use-package yasnippet
 :ensure t
 :defer t)
 
+(use-package emmet-mode
+  :ensure t
+  :defer t)
+
 (use-package flycheck
+  :ensure t
+  :defer t)
+
+(use-package js3-mode
   :ensure t
   :defer t)
