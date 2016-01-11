@@ -13,19 +13,10 @@
 
 (unless (assoc-default "melpa" package-archives)
   (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+  ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
   (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
 
-;; Install and configure use-package
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-
-(require 'use-package)
-(setq use-package-verbose t)
-
-;; Install and configure auto-compile
 (use-package auto-compile
   :ensure t
   :config
@@ -73,8 +64,7 @@
 (load-theme 'tsdh-light)
 
 (use-package winner
-  :ensure t
-  :defer t)
+  :ensure t)
 
 (use-package ido
   :disabled t
@@ -124,16 +114,10 @@
   :config
   (nyan-mode t))
 
-(use-package org
-:init
 (add-to-list 'org-modules 'org-drill)
-:load-path "elisp/org/lisp/"
-:ensure t
-:config
-(require 'org-drill))
 
-(use-package org-jekyll
-  :ensure t)
+      (use-package org-drill
+:load-path "elisp/org-mode/contrib/lisp")
 
 (use-package projectile
   :ensure t
