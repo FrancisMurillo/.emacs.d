@@ -43,7 +43,7 @@
 
    Or with an function instead
    #+BEGIN_SRC emacs-lisp
-     (defun reload-config ()
+     (defun fn/reload-config ()
      (interactive)
      (org-babel-load-file
       (expand-file-name "config.org" user-emacs-directory)))
@@ -118,7 +118,7 @@
 
     How about changing some options
 
-    #+BEGIN_SRC
+    #+BEGIN_SRC emacs-lisp
       (fset 'yes-or-no-p 'y-or-n-p)
     #+END_SRC
 
@@ -266,12 +266,19 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package org
-        :init
-        (add-to-list 'org-modules 'org-drill)
-        :pin org
-        :ensure t
-        :config
-        (require 'org-drill))
+      :init
+      (add-to-list 'org-modules 'org-drill)
+      :load-path "elisp/org/lisp/"
+      :ensure t
+      :config
+      (require 'org-drill))
+    #+END_SRC
+
+    This is for org-jekyll
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package org-jekyll
+        :ensure t)
     #+END_SRC
 
 *** projectile
@@ -308,7 +315,6 @@
       :config
       (setq projectile-completion-system 'helm)
       (helm-projectile-on))
-
     #+END_SRC
 
 *** autocomplete
@@ -357,7 +363,20 @@
         :ensure t
         :defer t)
     #+END_SRC
-
 * Scripts
+** projectile-init script
+   This script runs .projectile-hook.el in each project root to ease development
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/load-projectile-hook ()
+       (interactive)
+       (mapcar (lambda (project)
+        (setq fn/current-project (expand-file-name project))
+        (load
+         (expand-file-name ".projectile-hook" fn/current-project)
+         t))
+   	 projectile-known-projects))
+   #+END_SRC
+
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration

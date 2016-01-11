@@ -1,4 +1,4 @@
-(defun reload-config ()
+(defun fn/reload-config ()
 (interactive)
 (org-babel-load-file
  (expand-file-name "config.org" user-emacs-directory)))
@@ -37,6 +37,8 @@
 (setq initial-scratch-message nil)
 
 (set-language-environment "UTF-8")
+
+(fset 'yes-or-no-p 'y-or-n-p)
 
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
 
@@ -123,12 +125,15 @@
   (nyan-mode t))
 
 (use-package org
-  :init
-  (add-to-list 'org-modules 'org-drill)
-  :pin org
-  :ensure t
-  :config
-  (require 'org-drill))
+:init
+(add-to-list 'org-modules 'org-drill)
+:load-path "elisp/org/lisp/"
+:ensure t
+:config
+(require 'org-drill))
+
+(use-package org-jekyll
+  :ensure t)
 
 (use-package projectile
   :ensure t
@@ -178,3 +183,12 @@
 (use-package js3-mode
   :ensure t
   :defer t)
+
+(defun fn/load-projectile-hook ()
+  (interactive)
+  (mapcar (lambda (project)
+   (setq fn/current-project (expand-file-name project))
+   (load
+    (expand-file-name ".projectile-hook" fn/current-project)
+    t))
+    projectile-known-projects))
