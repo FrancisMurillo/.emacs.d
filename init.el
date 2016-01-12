@@ -47,13 +47,7 @@
     :ensure t)
   (kill-emacs))
 
-
-(require 'use-package)
-
-(setq use-package-verbose t)
-
-
 ;; This part assumes ony org-babel-load-file is available
 (setq package-enable-at-startup nil)
-(org-babel-load-file 
+(org-babel-load-file
   (expand-file-name "config.org" user-emacs-directory))
