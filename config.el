@@ -17,12 +17,15 @@
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
   (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
 
+(require 'use-package)
+(setq use-package-verbose t)
+
 (use-package auto-compile
-  :ensure t
-  :config
-  (auto-compile-on-load-mode)
-  (auto-compile-on-save-mode)
-  (setq load-prefer-newer t))
+    :ensure t
+    :config
+    (auto-compile-on-load-mode)
+    (auto-compile-on-save-mode)
+    (setq load-prefer-newer t))
 
 (setq inhibit-startup-screen t)
 (setq initial-scratch-message nil)
@@ -63,8 +66,12 @@
 
 (load-theme 'tsdh-light)
 
+(global-set-key (kbd "RET") 'newline-and-indent)
+
 (use-package winner
-  :ensure t)
+  :ensure t
+  :config
+  (winner-mode t))
 
 (use-package ido
   :disabled t
@@ -115,9 +122,6 @@
   (nyan-mode t))
 
 (add-to-list 'org-modules 'org-drill)
-
-      (use-package org-drill
-:load-path "elisp/org-mode/contrib/lisp")
 
 (use-package projectile
   :ensure t

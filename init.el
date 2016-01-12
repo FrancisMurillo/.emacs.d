@@ -12,7 +12,7 @@
 
 (require 'cl)
 (setq load-path
-      (remove-if 
+      (remove-if
        (lambda (text) (string/ends-with text "org"))
        load-path))
 
@@ -20,11 +20,7 @@
 (package-initialize t)
 
 ;; Modify the hard dependencies
-;; org-mode
-(add-to-list 'load-path
- 	     (expand-file-name "elisp/org-mode/lisp" user-emacs-directory))
-(add-to-list 'load-path
- 	     (expand-file-name "elisp/org-mode/contrib/lisp" user-emacs-directory))
+;; org-mode used to be here
 
 ;; Load the rest of the packages
 (package-initialize nil)
@@ -33,22 +29,31 @@
 ;; use-package is fundamental to this configuration
 (unless (package-installed-p 'use-package)
   (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-  ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
   (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
-  (package-refresh-contents)
-  (package-install 'use-package))
 
-;; Require hard dependencies
-;; use-package
+  (package-refresh-contents)
+  (package-install 'use-package)
+  (require 'use-package)
+
+  (use-package org
+    :ensure t)
+  (use-package org-plus-contrib
+    :ensure t)
+
+  ;; Weird dependency
+  (use-package dash
+    :ensure t)
+  (kill-emacs))
+
+
 (require 'use-package)
 
 (setq use-package-verbose t)
 
-;; org-mode configuration here instead
-(use-package org
-  :ensure t)
 
+;; This part assumes ony org-babel-load-file is available
 (setq package-enable-at-startup nil)
 (org-babel-load-file 
   (expand-file-name "config.org" user-emacs-directory))
