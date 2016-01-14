@@ -214,10 +214,15 @@
     #+END_SRC
 
 *** Theme
-    Emacs theme for me. I prefer the default tsdh-dark
+    Emacs theme for me. I prefer the default tsdh-dark since it's default doesn't ask too much.
+
+    If there is no window system or in a terminal,
+    #+BEGIN_SRC emacs-lisp
+      (unless (window-system) (load-theme 'tsdh-light))
+    #+END_SRC
 
     #+BEGIN_SRC emacs-lisp
-      (load-theme 'tsdh-dark)
+      (when (window-system) (load-theme 'tsdh-dark))
     #+END_SRC
 
 *** Programming
@@ -225,7 +230,10 @@
 
     #+BEGIN_SRC emacs-lisp
       (global-set-key (kbd "RET") 'newline-and-indent)
+
       (setq-default indent-tabs-mode nil)
+      (show-paren-mode t)
+      (add-hook 'before-save-hook 'delete-trailing-whitespace)
     #+END_SRC
 
 ** Builtin Modes
@@ -281,6 +289,14 @@
         )
     #+END_SRC
 
+*** dired
+    Directory management for Emacs
+
+    #+BEGIN_SRC emacs-lisp
+      (require 'dired-x)
+      (setq dired-dwim-target t)
+    #+END_SRC
+
 ** External Modes
 *** guru
     Want to make sure I never hit those evil keys
@@ -304,12 +320,32 @@
     #+END_SRC
 
 *** org
-    org-mode my buddy. Since this is part of the bootstrapping, the main configuration is in the =init.el= file. Here are the extra configuration that I need for it to work better.
+    org-mode my buddy. This is filed under external modes since I download a new copy of org mode to be updated.
 
-    However for dependencies on org-mode, I have to specify the load-path to avoid fetching a different copy of org.
+    Some basic setup
 
     #+BEGIN_SRC emacs-lisp
-      (add-to-list 'org-modules 'org-drill)
+      (use-package org
+        :ensure t
+        :config
+        ;; Setup
+        (add-to-list 'org-modules 'org-drill)
+
+        ;; Capture
+        (setq org-directory
+              (expand-file-name "~/Fakespace/nobody-library"))
+        (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
+        (setq org-journal-file (concat org-directory "/journal.org"))
+        (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
+        (setq org-capture-templates
+              (list
+               (list "t" "Todo" 'entry
+                     (list 'file+headline org-default-notes-file)
+                     "* TODO %?\n %i\n %a")
+               (list "j" "Journal" 'entry
+                     (list 'file+datetree org-journal-file)
+                     "* %?\nEntered on %U\n %i\n %a"))))
+
     #+END_SRC
 
 *** projectile
@@ -417,6 +453,10 @@
          t))
    	 projectile-known-projects))
    #+END_SRC
+** Open current buffer as root
+   Taken from Mastering Emacs, this opens the current buffer as root via TRAMP
 
+   #+BEGIN_SRC emacs-lisp
+   #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration

@@ -60,10 +60,15 @@
 
 (set-frame-font "DejaVu Sans Mono-6" t t)
 
-(load-theme 'tsdh-dark)
+(unless (window-system) (load-theme 'tsdh-light))
+
+(when (window-system) (load-theme 'tsdh-dark))
 
 (global-set-key (kbd "RET") 'newline-and-indent)
+
 (setq-default indent-tabs-mode nil)
+(show-paren-mode t)
+(add-hook 'before-save-hook 'delete-trailing-whitespace)
 
 (use-package winner
   :ensure t
@@ -107,6 +112,9 @@
     (smex-initialize))
   )
 
+(require 'dired-x)
+(setq dired-dwim-target t)
+
 (use-package guru-mode
   :ensure t
   :config
@@ -118,7 +126,26 @@
   :config
   (nyan-mode t))
 
-(add-to-list 'org-modules 'org-drill)
+(use-package org
+  :ensure t
+  :config
+  ;; Setup
+  (add-to-list 'org-modules 'org-drill)
+
+  ;; Capture
+  (setq org-directory
+        (expand-file-name "~/Fakespace/nobody-library"))
+  (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
+  (setq org-journal-file (concat org-directory "/journal.org"))
+  (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
+  (setq org-capture-templates
+        (list
+         (list "t" "Todo" 'entry
+               (list 'file+headline org-default-notes-file)
+               "* TODO %?\n %i\n %a")
+         (list "j" "Journal" 'entry
+               (list 'file+datetree org-journal-file)
+               "* %?\nEntered on %U\n %i\n %a"))))
 
 (use-package projectile
   :ensure t
@@ -181,3 +208,5 @@
     (expand-file-name ".projectile-hook" fn/current-project)
     t))
     projectile-known-projects))
+
+
