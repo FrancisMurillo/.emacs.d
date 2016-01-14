@@ -13,19 +13,12 @@
 
 (unless (assoc-default "melpa" package-archives)
   (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-  ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-  (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+  (add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/")))
 
 (require 'use-package)
 (setq use-package-verbose t)
-
-(use-package auto-compile
-    :ensure t
-    :config
-    (auto-compile-on-load-mode)
-    (auto-compile-on-save-mode)
-    (setq load-prefer-newer t))
 
 (setq inhibit-startup-screen t)
 (setq initial-scratch-message nil)
@@ -61,12 +54,16 @@
 
 (global-whitespace-mode t)
 (global-auto-revert-mode t)
+(global-visual-line-mode t)
+
+(global-hl-line-mode t)
 
 (set-frame-font "DejaVu Sans Mono-6" t t)
 
-(load-theme 'tsdh-light)
+(load-theme 'tsdh-dark)
 
 (global-set-key (kbd "RET") 'newline-and-indent)
+(setq-default indent-tabs-mode nil)
 
 (use-package winner
   :ensure t
@@ -167,6 +164,10 @@
 (use-package flycheck
   :ensure t
   :defer t)
+
+(use-package flyspell
+:ensure t
+:defer t)
 
 (use-package js3-mode
   :ensure t

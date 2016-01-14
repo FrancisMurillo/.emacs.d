@@ -42,9 +42,6 @@
   (use-package org-plus-contrib
     :ensure t)
 
-  ;; Weird dependency
-  (use-package dash
-    :ensure t)
   (kill-emacs))
 
 ;; This part assumes ony org-babel-load-file is available

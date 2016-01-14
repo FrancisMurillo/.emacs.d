@@ -1,4 +1,5 @@
 #+TITLE: Francis Murillo's Emacs configuration
+#+AUTHOR: Frncis Murillo
 #+OPTIONS: toc:4 h:4
 
 * Introduction
@@ -104,6 +105,12 @@
    #+BEGIN_SRC emacs-lisp
      (load "secret" t)
    #+END_SRC
+** Installation Option
+   Any configuration option I use to build Emacs
+
+   #+BEGIN_SRC sh
+     ls -al
+   #+END_SRC
 
 ** Package Sources
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
@@ -111,26 +118,17 @@
    #+BEGIN_SRC emacs-lisp
      (unless (assoc-default "melpa" package-archives)
        (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-       ;; (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-       (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-       (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
+       (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+       (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+       (add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/")))
    #+END_SRC
 
 ** Prepare Bootstrap
    Initialize everything needed to configure the rest. The two major packages =use-package= and =org= have been loaded in the =init.el= file; here are the extra bootstrapping option
 
-   Auto-compile is said to increase performance, but it is optional in my config
-
    #+BEGIN_SRC emacs-lisp
      (require 'use-package)
      (setq use-package-verbose t)
-
-     (use-package auto-compile
-         :ensure t
-         :config
-         (auto-compile-on-load-mode)
-         (auto-compile-on-save-mode)
-         (setq load-prefer-newer t))
    #+END_SRC
 
 ** General Configuration
@@ -203,6 +201,9 @@
     #+BEGIN_SRC emacs-lisp
       (global-whitespace-mode t)
       (global-auto-revert-mode t)
+      (global-visual-line-mode t)
+
+      (global-hl-line-mode t)
     #+END_SRC
 
 *** Font
@@ -216,7 +217,7 @@
     Emacs theme for me. I prefer the default tsdh-dark
 
     #+BEGIN_SRC emacs-lisp
-      (load-theme 'tsdh-light)
+      (load-theme 'tsdh-dark)
     #+END_SRC
 
 *** Programming
@@ -224,6 +225,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (global-set-key (kbd "RET") 'newline-and-indent)
+      (setq-default indent-tabs-mode nil)
     #+END_SRC
 
 ** Builtin Modes
@@ -384,6 +386,15 @@
           :ensure t
           :defer t)
     #+END_SRC
+*** flyspell
+    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package flyspell
+      :ensure t
+      :defer t)
+    #+END_SRC
+
 *** js3
     A great mode for progressive nodejs
 
