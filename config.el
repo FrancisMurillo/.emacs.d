@@ -166,8 +166,7 @@
 
           (use-package helm
 :ensure t
-:bind (
-           ("M-x" . helm-M-x))
+:bind (("M-x" . helm-M-x))
 :config
 (require 'helm-config)
 (setq helm-mode-fuzzy-match t)
@@ -179,6 +178,16 @@
 :config
 (setq projectile-completion-system 'helm)
 (helm-projectile-on))
+
+(use-package helm-swoop
+  :ensure t
+  :bind (("M-i" . helm-swoop)
+         ("C-c M-i" . helm-multi-swoop))
+  :config
+  (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
+  (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
+  (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
+  (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
 
 (use-package auto-complete
   :ensure t
@@ -206,6 +215,15 @@
 (use-package js3-mode
   :ensure t
   :defer t)
+
+(use-package twittering-mode
+  :ensure t
+  :defer t
+  :init
+  (setq twittering-auth-method 'xauth)
+  :config
+  (twittering-icon-mode t)
+  (setq twittering-convert-fix-size 24))e
 
 (defun fn/load-projectile-hook ()
   (interactive)

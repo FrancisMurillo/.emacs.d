@@ -368,7 +368,7 @@
         )
     #+END_SRC
 
-*** COMMENT helm
+*** helm
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp
@@ -457,6 +457,22 @@
         :ensure t
         :defer t)
     #+END_SRC
+
+** Utility Modes
+*** [[https://github.com/hayamiz/twittering-mode][twitter]]
+    Integrating with emacs is very fun.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package twittering-mode
+        :ensure t
+        :defer t
+        :init
+        (setq twittering-auth-method 'xauth)
+        :config
+        (twittering-icon-mode t)
+        (setq twittering-convert-fix-size 24))e
+    #+END_SRC
+
 * Scripts
 ** projectile-init script
    This script runs .projectile-hook.el in each project root to ease development
