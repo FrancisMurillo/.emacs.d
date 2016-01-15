@@ -112,7 +112,8 @@
     (smex-initialize))
   )
 
-(require 'dired-x)
+(require 'dired-x) ;; Allows multi open marked files
+
 (setq dired-dwim-target t)
 
 (use-package guru-mode
@@ -136,16 +137,22 @@
   (setq org-directory
         (expand-file-name "~/Fakespace/nobody-library"))
   (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
-  (setq org-journal-file (concat org-directory "/journal.org"))
+
+  (setq org-journal-file (expand-file-name "journal.org" org-directory))
+  (setq org-review-file (expand-file-name "learning.org" org-directory))
+
   (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
   (setq org-capture-templates
         (list
          (list "t" "Todo" 'entry
-               (list 'file+headline org-default-notes-file)
+               (list 'file+headline org-default-notes-file "Todo")
                "* TODO %?\n %i\n %a")
          (list "j" "Journal" 'entry
                (list 'file+datetree org-journal-file)
-               "* %?\nEntered on %U\n %i\n %a"))))
+               "* %?\nEntered on %U\n %i\n %a")
+         (list "r" "Review/Remember" 'entry
+               (list 'file+headline org-review-file "Learning Notes" "Review")
+               "* %? :drill:\n :CREATED_ON: %T"))))
 
 (use-package projectile
   :ensure t
