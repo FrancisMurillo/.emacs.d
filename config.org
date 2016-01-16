@@ -327,33 +327,37 @@
     Some basic setup
 
     #+BEGIN_SRC emacs-lisp
-                  (use-package org
-                    :ensure t
-                    :config
-                    ;; Setup
-                    (add-to-list 'org-modules 'org-drill)
+      (use-package org
+        :ensure t
+        :config
+        ;; Setup
+        (add-to-list 'org-modules 'org-drill)
 
-                    ;; Capture
-                    (setq org-directory
-                          (expand-file-name "~/Fakespace/nobody-library"))
-                    (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
+        ;; Capture
+        (setq org-directory
+              (expand-file-name "~/Fakespace/nobody-library"))
+        (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
-                    (setq org-journal-file (expand-file-name "journal.org" org-directory))
-                    (setq org-review-file (expand-file-name "learning.org" org-directory))
+        (setq org-journal-file (expand-file-name "journal.org" org-directory))
+        (setq org-review-file (expand-file-name "learning.org" org-directory))
 
-                    (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
-                    (setq org-capture-templates
-                          (list
-                           (list "t" "Todo" 'entry
-                                 (list 'file+headline org-default-notes-file "Todo")
-                                 "* TODO %?\n %i\n %a")
-                           (list "j" "Journal" 'entry
-                                 (list 'file+datetree org-journal-file)
-                                 "* %?\nEntered on %U\n %i\n %a")
-                           (list "r" "Review/Remember" 'entry
-                                 (list 'file+headline org-review-file "Learning Notes" "Review")
-                                 "* %? :drill:\n :CREATED_ON: %T"))))
+        (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
+        (setq org-capture-templates
+              (list
+               (list "t" "Todo" 'entry
+                     (list 'file+headline org-default-notes-file "Todo")
+                     "* TODO %?\n %i\n %a")
+               (list "j" "Journal" 'entry
+                     (list 'file+datetree org-journal-file)
+                     "* %?\nEntered on %U\n %i\n %a")
+               (list "r" "Review/Remember" 'entry
+                     (list 'file+headline org-review-file "Learning Notes" "Review")
+                     "* %? :drill:\n :CREATED_ON: %T"))))
 
+
+      (setq org-agenda-files
+            (list
+             org-review-file))
     #+END_SRC
 
 *** projectile
@@ -459,9 +463,20 @@
         :defer t)
     #+END_SRC
 
+*** sass
+    I use [[http://sass-lang.com/][sass]] for my jekyll blog
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package sass-mode
+        :ensure t
+        :defer t
+        :config
+        ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
+    #+END_SRC
+
 ** Utility Modes
-*** [[https://github.com/hayamiz/twittering-mode][twitter]]ing
-    Integrating with emacs is very fun.
+*** twittering
+    Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
 
     #+BEGIN_SRC emacs-lisp
       (use-package twittering-mode
@@ -472,6 +487,22 @@
         :config
         (twittering-icon-mode t)
         (setq twittering-convert-fix-size 24))
+    #+END_SRC
+*** gnus
+    The builtin =gnus= is useful in getting my mail
+
+    #+BEGIN_SRC emacs-lisp
+      (setq mail-authentication-file (expand-file-name ".authinfo.gpg"))
+
+      (setq gnus-select-method
+            '(nnimap "imap.gmail.com"
+                     (nnimap-stream ssl)
+                     (nnimap-authinfo-file mail-authentication-file)))
+
+      (setq gnus-secondary-select-methods
+            '((nnimap "imap.yandex.com"
+                      (nnimap-stream ssl)
+                      (nnimap-authinfo-file mail-authentication-file))))
     #+END_SRC
 
 * Scripts

@@ -154,6 +154,11 @@
                (list 'file+headline org-review-file "Learning Notes" "Review")
                "* %? :drill:\n :CREATED_ON: %T"))))
 
+
+(setq org-agenda-files
+      (list
+       org-review-file))
+
 (use-package projectile
   :ensure t
   :config
@@ -162,22 +167,23 @@
   )
 
 (use-package async
-:ensure t)
+  :ensure t)
 
-          (use-package helm
-:ensure t
-:bind (("M-x" . helm-M-x))
-:config
-(require 'helm-config)
-(setq helm-mode-fuzzy-match t)
-(setq helm-completion-in-region-fuzzy-match t)
-(helm-mode t))
+(use-package helm
+  :ensure t
+  :bind (("M-x" . helm-M-x)
+         ("C-x C-f" . helm-find-files))
+  :config
+  (require 'helm-config)
+  (setq helm-mode-fuzzy-match t)
+  (setq helm-completion-in-region-fuzzy-match t)
+  (helm-mode t))
 
 (use-package helm-projectile
-:ensure t
-:config
-(setq projectile-completion-system 'helm)
-(helm-projectile-on))
+  :ensure t
+  :config
+  (setq projectile-completion-system 'helm)
+  (helm-projectile-on))
 
 (use-package helm-swoop
   :ensure t
@@ -216,6 +222,12 @@
   :ensure t
   :defer t)
 
+(use-package sass-mode
+  :ensure t
+  :defer t
+  :config
+  ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
+
 (use-package twittering-mode
   :ensure t
   :defer t
@@ -224,6 +236,18 @@
   :config
   (twittering-icon-mode t)
   (setq twittering-convert-fix-size 24))
+
+(setq mail-authentication-file (expand-file-name ".authinfo.gpg"))
+
+(setq gnus-select-method
+      '(nnimap "imap.gmail.com"
+               (nnimap-stream ssl)
+               (nnimap-authinfo-file mail-authentication-file)))
+
+(setq gnus-secondary-select-methods
+      '((nnimap "imap.yandex.com"
+                (nnimap-stream ssl)
+                (nnimap-authinfo-file mail-authentication-file))))
 
 (defun fn/load-projectile-hook ()
       (interactive)
