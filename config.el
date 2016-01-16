@@ -209,8 +209,8 @@
   :defer t)
 
 (use-package flyspell
-:ensure t
-:defer t)
+  :ensure t
+  :defer t)
 
 (use-package js3-mode
   :ensure t
@@ -223,15 +223,15 @@
   (setq twittering-auth-method 'xauth)
   :config
   (twittering-icon-mode t)
-  (setq twittering-convert-fix-size 24))e
+  (setq twittering-convert-fix-size 24))
 
 (defun fn/load-projectile-hook ()
-  (interactive)
-  (mapcar (lambda (project)
-   (setq fn/current-project (expand-file-name project))
-   (load
-    (expand-file-name ".projectile-hook" fn/current-project)
-    t))
-    projectile-known-projects))
+      (interactive)
+      (mapcar (lambda (project)
+       (setq fn/current-project (expand-file-name project))
+       (load
+        (expand-file-name ".projectile-hook" fn/current-project)
+        t))
+projectile-known-projects))
 
 

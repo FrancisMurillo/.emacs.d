@@ -372,23 +372,24 @@
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp
-                (use-package async
-      :ensure t)
+      (use-package async
+        :ensure t)
 
-                (use-package helm
-      :ensure t
-      :bind (("M-x" . helm-M-x))
-      :config
-      (require 'helm-config)
-      (setq helm-mode-fuzzy-match t)
-      (setq helm-completion-in-region-fuzzy-match t)
-      (helm-mode t))
+      (use-package helm
+        :ensure t
+        :bind (("M-x" . helm-M-x)
+               ("C-x C-f" . helm-find-files))
+        :config
+        (require 'helm-config)
+        (setq helm-mode-fuzzy-match t)
+        (setq helm-completion-in-region-fuzzy-match t)
+        (helm-mode t))
 
       (use-package helm-projectile
-      :ensure t
-      :config
-      (setq projectile-completion-system 'helm)
-      (helm-projectile-on))
+        :ensure t
+        :config
+        (setq projectile-completion-system 'helm)
+        (helm-projectile-on))
 
       (use-package helm-swoop
         :ensure t
@@ -445,8 +446,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package flyspell
-      :ensure t
-      :defer t)
+        :ensure t
+        :defer t)
     #+END_SRC
 
 *** js3
@@ -459,7 +460,7 @@
     #+END_SRC
 
 ** Utility Modes
-*** [[https://github.com/hayamiz/twittering-mode][twitter]]
+*** [[https://github.com/hayamiz/twittering-mode][twitter]]ing
     Integrating with emacs is very fun.
 
     #+BEGIN_SRC emacs-lisp
@@ -470,7 +471,7 @@
         (setq twittering-auth-method 'xauth)
         :config
         (twittering-icon-mode t)
-        (setq twittering-convert-fix-size 24))e
+        (setq twittering-convert-fix-size 24))
     #+END_SRC
 
 * Scripts
@@ -485,8 +486,9 @@
         (load
          (expand-file-name ".projectile-hook" fn/current-project)
          t))
-   	 projectile-known-projects))
+ projectile-known-projects))
    #+END_SRC
+
 ** Open current buffer as root
    Taken from Mastering Emacs, this opens the current buffer as root via TRAMP
 

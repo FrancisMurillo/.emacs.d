@@ -20,7 +20,7 @@
 (package-initialize t)
 
 ;; Modify the hard dependencies
-;; org-mode used to be here
+;; Nothing to add to the load-path
 
 ;; Load the rest of the packages
 (package-initialize nil)
