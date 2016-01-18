@@ -409,6 +409,7 @@
                           "#+TITLE: Journal Entry- %Y-%b-%d (%A)\n\n" datim)))))
 
            (auto-insert-mode t)
+           (auto-insert-query t) ;; Don't ask, just put it in there
            (add-hook 'find-file-hook 'auto-insert)
 
            (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fn/insert-org-gpg-headers))
