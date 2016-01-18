@@ -325,7 +325,9 @@
 *** org
     org-mode my buddy. This is filed under external modes since I download a new copy of org mode to be updated.
 
-    Some basic setup
+    Some basic setup which I use =org-drill= and =org-journal=
+
+    Here is a reference to the  [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Time-Parsing.html][date time format]].
 
     #+BEGIN_SRC emacs-lisp
       (use-package org
@@ -361,16 +363,29 @@
                      "* %?\nEntered on %U\n %i\n %a")
                (list "r" "Review/Remember" 'entry
                      (list 'file+headline org-review-file "Learning Notes" "Review")
-                     "* %? :drill:\n  :CREATED_ON: %T"))))
 
+                     "* %? :drill:\n  :CREATED_ON: %T")))
 
-      (setq org-agenda-files
-            (list
-             org-review-file
-             org-default-notes-file
-             org-main-file
-             org-blog-file
-             ))
+        (setq org-agenda-files
+              (list
+               org-review-file
+               org-default-notes-file
+               org-main-file
+               org-blog-file
+               ))
+
+        (use-package org-journal
+          :ensure t
+          :bind (("C-c C-d" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+          :config
+          (setq org-journal-dir
+                (expand-file-name "diary" org-directory))
+          (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
+
+          (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
+          (setq org-journal-time-format "%T") ;; HH:MM:SS
+
+          (add-to-list 'org-agenda-files org-journal-dir)))
     #+END_SRC
 
 *** projectile

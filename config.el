@@ -140,6 +140,7 @@
   ;; Setup
   (add-to-list 'org-modules 'org-drill)
   (require 'org-drill)
+  (require 'org-journal)
 
   ;; Capture
   (setq org-directory
@@ -162,16 +163,16 @@
                "* %?\nEntered on %U\n %i\n %a")
          (list "r" "Review/Remember" 'entry
                (list 'file+headline org-review-file "Learning Notes" "Review")
-               "* %? :drill:\n  :CREATED_ON: %T"))))
+               "* %? :drill:\n  :CREATED_ON: %T")))
 
 
-(setq org-agenda-files
-      (list
-       org-review-file
-       org-default-notes-file
-       org-main-file
-       org-blog-file
-       ))
+  (setq org-agenda-files
+        (list
+         org-review-file
+         org-default-notes-file
+         org-main-file
+         org-blog-file
+         )))
 
 (use-package projectile
   :ensure t
@@ -214,6 +215,7 @@
           (and (= emacs-major-version 24)
                (>= emacs-minor-version 4)))
   :ensure t
+  :defer t
   )
 
 (use-package auto-complete
@@ -289,6 +291,10 @@
     (not matched-ignored-filename)))
 
 (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+
+(use-package malabar-mode
+  :ensure t
+  :defer t)
 
 (defun fn/load-projectile-hook ()
       (interactive)
