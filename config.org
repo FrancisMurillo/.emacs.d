@@ -331,61 +331,91 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package org
-        :ensure t
-        :bind (("C-c l" . org-store-link)
-               ("C-c a" . org-agenda))
-        :config
-        ;; Config
-        (setq org-log-done 'time)
+         :bind (("C-c l" . org-store-link)
+                ("C-c a" . org-agenda))
+         :config
+         ;; Config
+         (setq org-log-done 'time)
 
-        ;; Setup
-        (add-to-list 'org-modules 'org-drill)
-        (require 'org-drill)
+         ;; Setup
+         (add-to-list 'org-modules 'org-drill)
+         (require 'org-drill)
 
-        ;; Capture
-        (setq org-directory
-              (expand-file-name "~/Fakespace/nobody-library"))
-        (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
+         ;; Capture
+         (setq org-directory
+               (expand-file-name "~/Fakespace/nobody-library"))
+         (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
-        (setq org-main-file (expand-file-name "nobody.org" org-directory))
-        (setq org-journal-file (expand-file-name "journal.org" org-directory))
-        (setq org-review-file (expand-file-name "learning.org" org-directory))
-        (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
+         (setq org-main-file (expand-file-name "main.org" org-directory))
+         (setq org-journal-file (expand-file-name "journal.org" org-directory))
+         (setq org-review-file (expand-file-name "learning.org" org-directory))
+         (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
 
-        (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
-        (setq org-capture-templates
-              (list
-               (list "t" "Todo" 'entry
-                     (list 'file+headline org-default-notes-file "Todo")
-                     "* TODO %?\n %i\n %a")
-               (list "j" "Journal" 'entry
-                     (list 'file+datetree org-journal-file)
-                     "* %?\nEntered on %U\n %i\n %a")
-               (list "r" "Review/Remember" 'entry
-                     (list 'file+headline org-review-file "Learning Notes" "Review")
+         (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
+         (setq org-capture-templates
+               (list
+                (list "t" "Todo" 'entry
+                      (list 'file+headline org-default-notes-file "Todo")
+                      "* TODO %?\n %i\n %a")
+                (list "r" "Review/Remember" 'entry
+                      (list 'file+headline org-review-file "Learning Notes" "Review")
+                      "* %? :drill:\n  :CREATED_ON: %T")))
 
-                     "* %? :drill:\n  :CREATED_ON: %T")))
+         (setq org-agenda-files
+               (list
+                org-default-notes-file
+                org-main-file
+                org-review-file
+                org-blog-file
+                ))
 
-        (setq org-agenda-files
-              (list
-               org-review-file
-               org-default-notes-file
-               org-main-file
-               org-blog-file
-               ))
+         (use-package org-journal
+           :ensure t
+           :bind (("C-c e" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+           :config
+           ;; org-journal under org-agenda
+           (setq org-journal-dir
+                 (expand-file-name "diary" org-directory))
+           (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
 
-        (use-package org-journal
-          :ensure t
-          :bind (("C-c C-d" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
-          :config
-          (setq org-journal-dir
-                (expand-file-name "diary" org-directory))
-          (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
+           (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
+           (setq org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
 
-          (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
-          (setq org-journal-time-format "%T") ;; HH:MM:SS
+           (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
 
-          (add-to-list 'org-agenda-files org-journal-dir)))
+           (defun fn/insert-private-file-headers ()
+             (interactive)
+             (insert "# -*- backup-inhibited t; auto-save-default nil; -*-\n"))
+
+           (defun fn/insert-org-gpg-headers ()
+             (interactive)
+             (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\") -*-\n")
+             (fn/insert-private-file-headers))
+
+
+           (defun fn/insert-org-journal-headers ()
+             (interactive)
+             (fn/insert-org-gpg-headers)
+
+             (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
+                                 (buffer-name))
+               (let ((year  (string-to-number (match-string 1 (buffer-name))))
+                     (month (string-to-number (match-string 2 (buffer-name))))
+                     (day   (string-to-number (match-string 3 (buffer-name))))
+                     (datim nil))
+                 (setq datim (encode-time 0 0 0 day month year))
+
+                 (insert (format-time-string
+                          "#+TITLE: Journal Entry- %Y-%b-%d (%A)\n\n" datim)))))
+
+           (auto-insert-mode t)
+           (add-hook 'find-file-hook 'auto-insert)
+
+           (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fn/insert-org-gpg-headers))
+           (add-to-list 'auto-insert-alist '(".*\.private.org" . fn/insert-private-file-headers))
+           (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fn/insert-org-journal-headers))
+
+           (add-to-list 'org-agenda-files org-journal-dir)))
     #+END_SRC
 
 *** projectile
@@ -592,8 +622,8 @@
         :ensure t
         :defer t)
     #+END_SRC
-
-* Scripts
+*
+ Scripts
 ** projectile-init script
    This script runs .projectile-hook.el in each project root to ease development
 
