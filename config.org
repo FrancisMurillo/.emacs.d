@@ -293,10 +293,11 @@
     Directory management for Emacs
 
     #+BEGIN_SRC emacs-lisp
-      (require 'dired-x) ;; Allows multi open marked files
-
-      (setq dired-dwim-target t)
-
+      (use-package dired
+        :config
+        (setq dired-recursive-copies 'always)
+        (require 'dired-x) ;; Allows multi open marked files
+        (setq dired-dwim-target t))
     #+END_SRC
 
 ** External Modes
@@ -329,17 +330,25 @@
     #+BEGIN_SRC emacs-lisp
       (use-package org
         :ensure t
+        :bind (("C-c l" . org-store-link)
+               ("C-c a" . org-agenda))
         :config
+        ;; Config
+        (setq org-log-done 'time)
+
         ;; Setup
         (add-to-list 'org-modules 'org-drill)
+        (require 'org-drill)
 
         ;; Capture
         (setq org-directory
               (expand-file-name "~/Fakespace/nobody-library"))
         (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
+        (setq org-main-file (expand-file-name "nobody.org" org-directory))
         (setq org-journal-file (expand-file-name "journal.org" org-directory))
         (setq org-review-file (expand-file-name "learning.org" org-directory))
+        (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
 
         (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
         (setq org-capture-templates
@@ -352,12 +361,16 @@
                      "* %?\nEntered on %U\n %i\n %a")
                (list "r" "Review/Remember" 'entry
                      (list 'file+headline org-review-file "Learning Notes" "Review")
-                     "* %? :drill:\n :CREATED_ON: %T"))))
+                     "* %? :drill:\n  :CREATED_ON: %T"))))
 
 
       (setq org-agenda-files
             (list
-             org-review-file))
+             org-review-file
+             org-default-notes-file
+             org-main-file
+             org-blog-file
+             ))
     #+END_SRC
 
 *** projectile
@@ -407,16 +420,32 @@
 
     #+END_SRC
 
+*** magit
+    Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
+
+    There is a sad version requirement for 24.4 to use the latest code.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package magit
+        :if (or (> emacs-major-version 24)
+                (and (= emacs-major-version 24)
+                     (>= emacs-minor-version 4)))
+        :ensure t
+        :defer t
+        )
+    #+END_SRC
+
 *** autocomplete
     Autocomplete is a must have feature
 
     #+BEGIN_SRC emacs-lisp
       (use-package auto-complete
-    	:ensure t
-    	:config
-    	(require 'auto-complete-config)
-    	(ac-config-default)
-    	(setq popup-use-optimized-column-computation nil))
+        :ensure t
+        :config
+        (require 'auto-complete-config)
+        (ac-config-default)
+        (global-auto-complete-mode)
+        (setq popup-use-optimized-column-computation nil))
     #+END_SRC
 
 *** yasnippet
@@ -450,8 +479,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package flyspell
-        :ensure t
-        :defer t)
+        :ensure t)
     #+END_SRC
 
 *** js3
@@ -474,6 +502,19 @@
         ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
     #+END_SRC
 
+*** cedet
+    A must to use other libraries.
+
+    This is an hard external dependency found in the =elisp/cedet= folder
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package cedet
+        :load-path "elisp/cedet/lisp"
+        :defer t)
+    #+END_SRC
+
+***
+***
 ** Utility Modes
 *** twittering
     Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
@@ -503,6 +544,38 @@
             '((nnimap "imap.yandex.com"
                       (nnimap-stream ssl)
                       (nnimap-authinfo-file mail-authentication-file))))
+    #+END_SRC
+
+*** epa
+    Encryption is a must
+
+    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
+
+    #+BEGIN_SRC emacs-lisp
+      (require 'epa-file)
+      (epa-file-enable)
+
+      (defun fn/backup-each-save-filter (filename)
+        (let ((ignored-filenames
+               '("\\.gpg$"))
+              (matched-ignored-filename nil))
+          (mapc
+           (lambda (x)
+             (when (string-match x filename)
+               (setq matched-ignored-filename t)))
+           ignored-filenames)
+          (not matched-ignored-filename)))
+
+      (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+    #+END_SRC
+
+*** malabar
+    Programming in =maven= is a thing, so I need [[https://github.com/m0smith/malabar-mode][malabar-mode]]
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package malabar-mode
+        :ensure t
+        :defer t)
     #+END_SRC
 
 * Scripts

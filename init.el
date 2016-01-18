@@ -6,9 +6,9 @@
 (defun string/ends-with (s ending)
   "Return non-nil if string S ends with ENDING."
   (cond ((>= (length s) (length ending))
-	 (let ((elength (length ending)))
-	   (string= (substring s (- 0 elength)) ending)))
-            (t nil)))
+         (let ((elength (length ending)))
+           (string= (substring s (- 0 elength)) ending)))
+        (t nil)))
 
 (require 'cl)
 (setq load-path
@@ -20,7 +20,7 @@
 (package-initialize t)
 
 ;; Modify the hard dependencies
-;; Nothing to add to the load-path
+;; None needed
 
 ;; Load the rest of the packages
 (package-initialize nil)
@@ -47,7 +47,7 @@
 ;; This part assumes ony org-babel-load-file is available
 (setq package-enable-at-startup nil)
 (org-babel-load-file
-  (expand-file-name "config.org" user-emacs-directory))
+ (expand-file-name "config.org" user-emacs-directory))
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

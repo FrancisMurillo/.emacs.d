@@ -112,9 +112,11 @@
     (smex-initialize))
   )
 
-(require 'dired-x) ;; Allows multi open marked files
-
-(setq dired-dwim-target t)
+(use-package dired
+  :config
+  (setq dired-recursive-copies 'always)
+  (require 'dired-x) ;; Allows multi open marked files
+  (setq dired-dwim-target t))
 
 (use-package guru-mode
   :ensure t
@@ -129,17 +131,25 @@
 
 (use-package org
   :ensure t
+  :bind (("C-c l" . org-store-link)
+         ("C-c a" . org-agenda))
   :config
+  ;; Config
+  (setq org-log-done 'time)
+
   ;; Setup
   (add-to-list 'org-modules 'org-drill)
+  (require 'org-drill)
 
   ;; Capture
   (setq org-directory
         (expand-file-name "~/Fakespace/nobody-library"))
   (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
+  (setq org-main-file (expand-file-name "nobody.org" org-directory))
   (setq org-journal-file (expand-file-name "journal.org" org-directory))
   (setq org-review-file (expand-file-name "learning.org" org-directory))
+  (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
 
   (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
   (setq org-capture-templates
@@ -152,12 +162,16 @@
                "* %?\nEntered on %U\n %i\n %a")
          (list "r" "Review/Remember" 'entry
                (list 'file+headline org-review-file "Learning Notes" "Review")
-               "* %? :drill:\n :CREATED_ON: %T"))))
+               "* %? :drill:\n  :CREATED_ON: %T"))))
 
 
 (setq org-agenda-files
       (list
-       org-review-file))
+       org-review-file
+       org-default-notes-file
+       org-main-file
+       org-blog-file
+       ))
 
 (use-package projectile
   :ensure t
@@ -195,11 +209,19 @@
   (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
   (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
 
+(use-package magit
+  :if (or (> emacs-major-version 24)
+          (and (= emacs-major-version 24)
+               (>= emacs-minor-version 4)))
+  :ensure t
+  )
+
 (use-package auto-complete
   :ensure t
   :config
   (require 'auto-complete-config)
   (ac-config-default)
+  (global-auto-complete-mode)
   (setq popup-use-optimized-column-computation nil))
 
 (use-package yasnippet
@@ -215,8 +237,7 @@
   :defer t)
 
 (use-package flyspell
-  :ensure t
-  :defer t)
+  :ensure t)
 
 (use-package js3-mode
   :ensure t
@@ -227,6 +248,10 @@
   :defer t
   :config
   ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
+
+(use-package cedet
+  :load-path "elisp/cedet/lisp"
+  :defer t)
 
 (use-package twittering-mode
   :ensure t
@@ -248,6 +273,22 @@
       '((nnimap "imap.yandex.com"
                 (nnimap-stream ssl)
                 (nnimap-authinfo-file mail-authentication-file))))
+
+(require 'epa-file)
+(epa-file-enable)
+
+(defun fn/backup-each-save-filter (filename)
+  (let ((ignored-filenames
+         '("\\.gpg$"))
+        (matched-ignored-filename nil))
+    (mapc
+     (lambda (x)
+       (when (string-match x filename)
+         (setq matched-ignored-filename t)))
+     ignored-filenames)
+    (not matched-ignored-filename)))
+
+(setq backup-each-save-filter-function 'fn/backup-each-save-filter)
 
 (defun fn/load-projectile-hook ()
       (interactive)
