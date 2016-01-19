@@ -234,6 +234,8 @@
       (setq-default indent-tabs-mode nil)
       (show-paren-mode t)
       (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+      (setq search-whitespace-regexp ".*?")
     #+END_SRC
 
 ** Builtin Modes
@@ -301,6 +303,16 @@
     #+END_SRC
 
 ** External Modes
+*** smooth-scrolling
+    Smooth scrolling is nice, when I want to use =next-line= to =prev-line= to scroll; this behavior makes sense for me.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package smooth-scrolling
+        :ensure t
+        :config
+        (require 'smooth-scrolling))
+    #+END_SRC
+
 *** guru
     Want to make sure I never hit those evil keys
 
@@ -331,93 +343,124 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package org
-         :bind (("C-c l" . org-store-link)
-                ("C-c a" . org-agenda))
-         :config
-         ;; Config
-         (setq org-log-done 'time)
+        :bind (("C-c l" . org-store-link)
+               ("C-c a" . org-agenda))
+        :config
+        ;; Config
+        (setq org-log-done 'time)
 
-         ;; Setup
-         (add-to-list 'org-modules 'org-drill)
-         (require 'org-drill)
+        ;; Setup
+        (add-to-list 'org-modules 'org-drill)
 
-         ;; Capture
-         (setq org-directory
-               (expand-file-name "~/Fakespace/nobody-library"))
-         (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
+        ;; Todo
+        (setq org-todo-keywords
+              '((sequence "INVESTIGATE(i)" "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")))
 
-         (setq org-main-file (expand-file-name "main.org" org-directory))
-         (setq org-journal-file (expand-file-name "journal.org" org-directory))
-         (setq org-review-file (expand-file-name "learning.org" org-directory))
-         (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
+        ;; Capture
+        (setq org-directory
+              (expand-file-name "~/Fakespace/nobody-library"))
+        (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
-         (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
-         (setq org-capture-templates
-               (list
-                (list "t" "Todo" 'entry
-                      (list 'file+headline org-default-notes-file "Todo")
-                      "* TODO %?\n %i\n %a")
-                (list "r" "Review/Remember" 'entry
-                      (list 'file+headline org-review-file "Learning Notes" "Review")
-                      "* %? :drill:\n  :CREATED_ON: %T")))
+        (setq org-main-file (expand-file-name "main.org" org-directory))
+        (setq org-review-file (expand-file-name "learning.org" org-directory))
+        (setq org-todo-file (expand-file-name "todo.org" org-directory))
+        (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
 
-         (setq org-agenda-files
-               (list
-                org-default-notes-file
-                org-main-file
-                org-review-file
-                org-blog-file
-                ))
+        (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
+        (setq org-capture-templates
+              (list
+               (list "t" "Todo" 'entry
+                     (list 'file+headline org-todo-file "Todo")
+                     "* INVESTIGATE %?\n   %i\n  %a")
+               (list "r" "Review/Remember" 'entry
+                     (list 'file+headline org-review-file "Learning Notes" "Review")
+                     "* %? :drill:\n  CREATED_ON: %T")))
 
-         (use-package org-journal
-           :ensure t
-           :bind (("C-c e" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
-           :config
-           ;; org-journal under org-agenda
-           (setq org-journal-dir
-                 (expand-file-name "diary" org-directory))
-           (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
+        ;; Agenda
+        (setq org-agenda-span 14) ;; Fortnight
 
-           (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
-           (setq org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
+        (setq org-planning-files
+              (list
+               org-main-file
+               org-blog-file
+               ))
 
-           (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
+        (setq org-task-files
+              (list
+               org-todo-file
+               org-review-file))
 
-           (defun fn/insert-private-file-headers ()
-             (interactive)
-             (insert "# -*- backup-inhibited t; auto-save-default nil; -*-\n"))
+        (setq org-agenda-files
+              (append
+               org-planning-files
+               org-task-files))
 
-           (defun fn/insert-org-gpg-headers ()
-             (interactive)
-             (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\") -*-\n")
-             (fn/insert-private-file-headers))
+        (setq org-refile-targets nil) ;; TODO: Make refile tagets
 
+        ;; org-drill
+        (require 'org-drill)
+        (setq org-drill-scope
+              (list org-review-file))
 
-           (defun fn/insert-org-journal-headers ()
-             (interactive)
-             (fn/insert-org-gpg-headers)
+        ;; org-journal
+        (use-package org-journal
+          :ensure t
+          :bind (("C-c e" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+          :config
+          (setq org-journal-dir
+                (expand-file-name "diary" org-directory))
+          ;; (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
 
-             (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
-                                 (buffer-name))
-               (let ((year  (string-to-number (match-string 1 (buffer-name))))
-                     (month (string-to-number (match-string 2 (buffer-name))))
-                     (day   (string-to-number (match-string 3 (buffer-name))))
-                     (datim nil))
-                 (setq datim (encode-time 0 0 0 day month year))
+          (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
+          (setq org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
 
-                 (insert (format-time-string
-                          "#+TITLE: Journal Entry- %Y-%b-%d (%A)\n\n" datim)))))
+          (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
 
-           (auto-insert-mode t)
-           (auto-insert-query t) ;; Don't ask, just put it in there
-           (add-hook 'find-file-hook 'auto-insert)
+          (defun fn/insert-private-file-headers ()
+            (interactive)
+            (insert "# -*- backup-inhibited t; auto-save-default nil; -*-\n"))
 
-           (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fn/insert-org-gpg-headers))
-           (add-to-list 'auto-insert-alist '(".*\.private.org" . fn/insert-private-file-headers))
-           (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fn/insert-org-journal-headers))
+          (defun fn/insert-org-gpg-headers ()
+            (interactive)
+            (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\") -*-\n")
+            (fn/insert-private-file-headers))
 
-           (add-to-list 'org-agenda-files org-journal-dir)))
+          (defun fn/insert-org-journal-headers ()
+            (interactive)
+            (fn/insert-org-gpg-headers)
+
+            (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
+                                (buffer-name))
+              (let ((year  (string-to-number (match-string 1 (buffer-name))))
+                    (month (string-to-number (match-string 2 (buffer-name))))
+                    (day   (string-to-number (match-string 3 (buffer-name))))
+                    (datim nil))
+                (setq datim (encode-time 0 0 0 day month year))
+
+                (insert (format-time-string
+                         "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
+                (insert (format-time-string
+                         "* %Y-%b-%d %a" datim)))))
+
+          (auto-insert-mode t)
+          (setq auto-insert-query t) ;; Don't ask, just put it in there
+          (add-hook 'find-file-hook 'auto-insert)
+
+          (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fn/insert-org-gpg-headers))
+          (add-to-list 'auto-insert-alist '(".*\.private.org" . fn/insert-private-file-headers))
+          (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fn/insert-org-journal-headers)))
+
+        (require 'org-mobile)
+        (setq org-mobile-directory
+              (expand-file-name "mobile" org-directory))
+        (setq org-mobile-inbox-for-pull
+              (expand-file-name "mobile-pull" org-directory))
+        (setq org-mobile-files
+              (list org-review-file)))
+
     #+END_SRC
+
+    #+RESULTS:
 
 *** projectile
     Must have a project finder when using a project.
@@ -463,7 +506,6 @@
         (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
         (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
         (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
-
     #+END_SRC
 
 *** magit
@@ -561,6 +603,18 @@
 
 ***
 ***
+*** auto-complile
+    A good mode when editing lisp files
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package auto-compile
+        :ensure t
+        :defer t
+        :config
+        (auto-compile-on-load-mode)
+        (auto-compile-on-save-mode))
+    #+END_SRC
+
 ** Utility Modes
 *** twittering
     Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
@@ -570,7 +624,8 @@
         :ensure t
         :defer t
         :init
-        (setq twittering-auth-method 'xauth)
+        (setq twittering-auth-method 'oauth)
+        (setq twittering-use-master-password t)
         :config
         (twittering-icon-mode t)
         (setq twittering-convert-fix-size 24))
