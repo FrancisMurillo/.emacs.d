@@ -511,7 +511,7 @@
 
     There is a sad version requirement for 24.4 to use the latest code.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package magit
         :if (or (> emacs-major-version 24)
                 (and (= emacs-major-version 24)
@@ -671,13 +671,8 @@
 *** malabar
     Programming in =maven= is a thing, so I need [[https://github.com/m0smith/malabar-mode][malabar-mode]]
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package malabar-mode
-        :ensure t
-        :defer t)
-    #+END_SRC
-*
- Scripts
+
+* Scripts
 ** projectile-init script
    This script runs .projectile-hook.el in each project root to ease development
 

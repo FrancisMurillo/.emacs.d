@@ -70,6 +70,8 @@
 (show-paren-mode t)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
+(setq search-whitespace-regexp ".*?")
+
 (use-package winner
   :ensure t
   :config
@@ -286,14 +288,6 @@
   (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
   (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
 
-(use-package magit
-  :if (or (> emacs-major-version 24)
-          (and (= emacs-major-version 24)
-               (>= emacs-minor-version 4)))
-  :ensure t
-  :defer t
-  )
-
 (use-package auto-complete
   :ensure t
   :config
@@ -375,10 +369,6 @@
     (not matched-ignored-filename)))
 
 (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
-
-(use-package malabar-mode
-  :ensure t
-  :defer t)
 
 (defun fn/load-projectile-hook ()
       (interactive)
