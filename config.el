@@ -70,6 +70,8 @@
 (show-paren-mode t)
 (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
+(setq search-whitespace-regexp ".*?")
+
 (use-package winner
   :ensure t
   :config
@@ -375,10 +377,6 @@
     (not matched-ignored-filename)))
 
 (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
-
-(use-package malabar-mode
-  :ensure t
-  :defer t)
 
 (defun fn/load-projectile-hook ()
       (interactive)

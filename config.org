@@ -409,7 +409,6 @@
           :config
           (setq org-journal-dir
                 (expand-file-name "diary" org-directory))
-          ;; (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
 
           (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
           (setq org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
@@ -671,13 +670,14 @@
 *** malabar
     Programming in =maven= is a thing, so I need [[https://github.com/m0smith/malabar-mode][malabar-mode]]
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package malabar-mode
         :ensure t
         :defer t)
     #+END_SRC
 *
  Scripts
+* Scripts
 ** projectile-init script
    This script runs .projectile-hook.el in each project root to ease development
 
