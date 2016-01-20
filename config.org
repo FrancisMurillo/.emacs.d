@@ -460,8 +460,6 @@
 
     #+END_SRC
 
-    #+RESULTS:
-
 *** projectile
     Must have a project finder when using a project.
 
