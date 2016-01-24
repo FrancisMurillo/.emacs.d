@@ -210,7 +210,7 @@
     I like fixed font specially DejaVu Mono
 
     #+BEGIN_SRC emacs-lisp
-      (set-frame-font "DejaVu Sans Mono-6" t t)
+      (set-frame-font "DejaVu Sans Mono-8" t t)
     #+END_SRC
 
 *** Theme
@@ -299,8 +299,32 @@
         :config
         (setq dired-recursive-copies 'always)
         (require 'dired-x) ;; Allows multi open marked files
-        (setq dired-dwim-target t))
+        (setq dired-dwim-target t)
+        (dired-async-mode t))
     #+END_SRC
+
+*** epa
+    Encryption is a must
+
+    #+BEGIN_SRC emacs-lisp
+      (require 'epa-file)
+      (epa-file-enable)
+
+      (defun fn/backup-each-save-filter (filename)
+        (let ((ignored-filenames
+               '("\\.gpg$"))
+              (matched-ignored-filename nil))
+          (mapc
+           (lambda (x)
+             (when (string-match x filename)
+               (setq matched-ignored-filename t)))
+           ignored-filenames)
+          (not matched-ignored-filename)))
+
+      (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+    #+END_SRC
+
+    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
 
 ** External Modes
 *** smooth-scrolling
@@ -468,7 +492,7 @@
         :config
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native)
-        )
+        (add-to-list 'projectile-project-root-files "config.xml"))
     #+END_SRC
 
 *** helm
@@ -530,7 +554,9 @@
         (require 'auto-complete-config)
         (ac-config-default)
         (global-auto-complete-mode)
-        (setq popup-use-optimized-column-computation nil))
+        (setq popup-use-optimized-column-computation nil)
+        (ac-set-trigger-key "TAB")
+        (ac-set-trigger-key "<tab>"))
     #+END_SRC
 
 *** yasnippet
@@ -564,14 +590,51 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package flyspell
-        :ensure t)
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'org-mode-hook (lambda ()
+                                   (flyspell-mode t))))
     #+END_SRC
 
-*** js3
+*** js2
     A great mode for progressive nodejs
 
+    [[https://truongtx.me/2014/02/23/set-up-javascript-development-environment-in-emacs/][Tutorial in js2]]
+
     #+BEGIN_SRC emacs-lisp
-      (use-package js3-mode
+      (use-package js2-mode
+        :ensure t
+        :defer t
+        :config
+        (setq js2-highlight-level 3)
+        (define-key js-mode-map "{" 'paredit-open-curly)
+        (define-key js-mode-map "}" 'paredit-close-curly-and-newline))
+
+      (use-package ac-js2
+        :ensure t
+        :defer t)
+
+      (use-package js2-refactor
+        :ensure t
+        :defer t
+        :config
+        (add-hook 'js2-mode-hook #'js2-refactor-mode))
+
+      (use-package tern
+        :ensure t
+        :defer t
+        :config
+        (tern-mode t))
+
+      (use-package tern-auto-complete
+        :ensure t
+        :defer t
+        :config
+        (tern-ac-setup))
+
+
+      (use-package react-snippets
         :ensure t
         :defer t)
     #+END_SRC
@@ -644,27 +707,16 @@
                       (nnimap-authinfo-file mail-authentication-file))))
     #+END_SRC
 
-*** epa
-    Encryption is a must
-
-    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
+*** bbdb
+    People organization
 
     #+BEGIN_SRC emacs-lisp
-      (require 'epa-file)
-      (epa-file-enable)
-
-      (defun fn/backup-each-save-filter (filename)
-        (let ((ignored-filenames
-               '("\\.gpg$"))
-              (matched-ignored-filename nil))
-          (mapc
-           (lambda (x)
-             (when (string-match x filename)
-               (setq matched-ignored-filename t)))
-           ignored-filenames)
-          (not matched-ignored-filename)))
-
-      (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+      (use-package bbdb
+        :ensure t
+        :defer t
+        :config
+        (bbdb-initialize)
+        (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
     #+END_SRC
 
 *** malabar
@@ -676,8 +728,24 @@
         :defer t)
     #+END_SRC
 *
- Scripts
+Scripts
 * Scripts
+** starup and shutdown hook
+   Small script to update my org files
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/startup ()
+       (interactive)
+       (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
+
+     (defun fn/cleanup ()
+       (interactive)
+       (shell-command "cd ~/Fakespace/nobody-library\
+      && git add diary/*\
+      && git commit -a -m \"Home Update\"\
+      && git push origin master"))
+   #+END_SRC
+
 ** projectile-init script
    This script runs .projectile-hook.el in each project root to ease development
 

@@ -58,7 +58,7 @@
 
 (global-hl-line-mode t)
 
-(set-frame-font "DejaVu Sans Mono-6" t t)
+(set-frame-font "DejaVu Sans Mono-8" t t)
 
 (unless (window-system) (load-theme 'tsdh-light))
 
@@ -118,7 +118,24 @@
   :config
   (setq dired-recursive-copies 'always)
   (require 'dired-x) ;; Allows multi open marked files
-  (setq dired-dwim-target t))
+  (setq dired-dwim-target t)
+  (dired-async-mode t))
+
+(require 'epa-file)
+(epa-file-enable)
+
+(defun fn/backup-each-save-filter (filename)
+  (let ((ignored-filenames
+         '("\\.gpg$"))
+        (matched-ignored-filename nil))
+    (mapc
+     (lambda (x)
+       (when (string-match x filename)
+         (setq matched-ignored-filename t)))
+     ignored-filenames)
+    (not matched-ignored-filename)))
+
+(setq backup-each-save-filter-function 'fn/backup-each-save-filter)
 
 (use-package smooth-scrolling
   :ensure t
@@ -203,7 +220,6 @@
     :config
     (setq org-journal-dir
           (expand-file-name "diary" org-directory))
-    ;; (setq org-agenda-file-regexp "\\`[^.].*\\.org'\\|[0-9]+")
 
     (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
     (setq org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
@@ -257,7 +273,7 @@
   :config
   (projectile-global-mode t)
   (setq projectile-indexing-method 'native)
-  )
+  (add-to-list 'projectile-project-root-files "config.xml"))
 
 (use-package async
   :ensure t)
@@ -302,7 +318,9 @@
   (require 'auto-complete-config)
   (ac-config-default)
   (global-auto-complete-mode)
-  (setq popup-use-optimized-column-computation nil))
+  (setq popup-use-optimized-column-computation nil)
+  (ac-set-trigger-key "TAB")
+  (ac-set-trigger-key "<tab>"))
 
 (use-package yasnippet
 :ensure t
@@ -317,9 +335,44 @@
   :defer t)
 
 (use-package flyspell
-  :ensure t)
+  :ensure t
+  :defer t
+  :init
+  (add-hook 'org-mode-hook (lambda ()
+                             (flyspell-mode t))))
 
-(use-package js3-mode
+(use-package js2-mode
+  :ensure t
+  :defer t
+  :config
+  (setq js2-highlight-level 3)
+  (define-key js-mode-map "{" 'paredit-open-curly)
+  (define-key js-mode-map "}" 'paredit-close-curly-and-newline))
+
+(use-package ac-js2
+  :ensure t
+  :defer t)
+
+(use-package js2-refactor
+  :ensure t
+  :defer t
+  :config
+  (add-hook 'js2-mode-hook #'js2-refactor-mode))
+
+(use-package tern
+  :ensure t
+  :defer t
+  :config
+  (tern-mode t))
+
+(use-package tern-auto-complete
+  :ensure t
+  :defer t
+  :config
+  (tern-ac-setup))
+
+
+(use-package react-snippets
   :ensure t
   :defer t)
 
@@ -362,21 +415,23 @@
                 (nnimap-stream ssl)
                 (nnimap-authinfo-file mail-authentication-file))))
 
-(require 'epa-file)
-(epa-file-enable)
+(use-package bbdb
+  :ensure t
+  :defer t
+  :config
+  (bbdb-initialize)
+  (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
 
-(defun fn/backup-each-save-filter (filename)
-  (let ((ignored-filenames
-         '("\\.gpg$"))
-        (matched-ignored-filename nil))
-    (mapc
-     (lambda (x)
-       (when (string-match x filename)
-         (setq matched-ignored-filename t)))
-     ignored-filenames)
-    (not matched-ignored-filename)))
+(defun fn/startup ()
+  (interactive)
+  (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
 
-(setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+(defun fn/cleanup ()
+  (interactive)
+  (shell-command "cd ~/Fakespace/nobody-library\
+ && git add diary/*\
+ && git commit -a -m \"Home Update\"\
+ && git push origin master"))
 
 (defun fn/load-projectile-hook ()
       (interactive)
