@@ -593,8 +593,16 @@
         :ensure t
         :defer t
         :init
-        (add-hook 'org-mode-hook (lambda ()
-                                   (flyspell-mode t))))
+        (add-hook 'org-mode-hook 'flyspell-mode t))
+    #+END_SRC
+
+*** paredit
+    A good program pairer
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package paredit
+        :ensure t
+        :defer t)
     #+END_SRC
 
 *** js2
@@ -605,34 +613,38 @@
     #+BEGIN_SRC emacs-lisp
       (use-package js2-mode
         :ensure t
+        :mode (("\\.jsx\\'" . js2-jsx-mode)
+               ("\\.js\\'" . js2-mode))
         :defer t
         :config
-        (setq js2-highlight-level 3)
-        (define-key js-mode-map "{" 'paredit-open-curly)
-        (define-key js-mode-map "}" 'paredit-close-curly-and-newline))
+        (setq js2-highlight-level 3))
 
       (use-package ac-js2
         :ensure t
-        :defer t)
+        :defer t
+        :init
+        (add-hook 'js2-mode-hook 'auto-complete-mode)
+        (add-hook 'js2-mode-hook 'ac-js2-mode))
 
       (use-package js2-refactor
         :ensure t
         :defer t
-        :config
-        (add-hook 'js2-mode-hook #'js2-refactor-mode))
+        :init
+        (add-hook 'js2-mode-hook 'js2-refactor-mode)
+        (js2r-add-keybindings-with-prefix "C-c C-m"))
 
       (use-package tern
         :ensure t
         :defer t
-        :config
-        (tern-mode t))
+        :init
+        (add-hook 'js2-mode-hook 'tern-mode))
 
       (use-package tern-auto-complete
         :ensure t
         :defer t
-        :config
-        (tern-ac-setup))
-
+        :init
+        (add-hook 'js2-mode-hook (lambda ()
+                                         (tern-ac-setup))))
 
       (use-package react-snippets
         :ensure t
