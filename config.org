@@ -50,8 +50,8 @@
      ;; Configuration bootstrapping
      ;; use-package is fundamental to this configuration
      (unless (package-installed-p 'use-package)
-       (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-       (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+       (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
+       (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
        (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
        (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
 
@@ -117,10 +117,10 @@
 
    #+BEGIN_SRC emacs-lisp
      (unless (assoc-default "melpa" package-archives)
-       (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-       (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-       (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-       (add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/")))
+       (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
+       (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
+       (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+       (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
    #+END_SRC
 
 ** Prepare Bootstrap
@@ -441,11 +441,11 @@
 
           (defun fn/insert-private-file-headers ()
             (interactive)
-            (insert "# -*- backup-inhibited t; auto-save-default nil; -*-\n"))
+            (insert "# -*- backup-inhibited: t; auto-save-default: nil; -*-\n"))
 
           (defun fn/insert-org-gpg-headers ()
             (interactive)
-            (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\") -*-\n")
+            (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\"); -*-\n")
             (fn/insert-private-file-headers))
 
           (defun fn/insert-org-journal-headers ()
