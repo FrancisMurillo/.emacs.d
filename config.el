@@ -228,11 +228,11 @@
 
     (defun fn/insert-private-file-headers ()
       (interactive)
-      (insert "# -*- backup-inhibited t; auto-save-default nil; -*-\n"))
+      (insert "# -*- backup-inhibited: t; auto-save-default: nil; -*-\n"))
 
     (defun fn/insert-org-gpg-headers ()
       (interactive)
-      (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\") -*-\n")
+      (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\"); -*-\n")
       (fn/insert-private-file-headers))
 
     (defun fn/insert-org-journal-headers ()

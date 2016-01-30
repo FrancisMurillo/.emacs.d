@@ -687,6 +687,23 @@
         (auto-compile-on-save-mode))
     #+END_SRC
 
+** Programming Modes
+   Modes for my programming experience.
+
+*** python
+    I love me Python, it pushed me to languages after learning this. Curse you Java for being strict.
+
+    #+BEGIN_SRC emacs-lisp
+      (add-to-list 'load-path
+                   (expand-file-name "elisp/pymacs" user-emacs-directory))
+
+      (use-package python
+        :defer t
+        :ensure t)
+
+
+    #+END_SRC
+
 ** Utility Modes
 *** twittering
     Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
