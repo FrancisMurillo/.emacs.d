@@ -400,6 +400,13 @@
   (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
 
+(add-to-list 'load-path
+             (expand-file-name "elisp/pymacs" user-emacs-directory))
+
+(use-package python
+  :defer t
+  :ensure t)
+
 (use-package twittering-mode
   :ensure t
   :defer t

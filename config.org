@@ -693,6 +693,8 @@
 *** python
     I love me Python, it pushed me to languages after learning this. Curse you Java for being strict.
 
+    I use =pymacs= and =ropemacs=.
+
     #+BEGIN_SRC emacs-lisp
       (add-to-list 'load-path
                    (expand-file-name "elisp/pymacs" user-emacs-directory))
@@ -794,5 +796,72 @@ Scripts
 
    #+BEGIN_SRC emacs-lisp
    #+END_SRC
+** Create media diary
+   A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/compile-media-diary ()
+       (interactive)
+       (setq md-root "/mnt/veracrypt2"
+             md-file "media-diary.org"
+
+             md-journal-dir-name "journal"
+             md-audio-dir-name "audio"
+             md-photo-dir-name "photo"
+
+             md-journal-dir (expand-file-name md-journal-dir-name md-root)
+             md-audio-dir (expand-file-name md-audio-dir-name md-root)
+             md-photodir (expand-file-name md-photo-dir-name md-root)
+
+             md-title "Media Diary"
+             md-note-title "Notes"
+             md-journal-title "Journal"
+             md-media-title "Media"
+
+             md-note-text "Something profound happened to me but I forgot")
+
+       (defun directory-files-by-extension (directory extension)
+         (directory-files directory nil
+                          (format-message "\\.%s$" extension)))
+
+       (defun parse-date-from-filename (file)
+         (setq filename
+               (file-name-nondirectory file))
+         (parse-time-string filename))
+
+       (defun insert-org-header (header)
+         (org-insert-heading t)
+         (insert header))
+
+       (defun insert-org-subheader (subheader)
+         (org-insert-subheading t)
+         (insert subheader))
+
+       (defun render-note-section ()
+         (insert-org-subheader md-note-title)
+         (newline-and-indent)
+         (insert md-note-text))
+
+       (defun render-journal-section ()
+         (insert-org-header md-journal-title)
+         (setq journal-files
+               (directory-files-by-extension md-journal-dir "org"))
+
+
+       (defun render-media-section ()
+         (insert-org-header md-media-title))
+
+       (find-file
+        (expand-file-name md-file md-root))
+
+       (insert-org-header md-title)
+
+       (render-note-section)
+
+       (render-journal-section)
+
+       (render-media-section))
+   #+END_SRC
+
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
