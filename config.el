@@ -12,9 +12,9 @@
 (load "secret" t)
 
 (unless (assoc-default "melpa" package-archives)
-  (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
-  (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
-  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
   (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
 
 (require 'use-package)
@@ -72,6 +72,9 @@
 
 (setq search-whitespace-regexp ".*?")
 
+(use-package async
+  :ensure t)
+
 (use-package winner
   :ensure t
   :config
@@ -119,7 +122,7 @@
   (setq dired-recursive-copies 'always)
   (require 'dired-x) ;; Allows multi open marked files
   (setq dired-dwim-target t)
-  (dired-async-mode t))
+          (dired-async-mode t))
 
 (require 'epa-file)
 (epa-file-enable)
@@ -275,9 +278,6 @@
   (setq projectile-indexing-method 'native)
   (add-to-list 'projectile-project-root-files "config.xml"))
 
-(use-package async
-  :ensure t)
-
 (use-package helm
   :ensure t
   :bind (("M-x" . helm-M-x)
@@ -304,13 +304,13 @@
   (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
   (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
 
-(use-package magit
-  :if (or (> emacs-major-version 24)
-          (and (= emacs-major-version 24)
-               (>= emacs-minor-version 4)))
-  :ensure t
-  :defer t
-  )
+(when (or (> emacs-major-version 24)
+        (and (= emacs-major-version 24)
+             (>= emacs-minor-version 4)))
+    (use-package magit
+      :ensure t
+      :defer t
+      ))
 
 (use-package auto-complete
   :ensure t
@@ -457,3 +457,65 @@
 projectile-known-projects))
 
 
+
+(defun fn/compile-media-diary ()
+  (interactive)
+  (setq md-root "/mnt/veracrypt2"
+        md-file "media-diary.org"
+
+        md-journal-dir-name "journal"
+        md-audio-dir-name "audio"
+        md-photo-dir-name "photo"
+
+        md-journal-dir (expand-file-name md-journal-dir-name md-root)
+        md-audio-dir (expand-file-name md-audio-dir-name md-root)
+        md-photodir (expand-file-name md-photo-dir-name md-root)
+
+        md-title "Media Diary"
+        md-note-title "Notes"
+        md-journal-title "Journal"
+        md-media-title "Media"
+
+        md-note-text "Something profound happened to me but I forgot")
+
+  (defun directory-files-by-extension (directory extension)
+    (directory-files directory nil
+                     (format-message "\\.%s$" extension)))
+
+  (defun parse-date-from-filename (file)
+    (setq filename
+          (file-name-nondirectory file))
+    (parse-time-string filename))
+
+  (defun insert-org-header (header)
+    (org-insert-heading t)
+    (insert header))
+
+  (defun insert-org-subheader (subheader)
+    (org-insert-subheading t)
+    (insert subheader))
+
+  (defun render-note-section ()
+    (insert-org-subheader md-note-title)
+    (newline-and-indent)
+    (insert md-note-text))
+
+  (defun render-journal-section ()
+    (insert-org-header md-journal-title)
+    (setq journal-files
+          (directory-files-by-extension md-journal-dir "org")))
+
+
+  (defun render-media-section ()
+    (insert-org-header md-media-title))
+
+  (find-file
+   (expand-file-name md-file md-root))
+
+  (insert-org-header md-title)
+
+  (render-note-section)
+
+  (render-journal-section)
+
+  (render-media-section))
