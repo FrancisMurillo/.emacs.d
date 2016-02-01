@@ -117,9 +117,9 @@
 
    #+BEGIN_SRC emacs-lisp
      (unless (assoc-default "melpa" package-archives)
-       (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
-       (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
-       (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
+       (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+       (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
+       (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
        (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
    #+END_SRC
 
@@ -186,6 +186,12 @@
           regexp-search-ring))
     #+END_SRC
 
+*** Variables
+    Some preset variables
+
+    #+BEGIN_SRC emacs-lisp
+      (setq safe-local-variable-values '((auto-save-default) (backup-inhibited . t)))
+    #+END_SRC
 *** Window
     Window/Frame configuration. I prefer no clutter in my screen so I disable majority of the niceties.
 
@@ -239,6 +245,14 @@
     #+END_SRC
 
 ** Builtin Modes
+*** async
+    Not really builtin but should be
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package async
+        :ensure t)
+    #+END_SRC
+
 *** winner
     You got to have those window configuration
 
@@ -300,7 +314,7 @@
         (setq dired-recursive-copies 'always)
         (require 'dired-x) ;; Allows multi open marked files
         (setq dired-dwim-target t)
-        (dired-async-mode t))
+		(dired-async-mode t))
     #+END_SRC
 
 *** epa
@@ -441,16 +455,21 @@
 
           (defun fn/insert-private-file-headers ()
             (interactive)
-            (insert "# -*- backup-inhibited: t; auto-save-default: nil; -*-\n"))
+            (add-file-local-variable-prop-line 'backup-inhibited t)
+            (add-file-local-variable-prop-line 'auto-save-default nil))
 
           (defun fn/insert-org-gpg-headers ()
             (interactive)
-            (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\"); -*-\n")
+            (add-file-local-variable-prop-line
+             'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
             (fn/insert-private-file-headers))
 
           (defun fn/insert-org-journal-headers ()
             (interactive)
             (fn/insert-org-gpg-headers)
+
+            (end-of-visual-line)
+            (newline-and-indent)
 
             (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
                                 (buffer-name))
@@ -500,9 +519,6 @@
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp
-      (use-package async
-        :ensure t)
-
       (use-package helm
         :ensure t
         :bind (("M-x" . helm-M-x)
@@ -536,13 +552,13 @@
     There is a sad version requirement for 24.4 to use the latest code.
 
     #+BEGIN_SRC emacs-lisp
-      (use-package magit
-        :if (or (> emacs-major-version 24)
-                (and (= emacs-major-version 24)
-                     (>= emacs-minor-version 4)))
-        :ensure t
-        :defer t
-        )
+      (when (or (> emacs-major-version 24)
+              (and (= emacs-major-version 24)
+                   (>= emacs-minor-version 4)))
+          (use-package magit
+            :ensure t
+            :defer t
+            ))
     #+END_SRC
 
 *** autocomplete
@@ -674,8 +690,6 @@
         :defer t)
     #+END_SRC
 
-***
-***
 *** auto-complile
     A good mode when editing lisp files
 
@@ -893,7 +907,7 @@ Scripts
        (defun render-journal-section ()
          (insert-org-subheader md-journal-title)
          (setq journal-files
-               (directory-files-by-extension md-journal-dir "org"))
+               (directory-files-by-extension md-journal-dir "org")))
 
          (setq value nil
                demote-first (once (lambda () (org-demote))))
