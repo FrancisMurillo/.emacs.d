@@ -1,7 +1,6 @@
 #+TITLE: Francis Murillo's Emacs configuration
 #+AUTHOR: Frncis Murillo
 #+OPTIONS: toc:4 h:4
-
 * Introduction
 ** If I Forget
    No words can describe my awe with Emacs and continue to do so. A text editor with a lisp interpreter, it's concept is so simple and sublime. What joy.
@@ -190,7 +189,9 @@
     Some preset variables
 
     #+BEGIN_SRC emacs-lisp
-      (setq safe-local-variable-values '((auto-save-default) (backup-inhibited . t)))
+      (setq enable-local-variables :safe)
+      (setq safe-local-variable-values
+            '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to)))
     #+END_SRC
 *** Window
     Window/Frame configuration. I prefer no clutter in my screen so I disable majority of the niceties.
@@ -572,6 +573,7 @@
         (ac-config-default)
         (global-auto-complete-mode)
         (setq popup-use-optimized-column-computation nil)
+        (setq ac-show-menu-immediately-on-auto-complete t)
         (ac-set-trigger-key "TAB")
         (ac-set-trigger-key "<tab>"))
     #+END_SRC
@@ -704,13 +706,12 @@
 
 ** Programming Modes
    Modes for my programming experience.
-
-*** python
+*** pymacs
     I love me Python, it pushed me to languages after learning this. Curse you Java for being strict.
 
-    I use =pymacs= and =ropemacs=.
+    I switch over to the jedi for python
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
       (add-to-list 'load-path
                    (expand-file-name "elisp/pymacs" user-emacs-directory))
 
@@ -719,6 +720,37 @@
         :ensure t)
 
 
+    #+END_SRC
+*** jedi
+    The newer Python IDE, [[https://github.com/davidhalter/jedi][Jedi]], much easier to grok.
+
+    This requires [[https://pypi.python.org/pypi/pip/][pip]] and the packages  [[https://pypi.python.org/pypi/virtualenv][virtualenv]]. The snippet below is for the hard dependency. Let =jedi:install-server= do the work
+
+    #+BEGIN_SRC sh
+      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+
+      python get-pip.py
+
+      pip install virtualenv
+    #+END_SRC
+
+
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package jedi
+        :ensure t
+        :defer t
+        :bind (("M-." . jedi:goto-definition)
+               ("M-," . jedi:goto-definition-pop-marker)
+               ("M-?" . jedi:show-doc)
+               ("M-/" . jedi:get-in-function-call))
+        :init
+        (add-hook 'python-mode-hook 'jedi:setup)
+        (add-hook 'python-mode-hook 'jedi:ac-setup)
+        :config
+        (jedi:install-server)
+        (add-to-list 'ac-sources 'ac-source-jedi-direct)
+        (setq jedi:complete-on-dot t))
     #+END_SRC
 
 ** Utility Modes
@@ -907,7 +939,7 @@ Scripts
        (defun render-journal-section ()
          (insert-org-subheader md-journal-title)
          (setq journal-files
-               (directory-files-by-extension md-journal-dir "org")))
+               (directory-files-by-extension md-journal-dir "org"))
 
          (setq value nil
                demote-first (once (lambda () (org-demote))))
