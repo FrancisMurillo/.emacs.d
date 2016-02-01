@@ -460,6 +460,7 @@
                     (datim nil))
                 (setq datim (encode-time 0 0 0 day month year))
 
+                (insert "#+STARTUP: content\n")
                 (insert (format-time-string
                          "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
                 (insert (format-time-string
@@ -773,6 +774,7 @@ Scripts
        (interactive)
        (shell-command "cd ~/Fakespace/nobody-library\
       && git add diary/*\
+      && git add scripts/coins-polling\
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
    #+END_SRC
@@ -811,14 +813,21 @@ Scripts
 
              md-journal-dir (expand-file-name md-journal-dir-name md-root)
              md-audio-dir (expand-file-name md-audio-dir-name md-root)
-             md-photodir (expand-file-name md-photo-dir-name md-root)
+             md-photo-dir (expand-file-name md-photo-dir-name md-root)
 
              md-title "Media Diary"
              md-note-title "Notes"
              md-journal-title "Journal"
              md-media-title "Media"
 
-             md-note-text "Something profound happened to me but I forgot")
+             md-note-text "Something profound happened to me but I forgot"
+
+             md-journal-time-format "%b. %d, %Y"
+             md-audio-time-format "%b. %d, %Y %T - Recording"
+             md-photo-time-format "%b. %d, %Y %T o- Photograph")
+
+       (defun replace-in-string (what with in)
+         (replace-regexp-in-string (regexp-quote what) with in nil 'literal))
 
        (defun directory-files-by-extension (directory extension)
          (directory-files directory nil
@@ -826,16 +835,55 @@ Scripts
 
        (defun parse-date-from-filename (file)
          (setq filename
-               (file-name-nondirectory file))
-         (parse-time-string filename))
+               (file-name-sans-extension (file-name-nondirectory file)))
+         (apply 'encode-time
+                (parse-time-string (concat filename " " "00:00:00"))))
+
+
+       (defun parse-time-from-filename (file)
+         (setq filename
+               (file-name-sans-extension (file-name-nondirectory file))
+               date-time (split-string filename "_")
+               date-text (car date-time)
+               time-text (replace-in-string "-" ":" (car (cdr date-time)))
+               date-time-text (concat date-text " " time-text))
+
+         (apply 'encode-time
+                (parse-time-string date-time-text)))
 
        (defun insert-org-header (header)
-         (org-insert-heading t)
+         (org-insert-heading t nil t)
          (insert header))
 
        (defun insert-org-subheader (subheader)
-         (org-insert-subheading t)
-         (insert subheader))
+         (end-of-buffer)
+         (org-insert-heading t nil t)
+         (insert subheader)
+         (org-demote))
+
+       (defun insert-org-link (link title)
+         (end-of-buffer)
+         (org-insert-heading t)
+         (org-insert-link nil link title))
+
+       (defun once (f)
+         (lexical-let ((g f)
+                       (is-invoked nil))
+           (lambda ()
+             (if is-invoked nil
+               (progn
+                 (setq is-invoked t)
+                 (funcall g))))))
+
+       (defun insert-file-headers ()
+         (insert "# -*- epa-file-encrypt-to: (\"fnmurillo@yandex.com\"); -*-\n")
+         (insert "# -*- backup-inhibited: t; auto-save-default: nil; -*-\n")
+
+         (insert "#+STARTUP: content\n")
+         (insert "#+OPTIONS: toc:nil\n"))
+
+       (defun render-header ()
+         (insert-org-header md-title))
 
        (defun render-note-section ()
          (insert-org-subheader md-note-title)
@@ -843,24 +891,87 @@ Scripts
          (insert md-note-text))
 
        (defun render-journal-section ()
-         (insert-org-header md-journal-title)
+         (insert-org-subheader md-journal-title)
          (setq journal-files
                (directory-files-by-extension md-journal-dir "org"))
 
+         (setq value nil
+               demote-first (once (lambda () (org-demote))))
+
+         (dolist (journal-file journal-files value)
+           (progn
+             (setq journal-time (parse-date-from-filename journal-file)
+                   journal-title
+                   (format-time-string md-journal-time-format journal-time))
+
+             (insert-org-link
+              (concat "file:" md-journal-dir-name "/" journal-file)
+              journal-title)
+             (funcall demote-first)
+             (org-set-property "CREATED_ON"
+                               (format-time-string "%F %T" journal-time)))))
 
        (defun render-media-section ()
-         (insert-org-header md-media-title))
+         (insert-org-subheader md-media-title)
+         (setq photo-files
+               (directory-files-by-extension md-photo-dir "jpg")
+               audio-files
+               (directory-files-by-extension md-audio-dir "wav")
+               media-files
+               (sort (append photo-files audio-files)
+                     (lambda (left right)
+                       (progn
+                         (setq result
+                               (compare-strings
+                                (file-name-sans-extension left) nil nil
+                                (file-name-sans-extension right) nil nil
+                                nil))
+                         (if (booleanp result) t
+                           (if (> result 0) nil t))))))
+
+         (setq value nil
+               demote-first (once (lambda () (org-demote))))
+
+         (intern-soft "photo")
+         (intern-soft "audio")
+
+         (dolist (media-file media-files values)
+           (progn
+             (setq media-time (parse-time-from-filename media-file)
+                   media-type
+                   (if (string-equal (file-name-extension media-file) "wav")
+                       'audio 'photo)
+                   media-time-format
+                   (if (eq media-type 'audio) md-audio-time-format md-photo-time-format)
+                   media-dir-name
+                   (if (eq media-type 'audio) md-audio-dir-name md-photo-dir-name)
+                   media-title (format-time-string media-time-format media-time))
+
+             (insert-org-link
+              (concat "file:" media-dir-name "/" media-file)
+              media-title)
+             (funcall demote-first)
+             (org-set-property "CREATED_ON"
+                               (format-time-string "%F %T" media-time)))))
 
        (find-file
         (expand-file-name md-file md-root))
 
-       (insert-org-header md-title)
-
+       (insert-file-headers)
+       (render-header)
        (render-note-section)
-
        (render-journal-section)
+       (render-media-section)
 
-       (render-media-section))
+       (beginning-of-buffer)
+       (org-set-startup-visibility))
+
+     (defun fn/rename-link ()
+       (interactive)
+       (setq org-element (org-element-context)
+             org-path (org-element-property :raw-link org-element)
+             org-link (org-element-property :path org-element))
+       (org-insert-link nil org-path nil))
    #+END_SRC
 
 * Reference
