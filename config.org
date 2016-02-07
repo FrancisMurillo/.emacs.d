@@ -734,16 +734,14 @@
       pip install virtualenv
     #+END_SRC
 
-
-
     #+BEGIN_SRC emacs-lisp
       (use-package jedi
         :ensure t
         :defer t
         :bind (("M-." . jedi:goto-definition)
                ("M-," . jedi:goto-definition-pop-marker)
-               ("M-?" . jedi:show-doc)
-               ("M-/" . jedi:get-in-function-call))
+               ("M-?" . jedi:show-doc))
+               ;; ("M-/" . jedi:get-in-function-call))
         :init
         (add-hook 'python-mode-hook 'jedi:setup)
         (add-hook 'python-mode-hook 'jedi:ac-setup)
@@ -751,6 +749,13 @@
         (jedi:install-server)
         (add-to-list 'ac-sources 'ac-source-jedi-direct)
         (setq jedi:complete-on-dot t))
+    #+END_SRC
+
+*** latex
+    LaTeX editing is a must
+
+    #+BEGIN_SRC emacs-lisp
+
     #+END_SRC
 
 ** Utility Modes
@@ -814,13 +819,17 @@ Scripts
    #+BEGIN_SRC emacs-lisp
      (defun fn/startup ()
        (interactive)
-       (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
+       (shell-command "cd ~/Fakespace/nobody-library && git pull origin master")
+       (shell-command "cd ~/Fakespace/coins-watcher && git pull origin master"))
 
      (defun fn/cleanup ()
        (interactive)
        (shell-command "cd ~/Fakespace/nobody-library\
       && git add diary/*\
-      && git add scripts/coins-polling\
+      && git commit -a -m \"Home Update\"\
+      && git push origin master")
+       (shell-command "cd ~/Fakespace/coins-watcher\
+      && git add --all
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
    #+END_SRC
