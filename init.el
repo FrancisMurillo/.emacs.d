@@ -52,3 +52,6 @@
 (setq package-enable-at-startup nil)
 (org-babel-load-file
  (expand-file-name "config.org" user-emacs-directory))
+
+;; Environement specific files, don't commit that file
+(load "~/.init-extension.el" t)
