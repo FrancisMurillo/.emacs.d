@@ -47,7 +47,9 @@
     search-ring
     regexp-search-ring))
 
-(setq safe-local-variable-values '((auto-save-default) (backup-inhibited . t)))
+(setq enable-local-variables :safe)
+(setq safe-local-variable-values
+      '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to)))
 
 (tooltip-mode -1)
 (tool-bar-mode -1)
@@ -327,6 +329,7 @@
   (ac-config-default)
   (global-auto-complete-mode)
   (setq popup-use-optimized-column-computation nil)
+  (setq ac-show-menu-immediately-on-auto-complete t)
   (ac-set-trigger-key "TAB")
   (ac-set-trigger-key "<tab>"))
 
@@ -408,12 +411,48 @@
   (auto-compile-on-load-mode)
   (auto-compile-on-save-mode))
 
-(add-to-list 'load-path
-             (expand-file-name "elisp/pymacs" user-emacs-directory))
-
 (use-package python
   :defer t
   :ensure t)
+
+(use-package py-autopep8
+  :ensure t
+  :defer t)
+
+(use-package ein
+  :ensure t
+  :defer t)
+
+(use-package elpy
+  :ensure t
+  :defer t
+  :init
+  (add-hook 'python-mode-hook 'elpy-enable)
+
+  (add-hook 'elpy-mode-hook 'flycheck-mode)
+  (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
+  :config
+  (elpy-use-ipython)
+
+  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+  )
+
+(use-package jedi
+  :ensure t
+  :defer t
+  :bind (("M-." . jedi:goto-definition)
+         ("M-," . jedi:goto-definition-pop-marker)
+         ("M-?" . jedi:show-doc))
+         ;; ("M-/" . jedi:get-in-function-call))
+  :init
+  (add-hook 'python-mode-hook 'jedi:setup)
+  (add-hook 'python-mode-hook 'jedi:ac-setup)
+  :config
+  (jedi:install-server)
+  (add-to-list 'ac-sources 'ac-source-jedi-direct)
+  (setq jedi:complete-on-dot t))
+
+
 
 (use-package twittering-mode
   :ensure t
@@ -446,13 +485,17 @@
 
 (defun fn/startup ()
   (interactive)
-  (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
+  (shell-command "cd ~/Fakespace/nobody-library && git pull origin master")
+  (shell-command "cd ~/Fakespace/coins-watcher && git pull origin master"))
 
 (defun fn/cleanup ()
   (interactive)
   (shell-command "cd ~/Fakespace/nobody-library\
  && git add diary/*\
- && git add scripts/coins-polling\
+ && git commit -a -m \"Home Update\"\
+ && git push origin master")
+  (shell-command "cd ~/Fakespace/coins-watcher\
+ && git add --all\
  && git commit -a -m \"Home Update\"\
  && git push origin master"))
 
@@ -558,7 +601,7 @@ projectile-known-projects))
   (defun render-journal-section ()
     (insert-org-subheader md-journal-title)
     (setq journal-files
-          (directory-files-by-extension md-journal-dir "org")))
+          (directory-files-by-extension md-journal-dir "org"))
 
     (setq value nil
           demote-first (once (lambda () (org-demote))))

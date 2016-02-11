@@ -721,6 +721,46 @@
 
 
     #+END_SRC
+*** python
+    My favorite programming language, unassuming like Marcy from Peanuts
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package python
+        :defer t
+        :ensure t)
+    #+END_SRC
+
+    Some basic python requirements
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package py-autopep8
+        :ensure t
+        :defer t)
+
+      (use-package ein
+        :ensure t
+        :defer t)
+    #+END_SRC
+
+*** elpy
+    Making Python an IDE
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elpy
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'python-mode-hook 'elpy-enable)
+
+        (add-hook 'elpy-mode-hook 'flycheck-mode)
+        (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
+        :config
+        (elpy-use-ipython)
+
+        (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
+        )
+    #+END_SRC
+
 *** jedi
     The newer Python IDE, [[https://github.com/davidhalter/jedi][Jedi]], much easier to grok.
 
@@ -829,7 +869,7 @@ Scripts
       && git commit -a -m \"Home Update\"\
       && git push origin master")
        (shell-command "cd ~/Fakespace/coins-watcher\
-      && git add --all
+      && git add --all\
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
    #+END_SRC
