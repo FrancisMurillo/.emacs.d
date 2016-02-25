@@ -746,6 +746,13 @@
     Making Python an IDE
 
     #+BEGIN_SRC emacs-lisp
+      (use-package ein
+        :ensure t
+        :defer t
+        :config
+        (setq ein:use-auto-complete t)
+        (setq ein:use-smartrep t))
+
       (use-package elpy
         :ensure t
         :defer t
@@ -757,8 +764,12 @@
         :config
         (elpy-use-ipython)
 
-        (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-        )
+        (setq elpy-modules (delq 'elpy-module-flycheck elpy-modules))
+
+        (require 'py-autopep8)
+        (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save))
+
+
     #+END_SRC
 
 *** jedi
@@ -778,15 +789,18 @@
       (use-package jedi
         :ensure t
         :defer t
-        :bind (("M-." . jedi:goto-definition)
-               ("M-," . jedi:goto-definition-pop-marker)
-               ("M-?" . jedi:show-doc))
-               ;; ("M-/" . jedi:get-in-function-call))
         :init
         (add-hook 'python-mode-hook 'jedi:setup)
         (add-hook 'python-mode-hook 'jedi:ac-setup)
         :config
         (jedi:install-server)
+
+        (define-key jedi-mode-map (kbd "M-.") 'jedi:goto-definition)
+        (define-key jedi-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
+        (define-key jedi-mode-map (kbd "C-M-?") 'jedi:show-doc)
+        (define-key jedi-mode-map (kbd "C-M-/") 'jedi:get-in-function-call)
+
+        (setq elpy-rpc-backend "jedi")
         (add-to-list 'ac-sources 'ac-source-jedi-direct)
         (setq jedi:complete-on-dot t))
     #+END_SRC
@@ -813,23 +827,6 @@
         (twittering-icon-mode t)
         (setq twittering-convert-fix-size 24))
     #+END_SRC
-*** gnus
-    The builtin =gnus= is useful in getting my mail
-
-    #+BEGIN_SRC emacs-lisp
-      (setq mail-authentication-file (expand-file-name ".authinfo.gpg"))
-
-      (setq gnus-select-method
-            '(nnimap "imap.gmail.com"
-                     (nnimap-stream ssl)
-                     (nnimap-authinfo-file mail-authentication-file)))
-
-      (setq gnus-secondary-select-methods
-            '((nnimap "imap.yandex.com"
-                      (nnimap-stream ssl)
-                      (nnimap-authinfo-file mail-authentication-file))))
-    #+END_SRC
-
 *** bbdb
     People organization
 
@@ -840,6 +837,56 @@
         :config
         (bbdb-initialize)
         (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
+    #+END_SRC
+*** engine
+    Instant search with Emacs, sign me up.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package engine-mode
+        :ensure t
+        :config
+        (engine-mode t)
+
+        (engine/set-keymap-prefix (kbd "C-c s"))
+        (setq engine/browser-function 'browse-url-firefox)
+
+        (defengine amazon
+          "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=%s")
+
+        (defengine duckduckgo
+          "https://duckduckgo.com/?q=%s"
+          :keybinding "d")
+
+        (defengine github
+          "https://github.com/search?ref=simplesearch&q=%s"
+          :keybinding "g")
+
+        (defengine project-gutenberg
+          "http://www.gutenberg.org/ebooks/search/?query=%s")
+
+        (defengine rfcs
+          "http://pretty-rfc.herokuapp.com/search?q=%s")
+
+        (defengine stack-overflow
+          "https://stackoverflow.com/search?q=%s"
+          :keybinding "t")
+
+        (defengine twitter
+          "https://twitter.com/search?q=%s")
+
+        (defengine wikipedia
+          "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
+          :keybinding "w"
+          :docstring "Searchin' the wikis.")
+
+        (defengine wiktionary
+          "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
+
+        (defengine wolfram-alpha
+          "http://www.wolframalpha.com/input/?i=%s")
+
+        (defengine youtube
+          "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
     #+END_SRC
 
 *** malabar
