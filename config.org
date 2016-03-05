@@ -812,6 +812,22 @@
 
     #+END_SRC
 
+*** omnisharp
+    For C# development
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package omnisharp
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'csharp-mode-hook 'omnisharp-mode)
+        :config
+        (setq omnisharp-root-dir
+              (expand-file-name "~/Fakespace/omnisharp-server"))
+        (setq omnisharp-server-executable-path
+              (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
+    #+END_SRC
+
 ** Utility Modes
 *** twittering
     Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
@@ -966,7 +982,7 @@ Scripts
 
              md-journal-time-format "%b. %d, %Y"
              md-audio-time-format "%b. %d, %Y %T - Recording"
-             md-photo-time-format "%b. %d, %Y %T o- Photograph")
+             md-photo-time-format "%b. %d, %Y %T - Photograph")
 
        (defun replace-in-string (what with in)
          (replace-regexp-in-string (regexp-quote what) with in nil 'literal))
