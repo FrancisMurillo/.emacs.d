@@ -139,10 +139,17 @@
       (setq initial-scratch-message nil)
     #+END_SRC
 *** Environment
-    Some environment configuration
+    Some environment configuration.
 
     #+BEGIN_SRC emacs-lisp
       (set-language-environment "UTF-8")
+
+      (setq load-prefer-newer t)
+      (setq visible-bell t)
+
+      (windmove-default-keybindings) ;; Fix for org-mode
+      (setq org-replace-disputed-keys t)
+      (setq org-support-shift-select t)
     #+END_SRC
 
     How about changing some options
@@ -201,16 +208,26 @@
       (tool-bar-mode -1)
       (menu-bar-mode -1)
       (scroll-bar-mode -1)
+      (fringe-mode 0)
     #+END_SRC
 *** Buffer
     Some buffer configurations
 
     #+BEGIN_SRC emacs-lisp
-      (global-whitespace-mode t)
-      (global-auto-revert-mode t)
-      (global-visual-line-mode t)
+            (global-whitespace-mode t)
 
-      (global-hl-line-mode t)
+            (global-auto-revert-mode t)
+            (setq global-auto-revert-non-file-buffers t
+                  auto-revert-verbose nil)
+
+            (global-visual-line-mode t)
+
+            (global-hl-line-mode t)
+
+      (let ((display-table (or standard-display-table (make-display-table))))
+        (set-display-table-slot display-table
+                                'vertical-border (make-glyph-code ?┃))
+        (setq standard-display-table display-table))
     #+END_SRC
 
 *** Font
@@ -239,34 +256,32 @@
       (global-set-key (kbd "RET") 'newline-and-indent)
 
       (setq-default indent-tabs-mode nil)
-      (show-paren-mode t)
       (add-hook 'before-save-hook 'delete-trailing-whitespace)
 
       (setq search-whitespace-regexp ".*?")
+
+      (mouse-avoidance-mode 'cat-and-mouse)
+      (temp-buffer-resize-mode 1)
+
+      (setq auto-save-timeout 15
+            require-final-newline t
+            search-highlight t
+            compilation-window-height 10
+            compilation-scroll-output      'first-error
+            compilation-ask-about-save nil)
+    #+END_SRC
+
+*** Commands
+    Unlock some commands I need
+
+    #+BEGIN_SRC emacs-lisp
+      (put 'narrow-to-region 'disabled nil)
+      (put 'downcase-region 'disabled nil)
+      (put 'upcase-region 'disabled nil)
     #+END_SRC
 
 ** Builtin Modes
-*** async
-    Not really builtin but should be
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package async
-        :ensure t)
-    #+END_SRC
-
-*** winner
-    You got to have those window configuration
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package winner
-        :ensure t
-        :config
-        (winner-mode t))
-    #+END_SRC
-
 *** ido
-    =ido= has been kind to me since I started learning Emacs but learning =helm= might be better in the long term
-
     #+Begin_SRC emacs-lisp
       (use-package ido
         :disabled t
@@ -306,6 +321,16 @@
         )
     #+END_SRC
 
+    =ido= has been kind to me since I started learning Emacs but learning =helm= might be better in the long term
+
+*** async
+    #+BEGIN_SRC emacs-lisp
+      (use-package async
+        :ensure t)
+    #+END_SRC
+
+    Not really builtin but should be
+
 *** dired
     Directory management for Emacs
 
@@ -315,11 +340,23 @@
         (setq dired-recursive-copies 'always)
         (require 'dired-x) ;; Allows multi open marked files
         (setq dired-dwim-target t)
-		(dired-async-mode t))
+        (dired-async-mode t))
+    #+END_SRC
+
+*** winner
+    You got to have those window configuration
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package winner
+        :ensure t
+        :config
+        (winner-mode t))
     #+END_SRC
 
 *** epa
     Encryption is a must
+
+    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
 
     #+BEGIN_SRC emacs-lisp
       (require 'epa-file)
@@ -338,10 +375,217 @@
 
       (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
     #+END_SRC
+*** font-lock
+    Syntax highlighting deserves it's own space
 
-    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
+    #+BEGIN_SRC emacs-lisp
+      (global-font-lock-mode t)
 
-** External Modes
+      (setq font-lock-support-mode 'jit-lock-mode)
+      (setq font-lock-maximum-decoration t)
+
+      (add-hook 'text-mode-hook 'turn-on-auto-fill)
+      (setq-default fill-column 72)
+    #+END_SRC
+
+*** show-paren
+    Also a vital thing to keeping things highlighted
+
+    #+BEGIN_SRC emacs-lisp
+      (show-paren-mode t)
+
+      (setq show-paren-style 'expression)
+    #+END_SRC
+*** hippie-exp
+    Hippie expand rocks
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package hippie-exp
+        :config
+        (global-set-key (kbd "M-/") 'hippie-expand)
+        (setq hippie-expand-try-functions-list
+              '(
+                try-expand-dabbrev
+                try-expand-dabbrev-all-buffers
+                try-complete-file-name-partially
+                try-complete-file-name
+                try-expand-all-abbrevs
+                try-expand-list
+                try-expand-line
+                try-complete-lisp-symbol-partially
+                try-complete-lisp-symbol)))
+    #+END_SRC
+
+*** paredit
+    A must for Lisp editing
+
+    #+BEGIN_SRC emacs-lisp
+      (add-hook 'emacs-lisp-mode-hook 'paredit-mode);
+    #+END_SRC
+
+*** recentf
+    Accessing the files recently
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package recentf
+        :defer t
+        :config
+        (recentf-mode 1)
+        (setq recentf-max-menu-items 25)
+        (global-set-key "\C-x\ \C-r" 'recentf-open-files)
+        (setq recentf-exclude '("TAGS" ".*-autoloads\\.el\\'")))
+    #+END_SRC
+*** autorevert
+    Enhancement for log reading
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package autorevert
+        :diminish auto-revert-mode
+        :mode (("\\.log\\'" . auto-revert-tail-mode)));
+    #+END_SRC
+*** prettify-symbols
+    Make things more algebraic
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package prettify-symbols-mode
+        :if (version<= "24.4.4" emacs-version)
+        :config
+        (add-hook 'js2-mode-hook
+                  (lambda ()
+                    (push '("function" . ?λ) prettify-symbols-alist)
+                    (push '("var" . ?β) prettify-symbols-alist)
+                    (push '("return" . ?ρ) prettify-symbols-alist)
+                    (prettify-symbols-mode 1))))
+    #+END_SRC
+
+** Basic Modes
+*** guru
+    Want to make sure I never hit those evil keys
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package guru-mode
+        :ensure t
+        :config
+        (guru-global-mode t)
+      )
+    #+END_SRC
+*** nyan
+    Love them kitty down there. Also this keeps things in perspective to have fun.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package nyan-mode
+        :ensure t
+        :config
+        (nyan-mode t))
+
+      (use-package zone-nyan
+        :ensure t
+        :defer t)
+    #+END_SRC
+
+*** fireplace
+    Warm and cozy feeling
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package fireplace
+        :ensure t)
+    #+END_SRC
+*** pretty
+    Making things more algebraic
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package pretty-mode
+        :ensure t
+        :config
+        (add-hook 'js2-mode pretty-mode))
+    #+END_SRC
+
+*** term
+    An enhancement for =term=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package term
+        :bind (("C-c t" . ansi-term))
+        :config
+        (defadvice term-sentinel (around ansi-term-kill-buffer (proc msg))
+          (if (memq (process-status proc) '(signal exit))
+              (let ((buffer (process-buffer proc)))
+                ad-do-it
+                (kill-buffer buffer))
+            ad-do-it))
+        (ad-activate 'term-sentinel)
+        (defadvice ansi-term (before ansi-term-force-shell)
+          (interactive (list (getenv "SHELL"))))
+        (ad-activate 'ansi-term)
+        (add-hook 'term-mode-hook 'goto-address-mode)
+        (add-hook 'term-exec-hook
+                  '(lambda ()
+                     (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))))
+    #+END_SRC
+
+*** eshell
+    Another enhancement for the shell
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package eshell
+        :bind (("C-c e" . eshell))
+        :config
+        (defun fn/eshell-rename-buffer-before-command ()
+          (let* ((last-input
+                  (buffer-substring eshell-last-input-start eshell-last-input-end)))
+            (rename-buffer
+             (format "*eshell[%s]$ %s...*" default-directory last-input) t)))
+        (defun fn/eshell-rename-buffer-after-command ()
+          (rename-buffer
+           (format "*eshell[%s]$ %s*" default-directory
+                   (eshell-previous-input-string 0)) t))
+        (add-hook 'eshell-pre-command-hook
+                  'zakame/eshell-rename-buffer-before-command)
+        (add-hook 'eshell-post-command-hook
+                  'zakame/eshell-rename-buffer-after-command)
+        (use-package em-smart)
+        (setq eshell-where-to-jump 'begin
+              eshell-review-quick-commands nil
+              eshell-smart-space-goes-to-end t)
+        (add-hook 'eshell-mode-hook
+                  (lambda ()
+                    (eshell-smart-initialize))))
+    #+END_SRC
+*** workgroups
+    Saving window state is very helpful specially when you move a lot
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package workgroups2
+        :ensure t
+        :config
+        (setq wg-prefix-key (kbd "C-c w"))
+        (setq wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
+
+        (setq wg-morph-on nil)
+
+        (setq wg-emacs-exit-save-behavior           'save)
+        (setq wg-workgroups-mode-exit-save-behavior 'save)
+
+        (setq wg-mode-line-display-on t)
+        (setq wg-flag-modified t)
+        (setq wg-mode-line-decor-left-brace "["
+              wg-mode-line-decor-right-brace "]"
+              wg-mode-line-decor-divider ":")
+
+        (workgroups-mode 1))
+   #+END_SRC
+
+*** which-keys
+    Another key bindings
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package which-key
+        :ensure t
+        :diminish which-key-mode
+        :config
+        (which-key-mode))
+    #+END_SRC
+
 *** smooth-scrolling
     Smooth scrolling is nice, when I want to use =next-line= to =prev-line= to scroll; this behavior makes sense for me.
 
@@ -355,28 +599,120 @@
     It is a nice feature
 
     #+BEGIN_SRC emacs-lisp
-
-    #+END_SRC
-
-*** guru
-    Want to make sure I never hit those evil keys
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package guru-mode
+      (use-package smart-mode-line
         :ensure t
         :config
-        (guru-global-mode t)
-      )
+        (setq sml/no-confirm-load-theme t)
+        (setq sml/theme 'powerline)
+        (sml/setup))
     #+END_SRC
 
-*** nyan
-    Love them kitty down there. Also this keeps things in perspective to have fun.
+*** powerline
+    A neat addition the mode line
 
     #+BEGIN_SRC emacs-lisp
-      (use-package nyan-mode
+      (use-package powerline
         :ensure t
         :config
-        (nyan-mode t))
+        (powerline-default-theme))
+    #+END_SRC
+
+*** undo-tree
+    You got to have this
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package undo-tree
+        :diminish undo-tree-mode
+        :ensure t
+        :config
+        (global-undo-tree-mode 1))
+    #+END_SRC
+
+*** expand-region
+    Another great features
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package expand-region
+        :ensure t
+        :bind (("C-=" . er/expand-region)))
+    #+END_SRC
+
+*** multiple-cursors
+    This functions is does not get too much attention
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package multiple-cursors
+        :ensure t
+        :bind (("C-S-c C-S-c" . mc/edit-lines)
+               ("C->" . mc/mark-next-like-this)
+               ("C-<" . mc/mark-previous-like-this)
+               ("C-c C-<" . mc/mark-all-like-this)))
+    #+END_SRC
+*** hungry-delete
+    Whitespace organization
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package hungry-delete
+        :diminish hungry-delete-mode
+        :ensure t
+        :config
+        (global-hungry-delete-mode))
+    #+END_SRC
+
+*** aggressive-indent
+    This is too much to pass up
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package aggressive-indent
+        :ensure t
+        :config
+        (global-aggressive-indent-mode t))
+    #+END_SRC
+
+*** smartparens
+    This is as handy as =paredit=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package smartparens
+        :diminish smartparens-mode
+        :ensure t
+        :config
+        (use-package smartparens-config)
+        (smartparens-global-mode 1))
+    #+END_SRC
+
+*** uniquify
+    Nicer naming convention
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package uniquify
+        :if (version<= emacs-version "24.3.1")
+        :config
+        (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
+    #+END_SRC
+*** diff-hl
+    Diffing tool
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package diff-hl
+        :ensure t
+        :config
+        (global-diff-hl-mode)
+        (setq diff-hl-side 'left)
+        (diff-hl-margin-mode)
+        (eval-after-load "magit"
+          '(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
+    #+END_SRC
+
+*** markdown
+    Some basic =Markdown= editing
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package markdown-mode
+        :ensure t
+        :mode "\\.md\\'"
+        :config
+        (setq markdown-command "Markdown.pl")) ;; NOTE: Command pending
     #+END_SRC
 
 *** org
@@ -510,6 +846,61 @@
 
     #+END_SRC
 
+*** engine
+    Instant search with Emacs, sign me up.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package engine-mode
+        :ensure t
+        :config
+        (engine-mode t)
+
+        (engine/set-keymap-prefix (kbd "C-c s"))
+        (setq engine/browser-function 'browse-url-firefox)
+
+        (defengine amazon
+          "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=%s")
+
+        (defengine duckduckgo
+          "https://duckduckgo.com/?q=%s"
+          :keybinding "d")
+
+        (defengine emacsgo
+          "https://duckduckgo.com/?q=emacs+%s"
+          :keybinding "e")
+
+        (defengine github
+          "https://github.com/search?ref=simplesearch&q=%s"
+          :keybinding "g")
+
+        (defengine project-gutenberg
+          "http://www.gutenberg.org/ebooks/search/?query=%s")
+
+        (defengine rfcs
+          "http://pretty-rfc.herokuapp.com/search?q=%s")
+
+        (defengine stack-overflow
+          "https://stackoverflow.com/search?q=%s"
+          :keybinding "t")
+
+        (defengine twitter
+          "https://twitter.com/search?q=%s")
+
+        (defengine wikipedia
+          "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
+          :keybinding "w"
+          :docstring "Searchin' the wikis.")
+
+        (defengine wiktionary
+          "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
+
+        (defengine wolfram-alpha
+          "http://www.wolframalpha.com/input/?i=%s")
+
+        (defengine youtube
+          "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
+    #+END_SRC
+
 *** projectile
     Must have a project finder when using a project.
 
@@ -529,21 +920,61 @@
       (use-package helm
         :ensure t
         :bind (("M-x" . helm-M-x)
-               ("C-x C-f" . helm-find-files))
+               ("C-c f" . helm-recentf)
+               ("C-h a" . helm-apropos)
+               ("C-h r" . helm-info-emacs)
+               ("C-x b" . helm-mini)
+               ("C-x C-b" . helm-buffers-list)
+               ("C-x C-f" . helm-find-files)
+               ("M-s o" . helm-occur))
         :config
         (require 'helm-config)
         (setq helm-mode-fuzzy-match t)
         (setq helm-completion-in-region-fuzzy-match t)
-        (helm-mode t))
+
+        (setq helm-split-window-in-side-p t
+              helm-yank-symbol-first t
+              helm-buffers-fuzzy-matching t
+              helm-apropos-fuzzy-match t
+              helm-recentf-fuzzy-match t
+              helm-semantic-fuzzy-match t
+              helm-locate-fuzzy-match t
+              helm-ff-file-name-history-use-recentf t
+              helm-su-or-sudo "su"
+              helm-ff-auto-update-initial-value t)
+
+        (helm-mode t)
+        (helm-adaptive-mode t)
+        (helm-autoresize-mode t)
+
+        (add-hook 'eshell-mode-hook
+                  (lambda ()
+                    (define-key eshell-mode-map
+                      [remap eshell-pcomplete]
+                      'helm-esh-pcomplete)
+                    (define-key eshell-mode-map
+                      (kbd "M-p")
+                      'helm-eshell-history)))
+
+        (ido-mode -1))
+
+      (use-package helm-descbinds
+        :ensure t
+        :after helm
+        :bind (("C-h b" . helm-descbinds)))
 
       (use-package helm-projectile
         :ensure t
+        :after helm
+        :bind (("C-c p h" . helm-projectile)
+               ("C-c p p" . helm-projectile-switch-project))
         :config
         (setq projectile-completion-system 'helm)
         (helm-projectile-on))
 
       (use-package helm-swoop
         :ensure t
+        :after helm
         :bind (("M-i" . helm-swoop)
                ("C-c M-i" . helm-multi-swoop))
         :config
@@ -551,6 +982,12 @@
         (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
         (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
         (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
+
+      (use-package wgrep-helm
+        :ensure t
+        :after helm
+        :config
+        (setq wgrep-auto-save-buffer t))
     #+END_SRC
 
 *** magit
@@ -559,13 +996,17 @@
     There is a sad version requirement for 24.4 to use the latest code.
 
     #+BEGIN_SRC emacs-lisp
-      (when (or (> emacs-major-version 24)
-              (and (= emacs-major-version 24)
-                   (>= emacs-minor-version 4)))
-          (use-package magit
-            :ensure t
-            :defer t
-            ))
+      (use-package magit
+        :ensure t
+        :if (version<= "24.4.4" emacs-version)
+        :bind (("C-c g" . magit-status)
+               ("M-g b" . magit-blame))
+        :init
+        (setq magit-push-always-verify t))
+
+      (use-package git-timemachine
+        :ensure t
+        :bind (("M-g t" . git-timemachine)))
     #+END_SRC
 
 *** autocomplete
@@ -583,25 +1024,20 @@
         (ac-set-trigger-key "TAB")
         (ac-set-trigger-key "<tab>"))
     #+END_SRC
-
 *** yasnippet
     Snippet system along with autocomplete is awesome
 
     #+BEGIN_SRC emacs-lisp
       (use-package yasnippet
-      :ensure t
-      :defer t)
-    #+END_SRC
-
-*** emmet
-    I do a lot of HTML editing, YASnippet can do but emmet is better
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package emmet-mode
         :ensure t
-        :defer t)
+        :after helm
+        :diminish yas-minor-mode
+        :defer t
+        :init
+        (setq yas-verbosity 3)
+        :config
+        (push 'yas-hippie-try-expand hippie-expand-try-functions-list))
     #+END_SRC
-
 *** flycheck
     Syntax checking is very important
 
@@ -629,51 +1065,64 @@
         :ensure t
         :defer t)
     #+END_SRC
+** Programming Modes
+   Modes for my programming experiences
 
-*** js2
-    A great mode for progressive nodejs
-
-    [[https://truongtx.me/2014/02/23/set-up-javascript-development-environment-in-emacs/][Tutorial in js2]]
+*** auto-compile
+    A good mode when editing lisp files
 
     #+BEGIN_SRC emacs-lisp
-      (use-package js2-mode
+      (use-package auto-compile
         :ensure t
-        :mode (("\\.jsx\\'" . js2-jsx-mode)
-               ("\\.js\\'" . js2-mode))
         :defer t
         :config
-        (setq js2-highlight-level 3))
+        (auto-compile-on-load-mode)
+        (auto-compile-on-save-mode))
+    #+END_SRC
 
-      (use-package ac-js2
+*** web
+    The defacto mode for web development
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package web-mode
+        :ensure t
+        :mode (("\\.tt\\'" . web-mode)
+               ("\\.erb\\'" . web-mode)
+               ("\\.html\\.ep\\'" . web-mode)
+               ("\\.blade\\.php\\'" . web-mode)
+               ("\\.hbs\\'" . web-mode))
+        :init
+        (dolist (hook '(emmet-mode ac-emmet-html-setup ac-emmet-css-setup))
+          (add-hook 'web-mode-hook hook))
+        :config
+        (setq web-mode-enable-auto-pairing t
+              web-mode-enable-auto-closing t
+              web-mode-enable-current-element-highlight t
+              web-mode-enable-current-column-highlight t
+              web-mode-ac-sources-alist
+              '(("css" . (ac-source-css-property ac-source-emmet-css-snippets))
+                ("php" . (ac-source-yasnippet))
+                ("html" . (ac-source-emmet-html-aliases
+                           ac-source-emmet-html-snippets)))))
+    #+END_SRC
+
+*** emmet
+    I do a lot of HTML editing, YASnippet can do but emmet is better
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package emmet-mode
         :ensure t
         :defer t
         :init
-        (add-hook 'js2-mode-hook 'auto-complete-mode)
-        (add-hook 'js2-mode-hook 'ac-js2-mode))
+        (dolist (hook '(sgml-mode-hook css-mode-hook kolon-mode-hook))
+          (add-hook hook 'emmet-mode)))
 
-      (use-package js2-refactor
+      (use-package ac-emmet
         :ensure t
-        :defer t
+        :commands (ac-emmet-html-setup ac-emmet-css-setup)
         :init
-        (add-hook 'js2-mode-hook 'js2-refactor-mode)
-        (js2r-add-keybindings-with-prefix "C-c C-m"))
-
-      (use-package tern
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'js2-mode-hook 'tern-mode))
-
-      (use-package tern-auto-complete
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'js2-mode-hook (lambda ()
-                                         (tern-ac-setup))))
-
-      (use-package react-snippets
-        :ensure t
-        :defer t)
+        (add-hook 'sgml-mode-hook 'ac-emmet-html-setup)
+        (add-hook 'css-mode-hook 'ac-emmet-css-setup))
     #+END_SRC
 
 *** sass
@@ -686,32 +1135,80 @@
         :config
         ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
     #+END_SRC
+*** js2
+    A great mode for progressive nodejs
 
-*** cedet
-    A must to use other libraries.
-
-    This is an hard external dependency found in the =elisp/cedet= folder
+    [[https://truongtx.me/2014/02/23/set-up-javascript-development-environment-in-emacs/][Tutorial in js2]]
 
     #+BEGIN_SRC emacs-lisp
-      (use-package cedet
-        :load-path "elisp/cedet/lisp"
+      (use-package js2-mode
+        :ensure t
+        :interpreter (("node" . js2-mode))
+        :mode (("\\.jsx\\'" . js2-jsx-mode)
+               ("\\.\\(js\\|json\\)$" . js2-mode))
+        :defer t
+        :config
+        (add-hook 'js-mode-hook 'js2-minor-mode)
+        (setq js2-highlight-level 3
+              js2-mode-show-parse-errors nil
+              js2-mode-show-strict-warnings nil))
+
+      (use-package ac-js2
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'js2-mode-hook 'auto-complete-mode)
+        (add-hook 'js2-mode-hook 'ac-js2-mode)
+        (setq ac-js2-evaluate-calls t))
+
+      (use-package web-beautify
+        :after js2-mode
+        :ensure t
+        :bind (("C-c C-b" . web-beautify-js)))
+
+      (use-package js2-refactor
+        :defer t
+        :commands js2-refactor-mode
+        :diminish js2-refactor-mode
+        :ensure t
+        :init
+        (add-hook 'js2-mode-hook #'js2-refactor-mode)
+        :config
+        (js2r-add-keybindings-with-prefix "C-c C-m"))
+
+      (use-package json-snatcher
+        :ensure t
+        :after js2-mode
+        :bind (("C-c C-g" . jsons-print-path)))
+
+      (use-package tern
+        :ensure t
+        :defer t
+        :diminish tern-mode
+        :init
+        (add-hook 'js2-mode-hook 'tern-mode))
+
+      (use-package tern-auto-complete
+        :ensure t
+        :after tern
+        :config
+        (tern-ac-setup))
+
+      (use-package skewer-mode
+        :defer t
+        :diminish skewer-mode
+        :bind (("C-c K" . run-skewer))
+        :ensure t
+        :init
+        (add-hook 'js2-mode-hook 'skewer-mode)
+        (add-hook 'css-mode-hook 'skewer-css-mode)
+        (add-hook 'html-mode-hook 'skewer-html-mode))
+
+      (use-package react-snippets
+        :ensure t
         :defer t)
     #+END_SRC
 
-*** auto-complile
-    A good mode when editing lisp files
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package auto-compile
-        :ensure t
-        :defer t
-        :config
-        (auto-compile-on-load-mode)
-        (auto-compile-on-save-mode))
-    #+END_SRC
-
-** Programming Modes
-   Modes for my programming experience.
 *** pymacs
     I love me Python, it pushed me to languages after learning this. Curse you Java for being strict.
 
@@ -833,7 +1330,6 @@
         (setq omnisharp-server-executable-path
               (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
     #+END_SRC
-
 ** Utility Modes
 *** twittering
     Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
@@ -860,57 +1356,6 @@
         (bbdb-initialize)
         (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
     #+END_SRC
-*** engine
-    Instant search with Emacs, sign me up.
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package engine-mode
-        :ensure t
-        :config
-        (engine-mode t)
-
-        (engine/set-keymap-prefix (kbd "C-c s"))
-        (setq engine/browser-function 'browse-url-firefox)
-
-        (defengine amazon
-          "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=%s")
-
-        (defengine duckduckgo
-          "https://duckduckgo.com/?q=%s"
-          :keybinding "d")
-
-        (defengine github
-          "https://github.com/search?ref=simplesearch&q=%s"
-          :keybinding "g")
-
-        (defengine project-gutenberg
-          "http://www.gutenberg.org/ebooks/search/?query=%s")
-
-        (defengine rfcs
-          "http://pretty-rfc.herokuapp.com/search?q=%s")
-
-        (defengine stack-overflow
-          "https://stackoverflow.com/search?q=%s"
-          :keybinding "t")
-
-        (defengine twitter
-          "https://twitter.com/search?q=%s")
-
-        (defengine wikipedia
-          "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
-          :keybinding "w"
-          :docstring "Searchin' the wikis.")
-
-        (defengine wiktionary
-          "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
-
-        (defengine wolfram-alpha
-          "http://www.wolframalpha.com/input/?i=%s")
-
-        (defengine youtube
-          "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
-    #+END_SRC
-
 *** malabar
     Programming in =maven= is a thing, so I need [[https://github.com/m0smith/malabar-mode][malabar-mode]]
 
@@ -1172,3 +1617,4 @@ Scripts
 
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
+  - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
