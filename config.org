@@ -351,6 +351,12 @@
         :config
         (require 'smooth-scrolling))
     #+END_SRC
+*** smart-mode-line
+    It is a nice feature
+
+    #+BEGIN_SRC emacs-lisp
+
+    #+END_SRC
 
 *** guru
     Want to make sure I never hit those evil keys
@@ -915,6 +921,38 @@
     #+END_SRC
 *
 Scripts
+** Sandbox Modes
+   Experimental modes, see if it sticks or is useful
+
+   #+BEGIN_SRC emacs-lisp
+
+   #+END_SRC
+
+*** js-comint
+    Just a quick REPL
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package js-comint
+        :ensure t
+        :config
+        (setq inferior-js-program-command "/usr/bin/java org.mozilla.javascript.tools.shell.Main"))
+    #+END_SRC
+
+*** deft
+    Seems good for note taking
+
+    #+BEGIN_SRC emacs-lisp
+          (use-package deft
+            :ensure t
+            :disabled t
+            :config
+            (setq deft-extension "org"
+                  deft-directory (expand-file-name "~/deft/" user-emacs-directory)
+                  deft-text-mode 'org-mode)
+            (deft-setup)
+            (global-set-key [f8] 'deft))
+
+    #+END_SRC
 * Scripts
 ** starup and shutdown hook
    Small script to update my org files
