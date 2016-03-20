@@ -449,12 +449,17 @@
     #+BEGIN_SRC emacs-lisp
       (use-package prettify-symbols-mode
         :if (version<= "24.4.4" emacs-version)
-        :config
+        :init
         (add-hook 'js2-mode-hook
                   (lambda ()
                     (push '("function" . ?λ) prettify-symbols-alist)
-                    (push '("var" . ?β) prettify-symbols-alist)
+                    (push '("arguments" . ?ω) prettify-symbols-alist)
+                    (push '("var" . ?ν) prettify-symbols-alist)
                     (push '("return" . ?ρ) prettify-symbols-alist)
+                    (push '("this" . ?ι) prettify-symbols-alist)
+                    (push '("if" . ?α) prettify-symbols-alist)
+                    (push '("else if" . ?β) prettify-symbols-alist)
+                    (push '("else" . ?γ) prettify-symbols-alist)
                     (prettify-symbols-mode 1))))
     #+END_SRC
 
@@ -1080,6 +1085,18 @@
         (auto-compile-on-save-mode))
     #+END_SRC
 
+*** emr
+    Emacs Lisp refactor mode
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package emr
+        :ensure t
+        :defer t
+        :init
+        (define-key prog-mode-map (kbd "M-RET") 'emr-show-refactor-menu)
+        (add-hook 'prog-mode-hook 'emr-initialize))
+    #+END_SRC
+
 *** web
     The defacto mode for web development
 
@@ -1176,24 +1193,54 @@
         :config
         (js2r-add-keybindings-with-prefix "C-c C-m"))
 
+      (use-package js-doc
+        :ensure t
+        :after js2-mode
+        :init
+        (add-hook 'js2-mode-hook
+                  #'(lambda ()
+                      (define-key js2-mode-map "\C-ci" 'js-doc-insert-function-doc)
+                      (define-key js2-mode-map "@" 'js-doc-insert-tag)))
+
+
+        (setq js-doc-mail-address user-mail-address
+              js-doc-author (format "I am <%s>" js-doc-mail-address)
+              js-doc-url "francismurillo.github.io"
+              js-doc-license "GPL"))
+
       (use-package json-snatcher
         :ensure t
         :after js2-mode
         :bind (("C-c C-g" . jsons-print-path)))
 
+      (use-package react-snippets
+        :ensure t
+        :defer t)
+    #+END_SRC
+*** tern
+    A must have for Javascript development
+
+    #+BEGIN_SRC emacs-lisp
       (use-package tern
         :ensure t
         :defer t
         :diminish tern-mode
         :init
-        (add-hook 'js2-mode-hook 'tern-mode))
+        (setq-default tern-project-dir "~")
+        (add-hook 'js2-mode-hook 'tern-mode)
+        )
 
       (use-package tern-auto-complete
         :ensure t
         :after tern
         :config
         (tern-ac-setup))
+    #+END_SRC
 
+*** skewer
+    Live Javascript editing at your fingertips
+
+    #+BEGIN_SRC emacs-lisp
       (use-package skewer-mode
         :defer t
         :diminish skewer-mode
@@ -1203,10 +1250,6 @@
         (add-hook 'js2-mode-hook 'skewer-mode)
         (add-hook 'css-mode-hook 'skewer-css-mode)
         (add-hook 'html-mode-hook 'skewer-html-mode))
-
-      (use-package react-snippets
-        :ensure t
-        :defer t)
     #+END_SRC
 
 *** pymacs
@@ -1356,16 +1399,6 @@
         (bbdb-initialize)
         (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
     #+END_SRC
-*** malabar
-    Programming in =maven= is a thing, so I need [[https://github.com/m0smith/malabar-mode][malabar-mode]]
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (use-package malabar-mode
-        :ensure t
-        :defer t)
-    #+END_SRC
-*
-Scripts
 ** Sandbox Modes
    Experimental modes, see if it sticks or is useful
 
@@ -1613,6 +1646,14 @@ Scripts
              org-path (org-element-property :raw-link org-element)
              org-link (org-element-property :path org-element))
        (org-insert-link nil org-path nil))
+   #+END_SRC
+** open config file
+   This is just a convenience to open this config file
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/find-config-file ()
+       (interactive)
+       (find-file (expand-file-name "config.org" user-emacs-directory)))
    #+END_SRC
 
 * Reference
