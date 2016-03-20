@@ -143,8 +143,6 @@
 
     #+BEGIN_SRC emacs-lisp
       (set-language-environment "UTF-8")
-
-      (setq load-prefer-newer t)
       (setq visible-bell t)
 
       (windmove-default-keybindings) ;; Fix for org-mode
