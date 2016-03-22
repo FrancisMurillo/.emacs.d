@@ -564,7 +564,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package window-numbering
-        :ensure t)
+        :ensure t
+        :config
+        (window-numbering-mode t))
     #+END_SRC
 
 *** workgroups
@@ -1028,6 +1030,8 @@
 *** autocomplete
     Autocomplete is a must have feature
 
+    But after a while, it seems that =company= seems more stable and easier
+
     #+BEGIN_SRC emacs-lisp
       (use-package auto-complete
         :ensure t
@@ -1040,6 +1044,19 @@
         (ac-set-trigger-key "TAB")
         (ac-set-trigger-key "<tab>"))
     #+END_SRC
+*** company
+    A replacement for =autocomplete=.
+
+    Currently, a work in progress
+
+    #+BEGIN_SRC emacs-lisp :tangle no
+      (use-package company
+        :ensure t
+        :config
+        (global-company-mode t))
+
+    #+END_SRC
+
 *** yasnippet
     Snippet system along with autocomplete is awesome
 
