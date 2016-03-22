@@ -458,6 +458,11 @@
                     (push '("if" . ?α) prettify-symbols-alist)
                     (push '("else if" . ?β) prettify-symbols-alist)
                     (push '("else" . ?γ) prettify-symbols-alist)
+                    (prettify-symbols-mode 1)))
+        (add-hook 'haskell-mode-hook
+                  (lambda ()
+                    (push '("->" . ?→) prettify-symbols-alist)
+                    (push '("let" . ?ν) prettify-symbols-alist)
                     (prettify-symbols-mode 1))))
     #+END_SRC
 
@@ -554,6 +559,14 @@
                   (lambda ()
                     (eshell-smart-initialize))))
     #+END_SRC
+*** window-numbering
+    A must to navigate through windows with numbers
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package window-numbering
+        :ensure t)
+    #+END_SRC
+
 *** workgroups
     Saving window state is very helpful specially when you move a lot
 
@@ -1371,6 +1384,19 @@
         (setq omnisharp-server-executable-path
               (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
     #+END_SRC
+*** haskell
+    The defacto for Haskell development
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package haskell-mode
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'haskell-mode-hook 'haskell-indent-mode)
+        :config
+        (setq interactive-haskell-mode t))
+    #+END_SRC
+
 ** Utility Modes
 *** twittering
     Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
