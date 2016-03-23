@@ -1025,6 +1025,11 @@
       (use-package git-timemachine
         :ensure t
         :bind (("M-g t" . git-timemachine)))
+
+      (use-package git-gutter
+        :ensure t
+        :config
+        (global-git-gutter-mode t))
     #+END_SRC
 
 *** autocomplete
@@ -1053,8 +1058,13 @@
       (use-package company
         :ensure t
         :config
-        (global-company-mode t))
+        (global-company-mode t)
 
+        (setq company-tooltip-limit 20)
+        (setq company-tooltip-align-annotations 't)
+        (setq company-idle-delay .3)
+        (setq company-begin-commands '(self-insert-command))
+        (global-set-key (kbd "C-c /") 'company-files))
     #+END_SRC
 
 *** yasnippet
