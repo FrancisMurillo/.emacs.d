@@ -20,7 +20,7 @@
 (package-initialize t)
 
 ;; Modify the hard dependencies
-
+;; Removed cedet
 
 ;; Load the rest of the packages
 (package-initialize nil)

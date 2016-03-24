@@ -418,7 +418,9 @@
     A must for Lisp editing
 
     #+BEGIN_SRC emacs-lisp
-      (add-hook 'emacs-lisp-mode-hook 'paredit-mode);
+      (use-package paredit
+        :ensure t
+        :defer t)
     #+END_SRC
 
 *** recentf
@@ -617,6 +619,9 @@
     It is a nice feature
 
     #+BEGIN_SRC emacs-lisp
+      (use-package smart-mode-line-powerline-theme
+        :ensure t)
+
       (use-package smart-mode-line
         :ensure t
         :config
