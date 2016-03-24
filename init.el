@@ -20,11 +20,7 @@
 (package-initialize t)
 
 ;; Modify the hard dependencies
-;; cedet
-(let ((default-directory
-        (expand-file-name "elisp/cedet/lisp/" user-emacs-directory)))
-  (normal-top-level-add-to-load-path '("."))
-  (normal-top-level-add-subdirs-to-load-path))
+
 
 ;; Load the rest of the packages
 (package-initialize nil)
