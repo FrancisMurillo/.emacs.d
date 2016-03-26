@@ -873,7 +873,7 @@
 **** org-reveal
      A nice presentation framework
 
-     #+BEGIN_SRC emacs-lis
+     #+BEGIN_SRC emacs-lisp
        (use-package htmlize
          :ensure t
          :after ox-reveal)
