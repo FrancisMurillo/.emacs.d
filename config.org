@@ -1,5 +1,5 @@
 #+TITLE: Francis Murillo's Emacs configuration
-#+AUTHOR: Frncis Murillo
+#+AUTHOR: Francis Murillo
 #+OPTIONS: toc:4 h:4
 * Introduction
 ** If I Forget
@@ -461,6 +461,7 @@
                     (push '("if" . ?α) prettify-symbols-alist)
                     (push '("else if" . ?β) prettify-symbols-alist)
                     (push '("else" . ?γ) prettify-symbols-alist)
+                    (push '("->" . ?→) prettify-symbols-alist)
                     (prettify-symbols-mode 1)))
         (add-hook 'haskell-mode-hook
                   (lambda ()
@@ -1226,8 +1227,6 @@
 *** js2
     A great mode for progressive nodejs
 
-    [[https://truongtx.me/2014/02/23/set-up-javascript-development-environment-in-emacs/][Tutorial in js2]]
-
     #+BEGIN_SRC emacs-lisp
       (use-package js2-mode
         :ensure t
@@ -1307,6 +1306,17 @@
         :config
         (tern-ac-setup))
     #+END_SRC
+*** nodejs-repl
+    A quick repl for node that works
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package nodejs-repl
+        :ensure t
+        :bind (("C-c C-n C-c" . nodejs-repl-send-buffer)
+               ("C-c C-n C-r" . nodejs-repl-send-region)
+               ("C-c C-n C-e" . nodejs-repl-send-last-sexp))
+        :after js2-mode)
+    #+END_SRC
 
 *** skewer
     Live Javascript editing at your fingertips
@@ -1359,7 +1369,7 @@
         :defer t)
     #+END_SRC
 
-*** COMMENT elpy
+*** elpy
     Making Python an IDE
 
     #+BEGIN_SRC emacs-lisp
@@ -1389,8 +1399,6 @@
 
         (require 'py-autopep8)
         (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save))
-
-
     #+END_SRC
 
 *** jedi
