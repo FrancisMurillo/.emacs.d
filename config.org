@@ -1546,17 +1546,12 @@
    #+BEGIN_SRC emacs-lisp
      (defun fn/startup ()
        (interactive)
-       (shell-command "cd ~/Fakespace/nobody-library && git pull origin master")
-       (shell-command "cd ~/Fakespace/coins-watcher && git pull origin master"))
+       (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
 
      (defun fn/cleanup ()
        (interactive)
        (shell-command "cd ~/Fakespace/nobody-library\
       && git add diary/*\
-      && git commit -a -m \"Home Update\"\
-      && git push origin master")
-       (shell-command "cd ~/Fakespace/coins-watcher\
-      && git add --all\
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
    #+END_SRC
