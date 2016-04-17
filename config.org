@@ -138,6 +138,7 @@
       (setq inhibit-startup-screen t)
       (setq initial-scratch-message nil)
     #+END_SRC
+
 *** Environment
     Some environment configuration.
 
@@ -462,6 +463,15 @@
                     (push '("else if" . ?β) prettify-symbols-alist)
                     (push '("else" . ?γ) prettify-symbols-alist)
                     (push '("->" . ?→) prettify-symbols-alist)
+                    (push '("&&" . ?∧) prettify-symbols-alist)
+                    (push '("||" . ?∨) prettify-symbols-alist)
+                    (push '("true" . ?Τ) prettify-symbols-alist)
+                    (push '("false" . ?Θ) prettify-symbols-alist)
+                    (push '("null" . ?Ν) prettify-symbols-alist)
+                    (push '("undefined" . ?Χ) prettify-symbols-alist)
+                    (push '(", ". ?ϵ) prettify-symbols-alist)
+                    (push '("{". ?Ϲ) prettify-symbols-alist)
+                    (push '("}". ?Ͻ) prettify-symbols-alist)
                     (prettify-symbols-mode 1)))
         (add-hook 'haskell-mode-hook
                   (lambda ()
@@ -502,14 +512,15 @@
       (use-package fireplace
         :ensure t)
     #+END_SRC
-*** pretty
-    Making things more algebraic
+
+*** exec-path-from-shell
+    Command line integration
 
     #+BEGIN_SRC emacs-lisp
-      (use-package pretty-mode
+      (use-package exec-path-from-shell
         :ensure t
         :config
-        (add-hook 'js2-mode pretty-mode))
+        (exec-path-from-shell-initialize))
     #+END_SRC
 
 *** term
@@ -606,6 +617,17 @@
         :diminish which-key-mode
         :config
         (which-key-mode))
+    #+END_SRC
+
+*** command-log
+    A command log when needed
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package command-log-mode
+        :ensure t
+        :diminish command-log-mode
+        :config
+        (global-command-log-mode t))
     #+END_SRC
 
 *** smooth-scrolling
@@ -1317,7 +1339,6 @@
                ("C-c C-n C-e" . nodejs-repl-send-last-sexp))
         :after js2-mode)
     #+END_SRC
-
 *** skewer
     Live Javascript editing at your fingertips
 
@@ -1333,21 +1354,6 @@
         (add-hook 'html-mode-hook 'skewer-html-mode))
     #+END_SRC
 
-*** pymacs
-    I love me Python, it pushed me to languages after learning this. Curse you Java for being strict.
-
-    I switch over to the jedi for python
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (add-to-list 'load-path
-                   (expand-file-name "elisp/pymacs" user-emacs-directory))
-
-      (use-package python
-        :defer t
-        :ensure t)
-
-
-    #+END_SRC
 *** python
     My favorite programming language, unassuming like Marcy from Peanuts
 
@@ -1460,25 +1466,72 @@
     The defacto for Haskell development
 
     #+BEGIN_SRC emacs-lisp
+      (use-package structured-haskell-mode
+        :load-path "elisp/structured-haskell-mode/elisp/"
+        :init
+        ;; Requires to be in exec
+        (require 'shm)
+        :config
+        ;; (define-key shm-map  "\C-j" 'shm/newline-indent)
+        (define-key shm-map  "\M-a" 'shm/goto-parent)
+        (define-key shm-map  "\M-e" 'shm/goto-parent-end)
+        ;; (define-key shm-map  "\C-+" 'shm/add-operand)
+        (define-key shm-map  "\M-r" 'shm/raise)
+        (define-key shm-map  "\M-^" 'shm/delete-indentation)
+        (define-key shm-map  "\M-k" 'shm/kill)
+        (define-key shm-map  "\C-y" 'shm/yank)
+        (define-key shm-map  "\M-k" 'shm/kill-line)
+        (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
+
       (use-package haskell-mode
         :ensure t
         :defer t
         :init
-        (add-hook 'haskell-mode-hook 'haskell-indent-mode)
+        (require 'haskell-interactive-mode)
+        (require 'haskell-process)
+
+        (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+        (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
+        (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
+        (add-hook 'haskell-mode-hook 'structured-haskell-mode)
         :config
         (setq interactive-haskell-mode t)
-        (setq haskell-indent-mode t)
+        (setq haskell-stylish-on-save t)
 
-        (eval-after-load "haskell-mode"
-          '(progn
-             (define-key haskell-mode-map (kbd "C-x C-d") nil)
-             (define-key haskell-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
-             (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-file)
-             (define-key haskell-mode-map (kbd "C-c C-b") 'haskell-interactive-switch)
-             (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
-             (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
-             (define-key haskell-mode-map (kbd "C-c M-.") nil)
-             (define-key haskell-mode-map (kbd "C-c C-d") nil))))
+        (define-key haskell-mode-map (kbd "<f8>") 'haskell-navigate-imports)
+        (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-compile)
+        (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-compile)
+
+        (define-key haskell-mode-map (kbd "C-x C-d") nil)
+        (define-key haskell-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
+        (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-file)
+        (define-key haskell-mode-map (kbd "C-c C-b") 'haskell-interactive-switch)
+        (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
+        (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
+        (define-key haskell-mode-map (kbd "C-c M-.") nil)
+        (define-key haskell-mode-map (kbd "C-c C-d") nil)
+
+        (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
+        (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
+        (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
+        (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
+        (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+        (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+        (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
+
+        (define-key haskell-cabal-mode-map (kbd "C-`") 'haskell-interactive-bring)
+        (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+        (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+        (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)
+
+        (define-key haskell-mode-map (kbd "M-.") 'haskell-mode-jump-to-def)
+
+        (setq
+         haskell-process-suggest-remove-import-lines t
+         haskell-process-auto-import-loaded-modules t
+         haskell-process-log t
+         haskell-process-suggest-hoogle-imports t
+         haskell-interactive-mode-eval-mode 'haskell-mode))
     #+END_SRC
 
 ** Utility Modes
@@ -1581,7 +1634,7 @@
    #+BEGIN_SRC emacs-lisp
      (defun fn/compile-media-diary ()
        (interactive)
-       (setq md-root "/mnt/veracrypt2"
+       (setq md-root "~/Mountain/diary/media-diary"
              md-file "media-diary.org"
 
              md-journal-dir-name "journal"
@@ -1762,3 +1815,4 @@
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
+λ> exi
