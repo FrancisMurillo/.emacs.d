@@ -213,15 +213,16 @@
     Some buffer configurations
 
     #+BEGIN_SRC emacs-lisp
-            (global-whitespace-mode t)
+      (global-whitespace-mode t)
 
-            (global-auto-revert-mode t)
-            (setq global-auto-revert-non-file-buffers t
-                  auto-revert-verbose nil)
 
-            (global-visual-line-mode t)
+      (global-auto-revert-mode t)
+      (setq global-auto-revert-non-file-buffers t
+            auto-revert-verbose nil)
 
-            (global-hl-line-mode t)
+      (global-visual-line-mode t)
+
+      (global-hl-line-mode t)
 
       (let ((display-table (or standard-display-table (make-display-table))))
         (set-display-table-slot display-table
@@ -477,19 +478,40 @@
                   (lambda ()
                     (push '("->" . ?→) prettify-symbols-alist)
                     (push '("let" . ?ν) prettify-symbols-alist)
+                    (push '("if" . ?α) prettify-symbols-alist)
+                    (push '("in" . ?ε) prettify-symbols-alist)
+                    (push '("then" . ?σ) prettify-symbols-alist)
+                    (push '("else" . ?τ) prettify-symbols-alist)
+                    (push '("where" . ?δ) prettify-symbols-alist)
+                    (push '("module" . ?θ) prettify-symbols-alist)
+                    (push '("data" . ?Τ) prettify-symbols-alist)
+                    (push '("deriving" . ?Δ) prettify-symbols-alist)
                     (prettify-symbols-mode 1))))
     #+END_SRC
 
 ** Basic Modes
+*** diminish
+    Without this, the mode line has too many minor modes and I can't see
+    the nyan cat
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package diminish
+        :ensure t
+        :config
+        ;; TODO: Remove whitespace and visual -line
+        (eval-after-load "whitespace" '(diminish whitespace-mode))
+        (eval-after-load "simple" '(diminish visual-line-mode)))
+    #+END_SRC
+
 *** guru
     Want to make sure I never hit those evil keys
 
     #+BEGIN_SRC emacs-lisp
       (use-package guru-mode
         :ensure t
+        :diminish guru-mode
         :config
-        (guru-global-mode t)
-      )
+        (guru-global-mode t))
     #+END_SRC
 *** nyan
     Love them kitty down there. Also this keeps things in perspective to have fun.
@@ -575,13 +597,25 @@
                     (eshell-smart-initialize))))
     #+END_SRC
 *** window-numbering
-    A must to navigate through windows with numbers
+    A must to navigate through windows with numbers.
+
+    For now, I'm moving on to [[ace-window]] it eats up the prefix argument.
 
     #+BEGIN_SRC emacs-lisp
       (use-package window-numbering
         :ensure t
+        :disabled t
         :config
         (window-numbering-mode t))
+    #+END_SRC
+
+*** ace-window
+    Changing windows is a common thing
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package ace-window
+        :defer t
+        :bind (("M-o" . ace-window)))
     #+END_SRC
 
 *** workgroups
@@ -590,6 +624,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package workgroups2
         :ensure t
+        :diminish workgroups-mode
         :config
         (setq wg-prefix-key (kbd "C-c w"))
         (setq wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
@@ -969,6 +1004,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package projectile
         :ensure t
+        :diminish projectile-mode
         :config
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native)
@@ -1072,6 +1108,7 @@
 
       (use-package git-gutter
         :ensure t
+        :diminish git-gutter-mode
         :config
         (global-git-gutter-mode t))
     #+END_SRC
@@ -1084,6 +1121,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package auto-complete
         :ensure t
+        :diminish auto-complete-mode
         :config
         (require 'auto-complete-config)
         (ac-config-default)
@@ -1482,6 +1520,12 @@
         (define-key shm-map  "\C-y" 'shm/yank)
         (define-key shm-map  "\M-k" 'shm/kill-line)
         (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
+
+      (use-package hindent
+        :ensure t
+        :init
+        (add-hook 'haskell-mode-hook #'hindent-mode)
+        (setq hindent-style "johan-tibell"))
 
       (use-package haskell-mode
         :ensure t
