@@ -213,17 +213,6 @@
     Some buffer configurations
 
     #+BEGIN_SRC emacs-lisp
-      (global-whitespace-mode t)
-
-
-      (global-auto-revert-mode t)
-      (setq global-auto-revert-non-file-buffers t
-            auto-revert-verbose nil)
-
-      (global-visual-line-mode t)
-
-      (global-hl-line-mode t)
-
       (let ((display-table (or standard-display-table (make-display-table))))
         (set-display-table-slot display-table
                                 'vertical-border (make-glyph-code ?┃))
@@ -295,30 +284,29 @@
 
         ;; vertical ido display is better, like my taskbar
         (use-package ido-vertical-mode
-              :ensure t
-              :defer t
-              :config
-              (ido-vertical-mode t)
-              (setq ido-vertical-show-count t))
+          :ensure t
+          :defer t
+          :config
+          (ido-vertical-mode t)
+          (setq ido-vertical-show-count t))
 
         ;; flex matching is a must
         (use-package flx-ido
-              :ensure t
-              :defer t
-              :config
-              (flx-ido-mode t)
-              (setq ido-enable-flex-matching t)
-              (setq ido-use-faces nil))
+          :ensure t
+          :defer t
+          :config
+          (flx-ido-mode t)
+          (setq ido-enable-flex-matching t)
+          (setq ido-use-faces nil))
 
         ;; smex is a great addition as well
         (use-package smex
           :ensure t
           :defer t
           :bind (("M-x" . smex)
-    	     ("C-c C-c M-x" . execute-extended-command))
+                 ("C-c C-c M-x" . execute-extended-command))
           :config
-          (smex-initialize))
-        )
+          (smex-initialize)))
     #+END_SRC
 
     =ido= has been kind to me since I started learning Emacs but learning =helm= might be better in the long term
@@ -438,6 +426,49 @@
         (global-set-key "\C-x\ \C-r" 'recentf-open-files)
         (setq recentf-exclude '("TAGS" ".*-autoloads\\.el\\'")))
     #+END_SRC
+
+*** whitespace
+    Got to love that whitespace display
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package whitespace-mode
+        :diminish whitespace-mode
+        :config
+        (global-whitespace-mode t))
+    #+END_SRC
+
+*** visual-line
+    Visual lines make more sense than the hard lines, what you see is
+    what you get. Besides, I use syntax motions
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package visual-line
+        :diminish visual-line-mode
+        :config
+        (global-visual-line-mode t))
+    #+END_SRC
+
+*** hl-line
+    Highlight the current line
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package hl-line
+        :diminish hl-line-mode
+        :config
+        (global-hl-line-mode t))
+    #+END_SRC
+*** auto-revert
+    The more generic revert
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package auto-revert
+        :diminish auto-revert-mode
+        :config
+        (global-auto-revert-mode t)
+        (setq global-auto-revert-non-file-buffers t
+              auto-revert-verbose nil))
+    #+END_SRC
+
 *** autorevert
     Enhancement for log reading
 
@@ -446,6 +477,7 @@
         :diminish auto-revert-mode
         :mode (("\\.log\\'" . auto-revert-tail-mode)));
     #+END_SRC
+
 *** prettify-symbols
     Make things more algebraic
 
@@ -490,19 +522,6 @@
     #+END_SRC
 
 ** Basic Modes
-*** diminish
-    Without this, the mode line has too many minor modes and I can't see
-    the nyan cat
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package diminish
-        :ensure t
-        :config
-        ;; TODO: Remove whitespace and visual -line
-        (eval-after-load "whitespace" '(diminish whitespace-mode))
-        (eval-after-load "simple" '(diminish visual-line-mode)))
-    #+END_SRC
-
 *** guru
     Want to make sure I never hit those evil keys
 
@@ -747,6 +766,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package aggressive-indent
         :ensure t
+        :diminish aggressive-indent-mode
         :config
         (global-aggressive-indent-mode t))
     #+END_SRC
@@ -1017,6 +1037,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package helm
         :ensure t
+        :diminish helm-mode
         :bind (("M-x" . helm-M-x)
                ("C-c f" . helm-recentf)
                ("C-h a" . helm-apropos)
@@ -1056,36 +1077,36 @@
 
         (ido-mode -1))
 
-      (use-package helm-descbinds
-        :ensure t
-        :after helm
-        :bind (("C-h b" . helm-descbinds)))
+            (use-package helm-descbinds
+              :ensure t
+              :after helm
+              :bind (("C-h b" . helm-descbinds)))
 
-      (use-package helm-projectile
-        :ensure t
-        :after helm
-        :bind (("C-c p h" . helm-projectile)
-               ("C-c p p" . helm-projectile-switch-project))
-        :config
-        (setq projectile-completion-system 'helm)
-        (helm-projectile-on))
+            (use-package helm-projectile
+              :ensure t
+              :after helm
+              :bind (("C-c p h" . helm-projectile)
+                     ("C-c p p" . helm-projectile-switch-project))
+              :config
+              (setq projectile-completion-system 'helm)
+              (helm-projectile-on))
 
-      (use-package helm-swoop
-        :ensure t
-        :after helm
-        :bind (("M-i" . helm-swoop)
-               ("C-c M-i" . helm-multi-swoop))
-        :config
-        (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
-        (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
-        (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
-        (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
+            (use-package helm-swoop
+              :ensure t
+              :after helm
+              :bind (("M-i" . helm-swoop)
+                     ("C-c M-i" . helm-multi-swoop))
+              :config
+              (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
+              (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
+              (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
+              (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
 
-      (use-package wgrep-helm
-        :ensure t
-        :after helm
-        :config
-        (setq wgrep-auto-save-buffer t))
+            (use-package wgrep-helm
+              :ensure t
+              :after helm
+              :config
+              (setq wgrep-auto-save-buffer t))
     #+END_SRC
 
 *** magit
