@@ -662,16 +662,68 @@
         (window-numbering-mode t))
     #+END_SRC
 
-*** ace-window
-    Changing windows is a common thing
-
-    Good enough but [[window-numbering]] is definitely faster
+*** golden-ration
+    Makes windows large enough to see.
 
     #+BEGIN_SRC emacs-lisp
-      (use-package ace-window
-        :defer t
-        :disabled t
-        :bind (("M-o" . ace-window)))
+      (use-package golden-ratio
+        :ensure t
+        :after window-numbering
+        :diminish golden-ratio-mode
+        :bind (("C-c q" . golden-ratio))
+        :config
+        (golden-ratio-mode t)
+        (setq split-width-threshold nil)
+        (setq golden-ratio-exclude-modes '("ediff-mode"
+                                           "eshell-mode"
+                                           "dired-mode"))
+        (defun select-rationed-window-1 ()
+          (interactive)
+          (select-window-1)
+          (golden-ratio))
+        (defun select-rationed-window-2 ()
+          (interactive)
+          (select-window-2)
+          (golden-ratio))
+        (defun select-rationed-window-3 ()
+          (interactive)
+          (select-window-3)
+          (golden-ratio))
+        (defun select-rationed-window-4 ()
+          (interactive)
+          (select-window-4)
+          (golden-ratio))
+        (defun select-rationed-window-5 ()
+          (interactive)
+          (select-window-5)
+          (golden-ratio))
+        (defun select-rationed-window-6 ()
+          (interactive)
+          (select-window-6)
+          (golden-ratio))
+        (defun select-rationed-window-7 ()
+          (interactive)
+          (select-window-7)
+          (golden-ratio))
+        (defun select-rationed-window-8 ()
+          (interactive)
+          (select-window-8)
+          (golden-ratio))
+        (defun select-rationed-window-9 ()
+          (interactive)
+          (select-window-9)
+          (golden-ratio))
+
+        (define-key window-numbering-keymap (kbd "M-1") 'select-rationed-window-1)
+        (define-key window-numbering-keymap (kbd "M-2") 'select-rationed-window-2)
+        (define-key window-numbering-keymap (kbd "M-3") 'select-rationed-window-3)
+        (define-key window-numbering-keymap (kbd "M-4") 'select-rationed-window-4)
+        (define-key window-numbering-keymap (kbd "M-5") 'select-rationed-window-5)
+        (define-key window-numbering-keymap (kbd "M-6") 'select-rationed-window-6)
+        (define-key window-numbering-keymap (kbd "M-7") 'select-rationed-window-7)
+        (define-key window-numbering-keymap (kbd "M-8") 'select-rationed-window-8)
+        (define-key window-numbering-keymap (kbd "M-9") 'select-rationed-window-9)
+        (define-key window-numbering-keymap (kbd "M-0") 'select-rationed-window-0))
     #+END_SRC
 
 *** workgroups
