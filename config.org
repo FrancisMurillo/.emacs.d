@@ -422,7 +422,7 @@
         :defer t
         :config
         (recentf-mode 1)
-        (setq recentf-max-menu-items 25)
+        (setq recentf-max-menu-items 50)
         (global-set-key "\C-x\ \C-r" 'recentf-open-files)
         (setq recentf-exclude '("TAGS" ".*-autoloads\\.el\\'")))
     #+END_SRC
@@ -891,7 +891,8 @@
     #+BEGIN_SRC emacs-lisp
       (use-package org
         :bind (("C-c l" . org-store-link)
-               ("C-c a" . org-agenda))
+               ("C-c a" . org-agenda)
+               ("C-c h" . helm-org-in-buffer-headings))
         :config
         ;; Config
         (setq org-log-done 'time)
