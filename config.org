@@ -1496,20 +1496,16 @@
 
       (use-package ein
         :ensure t
-        :defer t)
+        :defer t
+        :config
+        (setq ein:use-auto-complete t)
+        (setq ein:use-smartrep t))
     #+END_SRC
 
 *** elpy
     Making Python an IDE
 
     #+BEGIN_SRC emacs-lisp
-      (use-package ein
-        :ensure t
-        :defer t
-        :config
-        (setq ein:use-auto-complete t)
-        (setq ein:use-smartrep t))
-
       (use-package elpy
         :ensure t
         :defer t
@@ -1945,4 +1941,3 @@
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
-λ> exi
