@@ -540,10 +540,6 @@
         :ensure t
         :config
         (nyan-mode t))
-
-      (use-package zone-nyan
-        :ensure t
-        :defer t)
     #+END_SRC
 
 *** fireplace
@@ -552,6 +548,47 @@
     #+BEGIN_SRC emacs-lisp
       (use-package fireplace
         :ensure t)
+    #+END_SRC
+
+*** zone
+    I love to zone out from time to time.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package zone
+        :ensure t
+        :config
+        (zone-when-idle 60)
+        (setq zone-programs (list))
+
+        (setq
+         zone-animation-directory (expand-file-name "elisp/custom-zone" user-emacs-directory)
+         end-of-buffer-animation (expand-file-name "end-of-buffer.el" zone-animation-directory)
+         waves-animation (expand-file-name "waves.el" zone-animation-directory)
+         )
+
+        (load-file end-of-buffer-animation)
+        (load-file waves-animation)
+
+        (add-to-list 'zone-programs 'zone-end-of-buffer)
+        (add-to-list 'zone-programs 'zone-waves))
+
+      (use-package zone-nyan
+        :ensure t
+        :after zone
+        :config
+        (add-to-list 'zone-programs 'zone-nyan))
+
+      (use-package zone-rainbow
+        :ensure t
+        :after zone
+        :config
+        (add-to-list 'zone-programs 'zone-rainbow))
+
+      (use-package zone-sl
+        :ensure t
+        :after zone
+        :config
+        (add-to-list 'zone-programs 'zone-sl))
     #+END_SRC
 
 *** exec-path-from-shell
@@ -621,7 +658,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package paradox
         :ensure t
-        :bind (("C-M-P" . paradox-list-packages)))
+        :bind (("C-c C-p" . paradox-list-packages)))
     #+END_SRC
 
 *** smart-mode-line
@@ -662,7 +699,7 @@
         (window-numbering-mode t))
     #+END_SRC
 
-*** golden-ration
+*** golden-ratio
     Makes windows large enough to see.
 
     #+BEGIN_SRC emacs-lisp
@@ -674,9 +711,7 @@
         :config
         (golden-ratio-mode t)
         (setq split-width-threshold nil)
-        (setq golden-ratio-exclude-modes '("ediff-mode"
-                                           "eshell-mode"
-                                           "dired-mode"))
+
         (defun select-rationed-window-1 ()
           (interactive)
           (select-window-1)
@@ -1937,7 +1972,7 @@
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
    #+END_SRC
-
+**
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
