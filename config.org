@@ -537,7 +537,7 @@
 
                   (push '("[". ?⊏) prettify-symbols-alist)
               (push '("]". ?⊐) prettify-symbols-alist)
-        (push '("],". ?⊡) prettify-symbols-alist)
+        (push '("],". ?⊡P) prettify-symbols-alist)
       (push '("];". ?⊐) prettify-symbols-alist)
 
       (push '(";". ?⟐) prettify-symbols-alist)
@@ -1790,7 +1790,7 @@
             (deft-setup)
             (global-set-key [f8] 'deft))
 
-    #+END_SR
+    #+END_SRC
 * Scripts
 ** starup and shutdown hook
    Small script to update my org files
