@@ -492,33 +492,71 @@
                     (push '("var" . ?ν) prettify-symbols-alist)
                     (push '("return" . ?ρ) prettify-symbols-alist)
                     (push '("this" . ?ι) prettify-symbols-alist)
+
+                    (push '("for" . ?∫) prettify-symbols-alist)
+                    (push '("in" . ?⊂ ) prettify-symbols-alist)
+
+                    (push '("Object" . ?Θ) prettify-symbols-alist)
+
                     (push '("if" . ?α) prettify-symbols-alist)
                     (push '("else if" . ?β) prettify-symbols-alist)
                     (push '("else" . ?γ) prettify-symbols-alist)
+
                     (push '("->" . ?→) prettify-symbols-alist)
                     (push '("&&" . ?∧) prettify-symbols-alist)
                     (push '("||" . ?∨) prettify-symbols-alist)
-                    (push '("true" . ?Τ) prettify-symbols-alist)
-                    (push '("false" . ?Θ) prettify-symbols-alist)
-                    (push '("null" . ?Ν) prettify-symbols-alist)
-                    (push '("undefined" . ?Χ) prettify-symbols-alist)
-                    (push '(", ". ?ϵ) prettify-symbols-alist)
-                    (push '("{". ?Ϲ) prettify-symbols-alist)
-                    (push '("}". ?Ͻ) prettify-symbols-alist)
-                    (prettify-symbols-mode 1)))
-        (add-hook 'haskell-mode-hook
-                  (lambda ()
-                    (push '("->" . ?→) prettify-symbols-alist)
-                    (push '("let" . ?ν) prettify-symbols-alist)
-                    (push '("if" . ?α) prettify-symbols-alist)
-                    (push '("in" . ?ε) prettify-symbols-alist)
-                    (push '("then" . ?σ) prettify-symbols-alist)
-                    (push '("else" . ?τ) prettify-symbols-alist)
-                    (push '("where" . ?δ) prettify-symbols-alist)
-                    (push '("module" . ?θ) prettify-symbols-alist)
-                    (push '("data" . ?Τ) prettify-symbols-alist)
-                    (push '("deriving" . ?Δ) prettify-symbols-alist)
-                    (prettify-symbols-mode 1))))
+
+                    (push '("!" . ?¬) prettify-symbols-alist)
+                    (push '("!!" . ?⌐) prettify-symbols-alist)
+
+                    (push '("=" . ?⟵) prettify-symbols-alist)
+                    (push '(":" . ?⟵) prettify-symbols-alist)
+
+                    (push '("===" . ?≡) prettify-symbols-alist)
+                    (push '("!==" . ?≢) prettify-symbols-alist)
+
+                    (push '(">=" . ?≧) prettify-symbols-alist)
+                    (push '("<=" . ?≦) prettify-symbols-alist)
+
+                    (push '("true" . ?⊤) prettify-symbols-alist)
+                    (push '("false" . ?⊥) prettify-symbols-alist)
+
+                    (push '("null" . ?∅) prettify-symbols-alist)
+                    (push '("undefined" . ?↑) prettify-symbols-alist)
+
+                    (push '(", ". ?⟼) prettify-symbols-alist)
+                    (push '("{". ?⟹) prettify-symbols-alist)
+                    (push '("},". ?⟺) prettify-symbols-alist)
+                    (push '("}". ?⟸) prettify-symbols-alist)
+                    (push '("};". ?⟽) prettify-symbols-alist)
+
+                    (push '("(". ?⟪) prettify-symbols-alist)
+                          (push '(")". ?⟫) prettify-symbols-alist)
+                    (push '(");". ?⟫) prettify-symbols-alist)
+                  (push '("),". ?⟫) prettify-symbols-alist)
+
+        (push '("[". ?⟦) prettify-symbols-alist)
+              (push '("]". ?⟧) prettify-symbols-alist)
+        (push '("],". ?⟧) prettify-symbols-alist)
+      (push '("];". ?⟧) prettify-symbols-alist)
+
+      (push '(";". ?⟐) prettify-symbols-alist)
+
+
+      (prettify-symbols-mode 1)))
+      (add-hook 'haskell-mode-hook
+                (lambda ()
+                  (push '("->" . ?→) prettify-symbols-alist)
+                  (push '("let" . ?ν) prettify-symbols-alist)
+                  (push '("if" . ?α) prettify-symbols-alist)
+                  (push '("in" . ?ε) prettify-symbols-alist)
+                  (push '("then" . ?σ) prettify-symbols-alist)
+                  (push '("else" . ?τ) prettify-symbols-alist)
+                  (push '("where" . ?δ) prettify-symbols-alist)
+                  (push '("module" . ?θ) prettify-symbols-alist)
+                  (push '("data" . ?Τ) prettify-symbols-alist)
+                  (push '("deriving" . ?Δ) prettify-symbols-alist)
+                  (prettify-symbols-mode 1))))
     #+END_SRC
 
 ** Basic Modes
@@ -1752,7 +1790,7 @@
             (deft-setup)
             (global-set-key [f8] 'deft))
 
-    #+END_SRC
+    #+END_SR
 * Scripts
 ** starup and shutdown hook
    Small script to update my org files
