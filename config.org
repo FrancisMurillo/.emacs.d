@@ -537,7 +537,7 @@
 
                   (push '("[". ?⊏) prettify-symbols-alist)
               (push '("]". ?⊐) prettify-symbols-alist)
-        (push '("],". ?⊡P) prettify-symbols-alist)
+        (push '("],". ?⊡) prettify-symbols-alist)
       (push '("];". ?⊐) prettify-symbols-alist)
 
       (push '(";". ?⟐) prettify-symbols-alist)
@@ -1833,8 +1833,9 @@
    #+BEGIN_SRC emacs-lisp
      (defun fn/compile-media-diary ()
        (interactive)
-       (setq md-root "~/Mountain/diary/media-diary"
+       (setq md-root "/media/veracrypt1/media-diary"
              md-file "media-diary.org"
+             md-prefix (read-input "Input year-month[yyyy-mm]:" "2016-04")
 
              md-journal-dir-name "journal"
              md-audio-dir-name "audio"
@@ -1858,9 +1859,9 @@
        (defun replace-in-string (what with in)
          (replace-regexp-in-string (regexp-quote what) with in nil 'literal))
 
-       (defun directory-files-by-extension (directory extension)
+       (defun directory-files-by-extension (directory extension) ;; NOTE: md-prefix tangled here
          (directory-files directory nil
-                          (format-message "\\.%s$" extension)))
+                          (format-message "%s-.*\\.%s$" md-prefix extension)))
 
        (defun parse-date-from-filename (file)
          (setq filename
