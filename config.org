@@ -329,7 +329,19 @@
         (setq dired-recursive-deletes 'always)
         (require 'dired-x) ;; Allows multi open marked files
         (setq dired-dwim-target t)
-        (dired-async-mode t))
+        (dired-async-mode t)
+        (add-hook 'dired-after-readin-hook 'dired-hide-details-mode))
+    #+END_SRC
+
+*** tramp
+    The ubiquitous way of ssh
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package tramp
+        :ensure t
+        :config
+        (setq tramp-default-method "ssh"))
+
     #+END_SRC
 
 *** winner
@@ -700,6 +712,40 @@
         :ensure t
         :bind (("C-c C-p" . paradox-list-packages)))
     #+END_SRC
+*** unicode-fonts
+    Unicode is too much to pass up
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package unicode-fonts
+        :ensure t
+        :config
+        (unicode-font-setup))
+    #+END_SRC
+
+*** workgroups
+    Saving window state is very helpful specially when you move a lot
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package workgroups2
+        :ensure t
+        :diminish workgroups-mode
+        :config
+        (setq wg-prefix-key (kbd "C-c w"))
+        (setq wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
+
+        (setq wg-morph-on nil)
+
+        (setq wg-emacs-exit-save-behavior           'save)
+        (setq wg-workgroups-mode-exit-save-behavior 'save)
+
+        (setq wg-mode-line-display-on t)
+        (setq wg-flag-modified t)
+        (setq wg-mode-line-decor-left-brace "["
+              wg-mode-line-decor-right-brace "]"
+              wg-mode-line-decor-divider ":")
+
+        (workgroups-mode t))
+   #+END_SRC
 
 *** smart-mode-line
     It is a nice feature
@@ -800,31 +846,6 @@
         (define-key window-numbering-keymap (kbd "M-9") 'select-rationed-window-9)
         (define-key window-numbering-keymap (kbd "M-0") 'select-rationed-window-0))
     #+END_SRC
-
-*** workgroups
-    Saving window state is very helpful specially when you move a lot
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package workgroups2
-        :ensure t
-        :diminish workgroups-mode
-        :config
-        (setq wg-prefix-key (kbd "C-c w"))
-        (setq wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
-
-        (setq wg-morph-on nil)
-
-        (setq wg-emacs-exit-save-behavior           'save)
-        (setq wg-workgroups-mode-exit-save-behavior 'save)
-
-        (setq wg-mode-line-display-on t)
-        (setq wg-flag-modified t)
-        (setq wg-mode-line-decor-left-brace "["
-              wg-mode-line-decor-right-brace "]"
-              wg-mode-line-decor-divider ":")
-
-        (workgroups-mode 1))
-   #+END_SRC
 
 *** which-keys
     Another key bindings
