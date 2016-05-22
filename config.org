@@ -89,7 +89,7 @@
      (setq org-src-tab-acts-natively t)
    #+END_SRC
 
-* Configuration
+* Configurationq
 ** Personal Options
    Just some things that relate to me
 
@@ -115,6 +115,7 @@
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
 
    #+BEGIN_SRC emacs-lisp
+     ;; TODO: Make them work with https, apparently it is too slow over the wire
      (unless (assoc-default "melpa" package-archives)
        (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
        (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
@@ -195,9 +196,9 @@
     Some preset variables
 
     #+BEGIN_SRC emacs-lisp
-      (setq enable-local-variables :safe)
-      (setq safe-local-variable-values
-            '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to)))
+      (setq enable-local-variables :safe
+            safe-local-variable-values '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to))
+            whitespace-line-column 10000)
     #+END_SRC
 *** Window
     Window/Frame configuration. I prefer no clutter in my screen so I disable majority of the niceties.
@@ -223,7 +224,7 @@
     I like fixed font specially DejaVu Mono
 
     #+BEGIN_SRC emacs-lisp
-      (set-frame-font "DejaVu Sans Mono-8" t t)
+      (set-frame-font "DejaVu Sans Mono-8" t t )
     #+END_SRC
 
 *** Theme
@@ -231,32 +232,22 @@
     default doesn't ask too much.
 
     #+BEGIN_SRC emacs-lisp
+      (use-package monokai-theme
+        :ensure t
+        :defer t)
+
       (use-package base16-theme
         :ensure t
         :defer t)
+    #+END_SRC
+
+    #+BEGIN_SRC emacs-lisp
 
       (when (window-system)
-        (load-theme 'base16-solarized-dark)
+        (load-theme 'monokai t))
 
-        (custom-set-faces
-         '(whitespace-line ((t (:foreground "#657b83"))))))
-    #+END_SRC
-
-    If there is no window system or in a terminal,
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package base16-theme
-        :ensure t
-        :defer t)
-
-      (unless (window-system) (load-theme 'base16-theme))
-    #+END_SRC
-
-*** Faces
-    Some customization on the basic faces
-
-    #+BEGIN_SRC emacs-lisp
-      ;; Long lines with purple color is anonying
+      (unless (window-system)
+        (load-theme 'base16-solarized-dark t))
     #+END_SRC
 
 *** Programming
@@ -725,13 +716,22 @@
                   (lambda ()
                     (eshell-smart-initialize))))
     #+END_SRC
+*** prodigy
+    Living in the shell requires some genius
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package prodigy
+        :ensure t
+        )
+    #+END_SRC
+
 *** paradox
     An improvement for the package manager
 
     #+BEGIN_SRC emacs-lisp
       (use-package paradox
         :ensure t
-        :bind (("C-c C-p" . paradox-list-packages)))
+        :bind (("C-c P" . paradox-list-packages)))
     #+END_SRC
 *** unicode-fonts
     Unicode is too much to pass up
@@ -778,20 +778,14 @@
       (use-package smart-mode-line
         :ensure t
         :config
-        (setq sml/no-confirm-load-theme t)
-        (setq sml/theme 'powerline)
+        (setq sml/no-confirm-load-theme t
+              sml/shorten-directory t
+              sml/shorten-modes t
+              sml/theme 'powerline)
+
         (sml/setup))
     #+END_SRC
 
-*** powerline
-    A neat addition the mode line
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package powerline
-        :ensure t
-        :config
-        (powerline-default-theme))
-    #+END_SRC
 *** window-numbering
     A must to navigate through windows with numbers.
 
@@ -1323,35 +1317,48 @@
 
     But after a while, it seems that =company= seems more stable and easier
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package auto-complete
         :ensure t
         :diminish auto-complete-mode
         :config
         (require 'auto-complete-config)
         (ac-config-default)
-        (global-auto-complete-mode)
+
         (setq popup-use-optimized-column-computation nil)
         (setq ac-show-menu-immediately-on-auto-complete t)
         (ac-set-trigger-key "TAB")
         (ac-set-trigger-key "<tab>"))
     #+END_SRC
+
 *** company
     A replacement for =autocomplete=.
 
     Currently, a work in progress
 
-    #+BEGIN_SRC emacs-lisp :tangle no
+    #+BEGIN_SRC emacs-lisp
       (use-package company
         :ensure t
+        :diminish company-mode
         :config
         (global-company-mode t)
 
         (setq company-tooltip-limit 20)
-        (setq company-tooltip-align-annotations 't)
-        (setq company-idle-delay .3)
+        (setq company-tooltip-align-annotations t)
+        (setq company-idle-delay 0)
         (setq company-begin-commands '(self-insert-command))
-        (global-set-key (kbd "C-c /") 'company-files))
+        (global-set-key (kbd "C-c /") 'company-files)
+
+        (define-key company-mode-map (kbd "M-/") 'company-complete)
+        (define-key company-active-map (kbd "M-/") 'company-select-next)
+
+        (setq-default company-backends '((company-capf company-dabbrev-code) company-dabbrev)))
+
+      (use-package helm-company
+        :ensure t
+        :config
+        (define-key company-mode-map (kbd "C-:") 'helm-company)
+        (define-key company-active-map (kbd "C-:") 'helm-company))
     #+END_SRC
 
 *** yasnippet
@@ -1381,12 +1388,12 @@
       (use-package flycheck
         :ensure t
         :defer  t
+        :diminish flycheck-mode
         :init
         (add-hook 'js2-mode-hook 'flycheck-mode)
+        (add-hook 'web-mode 'flycheck-mode)
         (add-hook 'haskell-mode-hook 'flycheck-mode)
-        (add-hook 'python-mode 'flycheck-mode)
-        :config
-        (flycheck-haskell-setup))
+        (add-hook 'python-mode 'flycheck-mode))
     #+END_SRC
 *** flyspell
     Having a good spell checker is a must. I use =flyspell= although I have read issues about it
@@ -1410,6 +1417,28 @@
 ** Programming Modes
    Modes for my programming experiences
 
+*** rainbow-delimeter
+    Visual aid helps with very nested code
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package rainbow-delimiters
+        :ensure t
+        :init
+        (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
+        :config
+        (custom-set-faces
+         ;; Thanks to https://ericscrivner.me/2015/06/better-emacs-rainbow-delimiters-color-scheme/
+         '(rainbow-delimiters-depth-1-face ((t (:foreground "dark orange"))))
+         '(rainbow-delimiters-depth-2-face ((t (:foreground "deep pink"))))
+         '(rainbow-delimiters-depth-3-face ((t (:foreground "chartreuse"))))
+         '(rainbow-delimiters-depth-4-face ((t (:foreground "deep sky blue"))))
+         '(rainbow-delimiters-depth-5-face ((t (:foreground "yellow"))))
+         '(rainbow-delimiters-depth-6-face ((t (:foreground "orchid"))))
+         '(rainbow-delimiters-depth-7-face ((t (:foreground "spring green"))))
+         '(rainbow-delimiters-depth-8-face ((t (:foreground "sienna1"))))))
+
+    #+END_SRC
+
 *** auto-compile
     A good mode when editing lisp files
 
@@ -1418,8 +1447,8 @@
         :ensure t
         :defer t
         :config
-        (auto-compile-on-load-mode)
-        (auto-compile-on-save-mode))
+        (setq auto-compile-on-load-mode t
+              auto-compile-on-save-mode t))
     #+END_SRC
 
 *** emr
@@ -1446,18 +1475,17 @@
                ("\\.blade\\.php\\'" . web-mode)
                ("\\.hbs\\'" . web-mode))
         :init
-        (dolist (hook '(emmet-mode ac-emmet-html-setup ac-emmet-css-setup))
+        (dolist (hook '(emmet-mode))
           (add-hook 'web-mode-hook hook))
         :config
         (setq web-mode-enable-auto-pairing t
               web-mode-enable-auto-closing t
               web-mode-enable-current-element-highlight t
-              web-mode-enable-current-column-highlight t
-              web-mode-ac-sources-alist
-              '(("css" . (ac-source-css-property ac-source-emmet-css-snippets))
-                ("php" . (ac-source-yasnippet))
-                ("html" . (ac-source-emmet-html-aliases
-                           ac-source-emmet-html-snippets)))))
+              web-mode-enable-current-column-highlight t))
+
+      (use-package company-web
+        :ensure t
+        :after web)
     #+END_SRC
 
 *** emmet
@@ -1470,13 +1498,6 @@
         :init
         (dolist (hook '(sgml-mode-hook css-mode-hook kolon-mode-hook))
           (add-hook hook 'emmet-mode)))
-
-      (use-package ac-emmet
-        :ensure t
-        :commands (ac-emmet-html-setup ac-emmet-css-setup)
-        :init
-        (add-hook 'sgml-mode-hook 'ac-emmet-html-setup)
-        (add-hook 'css-mode-hook 'ac-emmet-css-setup))
     #+END_SRC
 
 *** sass
@@ -1496,22 +1517,13 @@
       (use-package js2-mode
         :ensure t
         :interpreter (("node" . js2-mode))
-        :mode (("\\.jsx\\'" . js2-jsx-mode)
-               ("\\.\\(js\\|json\\)$" . js2-mode))
+        :mode (("\\.\\(js\\|json\\)$" . js2-mode))
         :defer t
         :config
         (add-hook 'js-mode-hook 'js2-minor-mode)
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
               js2-mode-show-strict-warnings nil))
-
-      (use-package ac-js2
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'js2-mode-hook 'auto-complete-mode)
-        (add-hook 'js2-mode-hook 'ac-js2-mode)
-        (setq ac-js2-evaluate-calls t))
 
       (use-package web-beautify
         :after js2-mode
@@ -1562,14 +1574,13 @@
         :diminish tern-mode
         :init
         (setq-default tern-project-dir "~")
-        (add-hook 'js2-mode-hook 'tern-mode)
-        )
+        (add-hook 'js2-mode-hook 'tern-mode))
 
-      (use-package tern-auto-complete
+      (use-package company-tern
         :ensure t
         :after tern
         :config
-        (tern-ac-setup))
+        (add-to-list 'company-backends 'company-tern))
     #+END_SRC
 *** nodejs-repl
     A quick repl for node that works
@@ -1777,6 +1788,19 @@
          haskell-process-log t
          haskell-process-suggest-hoogle-imports t
          haskell-interactive-mode-eval-mode 'haskell-mode))
+
+      (use-package company-ghc
+        :ensure t
+        :after haskell
+        :config
+        (add-to-list 'company-backends 'company-ghc))
+
+      (use-package company-ghci
+        :ensure t
+        :after haskell
+        :config
+        (add-to-list 'company-backends 'company-ghci))
+
     #+END_SRC
 
 ** Utility Modes
