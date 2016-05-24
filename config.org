@@ -133,7 +133,7 @@
 * The General Setup
   Basic configurations anyone can do for vanilla Emacs
 
-** Personal
+** Personal Information
    Just some things that relate to me
 
    #+BEGIN_SRC emacs-lisp
@@ -149,29 +149,40 @@
    #+END_SRC
 
 ** Startup
-    Startup options to stop annoying you
+   Everything related to the startup state
+
+   No need for the awesome startup screen.
 
     #+BEGIN_SRC emacs-lisp
       (setq inhibit-startup-screen t)
-      (setq initial-scratch-message nil)
     #+END_SRC
+
+   No need also for the empty scratch buffer
+
+   #+BEGIN_SRC emacs-lisp
+     (setq initial-scratch-message nil)
+   #+END_SRC
 
 ** Environment
     Some environment configuration.
 
+    UTF should be the default environment if it is not stated.
+
     #+BEGIN_SRC emacs-lisp
       (set-language-environment "UTF-8")
-      (setq visible-bell t)
-
-      (windmove-default-keybindings) ;; Fix for org-mode
-      (setq org-replace-disputed-keys t)
-      (setq org-support-shift-select t)
     #+END_SRC
 
-    How about changing some options
+    When there is an error, the visible bell is much more helpful than
+    getting an error.
 
     #+BEGIN_SRC emacs-lisp
-      (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N is enough to say Yes or No
+      (setq visible-bell t)
+    #+END_SRC
+
+    Instead of yes or no, y or n is enough.
+
+    #+BEGIN_SRC emacs-lisp
+      (fset 'yes-or-no-p 'y-or-n-p)
     #+END_SRC
 
 ** Backups
@@ -196,8 +207,6 @@
     Save minibuffer history
 
     #+BEGIN_SRC emacs-lisp
-      (savehist-mode 1)
-
       (setq savehist-file (expand-file-name "savehist" user-emacs-directory))
       (setq history-length t)
       (setq history-delete-duplicates t)
@@ -206,6 +215,8 @@
         '(kill-ring
           search-ring
           regexp-search-ring))
+
+      (savehist-mode 1)
     #+END_SRC
 
 ** Variables
@@ -652,7 +663,6 @@
         (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
     #+END_SRC
 
-
 ** Buffers
    Anything related to buffers
 
@@ -784,30 +794,6 @@
         (which-key-mode t))
     #+END_SRC
 
-*** which-function
-    Another mnemionic for functions
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package which-func
-        :ensure t
-        :diminish which-function-mode
-        :config
-        (which-function-mode))
-    #+END_SRC
-
-** Packages
-   Maintenance support
-*** paradox
-    An improvement for the package manager
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package paradox
-        :ensure t
-        :bind (("C-c n p" . paradox-list-packages)))
-    #+END_SRC
-
-
-
 * The Picky Artist
   Visual aesthetics is also a functional thing as well
 
@@ -818,7 +804,7 @@
       (set-frame-font "DejaVu Sans Mono-8" t t )
     #+END_SRC
 
-** Window
+** Screen
     I prefer no clutter in my screen so I disable majority of the niceties.
 
     #+BEGIN_SRC emacs-lisp
@@ -828,7 +814,10 @@
       (scroll-bar-mode -1)
       (fringe-mode 0)
     #+END_SRC
+
 ** Theme
+   I like dark themes, my eyes respond better to it
+
     #+BEGIN_SRC emacs-lisp
       (use-package apropospriate-theme
         :ensure t
@@ -838,6 +827,8 @@
         :ensure t
         :defer t)
     #+END_SRC
+
+    Load the theme if it is a terminal or desktop.
 
     #+BEGIN_SRC emacs-lisp
       (when (window-system)
@@ -929,6 +920,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package fireplace
+        :bind (("C-c n f" . fireplace))
         :ensure t)
     #+END_SRC
 
@@ -2035,7 +2027,7 @@
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
    #+END_SRC
-**
+
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
