@@ -88,7 +88,7 @@
    #+BEGIN_SRC emacs-lisp
      (setq org-src-tab-acts-natively t)
    #+END_SRC
-* The Big Bootstrap
+* Bootstrap
 ** Package Sources
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
 
@@ -109,7 +109,7 @@
      (setq use-package-verbose t)
    #+END_SRC
 
-* The Least Librarian
+* Dependencies
   Everything needed to support this configuration
 
 ** async
@@ -130,7 +130,7 @@
         (unicode-fonts-setup))
     #+END_SRC
 
-* The General Setup
+* Setup
   Basic configurations anyone can do for vanilla Emacs
 
 ** Personal Information
@@ -227,6 +227,7 @@
             safe-local-variable-values '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to))
             whitespace-line-column 10000)
     #+END_SRC
+
 ** Buffer
     Some buffer configurations
 
@@ -268,8 +269,7 @@
       (put 'upcase-region 'disabled nil)
     #+END_SRC
 
-
-* The Terminal Terminator
+* Terminator
   Shell related aspect
 
 ** exec-path-from-shell
@@ -322,9 +322,9 @@
            (format "*eshell[%s]$ %s*" default-directory
                    (eshell-previous-input-string 0)) t))
         (add-hook 'eshell-pre-command-hook
-                  'zakame/eshell-rename-buffer-before-command)
+                  'fn/eshell-rename-buffer-before-command)
         (add-hook 'eshell-post-command-hook
-                  'zakame/eshell-rename-buffer-after-command)
+                  'fn/eshell-rename-buffer-after-command)
         (use-package em-smart)
         (setq eshell-where-to-jump 'begin
               eshell-review-quick-commands nil
@@ -341,8 +341,18 @@
         :ensure t
         :defer t)
     #+END_SRC
+** emamux
+   Work better with tmux
 
-* The Emacs Writer
+   #+BEGIN_SRC emacs-lisp
+     (use-package emamux
+       :ensure t
+       :defer t
+       :config
+       (global-set-key (kbd "C-z") emamux:keymap))
+   #+END_SRC
+
+* Editor
   Anything to do with editing in Emacs
 
 ** Environment
@@ -372,8 +382,11 @@
    Useful mode when writing, keeps things under 80 characters.
 
    #+BEGIN_SRC emacs-lisp
-      (add-hook 'text-mode-hook 'turn-on-auto-fill)
-      (setq-default fill-column 72)
+     (use-package auto-fill
+       :diminish auto-fill-mode
+       :init
+       (add-hook 'text-mode-hook 'turn-on-auto-fill)
+       (setq-default fill-column 72))
    #+END_SRC
 
 *** auto-revert
@@ -498,17 +511,17 @@
       (use-package company
         :ensure t
         :diminish company-mode
+        :init
+        (add-hook 'prog-mode-hook 'company-mode)
         :config
-        (global-company-mode t)
-
         (setq company-tooltip-limit 20)
         (setq company-tooltip-align-annotations t)
         (setq company-idle-delay 0)
         (setq company-begin-commands '(self-insert-command))
         (global-set-key (kbd "C-c /") 'company-files)
 
-        (define-key company-mode-map (kbd "M-/") 'company-complete)
-        (define-key company-active-map (kbd "M-/") 'company-select-next)
+        (define-key company-mode-map (kbd "TAB") 'company-complete)
+        (define-key company-active-map (kbd "TAB") 'company-select-next)
 
         (setq-default company-backends '((company-capf company-dabbrev-code) company-dabbrev)))
 
@@ -534,8 +547,7 @@
         (push 'yas-hippie-try-expand hippie-expand-try-functions-list))
     #+END_SRC
 
-
-* The Ergonomic Ego
+* Ergonomic
   Things to assist in managing Emacs
 
 ** Windows
@@ -666,6 +678,14 @@
 ** Buffers
    Anything related to buffers
 
+*** Bindings
+    Some key bindings for buffer management
+
+    #+BEGIN_SRC emacs-lisp
+      (define-key global-map "\C-cnk" 'kill-this-buffer)
+    #+END_SRC
+
+
 *** recentf
     Accessing the files recently
 
@@ -783,6 +803,18 @@
         (global-command-log-mode t))
     #+END_SRC
 
+*** keyfreq
+    Nice to know what key's I press the most
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package keyfreq
+        :ensure t
+        :bind (("C-c n K" . keyfreq-show))
+        :config
+        (keyfreq-mode t)
+        (keyfreq-autosave-mode t))
+    #+END_SRC
+
 *** which-key
     A mnemionic for key bindings
 
@@ -794,7 +826,21 @@
         (which-key-mode t))
     #+END_SRC
 
-* The Picky Artist
+** Packages
+   Anything to manage packages
+
+*** paradox
+    The package management improvement
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package paradox
+        :ensure t
+        :bind (("C-c n p" . paradox-list-packages))
+        :config
+        (setq paradox-github-token t))
+    #+END_SRC
+
+* Artist
   Visual aesthetics is also a functional thing as well
 
 ** Font
@@ -817,6 +863,8 @@
 
 ** Theme
    I like dark themes, my eyes respond better to it
+
+   My chosen themes
 
     #+BEGIN_SRC emacs-lisp
       (use-package apropospriate-theme
@@ -1090,9 +1138,7 @@
       (setq show-paren-style 'expression)
     #+END_SRC
 
-
-
-* The Loose Organizer
+* Organizer
   Things to organize life in general
 
 ** epa
@@ -1287,10 +1333,10 @@
         (require 'dired-x) ;; Allows multi open marked files
         (setq dired-dwim-target t)
         (dired-async-mode t)
-        (add-hook 'dired-mode-hook 'dired-hide-details-mode))
+        (add-hook 'dired-load-hook 'dired-hide-details-mode))
     #+END_SRC
 
-* The Code Monkey
+* Code Monkey
   Modes for my programming experiences
 
 ** Support
@@ -1495,7 +1541,6 @@
         :defer t
         :diminish tern-mode
         :init
-        (setq-default tern-project-dir "~")
         (add-hook 'js2-mode-hook 'tern-mode))
 
       (use-package company-tern
@@ -1722,7 +1767,7 @@
               (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
     #+END_SRC
 
-* The Random Bits
+* Random Was Alone
   Anything that just does something useful
 
 ** twittering
@@ -1808,6 +1853,30 @@
     #+END_SRC
 
 * Scripts
+** Custom Emacs
+   Bootstrap different configurations of Emacs
+
+*** enhancment
+*** Itself
+    Load another copy of this configuration for vanity sake I suppose?
+
+    #+BEGIN_SRC emacs-lisp
+      (defun fn/bootstrap-itself ()
+        (interactive)
+        (fn/bootstrap-new-emacs nil))
+    #+END_SRC
+
+*** Spacemacs
+    The love child of Emacs and Vim, what does it hold?
+
+    #+BEGIN_SRC emacs-lisp
+      (setq fn/spacemacs-home "~/.spacemacs.d/")
+
+      (defun fn/bootstrap-spacemacs ()
+        (interactive)
+        (fn/bootstrap-new-emacs fn/spacemacs-home))
+    #+END_SRC
+
 ** starup and shutdown hook
    Small script to update my org files
 
@@ -1822,6 +1891,9 @@
       && git add diary/*\
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
+
+     (define-key global-map "\C-cms" 'fn/startup)
+     (define-key global-map "\C-cmc"'fn/cleanup)
    #+END_SRC
 
 ** projectile-init script
@@ -1838,11 +1910,6 @@
  projectile-known-projects))
    #+END_SRC
 
-** Open current buffer as root
-   Taken from Mastering Emacs, this opens the current buffer as root via TRAMP
-
-   #+BEGIN_SRC emacs-lisp
-   #+END_SRC
 ** Create media diary
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
 
@@ -2019,15 +2086,32 @@
              org-link (org-element-property :path org-element))
        (org-insert-link nil org-path nil))
    #+END_SRC
-** open config file
+** Open config file
    This is just a convenience to open this config file
 
    #+BEGIN_SRC emacs-lisp
      (defun fn/find-config-file ()
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
-   #+END_SRC
 
+     (define-key global-map "\C-cmc" 'fn/find-config-file)
+   #+END_SRC
+* My Bindings
+  Here is where all the key binding I mapped to
+
+  #+BEGIN_SRC emacs-lisp
+    ;; Custom Emacs
+    (define-key global-map "\C-cmes" 'fn/bootstrap-spacemacs)
+    (define-key global-map "\C-cmec" 'fn/bootstrap-itself)
+  #+END_SRC
+
+* Sandbox
+
+  #+BEGIN_SRC emacs-lisp
+  (use-package legalese
+    :ensure t
+    :defer t)
+  #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
