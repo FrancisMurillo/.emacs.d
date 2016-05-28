@@ -1,4 +1,4 @@
-;; This customized init file allows to load a default home or a custom home
+;; This customized init file allows to load a default home or a custom home to
 
 (setq fn/home-switch "-H")
 

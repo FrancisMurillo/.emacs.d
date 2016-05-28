@@ -322,9 +322,7 @@
    #+BEGIN_SRC emacs-lisp
      (use-package emamux
        :ensure t
-       :defer t
-       :config
-       (global-set-key (kbd "C-z") emamux:keymap))
+       :defer t)
    #+END_SRC
 
 * Editor
@@ -550,7 +548,8 @@
               wg-mode-line-decor-right-brace "]"
               wg-mode-line-decor-divider ":")
 
-        (workgroups-mode))
+        ;; Load workgroups when all other configuration is done
+        (add-hook 'after-init-hook 'workgroups-mode))
    #+END_SRC
 
 *** winner
@@ -655,14 +654,6 @@
 ** Buffers
    Anything related to buffers
 
-*** Bindings
-    Some key bindings for buffer management
-
-    #+BEGIN_SRC emacs-lisp
-      (define-key global-map "\C-cnk" 'kill-this-buffer)
-    #+END_SRC
-
-
 *** recentf
     Accessing the files recently
 
@@ -683,6 +674,19 @@
         :ensure t
         :diminish projectile-mode
         :config
+        (defun fn/load-project-init ()
+          ;; When the project is switched, run a custom initialization file.
+          ;; Be careful though with side effects, make the init file fast and pure/side-effect free
+          (interactive)
+          (let* ((project-init-file-name ".project.el")
+                 (current-project-root (projectile-project-root))
+                 (project-init-file (expand-file-name project-init-file-name current-project-root)))
+            (when (file-exists-p project-init-file)
+              (message (concat  "Loading project init file for " current-project-root))
+              (load project-init-file t))))
+
+        (add-hook 'projectile-after-switch-project-hook 'fn/load-project-init)
+
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native)
         (add-to-list 'projectile-project-root-files "config.xml"))
@@ -695,6 +699,7 @@
       (use-package helm
         :ensure t
         :diminish helm-mode
+        :defer 2
         :bind (("M-x" . helm-M-x)
                ("C-c f" . helm-recentf)
                ("C-h a" . helm-apropos)
@@ -720,8 +725,11 @@
               helm-ff-auto-update-initial-value t)
 
         (helm-mode t)
+
         (helm-adaptive-mode t)
+
         (helm-autoresize-mode t)
+
 
         (add-hook 'eshell-mode-hook
                   (lambda ()
@@ -734,36 +742,36 @@
 
         (ido-mode -1))
 
-            (use-package helm-descbinds
-              :ensure t
-              :after helm
-              :bind (("C-h b" . helm-descbinds)))
+      (use-package helm-descbinds
+        :ensure t
+        :after helm
+        :bind (("C-h b" . helm-descbinds)))
 
-            (use-package helm-projectile
-              :ensure t
-              :after helm
-              :bind (("C-c p h" . helm-projectile)
-                     ("C-c p p" . helm-projectile-switch-project))
-              :config
-              (setq projectile-completion-system 'helm)
-              (helm-projectile-on))
+      (use-package helm-projectile
+        :ensure t
+        :after (projectile helm)
+        :bind (("C-c p h" . helm-projectile)
+               ("C-c p p" . helm-projectile-switch-project))
+        :config
+        (setq projectile-completion-system 'helm)
+        (helm-projectile-on))
 
-            (use-package helm-swoop
-              :ensure t
-              :after helm
-              :bind (("M-i" . helm-swoop)
-                     ("C-c M-i" . helm-multi-swoop))
-              :config
-              (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
-              (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
-              (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
-              (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
+      (use-package helm-swoop
+        :ensure t
+        :after helm
+        :bind (("M-i" . helm-swoop)
+               ("C-c M-i" . helm-multi-swoop))
+        :config
+        (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
+        (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
+        (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
+        (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
 
-            (use-package wgrep-helm
-              :ensure t
-              :after helm
-              :config
-              (setq wgrep-auto-save-buffer t))
+      (use-package wgrep-helm
+        :ensure t
+        :after helm
+        :config
+        (setq wgrep-auto-save-buffer t))
     #+END_SRC
 
 ** Help
@@ -803,6 +811,24 @@
         :diminish which-key-mode
         :config
         (which-key-mode t))
+    #+END_SRC
+
+*** eldoc
+    Nice to have the documentation at any time in the buffer.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package eldoc
+        :diminish eldoc-mode
+        :init
+        (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
+        (add-hook 'lisp-interaction-mode-hook 'turn-on-eldoc-mode)
+        (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode))
+
+      (use-package org-eldoc
+        :init
+        (add-hook 'org-mode-hook 'org-eldoc-load)
+        :config
+        (setq org-eldoc-breadcrumb-separator ">"))
     #+END_SRC
 
 ** Packages
@@ -908,7 +934,7 @@
       (use-package smooth-scrolling
         :ensure t
         :config
-        (require 'smooth-scrolling))
+        (smooth-scrolling-mode t))
     #+END_SRC
 
 *** smart-mode-line
@@ -1353,12 +1379,6 @@
     Syntax checking is very important
 
     #+BEGIN_SRC emacs-lisp
-      (use-package flycheck-haskell
-        :ensure t
-        :init
-        (eval-after-load 'flycheck
-          '(add-hook 'flycheck-mode-hook #'flycheck-haskell-setup)))
-
       (use-package flycheck
         :ensure t
         :defer  t
@@ -1367,6 +1387,7 @@
         (add-hook 'js2-mode-hook 'flycheck-mode)
         (add-hook 'web-mode 'flycheck-mode)
         (add-hook 'haskell-mode-hook 'flycheck-mode)
+        (add-hook 'emacs-lisp-mode-hook 'flycheck-mode)
         (add-hook 'python-mode 'flycheck-mode))
     #+END_SRC
 
@@ -1397,14 +1418,24 @@
 
 ** Elisp
 *** paredit
-    A good program pairer
+    Makes you a good lisp developer and quite addictive to have
 
     #+BEGIN_SRC emacs-lisp
       (use-package paredit
         :ensure t
         :defer t
         :init
-        (add-hook 'emacs-lisp-mode-hook 'paredit-mode))
+        (add-hook 'emacs-lisp-mode-hook 'paredit-mode)
+        (add-hook 'ielm-mode-hook 'paredit-mode)
+        (add-hook 'lisp-mode-hook 'paredit-mode)
+        (add-hook 'lisp-interaction-mode-hook 'paredit-mode)
+        :config
+        (require 'eldoc)
+        (eldoc-add-command
+         'paredit-backward-delete
+         'paredit-close-round))
+
+
     #+END_SRC
 *** emr
     Emacs Lisp refactor mode
@@ -1647,33 +1678,10 @@
     #+END_SRC
 
 ** Haskell
-*** haskell
+*** Mode
     The defacto for Haskell development
 
     #+BEGIN_SRC emacs-lisp
-      (use-package structured-haskell-mode
-        :load-path "elisp/structured-haskell-mode/elisp/"
-        :init
-        ;; Requires to be in exec
-        (require 'shm)
-        :config
-        ;; (define-key shm-map  "\C-j" 'shm/newline-indent)
-        (define-key shm-map  "\M-a" 'shm/goto-parent)
-        (define-key shm-map  "\M-e" 'shm/goto-parent-end)
-        ;; (define-key shm-map  "\C-+" 'shm/add-operand)
-        (define-key shm-map  "\M-r" 'shm/raise)
-        (define-key shm-map  "\M-^" 'shm/delete-indentation)
-        (define-key shm-map  "\M-k" 'shm/kill)
-        (define-key shm-map  "\C-y" 'shm/yank)
-        (define-key shm-map  "\M-k" 'shm/kill-line)
-        (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
-
-      (use-package hindent
-        :ensure t
-        :init
-        (add-hook 'haskell-mode-hook #'hindent-mode)
-        (setq hindent-style "johan-tibell"))
-
       (use-package haskell-mode
         :ensure t
         :defer t
@@ -1681,7 +1689,6 @@
         (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
         (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
         (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
-        (add-hook 'haskell-mode-hook 'structured-haskell-mode)
         :config
         (require 'haskell-interactive-mode)
         (require 'haskell-process)
@@ -1717,27 +1724,77 @@
 
         (define-key haskell-mode-map (kbd "M-.") 'haskell-mode-jump-to-def)
 
-        (setq
-         haskell-process-suggest-remove-import-lines t
-         haskell-process-auto-import-loaded-modules t
-         haskell-process-log t
-         haskell-process-suggest-hoogle-imports t
-         haskell-interactive-mode-eval-mode 'haskell-mode))
+        (setq haskell-process-suggest-remove-import-lines t
+              haskell-process-auto-import-loaded-modules t
+              haskell-process-log t
+              haskell-process-suggest-hoogle-imports t
+              haskell-interactive-mode-eval-mode 'haskell-mode))
+    #+END_SRC
 
+*** Motion
+    The paredit for haskell
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package shm
+        :ensure t
+        :after haskell-mode
+        :init
+        (add-hook 'haskell-mode-hook 'structured-haskell-mode)
+        :config
+        ;; (define-key shm-map  "\C-j" 'shm/newline-indent)
+        (define-key shm-map  "\M-a" 'shm/goto-parent)
+        (define-key shm-map  "\M-e" 'shm/goto-parent-end)
+        ;; (define-key shm-map  "\C-+" 'shm/add-operand)
+        (define-key shm-map  "\M-r" 'shm/raise)
+        (define-key shm-map  "\M-^" 'shm/delete-indentation)
+        (define-key shm-map  "\M-k" 'shm/kill)
+        (define-key shm-map  "\C-y" 'shm/yank)
+        (define-key shm-map  "\M-k" 'shm/kill-line)
+        (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
+    #+END_SRC
+
+*** Autocomplete
+    Company for Haskell
+
+    #+BEGIN_SRC emacs-lisp
       (use-package company-ghc
         :ensure t
-        :after haskell
+        :after (company haskell-mode)
         :config
         (add-to-list 'company-backends 'company-ghc))
 
       (use-package company-ghci
         :ensure t
-        :after haskell
+        :after (company haskell-mode)
         :config
         (add-to-list 'company-backends 'company-ghci))
 
     #+END_SRC
+*** Formatter
+    Formatter for Haskell
 
+    #+BEGIN_SRC emacs-lisp
+      (use-package hindent
+        :ensure t
+        :after haskell-mode
+        :init
+        (add-hook 'haskell-mode-hook #'hindent-mode)
+        :config
+        (setq hindent-style "johan-tibell"))
+    #+END_SRC
+
+*** Linter
+    Syntax checker for Haskell
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package flycheck-haskell
+        :ensure t
+        :after (flycheck haskell-mode)
+        :config
+        (flycheck-haskell-setup))
+    #+END_SRC
+
+***
 ** dotNet
 *** omnisharp
     For C# development
@@ -1755,6 +1812,40 @@
               (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
     #+END_SRC
 
+** TODO LaTeX
+   LaTeX editing for my files
+
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package auctex
+       :ensure t
+       :defer t
+       :init
+       (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+       (add-hook 'latex-mode-hook 'turn-on-reftex)
+       (setq reftex-plug-into-AUCTex t))
+
+     (use-package company-auctex
+       :ensure t
+       :after auctex
+       :config
+       (company-auctex-init))
+
+     (use-package auctex-latexmk
+       :ensure t
+       :after auctex)
+   #+END_SRC
+
+*** haskell-snippets
+    Easy snippets for Haskell
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package haskell-snippets
+        :ensure t
+        :after (yasnippet haskell-mode)
+        :config
+        (require 'haskell-snippets))
+    #+END_SRC
 * Random Was Alone
   Anything that just does something useful
 
@@ -2142,6 +2233,11 @@
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
+    ;; Application
+    (define-key global-map "\C-cx" 'helm-M-x)
+    ;; Buffers
+    (define-key global-map "\C-cnk" 'kill-this-buffer)
+
     ;; Custom Emacs
     (define-key global-map "\C-cmes" 'fn/bootstrap-spacemacs)
     (define-key global-map "\C-cmef" 'fn/bootstrap-from-dir)
@@ -2156,9 +2252,7 @@
 * Sandbox
 
   #+BEGIN_SRC emacs-lisp
-  (use-package legalese
-    :ensure t
-    :defer t)
+
   #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
