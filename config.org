@@ -108,29 +108,7 @@
      (require 'use-package)
      (setq use-package-verbose t)
    #+END_SRC
-
-* Dependencies
-  Everything needed to support this configuration
-
-** async
-    Not really builtin but should be
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package async
-        :ensure t)
-    #+END_SRC
-
-** unicode-fonts
-   Unicode is an required aesthetic
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package unicode-fonts
-        :ensure t
-        :config
-        (unicode-fonts-setup))
-    #+END_SRC
-
-* Setup
+* Basic Setup
   Basic configurations anyone can do for vanilla Emacs
 
 ** Personal Information
@@ -142,47 +120,25 @@
       user-mail-address "francisavmurillo@gmail.com")
    #+END_SRC
 
-   And load some secret configuration
-
-   #+BEGIN_SRC emacs-lisp
-     (load "secret" t)
-   #+END_SRC
-
 ** Startup
    Everything related to the startup state
 
-   No need for the awesome startup screen.
-
     #+BEGIN_SRC emacs-lisp
-      (setq inhibit-startup-screen t)
-    #+END_SRC
+      (setq gc-cons-threshold (* 128 1024 1024)) ;; High memory for Emacs
 
-   No need also for the empty scratch buffer
-
-   #+BEGIN_SRC emacs-lisp
-     (setq initial-scratch-message nil)
+      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
+            initial-scratch-message nil)
    #+END_SRC
 
 ** Environment
     Some environment configuration.
 
-    UTF should be the default environment if it is not stated.
-
     #+BEGIN_SRC emacs-lisp
-      (set-language-environment "UTF-8")
-    #+END_SRC
+      (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
 
-    When there is an error, the visible bell is much more helpful than
-    getting an error.
+      (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
 
-    #+BEGIN_SRC emacs-lisp
-      (setq visible-bell t)
-    #+END_SRC
-
-    Instead of yes or no, y or n is enough.
-
-    #+BEGIN_SRC emacs-lisp
-      (fset 'yes-or-no-p 'y-or-n-p)
+      (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
     #+END_SRC
 
 ** Backups
@@ -223,9 +179,7 @@
     Some preset variables
 
     #+BEGIN_SRC emacs-lisp
-      (setq enable-local-variables :safe
-            safe-local-variable-values '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to))
-            whitespace-line-column 10000)
+      (setq whitespace-line-column 10000)
     #+END_SRC
 
 ** Buffer
@@ -267,6 +221,27 @@
       (put 'narrow-to-region 'disabled nil)
       (put 'downcase-region 'disabled nil)
       (put 'upcase-region 'disabled nil)
+    #+END_SRC
+
+* Dependencies
+  Everything needed to support this more complex configurations
+
+** async
+    Not really builtin but should be
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package async
+        :ensure t)
+    #+END_SRC
+
+** unicode-fonts
+   Unicode is an required aesthetic
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package unicode-fonts
+        :ensure t
+        :config
+        (unicode-fonts-setup))
     #+END_SRC
 
 * Terminator
@@ -1166,6 +1141,9 @@
           (not matched-ignored-filename)))
 
       (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+
+      (setq enable-local-variables :safe
+            safe-local-variable-values '((auto-save-default) (backup-inhibited . t) (epa-file-encrypt-to)))
     #+END_SRC
 
 ** org
@@ -1864,7 +1842,8 @@
 
 * Scripts
 ** Custom Emacs
-   Bootstrap different configurations of Emacs
+   Bootstrap different configurations of Emacs for reviewing expert
+   configurations and trying different modes
 
 *** Configurable
     Let's bootstrap from different configurations dynamically
@@ -1872,7 +1851,7 @@
     #+BEGIN_SRC emacs-lisp
       (defun fn/bootstrap-from-dir ()
         (interactive)
-        (setq new-home (read-directory-name "What Emacs config would you like to boot?"))
+        (setq new-home (read-directory-name "What Emacs config would you like to boot?" "~"))
         (fn/bootstrap-new-emacs new-home))
     #+END_SRC
 
@@ -1894,6 +1873,50 @@
       (defun fn/bootstrap-spacemacs ()
         (interactive)
         (fn/bootstrap-new-emacs fn/spacemacs-home))
+    #+END_SRC
+
+*** Zak Elep
+    First known master and friend
+
+    #+BEGIN_SRC emacs-lisp
+      (setq fn/zak-elep-home "~/Fakespace/zakame.d/")
+
+      (defun fn/bootstrap-zak-elep ()
+        (interactive)
+        (fn/bootstrap-new-emacs fn/zak-elep-home))
+    #+END_SRC
+
+*** Sacha Chua
+    Inspiration for the configuration
+
+    #+BEGIN_SRC emacs-lisp
+      (setq fn/sacha-chua-home "~/Fakespace/sacha.d/")
+
+      (defun fn/bootstrap-sacha-chua  ()
+        (interactive)
+        (fn/bootstrap-new-emacs fn/sacha-chua-home))
+    #+END_SRC
+
+*** Steve Purcell
+    One of the known masters
+
+    #+BEGIN_SRC emacs-lisp
+      (setq fn/steve-purcell-home "~/Fakespace/purcell.d/")
+
+      (defun fn/bootstrap-steve-purcell ()
+        (interactive)
+        (fn/bootstrap-new-emacs fn/steve-purcell-home))
+    #+END_SRC
+
+*** John Wiegley
+    A master and maintainer of Emacs
+
+    #+BEGIN_SRC emacs-lisp
+      (setq fn/john-wiegley-home "~/Fakespace/wiegley.d/")
+
+      (defun fn/bootstrap-john-wiegley ()
+        (interactive)
+        (fn/bootstrap-new-emacs fn/john-wiegley-home))
     #+END_SRC
 
 ** starup and shutdown hook
@@ -2121,8 +2144,13 @@
   #+BEGIN_SRC emacs-lisp
     ;; Custom Emacs
     (define-key global-map "\C-cmes" 'fn/bootstrap-spacemacs)
-    (define-key global-map "\C-cmec" 'fn/bootstrap-itself)
     (define-key global-map "\C-cmef" 'fn/bootstrap-from-dir)
+
+    ;; Review Custom Emacs
+    (define-key global-map "\C-cmep" 'fn/bootstrap-steve-purcell)
+    (define-key global-map "\C-cmez" 'fn/bootstrap-zak-elep)
+    (define-key global-map "\C-cmec" 'fn/bootstrap-sacha-chua)
+    (define-key global-map "\C-cmej" 'fn/bootstrap-john-wiegley)
   #+END_SRC
 
 * Sandbox

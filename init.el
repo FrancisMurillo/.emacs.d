@@ -28,6 +28,7 @@
 (defun fn/bootstrap-new-emacs (new-home)
   (async-shell-command (mapconcat 'identity
                                   (list "emacs"
+                                        "--debug-init"
                                         fn/home-switch
                                         new-home)
                                   " "))
