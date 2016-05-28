@@ -23,7 +23,7 @@
     (load bootstrap-file))
 
   ;; This is to let the home switch pass through normally, not as a invalid argument
-  (add-to-list 'command-switch-alist '(home-switch . 'identity)))
+  (add-to-list 'command-switch-alist '(fn/home-switch . identity)))
 
 (defun fn/bootstrap-new-emacs (new-home)
   (async-shell-command (mapconcat 'identity

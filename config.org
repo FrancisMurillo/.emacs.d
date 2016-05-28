@@ -614,7 +614,9 @@
         :bind (("C-c q" . golden-ratio))
         :config
         (golden-ratio-mode t)
-        (setq split-width-threshold nil)
+
+        (setq split-width-threshold nil
+              golden-ratio-adjust-factor 1.0)
 
         (defun select-rationed-window-1 ()
           (interactive)
@@ -812,7 +814,9 @@
         :bind (("C-c n K" . keyfreq-show))
         :config
         (keyfreq-mode t)
-        (keyfreq-autosave-mode t))
+        (keyfreq-autosave-mode t)
+        (setq keyfreq-file (expand-file-name ".keyfreq" user-emacs-directory)
+              keyfreq-file-lock (expand-file-name ".keyfreq.lock" user-emacs-directory)))
     #+END_SRC
 
 *** which-key
@@ -1326,14 +1330,16 @@
     Directory management for Emacs
 
     #+BEGIN_SRC emacs-lisp
-      (use-package dired
-        :config
-        (setq dired-recursive-copies 'always)
-        (setq dired-recursive-deletes 'always)
-        (require 'dired-x) ;; Allows multi open marked files
-        (setq dired-dwim-target t)
-        (dired-async-mode t)
-        (add-hook 'dired-load-hook 'dired-hide-details-mode))
+      (require 'dired-x) ;; Allows multi open marked files
+
+      (setq dired-recursive-copies 'always)
+      (setq dired-recursive-deletes 'always)
+
+
+      (setq dired-dwim-target t)
+      (dired-async-mode t)
+
+      (add-hook 'dired-mode-hook 'dired-hide-details-mode)
     #+END_SRC
 
 * Code Monkey
@@ -1347,6 +1353,8 @@
       (use-package auto-compile
         :ensure t
         :defer t
+        :init
+        (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
         :config
         (setq auto-compile-on-load-mode t
               auto-compile-on-save-mode t))
@@ -1416,7 +1424,9 @@
     #+BEGIN_SRC emacs-lisp
       (use-package paredit
         :ensure t
-        :defer t)
+        :defer t
+        :init
+        (add-hook 'emacs-lisp-mode-hook 'paredit-mode))
     #+END_SRC
 *** emr
     Emacs Lisp refactor mode
@@ -1856,7 +1866,16 @@
 ** Custom Emacs
    Bootstrap different configurations of Emacs
 
-*** enhancment
+*** Configurable
+    Let's bootstrap from different configurations dynamically
+
+    #+BEGIN_SRC emacs-lisp
+      (defun fn/bootstrap-from-dir ()
+        (interactive)
+        (setq new-home (read-directory-name "What Emacs config would you like to boot?"))
+        (fn/bootstrap-new-emacs new-home))
+    #+END_SRC
+
 *** Itself
     Load another copy of this configuration for vanity sake I suppose?
 
@@ -2103,6 +2122,7 @@
     ;; Custom Emacs
     (define-key global-map "\C-cmes" 'fn/bootstrap-spacemacs)
     (define-key global-map "\C-cmec" 'fn/bootstrap-itself)
+    (define-key global-map "\C-cmef" 'fn/bootstrap-from-dir)
   #+END_SRC
 
 * Sandbox
