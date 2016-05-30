@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: iifr
+# key: iifr
+# --
+var ${1:myValue} = (function ${2:myIIFE}() {
+    $0
+    return;
+}());

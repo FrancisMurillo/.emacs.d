@@ -108,6 +108,7 @@
      (require 'use-package)
      (setq use-package-verbose t)
    #+END_SRC
+
 * Basic Setup
   Basic configurations anyone can do for vanilla Emacs
 
@@ -346,9 +347,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package visual-line
-        :diminish visual-line-mode
         :init
-        (global-visual-line-mode t))
+        (global-visual-line-mode t)
+        (diminish 'visual-line-mode))
     #+END_SRC
 
 *** auto-fill
@@ -356,9 +357,9 @@
 
    #+BEGIN_SRC emacs-lisp
      (use-package auto-fill
-       :diminish auto-fill-mode
        :init
        (add-hook 'text-mode-hook 'turn-on-auto-fill)
+       (diminish 'auto-fill-function)
        (setq-default fill-column 72))
    #+END_SRC
 
@@ -458,25 +459,6 @@
                 try-complete-lisp-symbol)))
     #+END_SRC
 
-*** autocomplete
-    Autocomplete is a must have feature
-
-    But after a while, it seems that =company= seems more stable and easier
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (use-package auto-complete
-        :ensure t
-        :diminish auto-complete-mode
-        :config
-        (require 'auto-complete-config)
-        (ac-config-default)
-
-        (setq popup-use-optimized-column-computation nil)
-        (setq ac-show-menu-immediately-on-auto-complete t)
-        (ac-set-trigger-key "TAB")
-        (ac-set-trigger-key "<tab>"))
-    #+END_SRC
-
 *** company
     A replacement for =autocomplete=.
 
@@ -487,23 +469,43 @@
         :init
         (add-hook 'prog-mode-hook 'company-mode)
         :config
-        (setq company-tooltip-limit 20)
-        (setq company-tooltip-align-annotations t)
-        (setq company-idle-delay 0)
-        (setq company-begin-commands '(self-insert-command))
-        (global-set-key (kbd "C-c /") 'company-files)
+        (setq company-tooltip-limit 20
+              company-tooltip-align-annotations t
 
-        (define-key company-mode-map (kbd "TAB") 'company-complete)
-        (define-key company-active-map (kbd "TAB") 'company-select-next)
+              company-idle-delay 0.1
 
-        (setq-default company-backends '((company-capf company-dabbrev-code) company-dabbrev)))
+              company-show-numbers t
+              company-minimum-prefix-length 2
 
-      (use-package helm-company
-        :ensure t
-        :after helm
-        :config
-        (define-key company-mode-map (kbd "C-:") 'helm-company)
-        (define-key company-active-map (kbd "C-:") 'helm-company))
+              company-begin-commands '(self-insert-command))
+
+        (setq company-backends '(company-elisp company-dabbrev-code))
+
+        (defun fn/combine-backends (backend new-backend)
+          (if (and (listp backend) (member new-backend backend))
+              backend
+            (let* ((list-backend (if (consp backend)
+                                     backend
+                                   (list backend)))
+                   (with-backend (if (member ':with list-backend)
+                                     list-backend
+                                   (append list-backend '(:with)))))
+              (append with-backend (list new-backend)))))
+
+        (defun fn/append-to-backends (new-backend)
+          (setq company-backends
+                (mapcar
+                 (lambda (backend)
+                   (fn/combine-backends backend new-backend))
+                 company-backends)))
+
+        (setq fn/company-prog-backends '(company-dabbrev-code company-keywords))
+
+        (defun fn/backend-with-prog ()
+          (fn/append-to-backends 'company-keywords)
+          (fn/append-to-backends 'company-dabbrev-code))
+
+        (add-hook 'after-init-hook 'fn/backend-with-prog))
     #+END_SRC
 
 *** yasnippet
@@ -512,12 +514,23 @@
     #+BEGIN_SRC emacs-lisp
       (use-package yasnippet
         :ensure t
-        :diminish yas-minor-mode
+        :after company
         :defer t
-        :init
-        (setq yas-verbosity 3)
+        :diminish yas-minor-mode
+        :bind (("C-c n y" . yas-new-snippet))
         :config
-        (push 'yas-hippie-try-expand hippie-expand-try-functions-list))
+        (setq yas-verbosity 3)
+
+        (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
+
+        (yas-reload-all)
+
+        (add-hook 'prog-mode-hook 'yas/minor-mode-on)
+
+        (defun fn/add-company-yasnippet ()
+          (fn/append-to-backends 'company-yasnippet))
+
+        (add-hook 'after-init-hook 'fn/add-company-yasnippet))
     #+END_SRC
 
 * Ergonomic
@@ -532,24 +545,28 @@
     #+BEGIN_SRC emacs-lisp
       (use-package workgroups2
         :ensure t
-        :diminish workgroups-mode
         :config
         (setq wg-prefix-key (kbd "C-c w"))
         (setq wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
 
         (setq wg-morph-on nil)
 
-        (setq wg-emacs-exit-save-behavior           'save)
-        (setq wg-workgroups-mode-exit-save-behavior 'save)
+        (setq wg-emacs-exit-save-behavior           'save
+              wg-workgroups-mode-exit-save-behavior 'save)
 
-        (setq wg-mode-line-display-on t)
-        (setq wg-flag-modified t)
-        (setq wg-mode-line-decor-left-brace "["
+        (setq wg-control-frames nil
+              wg-flag-modified nil
+              wg-load-last-workgroup nil)
+
+        (setq wg-mode-line-display-on t
+              wg-mode-line-decor-left-brace "["
               wg-mode-line-decor-right-brace "]"
               wg-mode-line-decor-divider ":")
 
         ;; Load workgroups when all other configuration is done
-        (add-hook 'after-init-hook 'workgroups-mode))
+        (add-hook 'after-init-hook (lambda ()
+                                     (workgroups-mode)
+                                     (diminish 'workgroups-mode))))
    #+END_SRC
 
 *** winner
@@ -565,16 +582,19 @@
 *** window-numbering
     A must to navigate through windows with numbers.
 
-    Note that this must be after [[smart-mode-line]]
-
     #+BEGIN_SRC emacs-lisp
       (use-package window-numbering
         :ensure t
-        :after smart-mode-line
         :config
         (window-numbering-mode t)
-        (custom-set-faces
-         '(window-numbering-face ((t (:foreground "tomato" :weight extra-bold))) t)))
+
+        (defun fn/tweak-window-numbering-faces ()
+          (custom-set-faces
+           '(window-numbering-face ((t (:foreground "tomato" :weight extra-bold))) t)))
+
+        (fn/tweak-window-numbering-faces)
+
+        (add-hook 'smart-mode-line-hook 'fn/tweak-window-numbering-faces))
     #+END_SRC
 
 *** golden-ratio
@@ -591,6 +611,9 @@
 
         (setq split-width-threshold nil
               golden-ratio-adjust-factor 1.0)
+
+        ;; If there are workgroups, make sure the currently focused buffer is rationed
+        (add-hook 'wg-after-switch-to-workgroup-hook 'golden-ratio)
 
         (defun select-rationed-window-1 ()
           (interactive)
@@ -662,7 +685,7 @@
         :defer t
         :config
         (recentf-mode 1)
-        (setq recentf-max-menu-items 50)
+        (setq recentf-max-menu-items 100)
         (global-set-key "\C-x\ \C-r" 'recentf-open-files)
         (setq recentf-exclude '("TAGS" ".*-autoloads\\.el\\'")))
     #+END_SRC
@@ -813,6 +836,15 @@
         (which-key-mode t))
     #+END_SRC
 
+*** which-function
+    Likewise with key and funcitons
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package which-function
+        :init
+        (which-function-mode t))
+    #+END_SRC
+
 *** eldoc
     Nice to have the documentation at any time in the buffer.
 
@@ -899,9 +931,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package whitespace-mode
-        :diminish whitespace-mode
         :init
-        (global-whitespace-mode t))
+        (global-whitespace-mode t)
+        (diminish 'global-whitespace-mode))
     #+END_SRC
 
 *** diff-hl
@@ -925,16 +957,6 @@
         :diminish hl-line-mode
         :init
         (global-hl-line-mode t))
-    #+END_SRC
-
-*** smooth-scrolling
-    Smooth scrolling is nice, when I want to use =next-line= to =prev-line= to scroll; this behavior makes sense for me.
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package smooth-scrolling
-        :ensure t
-        :config
-        (smooth-scrolling-mode t))
     #+END_SRC
 
 *** smart-mode-line
@@ -1034,83 +1056,10 @@
     Make things more algebraic
 
     #+BEGIN_SRC emacs-lisp
-      (use-package prettify-symbols-mode
-        :if (version<= "24.4.4" emacs-version)
-        :init
-        (add-hook 'js2-mode-hook
-                  (lambda ()
-                    (push '("function" . ?λ) prettify-symbols-alist)
-                    (push '("arguments" . ?ω) prettify-symbols-alist)
-                    (push '("var" . ?ν) prettify-symbols-alist)
-                    (push '("return" . ?ρ) prettify-symbols-alist)
-                    (push '("this" . ?ι) prettify-symbols-alist)
-
-                    (push '("for" . ?∫) prettify-symbols-alist)
-                    (push '("in" . ?⊂ ) prettify-symbols-alist)
-
-                    (push '("Object" . ?Θ) prettify-symbols-alist)
-
-                    (push '("if" . ?α) prettify-symbols-alist)
-                    (push '("else if" . ?β) prettify-symbols-alist)
-                    (push '("else" . ?γ) prettify-symbols-alist)
-
-                    (push '("->" . ?→) prettify-symbols-alist)
-                    (push '("&&" . ?∧) prettify-symbols-alist)
-                    (push '("||" . ?∨) prettify-symbols-alist)
-
-                    (push '("!" . ?¬) prettify-symbols-alist)
-                    (push '("!!" . ?⌐) prettify-symbols-alist)
-
-                    (push '("=" . ?⟵) prettify-symbols-alist)
-                    (push '(":" . ?⟵) prettify-symbols-alist)
-
-                    (push '("===" . ?≡) prettify-symbols-alist)
-                    (push '("!==" . ?≢) prettify-symbols-alist)
-
-                    (push '(">=" . ?≧) prettify-symbols-alist)
-                    (push '("<=" . ?≦) prettify-symbols-alist)
-
-                    (push '("true" . ?⊤) prettify-symbols-alist)
-                    (push '("false" . ?⊥) prettify-symbols-alist)
-
-                    (push '("null" . ?∅) prettify-symbols-alist)
-                    (push '("undefined" . ?↑) prettify-symbols-alist)
-
-                    (push '(", ". ?⟼) prettify-symbols-alist)
-                    (push '("{". ?⟹) prettify-symbols-alist)
-                    (push '("},". ?⟺) prettify-symbols-alist)
-                    (push '("}". ?⟸) prettify-symbols-alist)
-                    (push '("};". ?⟽) prettify-symbols-alist)
-
-                    (push '("(". ?⟖) prettify-symbols-alist)
-                    (push '(")". ?⟕) prettify-symbols-alist)
-                    (push '(");". ?⟕) prettify-symbols-alist)
-                    (push '("),". ?⟗) prettify-symbols-alist)
-                    (push '(").". ?⟗) prettify-symbols-alist)
-
-                    (push '("[". ?⊏) prettify-symbols-alist)
-                    (push '("]". ?⊐) prettify-symbols-alist)
-                    (push '("],". ?⊡) prettify-symbols-alist)
-                    (push '("].". ?⊡) prettify-symbols-alist)
-                    (push '("];". ?⊐) prettify-symbols-alist)
-
-                    (push '(";". ?⟐) prettify-symbols-alist)
-
-
-      (prettify-symbols-mode 1)))
-      (add-hook 'haskell-mode-hook
-                (lambda ()
-                  (push '("->" . ?→) prettify-symbols-alist)
-                  (push '("let" . ?ν) prettify-symbols-alist)
-                  (push '("if" . ?α) prettify-symbols-alist)
-                  (push '("in" . ?ε) prettify-symbols-alist)
-                  (push '("then" . ?σ) prettify-symbols-alist)
-                  (push '("else" . ?τ) prettify-symbols-alist)
-                  (push '("where" . ?δ) prettify-symbols-alist)
-                  (push '("module" . ?θ) prettify-symbols-alist)
-                  (push '("data" . ?Τ) prettify-symbols-alist)
-                  (push '("deriving" . ?Δ) prettify-symbols-alist)
-                  (prettify-symbols-mode 1))))
+            (use-package prettify-symbols-mode
+              :if (version<= "24.4.4" emacs-version)
+              :init
+              (setq fn/enable-prettify-symbols t))
     #+END_SRC
 
 *** rainbow-delimeter
@@ -1326,8 +1275,9 @@
       (use-package flyspell
         :ensure t
         :defer t
+        :diminish flyspell-mode
         :init
-        (add-hook 'org-mode-hook 'flyspell-mode t))
+         (add-hook 'org-mode-hook 'flyspell-mode t))
     #+END_SRC
 
 ** dired
@@ -1336,11 +1286,13 @@
     #+BEGIN_SRC emacs-lisp
       (require 'dired-x) ;; Allows multi open marked files
 
-      (setq dired-recursive-copies 'always)
-      (setq dired-recursive-deletes 'always)
+      (setq dired-recursive-copies 'always  ;; Don't ask because I did it
+            dired-recursive-deletes 'always)
 
+      (setq dired-dwim-target t) ;; Split pane copying, be careful though with this
 
-      (setq dired-dwim-target t)
+      (setq dired-listing-switches "-alh") ;; Want to see the size with better details
+
       (dired-async-mode t)
 
       (add-hook 'dired-mode-hook 'dired-hide-details-mode)
@@ -1350,6 +1302,19 @@
   Modes for my programming experiences
 
 ** Support
+
+*** type-break-mode
+    I definitely need to chill out from time to time
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package type-break
+        :init
+        (type-break-mode t)
+        (type-break-query-mode t)
+        :config
+        (setq type-break-interval (* 60 25)
+              type-break-good-rest-interva (* 60 5)))
+    #+END_SRC
 *** auto-compile
     A good mode when editing lisp files
 
@@ -1360,8 +1325,9 @@
         :init
         (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
         :config
-        (setq auto-compile-on-load-mode t
-              auto-compile-on-save-mode t))
+        (setq load-prefer-newer t)
+        (auto-compile-on-load-mode)
+        (auto-compile-on-save-mode))
     #+END_SRC
 *** smartparens
     This is as handy as =paredit=
@@ -1386,9 +1352,22 @@
         :init
         (add-hook 'js2-mode-hook 'flycheck-mode)
         (add-hook 'web-mode 'flycheck-mode)
-        (add-hook 'haskell-mode-hook 'flycheck-mode)
         (add-hook 'emacs-lisp-mode-hook 'flycheck-mode)
-        (add-hook 'python-mode 'flycheck-mode))
+        (add-hook 'python-mode 'flycheck-mode)
+        :config
+        (setq flycheck-highlighting-mode 'sexps)
+
+        (defun fn/tweak-flycheck-python ()
+          ;; TODO:When python get slow in flycheck, highlighting mode should be set to lines instead
+          )
+
+        (add-hook 'python-mode-hook 'fn/tweak-flycheck-python))
+
+      (use-package flycheck-pos-tip
+        :ensure t
+        :after flycheck
+        :config
+        (flycheck-pos-tip-mode t))
     #+END_SRC
 
 *** magit
@@ -1415,7 +1394,6 @@
         :config
         (global-git-gutter-mode t))
     #+END_SRC
-
 ** Elisp
 *** paredit
     Makes you a good lisp developer and quite addictive to have
@@ -1424,6 +1402,7 @@
       (use-package paredit
         :ensure t
         :defer t
+        :diminish paredit-mode
         :init
         (add-hook 'emacs-lisp-mode-hook 'paredit-mode)
         (add-hook 'ielm-mode-hook 'paredit-mode)
@@ -1449,8 +1428,8 @@
         (add-hook 'prog-mode-hook 'emr-initialize))
     #+END_SRC
 
-** Javascript
-*** web
+** Web
+*** Mode
     The defacto mode for web development
 
     #+BEGIN_SRC emacs-lisp
@@ -1475,7 +1454,7 @@
         :after web)
     #+END_SRC
 
-*** emmet
+*** Editing
     I do a lot of HTML editing, YASnippet can do but emmet is better
 
     #+BEGIN_SRC emacs-lisp
@@ -1487,7 +1466,7 @@
           (add-hook hook 'emmet-mode)))
     #+END_SRC
 
-*** sass
+*** CSS
     I use [[http://sass-lang.com/][sass]] for my jekyll blog
 
     #+BEGIN_SRC emacs-lisp
@@ -1497,8 +1476,9 @@
         :config
         ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
     #+END_SRC
-*** js2
-    A great mode for progressive nodejs
+** JavaScript
+*** Mode
+    The ultimate JS mode
 
     #+BEGIN_SRC emacs-lisp
       (use-package js2-mode
@@ -1511,21 +1491,6 @@
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
               js2-mode-show-strict-warnings nil))
-
-      (use-package web-beautify
-        :after js2-mode
-        :ensure t
-        :bind (("C-c C-b" . web-beautify-js)))
-
-      (use-package js2-refactor
-        :defer t
-        :commands js2-refactor-mode
-        :diminish js2-refactor-mode
-        :ensure t
-        :init
-        (add-hook 'js2-mode-hook #'js2-refactor-mode)
-        :config
-        (js2r-add-keybindings-with-prefix "C-c C-m"))
 
       (use-package js-doc
         :ensure t
@@ -1541,17 +1506,23 @@
               js-doc-author (format "I am <%s>" js-doc-mail-address)
               js-doc-url "francismurillo.github.io"
               js-doc-license "GPL"))
-
-      (use-package json-snatcher
-        :ensure t
-        :after js2-mode
-        :bind (("C-c C-g" . jsons-print-path)))
-
-      (use-package react-snippets
-        :ensure t
-        :defer t)
     #+END_SRC
-*** tern
+
+*** Refactor
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package js2-refactor
+        :diminish js2-refactor-mode
+        :ensure t
+        :defer t
+        :after js2-mode
+        :init
+        (add-hook 'js2-mode-hook #'js2-refactor-mode)
+        :config
+        (js2r-add-keybindings-with-prefix "C-c C-m"))
+    #+END_SRC
+
+*** Autocomplete
     A must have for Javascript development
 
     #+BEGIN_SRC emacs-lisp
@@ -1559,17 +1530,38 @@
         :ensure t
         :defer t
         :diminish tern-mode
+        :after js2-mode
         :init
         (add-hook 'js2-mode-hook 'tern-mode))
 
       (use-package company-tern
         :ensure t
-        :after tern
+        :after (tern company)
         :config
         (add-to-list 'company-backends 'company-tern))
     #+END_SRC
-*** nodejs-repl
-    A quick repl for node that works
+
+*** Formatter
+    Formatter for js
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package web-beautify
+        :ensure t
+        :after js2-mode
+        :bind (("C-c C-b" . web-beautify-js)))
+
+    #+END_SRC
+
+*** Snippets
+    Snippet support
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package react-snippets
+        :ensure t
+        :after (js2 yasnippet))
+    #+END_SRC
+*** REPL
+    Got to have those REPLs
 
     #+BEGIN_SRC emacs-lisp
       (use-package nodejs-repl
@@ -1578,11 +1570,7 @@
                ("C-c C-n C-r" . nodejs-repl-send-region)
                ("C-c C-n C-e" . nodejs-repl-send-last-sexp))
         :after js2-mode)
-    #+END_SRC
-*** skewer
-    Live Javascript editing at your fingertips
 
-    #+BEGIN_SRC emacs-lisp
       (use-package skewer-mode
         :defer t
         :diminish skewer-mode
@@ -1592,6 +1580,82 @@
         (add-hook 'js2-mode-hook 'skewer-mode)
         (add-hook 'css-mode-hook 'skewer-css-mode)
         (add-hook 'html-mode-hook 'skewer-html-mode))
+    #+END_SRC
+
+*** Prettify
+    My symbols for JS
+
+    #+BEGIN_SRC emacs-lisp
+      (when fn/enable-prettify-symbols
+        (add-hook 'js2-mode-hook
+                  (lambda ()
+                    (push '("function" . ?λ) prettify-symbols-alist)
+                    (push '("arguments" . ?ω) prettify-symbols-alist)
+                    (push '("var" . ?ν) prettify-symbols-alist)
+                    (push '("return" . ?ρ) prettify-symbols-alist)
+                    (push '("this" . ?ι) prettify-symbols-alist)
+
+                    (push '("for" . ?∫) prettify-symbols-alist)
+                    (push '("in" . ?⊂ ) prettify-symbols-alist)
+
+                    (push '("Object" . ?Θ) prettify-symbols-alist)
+
+                    (push '("if" . ?α) prettify-symbols-alist)
+                    (push '("else if" . ?β) prettify-symbols-alist)
+                    (push '("else" . ?γ) prettify-symbols-alist)
+
+                    (push '("->" . ?→) prettify-symbols-alist)
+                    (push '("&&" . ?∧) prettify-symbols-alist)
+                    (push '("||" . ?∨) prettify-symbols-alist)
+
+                    (push '("!" . ?¬) prettify-symbols-alist)
+                    (push '("!!" . ?⌐) prettify-symbols-alist)
+
+                    (push '("=" . ?⟵) prettify-symbols-alist)
+                    (push '(":" . ?⟵) prettify-symbols-alist)
+
+                    (push '("===" . ?≡) prettify-symbols-alist)
+                    (push '("!==" . ?≢) prettify-symbols-alist)
+
+                    (push '(">=" . ?≧) prettify-symbols-alist)
+                    (push '("<=" . ?≦) prettify-symbols-alist)
+
+                    (push '("true" . ?⊤) prettify-symbols-alist)
+                    (push '("false" . ?⊥) prettify-symbols-alist)
+
+                    (push '("null" . ?∅) prettify-symbols-alist)
+                    (push '("undefined" . ?↑) prettify-symbols-alist)
+
+                    (push '(", ". ?⟼) prettify-symbols-alist)
+                    (push '("{". ?⟹) prettify-symbols-alist)
+                    (push '("},". ?⟺) prettify-symbols-alist)
+                    (push '("}". ?⟸) prettify-symbols-alist)
+                    (push '("};". ?⟽) prettify-symbols-alist)
+
+                    (push '("(". ?⟖) prettify-symbols-alist)
+                    (push '(")". ?⟕) prettify-symbols-alist)
+                    (push '(");". ?⟕) prettify-symbols-alist)
+                    (push '("),". ?⟗) prettify-symbols-alist)
+                    (push '(").". ?⟗) prettify-symbols-alist)
+
+                    (push '("[". ?⊏) prettify-symbols-alist)
+                    (push '("]". ?⊐) prettify-symbols-alist)
+                    (push '("],". ?⊡) prettify-symbols-alist)
+                    (push '("].". ?⊡) prettify-symbols-alist)
+                    (push '("];". ?⊐) prettify-symbols-alist)
+
+                    (push '(";". ?⟐) prettify-symbols-alist)
+
+                    (prettify-symbols-mode t))))
+    #+END_SRC
+*** JSON
+    JSON support
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package json-snatcher
+        :ensure t
+        :after js2-mode
+        :bind (("C-c C-g" . jsons-print-path)))
     #+END_SRC
 
 ** Python
@@ -1692,23 +1756,16 @@
         :config
         (require 'haskell-interactive-mode)
         (require 'haskell-process)
-
-        (setq interactive-haskell-mode t)
-        (setq haskell-stylish-on-save t)
+        ;; Reset mapping as it does more damage than good
+        (setq haskell-cabal-mode-map (make-keymap)
+              interactive-haskell-mode-map (make-keymap))
 
         (define-key haskell-mode-map (kbd "<f8>") 'haskell-navigate-imports)
+
         (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-compile)
         (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-compile)
 
-        (define-key haskell-mode-map (kbd "C-x C-d") nil)
-        (define-key haskell-mode-map (kbd "C-c C-z") 'haskell-interactive-switch)
-        (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-file)
-        (define-key haskell-mode-map (kbd "C-c C-b") 'haskell-interactive-switch)
-        (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
-        (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
-        (define-key haskell-mode-map (kbd "C-c M-.") nil)
-        (define-key haskell-mode-map (kbd "C-c C-d") nil)
-
+        ;; Haskell bindings
         (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
         (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
         (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
@@ -1717,12 +1774,19 @@
         (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
         (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
 
-        (define-key haskell-cabal-mode-map (kbd "C-`") 'haskell-interactive-bring)
-        (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
-        (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
-        (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)
+        ;; Cabal bindings
+        ;; (define-key haskell-cabal-mode-map (kbd "C-`") 'haskell-interactive-bring)
+        ;; (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+        ;; (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+        ;; (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)
 
-        (define-key haskell-mode-map (kbd "M-.") 'haskell-mode-jump-to-def)
+        ;; Interactive Haskell
+        (define-key interactive-haskell-mode-map (kbd "C-c M-.") 'haskell-mode-goto-loc)
+        (define-key interactive-haskell-mode-map (kbd "C-c M-t") 'haskell-mode-show-type-at)
+
+        (setq haskell-stylish-on-save t)
+
+        (setq interactive-haskell-mode t)
 
         (setq haskell-process-suggest-remove-import-lines t
               haskell-process-auto-import-loaded-modules t
@@ -1790,11 +1854,36 @@
       (use-package flycheck-haskell
         :ensure t
         :after (flycheck haskell-mode)
+        :init
+        (add-hook 'haskell-mode-hook 'flycheck-mode)
         :config
         (flycheck-haskell-setup))
     #+END_SRC
 
 ***
+
+*** Prettify
+    My symbols for Haskell
+
+    #+BEGIN_SRC emacs-lisp
+      (when fn/enable-prettify-symbols
+        (add-hook 'haskell-mode-hook
+                  (lambda ()
+                    (push '("->" . ?→) prettify-symbols-alist)
+                    (push '("let" . ?ν) prettify-symbols-alist)
+                    (push '("if" . ?α) prettify-symbols-alist)
+                    (push '("in" . ?ε) prettify-symbols-alist)
+                    (push '("then" . ?σ) prettify-symbols-alist)
+                    (push '("else" . ?τ) prettify-symbols-alist)
+                    (push '("where" . ?δ) prettify-symbols-alist)
+                    (push '("module" . ?θ) prettify-symbols-alist)
+                    (push '("data" . ?Τ) prettify-symbols-alist)
+                    (push '("deriving" . ?Δ) prettify-symbols-alist)
+                    (prettify-symbols-mode t))))
+
+    #+END_SRC
+*** Build Tools
+    Maybe stack or hack?
 ** dotNet
 *** omnisharp
     For C# development
@@ -1930,6 +2019,50 @@
         (bbdb-initialize)
         (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
     #+END_SRC
+
+** emms
+   This controls the music player.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package emms
+       :ensure t
+       :defer t
+       :config
+       (emms-standard)
+       (emms-default-players)
+
+       (setq emms-source-file-default-directory "~/Music/")
+
+       (setq emms-info-asynchronously nil
+             emms-playlist-buffer-name "*Music*")
+
+       (setq emms-playlist-default-major-mode 'emms-playlist-mode)
+
+       ;; emms-mark
+       (require 'emms-mark)
+
+       ;; emms-history
+       (require 'emms-history)
+       (emms-history-load)
+
+       ;; emms-mode-line
+       (require 'emms-mode-line)
+       (emms-mode-line 1)
+
+       (require 'emms-playing-time)
+       (emms-playing-time 1)
+
+       ;; emms-browser
+       (require 'emms-browser)
+
+       ;; emms-volume
+       (emms-volume-minor-mode t)
+
+       (setq emms-volume-mode-timeout 1)
+
+       (define-key emms-volume-minor-mode-map (kbd "C-c -") 'emms-volume-minus)
+       (define-key emms-volume-minor-mode-map (kbd "C-c +") 'emms-volume-plus))
+   #+END_SRC
 
 * Scripts
 ** Custom Emacs
