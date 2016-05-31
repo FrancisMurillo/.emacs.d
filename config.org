@@ -554,9 +554,7 @@
         (setq wg-emacs-exit-save-behavior           'save
               wg-workgroups-mode-exit-save-behavior 'save)
 
-        (setq wg-control-frames nil
-              wg-flag-modified nil
-              wg-load-last-workgroup nil)
+        (setq wg-flag-modified nil)
 
         (setq wg-mode-line-display-on t
               wg-mode-line-decor-left-brace "["
@@ -854,13 +852,9 @@
         :init
         (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
         (add-hook 'lisp-interaction-mode-hook 'turn-on-eldoc-mode)
-        (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode))
+        (add-hook 'ielm-mode-hook 'turn-on-eldoc-mode)
 
-      (use-package org-eldoc
-        :init
-        (add-hook 'org-mode-hook 'org-eldoc-load)
-        :config
-        (setq org-eldoc-breadcrumb-separator ">"))
+        (add-hook 'org-mode-hook 'turn-on-eldoc-mode))
     #+END_SRC
 
 ** Packages
@@ -1257,15 +1251,15 @@
      A nice presentation framework
 
      #+BEGIN_SRC emacs-lisp
+       (use-package ox-reveal
+         :ensure t
+         :after org
+         :config
+         (setq org-reveal-root "file:////home/fnmurillo/Fakespace/reveal-js"))
+
        (use-package htmlize
          :ensure t
          :after ox-reveal)
-
-       (use-package ox-reveal
-         :ensure t
-         :config
-         (setq org-reveal-root "file:////home/fnmurillo/Fakespace/reveal-js")
-         )
      #+END_SRC
 
 ** flyspell
