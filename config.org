@@ -146,18 +146,15 @@
     Backups are good, just annoying when things are good
 
    #+BEGIN_SRC emacs-lisp
-     (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
-   #+END_SRC
+     (setq backup-by-copying t
+           kept-new-versions 10
+           kept-old-versions 50
 
-   Version control is good, like wise.
-
-   #+BEGIN_SRC emacs-lisp
-     (setq delete-old-versions -1)
-     (setq version-conrol t)
-     (setq backup-by-copying t)
-     (setq vc-make-backup-files t)
-     ;; FIXME: Hard coded path?
-     (setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+           delete-old-versions t
+           version-conrol t
+           vc-make-backup-files t
+           backup-directory-alist (list (cons "." (expand-file-name "backups" user-emacs-directory)))
+           auto-save-file-name-transforms (list (list ".*" (expand-file-name "auto-save-list/" user-emacs-directory) t)))
    #+END_SRC
 
 ** History
@@ -545,9 +542,10 @@
     #+BEGIN_SRC emacs-lisp
       (use-package workgroups2
         :ensure t
-        :config
-        (setq wg-prefix-key (kbd "C-c w"))
-        (setq wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
+        :bind (("C-c n w" . workgroups-mode))
+        :init
+        (setq wg-prefix-key (kbd "C-c w")
+              wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
 
         (setq wg-morph-on nil)
 
@@ -559,12 +557,7 @@
         (setq wg-mode-line-display-on t
               wg-mode-line-decor-left-brace "["
               wg-mode-line-decor-right-brace "]"
-              wg-mode-line-decor-divider ":")
-
-        ;; Load workgroups when all other configuration is done
-        (add-hook 'after-init-hook (lambda ()
-                                     (workgroups-mode)
-                                     (diminish 'workgroups-mode))))
+              wg-mode-line-decor-divider ":"))
    #+END_SRC
 
 *** winner
@@ -763,10 +756,6 @@
 
         (ido-mode -1))
 
-      (use-package helm-descbinds
-        :ensure t
-        :after helm
-        :bind (("C-h b" . helm-descbinds)))
 
       (use-package helm-projectile
         :ensure t
@@ -857,6 +846,26 @@
         (add-hook 'org-mode-hook 'turn-on-eldoc-mode))
     #+END_SRC
 
+*** helm-descbinds
+    Another way to check bindings
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package helm-descbinds
+        :ensure t
+        :after helm
+        :bind (("C-h b" . helm-descbinds)))
+    #+END_SRC
+
+*** helm-describe-modes
+    A nice way to describe the current modes
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package helm-describe-modes
+        :ensure t
+        :after helm
+        :config
+        (global-set-key [remap describe-mode] #'helm-describe-modes))
+    #+END_SRC
 ** Packages
    Anything to manage packages
 
@@ -885,11 +894,19 @@
     I prefer no clutter in my screen so I disable majority of the niceties.
 
     #+BEGIN_SRC emacs-lisp
-      (tooltip-mode -1)
-      (tool-bar-mode -1)
-      (menu-bar-mode -1)
-      (scroll-bar-mode -1)
+      (defun fn/optimize-visual-space ()
+        (let ((try-set-mode (lambda (mode value)
+                              (when (fboundp 'mode)
+                                (mode value)))))
+          (funcall try-set-mode 'tooltip-mode -1)
+          (funcall try-set-mode 'tool-bar-mode -1)
+          (funcall try-set-mode 'menu-bar-mode -1)))
+
+      (fn/optimize-visual-space)
+
       (fringe-mode 0)
+
+      (add-hook 'after-init-hook 'toggle-frame-fullscreen)
     #+END_SRC
 
 ** Theme
@@ -1050,10 +1067,12 @@
     Make things more algebraic
 
     #+BEGIN_SRC emacs-lisp
-            (use-package prettify-symbols-mode
-              :if (version<= "24.4.4" emacs-version)
-              :init
-              (setq fn/enable-prettify-symbols t))
+      (setq fn/enable-prettify-symbols nil)
+
+      (use-package prettify-symbols-mode
+        :if (version<= "24.4.4" emacs-version)
+        :init
+        (setq fn/enable-prettify-symbols t))
     #+END_SRC
 
 *** rainbow-delimeter
@@ -1076,6 +1095,18 @@
          '(rainbow-delimiters-depth-7-face ((t (:foreground "spring green"))))
          '(rainbow-delimiters-depth-8-face ((t (:foreground "sienna1"))))))
 
+    #+END_SRC
+
+*** color-identifiers-mode
+    Make things easier to see
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package color-identifiers-mode
+        :ensure t
+        :defer t
+        :diminish color-identifiers-mode
+        :init
+        (add-hook 'prog-mode-hook 'color-identifiers-mode))
     #+END_SRC
 *** show-paren
     Also a vital thing to keeping things highlighted
@@ -1187,15 +1218,18 @@
         ;; org-journal
         (use-package org-journal
           :ensure t
-          :bind (("C-c e" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+          :after org
+          :bind (("C-c n j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
           :config
           (setq org-journal-dir
                 (expand-file-name "diary" org-directory))
 
-          (setq org-journal-date-format "%Y-%b-%d %a") ;; YYYY-MMM-DD DAY
-          (setq org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
+          (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
+                org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
 
           (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
+
+          (setq org-journal-find-file 'find-file)
 
           (defun fn/insert-private-file-headers ()
             (interactive)
@@ -1244,7 +1278,16 @@
               (expand-file-name "mobile-pull" org-directory))
         (setq org-mobile-files
               (list org-review-file)))
+    #+END_SRC
 
+    I prefer to see my main org file on boot
+
+    #+BEGIN_SRC emacs-lisp
+      (defun fn/find-main-org-file ()
+        (interactive)
+        (find-file org-main-file))
+
+      (add-hook 'after-init-hook 'fn/find-main-org-file)
     #+END_SRC
 
 **** org-reveal
@@ -1387,6 +1430,16 @@
         :diminish git-gutter-mode
         :config
         (global-git-gutter-mode t))
+    #+END_SRC
+
+*** gist
+    GitHub integration with gists
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package gist
+        :ensure t
+        :defer t
+        )
     #+END_SRC
 ** Elisp
 *** paredit
@@ -1895,7 +1948,7 @@
               (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
     #+END_SRC
 
-** TODO LaTeX
+** LaTeX
    LaTeX editing for my files
 
 
@@ -2346,6 +2399,16 @@
              org-link (org-element-property :path org-element))
        (org-insert-link nil org-path nil))
    #+END_SRC
+
+** Open standard buffers
+   Nice to see the standard buffers
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/open-message-buffer ()
+       (interactive)
+       (switch-to-buffer "*Messages*"))
+   #+END_SRC
+
 ** Open config file
    This is just a convenience to open this config file
 
@@ -2353,27 +2416,68 @@
      (defun fn/find-config-file ()
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
-
-     (define-key global-map "\C-cmc" 'fn/find-config-file)
    #+END_SRC
+** Four way layout
+   Split the windows into a nice four panel division. This works even
+   well with [[golden-ratio]].
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/four-way-horizontal-window-layout ()
+       (interactive)
+       (delete-other-windows)
+       (split-window-vertically)
+       (split-window-horizontally)
+       (other-window 2)
+       (split-window-horizontally)
+       (other-window 2))
+
+     (defun fn/four-way-vertical-window-layout ()
+       (interactive)
+       (split-window-vertically)
+       (delete-other-windows)
+       (split-window-horizontally)
+       (other-window 2)
+       (split-window-vertically)
+       (other-window 2))
+   #+END_SRC
+
 * My Bindings
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
     ;; Application
-    (define-key global-map "\C-cx" 'helm-M-x)
+    (define-key global-map (kbd  "C-c x") 'helm-M-x)
+
     ;; Buffers
-    (define-key global-map "\C-cnk" 'kill-this-buffer)
+    (define-key global-map (kbd  "C-c n k") 'kill-this-buffer)
+
+    ;; Windows
+    (define-key global-map (kbd "C-c m w h") 'fn/four-way-horizontal-window-layout)
+    (define-key global-map (kbd "C-c m w v") 'fn/four-way-vertical-window-layout)
+
+    ;; System Buffers
+    (define-key global-map (kbd "C-c m b m") 'fn/open-message-buffer)
+
+    ;; Shell
+    (define-key global-map (kbd "C-c n s") 'shell)
+
+    ;; Files
+    (define-key global-map (kbd "C-c m b c") 'fn/find-config-file)
+    (define-key global-map (kbd "C-c m b o") 'fn/find-main-org-file)
+
+    ;; Functions
+    (define-key global-map (kbd  "C-c m r s") 'fn/startup)
+    (define-key global-map (kbd  "C-c m r c") 'fn/cleanup)
 
     ;; Custom Emacs
-    (define-key global-map "\C-cmes" 'fn/bootstrap-spacemacs)
-    (define-key global-map "\C-cmef" 'fn/bootstrap-from-dir)
+    (define-key global-map (kbd  "C-c m e s") 'fn/bootstrap-spacemacs)
+    (define-key global-map (kbd  "C-c m e f") 'fn/bootstrap-from-dir)
 
     ;; Review Custom Emacs
-    (define-key global-map "\C-cmep" 'fn/bootstrap-steve-purcell)
-    (define-key global-map "\C-cmez" 'fn/bootstrap-zak-elep)
-    (define-key global-map "\C-cmec" 'fn/bootstrap-sacha-chua)
-    (define-key global-map "\C-cmej" 'fn/bootstrap-john-wiegley)
+    (define-key global-map (kbd  "C-c m e p") 'fn/bootstrap-steve-purcell)
+    (define-key global-map (kbd  "C-c m e z") 'fn/bootstrap-zak-elep)
+    (define-key global-map (kbd  "C-c m e c") 'fn/bootstrap-sacha-chua)
+    (define-key global-map (kbd  "C-c m e j") 'fn/bootstrap-john-wiegley)
   #+END_SRC
 
 * Sandbox
