@@ -312,7 +312,8 @@
     #+BEGIN_SRC emacs-lisp
       (use-package prodigy
         :ensure t
-        :defer t)
+        :defer t
+        :bind (("C-c n q" . prodigy)))
     #+END_SRC
 ** emamux
    Work better with tmux
@@ -1215,61 +1216,7 @@
         (setq org-drill-scope
               (list org-review-file))
 
-        ;; org-journal
-        (use-package org-journal
-          :ensure t
-          :after org
-          :bind (("C-c n j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
-          :config
-          (setq org-journal-dir
-                (expand-file-name "diary" org-directory))
 
-          (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
-                org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
-
-          (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
-
-          (setq org-journal-find-file 'find-file)
-
-          (defun fn/insert-private-file-headers ()
-            (interactive)
-            (add-file-local-variable-prop-line 'backup-inhibited t)
-            (add-file-local-variable-prop-line 'auto-save-default nil))
-
-          (defun fn/insert-org-gpg-headers ()
-            (interactive)
-            (add-file-local-variable-prop-line
-             'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
-            (fn/insert-private-file-headers))
-
-          (defun fn/insert-org-journal-headers ()
-            (interactive)
-            (fn/insert-org-gpg-headers)
-
-            (end-of-visual-line)
-            (newline-and-indent)
-
-            (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
-                                (buffer-name))
-              (let ((year  (string-to-number (match-string 1 (buffer-name))))
-                    (month (string-to-number (match-string 2 (buffer-name))))
-                    (day (string-to-number (match-string 3 (buffer-name))))
-                    (datim nil))
-                (setq datim (encode-time 0 0 0 day month year))
-
-                (insert "#+STARTUP: content\n")
-                (insert (format-time-string
-                         "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
-                (insert (format-time-string
-                         "* %Y-%b-%d %a" datim)))))
-
-          (auto-insert-mode t)
-          (setq auto-insert-query t) ;; Don't ask, just put it in there
-          (add-hook 'find-file-hook 'auto-insert)
-
-          (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fn/insert-org-gpg-headers))
-          (add-to-list 'auto-insert-alist '(".*\.private.org" . fn/insert-private-file-headers))
-          (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fn/insert-org-journal-headers)))
 
         (require 'org-mobile)
         (setq org-mobile-directory
@@ -1305,6 +1252,65 @@
          :after ox-reveal)
      #+END_SRC
 
+*** org-journal
+    Having a journal is good
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package org-journal
+        :ensure t
+        :after org
+        :bind (("C-c n j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+        :config
+        (setq org-journal-dir
+              (expand-file-name "diary" org-directory))
+
+        (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
+              org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
+
+        (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
+
+        (setq org-journal-find-file 'find-file)
+
+        (defun fn/insert-private-file-headers ()
+          (interactive)
+          (add-file-local-variable-prop-line 'backup-inhibited t)
+          (add-file-local-variable-prop-line 'auto-save-default nil))
+
+        (defun fn/insert-org-gpg-headers ()
+          (interactive)
+          (add-file-local-variable-prop-line
+           'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
+          (fn/insert-private-file-headers))
+
+        (defun fn/insert-org-journal-headers ()
+          (interactive)
+          (fn/insert-org-gpg-headers)
+
+          (end-of-visual-line)
+          (newline-and-indent)
+
+          (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
+                              (buffer-name))
+            (let ((year  (string-to-number (match-string 1 (buffer-name))))
+                  (month (string-to-number (match-string 2 (buffer-name))))
+                  (day (string-to-number (match-string 3 (buffer-name))))
+                  (datim nil))
+              (setq datim (encode-time 0 0 0 day month year))
+
+              (insert "#+STARTUP: content\n")
+              (insert (format-time-string
+                       "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
+              (insert (format-time-string
+                       "* %Y-%b-%d %a" datim)))))
+
+        (auto-insert-mode t)
+        (setq auto-insert-query t) ;; Don't ask, just put it in there
+        (add-hook 'find-file-hook 'auto-insert)
+
+        (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fn/insert-org-gpg-headers))
+        (add-to-list 'auto-insert-alist '(".*\.private.org" . fn/insert-private-file-headers))
+        (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fn/insert-org-journal-headers)))
+    #+END_SRC
 ** flyspell
     Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
