@@ -2141,6 +2141,17 @@
         (fn/bootstrap-new-emacs nil))
     #+END_SRC
 
+*** Experimental
+    Just a random build for myself
+
+    #+BEGIN_SRC emacs-lisp
+      (setq fn/experimental-home "~/.fmacs.d/")
+
+      (defun fn/bootstrap-experimental ()
+        (interactive)
+        (fn/bootstrap-new-emacs fn/experimental-home))
+    #+END_SRC
+
 *** Spacemacs
     The love child of Emacs and Vim, what does it hold?
 
@@ -2476,6 +2487,7 @@
     (define-key global-map (kbd  "C-c m r c") 'fn/cleanup)
 
     ;; Custom Emacs
+    (define-key global-map (kbd  "C-c m e e") 'fn/bootstrap-experimental)
     (define-key global-map (kbd  "C-c m e s") 'fn/bootstrap-spacemacs)
     (define-key global-map (kbd  "C-c m e f") 'fn/bootstrap-from-dir)
 
