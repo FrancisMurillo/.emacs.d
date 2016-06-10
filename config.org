@@ -121,6 +121,15 @@
       user-mail-address "francisavmurillo@gmail.com")
    #+END_SRC
 
+** Customization
+   Basis for configuration
+
+   #+BEGIN_SRC emacs-lisp
+     (defgroup fn nil
+       "My namespace for customizing my configuration")
+
+   #+END_SRC
+
 ** Startup
    Everything related to the startup state
 
@@ -197,7 +206,14 @@
       (global-set-key (kbd "RET") 'newline-and-indent)
 
       (setq-default indent-tabs-mode nil)
-      (add-hook 'before-save-hook 'delete-trailing-whitespace)
+
+      (setq fn/enable-whitespace-cleanup-before-save t)
+
+      (defun fn/delete-trailing-whitespace-before-save ()
+        (when 'fn/enable-delete-whitespace-cleanup-before-save
+          (delete-trailing-whitespace)))
+
+      (add-hook 'before-save-hook 'fn/delete-trailing-whitespace-before-save)
 
       (setq search-whitespace-regexp ".*?")
 
@@ -390,8 +406,9 @@
       (use-package hungry-delete
         :diminish hungry-delete-mode
         :ensure t
-        :config
-        (global-hungry-delete-mode))
+        :init
+        (add-hook 'prog-mode-hook 'hungry-delete-mode)
+        (add-hook 'org-mode-hook 'hungry-delete-mode))
     #+END_SRC
 
 *** aggressive-indent
@@ -401,8 +418,8 @@
       (use-package aggressive-indent
         :ensure t
         :diminish aggressive-indent-mode
-        :config
-        (global-aggressive-indent-mode t))
+        :init
+        (add-hook 'prog-mode-hook 'aggressive-indent-mode))
     #+END_SRC
 
 *** expand-region
@@ -689,21 +706,25 @@
         :ensure t
         :diminish projectile-mode
         :config
-        (defun fn/load-project-init ()
+
+        (defun fn/load-project-hook ()
           ;; When the project is switched, run a custom initialization file.
           ;; Be careful though with side effects, make the init file fast and pure/side-effect free
           (interactive)
-          (let* ((project-init-file-name ".project.el")
-                 (current-project-root (projectile-project-root))
-                 (project-init-file (expand-file-name project-init-file-name current-project-root)))
-            (when (file-exists-p project-init-file)
-              (message (concat  "Loading project init file for " current-project-root))
-              (load project-init-file t))))
+          (when (projectile-project-p)
+            (let* ((project-init-file-name ".project.el")
+                   (current-project-root (projectile-project-root))
+                   (project-init-file (expand-file-name project-init-file-name current-project-root)))
+              (when (file-exists-p project-init-file)
+                (message (concat  "Loading project init file for " current-project-root))
+                (load project-init-file t)))))
 
-        (add-hook 'projectile-after-switch-project-hook 'fn/load-project-init)
+
+        (add-hook 'projectile-after-switch-project-hook 'fn/load-project-hook)
 
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native)
+
         (add-to-list 'projectile-project-root-files "config.xml"))
     #+END_SRC
 
@@ -1234,7 +1255,8 @@
         (interactive)
         (find-file org-main-file))
 
-      (add-hook 'after-init-hook 'fn/find-main-org-file)
+      (setq initial-buffer-choice org-main-file)
+
     #+END_SRC
 
 **** org-reveal
