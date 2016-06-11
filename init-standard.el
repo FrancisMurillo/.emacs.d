@@ -26,7 +26,6 @@
 ;; customize loading the packages
 (package-initialize t)
 
-
 ;; Load the rest of the packages
 (package-initialize nil)
 
