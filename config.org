@@ -754,23 +754,36 @@
         :diminish projectile-mode
         :config
 
-        (defun fn/load-project-hook ()
+        (defconst fn/project-file ".project.el"
+          "Project configuration file")
+
+        (defconst fn/project-local-file ".project-local.el"
+          "Project local setting file")
+
+        (defun fn/load-project-file ()
           ;; When the project is switched, run a custom initialization file.
           ;; Be careful though with side effects, make the init file fast and pure/side-effect free
           (interactive)
           (when (projectile-project-p)
-            (let* ((project-init-file-name ".project.el")
-                   (current-project-root (projectile-project-root))
-                   (project-init-file (expand-file-name project-init-file-name current-project-root)))
+            (let* ((current-project-root (projectile-project-root))
+                   (project-init-file (expand-file-name fn/project-file current-project-root)))
               (when (file-exists-p project-init-file)
                 (message (concat  "Loading project init file for " current-project-root))
                 (load project-init-file t)))))
 
+        (defun fn/load-project-local-file ()
+          (interactive)
+          (when (projectile-project-p)
+            (let* ((current-project-root (projectile-project-root))
+                   (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+              (when (file-exists-p project-local-init-file)
+                (message (concat  "Loading project local file for " current-project-root))
+                (load project-local-init-file t)))))
 
-        (add-hook 'projectile-after-switch-project-hook 'fn/load-project-hook)
+        (add-hook 'projectile-after-switch-project-hook 'fn/load-project-file)
 
-        (add-hook 'find-file 'fn/load-project-hook)
-        (add-hook 'find-dired 'fn/load-project-hook)
+        (add-hook 'find-file-hook 'fn/load-project-file)
+        (add-hook 'find-dired-hook 'fn/load-project-file)
 
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native)
@@ -1381,6 +1394,7 @@
          :config
          (setq org-reveal-root "file:////home/fnmurillo/Fakespace/reveal-js")
 
+
          (define-minor-mode fn-reveal-editing
            "Some editing enhancement when editing org-reveal files"
            :lighter " FnRevealer"
@@ -1392,10 +1406,8 @@
 
            (let ((export-reveal (lambda ()
                                   (when fnr/enable-auto-export-on-save
-                                    (org-reveal-export-to-html)))))
+                                    (org-reveal-export-to-html t)))))
              (add-hook 'after-save-hook export-reveal t t))))
-
-
      #+END_SRC
 
 *** org-present
