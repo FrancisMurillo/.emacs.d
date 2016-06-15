@@ -215,8 +215,8 @@
 
       (defun fn/delete-trailing-whitespace-before-save ()
         (when fn/enable-whitespace-cleanup-before-save
-          (delete-trailing-whitespace)))
-
+          (with-current-buffer (current-buffer)
+            (delete-trailing-whitespace (point-min) (point-max)))))
 
       (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-before-save)
 
@@ -780,7 +780,19 @@
                 (message (concat  "Loading project local file for " current-project-root))
                 (load project-local-init-file t)))))
 
-        (add-hook 'projectile-after-switch-project-hook 'fn/load-project-file)
+        (let* ((project-memoized (lambda ()
+                                   (lexical-let ((initialized-projects (list ".")))
+                                     #'(lambda ()
+                                         (when (projectile-project-p)
+                                           (lexical-let ((current-project (projectile-project-root)))
+                                             (if (not (member current-project initialized-projects))
+                                                 (progn
+                                                   (add-to-list 'initialized-projects current-project)
+                                                   (fn/load-project-file))
+                                               (message "%s is already loaded." current-project)
+                                               )))))))
+               (load-project-hook (funcall project-memoized)))
+          (add-hook 'projectile-after-switch-project-hook load-project-hook))
 
         (add-hook 'find-file-hook 'fn/load-project-file)
         (add-hook 'find-dired-hook 'fn/load-project-file)
@@ -985,11 +997,10 @@
                                 (mode value)))))
           (funcall try-set-mode 'tooltip-mode -1)
           (funcall try-set-mode 'tool-bar-mode -1)
-          (funcall try-set-mode 'menu-bar-mode -1)))
+          (funcall try-set-mode 'menu-bar-mode -1)
+          (funcall try-set-mode 'fringe-mode 0)))
 
       (fn/optimize-visual-space)
-
-      (fringe-mode 0)
 
       (add-hook 'after-init-hook 'toggle-frame-fullscreen)
     #+END_SRC

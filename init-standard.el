@@ -48,10 +48,22 @@
 
   (kill-emacs))
 
+(defcustom fn/pre-config-file "pre-config.el"
+  "File script to load before the main configuration loads, useful for setting options")
+
+(load (expand-file-name fn/pre-config-file user-emacs-directory) t)
+
 ;; This part assumes ony org-babel-load-file is available
 (setq package-enable-at-startup nil)
+
+(defcustom fn/config-file "config.org"
+  "Main org file to load")
+
 (org-babel-load-file
- (expand-file-name "config.org" user-emacs-directory))
+ (expand-file-name fn/config-file user-emacs-directory))
 
 ;; Environement specific files, don't commit that file
-(load "~/.init-extension.el" t)
+(defcustom fn/post-config-file ".init-extension.el"
+  "Post script to load after the main configuration loads")
+
+(load (expand-file-name fn/post-config-file "~") t)
