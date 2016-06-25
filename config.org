@@ -1021,16 +1021,18 @@
       (use-package base16-theme
         :ensure t
         :defer t)
+
+      (use-package tronesque-theme
+        :ensure t
+        :defer t)
     #+END_SRC
 
     Load the theme if it is a terminal or desktop.
 
     #+BEGIN_SRC emacs-lisp
-      (when (window-system)
-        (load-theme 'apropospriate-dark t))
-
-      (unless (window-system)
-        (load-theme 'base16-solarized-dark t))
+      (cond
+       ((window-system) (load-theme 'apropospriate-dark t))
+       ((not (window-system)) (load-theme 'tronesque t)))
     #+END_SRC
 
 ** Aesthetic
@@ -1204,8 +1206,7 @@
         :ensure t
         :defer t
         :diminish color-identifiers-mode
-        :init
-        (add-hook 'prog-mode-hook 'color-identifiers-mode))
+        )
     #+END_SRC
 *** show-paren
     Also a vital thing to keeping things highlighted
@@ -1432,16 +1433,7 @@
                                   (when fnr/enable-auto-export-on-save
                                     (message "Auto exporting %s" (buffer-file-name))
 
-                                    (org-reveal-export-to-html t)
-                                    (debug)
-                                    (async-start
-                                     (lambda ()
-                                       (let* ((current-file (buffer-file-name))
-                                              (target-file (replace-regexp-in-string ".org" ".js" current-file))
-                                              (target-lang "javascript"))
-                                         (org-babel-tangle-file current-file target-file target-lang)))
-                                     'ignore)))))
-
+                                    (org-reveal-export-to-html t)))))
              (add-hook 'after-save-hook export-reveal t t)))
 
          (make-variable-buffer-local
@@ -1929,10 +1921,12 @@
     #+BEGIN_SRC emacs-lisp
       (use-package py-autopep8
         :ensure t
+        :after python
         :defer t)
 
       (use-package ein
         :ensure t
+        :after python
         :defer t
         :config
         (setq ein:use-auto-complete t)
@@ -2263,6 +2257,25 @@
         (defengine youtube
           "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
     #+END_SRC
+
+** elfeed
+   RSS Reader in Emacs
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package elfeed
+       :ensure t
+       :defer t
+       :bind (("C-c n r" . elfeed))
+       :if (fn/check-command "curl")
+       :config
+       (setq elfeed-curl-program-name "curl")
+
+       (setq elfeed-feeds (list
+                           (list "http://planet.emacsen.org/atom.xml" 'emacs)
+                           (list "http://sachachua.com/blog/category/emacs/feed" 'emacs)))
+
+       (setq elfeed-search-filter "@2-weeks-ago +unread "))
+   #+END_SRC
 
 ** bbdb
     People organization
@@ -2659,14 +2672,36 @@
        (other-window 2)
        (split-window-vertically)
        (other-window 2))
+
+     (defun fn/three-way-left-window-layout ()
+       (interactive)
+       (delete-other-windows)
+       (split-window-horizontally)
+       (other-window 1)
+       (split-window-vertically)
+       (other-window 2))
    #+END_SRC
 
 * My Bindings
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
-    ;; Application
-    (define-key global-map (kbd  "C-c x") 'helm-M-x)
+    (defun fn/trigger-key (key)
+      "Returns a function that triggers the function bound by the key"
+      (lexical-let* ((key-trigger key)
+                     (trigger (lambda ()
+                                (interactive)
+                                (let ((key-command (lookup-key global-map key-trigger)))
+                                  (cond
+                                   (key-command
+                                    (message "Triggering %s" key-command)
+                                    (command-execute key-command))
+                                   (t
+                                    (message "No key bound to %s" key-command)))))))
+        trigger))
+
+    ;; Motion
+    (define-key global-map (kbd "C-,") (fn/trigger-key (kbd "DEL")))
 
     ;; Buffers
     (define-key global-map (kbd  "C-c n k") 'kill-this-buffer)
@@ -2674,12 +2709,16 @@
     ;; Windows
     (define-key global-map (kbd "C-c m w h") 'fn/four-way-horizontal-window-layout)
     (define-key global-map (kbd "C-c m w v") 'fn/four-way-vertical-window-layout)
+    (define-key global-map (kbd "C-c m w t") 'fn/three-way-left-window-layout)
 
     ;; System Buffers
     (define-key global-map (kbd "C-c m b m") 'fn/open-message-buffer)
 
     ;; Shell
     (define-key global-map (kbd "C-c n s") 'shell)
+
+    ;; Commands
+    (define-key global-map (kbd "C-x C-x") (fn/trigger-key (kbd "M-x")))
 
     ;; Files
     (define-key global-map (kbd "C-c m b c") 'fn/find-config-file)
@@ -2699,6 +2738,12 @@
     (define-key global-map (kbd  "C-c m e z") 'fn/bootstrap-zak-elep)
     (define-key global-map (kbd  "C-c m e c") 'fn/bootstrap-sacha-chua)
     (define-key global-map (kbd  "C-c m e j") 'fn/bootstrap-john-wiegley)
+
+    ;; Remapped Keys
+    ;; TODO: Rebind this better
+    (define-key global-map (kbd "C-`") (fn/trigger-key (kbd "C-RET")))
+    (define-key global-map (kbd "M-`") (fn/trigger-key (kbd "M-RET")))
+    (define-key global-map (kbd "M-C-`") (fn/trigger-key (kbd "C-M-RET")))
   #+END_SRC
 
 * Sandbox
@@ -2709,3 +2754,4 @@
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
+* Meow
