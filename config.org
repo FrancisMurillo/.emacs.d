@@ -116,9 +116,13 @@
    Just some things that relate to me
 
    #+BEGIN_SRC emacs-lisp
-     (setq
-      user-full-name "Francis Murillo"
-      user-mail-address "francisavmurillo@gmail.com")
+     (defconst personal-file-name "personal.el"
+       "Personal configuration file name")
+
+     (defconst fn/personal-file (expand-file-name personal-file-name user-emacs-directory)
+       "Personal configuration file to be loaded")
+
+     (load fn/personal-file t)
    #+END_SRC
 
 ** Customization
@@ -2686,22 +2690,33 @@
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
+    (defun fn/find-current-key (key)
+      "Find the current key active"
+      (reduce (lambda (x y)
+                (or x y))
+              (mapcar (lambda (map)
+                        (lookup-key map key))
+                      (current-active-maps))
+              :initial-value nil))
+
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
       (lexical-let* ((key-trigger key)
                      (trigger (lambda ()
                                 (interactive)
-                                (let ((key-command (lookup-key global-map key-trigger)))
+                                (let ((key-command (fn/find-current-key key-trigger)))
                                   (cond
                                    (key-command
                                     (message "Triggering %s" key-command)
                                     (command-execute key-command))
                                    (t
-                                    (message "No key bound to %s" key-command)))))))
+                                    (message "No key bound to %s" key-trigger)))))))
         trigger))
 
     ;; Motion
-    (define-key global-map (kbd "C-,") (fn/trigger-key (kbd "DEL")))
+    (define-key global-map (kbd "C-` RET") (fn/trigger-key (kbd "C-<return>")))
+    ;; (define-key global-map (kbd "M-` RET") (fn/trigger-key (kbd "M-<return>")))
+    (define-key global-map (kbd "M-C-` RET") (fn/trigger-key (kbd "M-C-<return>")))
 
     ;; Buffers
     (define-key global-map (kbd  "C-c n k") 'kill-this-buffer)
@@ -2738,12 +2753,6 @@
     (define-key global-map (kbd  "C-c m e z") 'fn/bootstrap-zak-elep)
     (define-key global-map (kbd  "C-c m e c") 'fn/bootstrap-sacha-chua)
     (define-key global-map (kbd  "C-c m e j") 'fn/bootstrap-john-wiegley)
-
-    ;; Remapped Keys
-    ;; TODO: Rebind this better
-    (define-key global-map (kbd "C-`") (fn/trigger-key (kbd "C-RET")))
-    (define-key global-map (kbd "M-`") (fn/trigger-key (kbd "M-RET")))
-    (define-key global-map (kbd "M-C-`") (fn/trigger-key (kbd "C-M-RET")))
   #+END_SRC
 
 * Sandbox
