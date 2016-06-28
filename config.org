@@ -89,6 +89,16 @@
      (setq org-src-tab-acts-natively t)
    #+END_SRC
 * Bootstrap
+** Lexical Binding
+   This makes it so that the file that is produced from tangling this
+   file uses lexical scoping and all succeeding files
+
+   #+BEGIN_SRC emacs-lisp
+   ;;; -*- lexical-binding: t -*-
+
+  (setq lexical-binding t)
+   #+END_SRC
+
 ** Package Sources
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
 
@@ -209,6 +219,9 @@
     #+BEGIN_SRC emacs-lisp
       (global-set-key (kbd "RET") 'newline-and-indent)
 
+      ;; Make M-a go to period instead of the beginning of the paragraph
+      (setq sentence-end-double-space nil)
+
       (setq-default indent-tabs-mode nil)
 
       (make-variable-buffer-local
@@ -220,6 +233,7 @@
       (defun fn/delete-trailing-whitespace-before-save ()
         (when fn/enable-whitespace-cleanup-before-save
           (with-current-buffer (current-buffer)
+            (message "Deleting trailing whitespace in %s" (current-buffer))
             (delete-trailing-whitespace (point-min) (point-max)))))
 
       (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-before-save)
@@ -672,56 +686,10 @@
         (setq split-width-threshold nil
               golden-ratio-adjust-factor 1.0)
 
-        ;; If there are workgroups, make sure the currently focused buffer is rationed
-        (add-hook 'wg-after-switch-to-workgroup-hook 'golden-ratio)
-
-        (defun select-rationed-window-1 ()
-          (interactive)
-          (select-window-1)
-          (golden-ratio))
-        (defun select-rationed-window-2 ()
-          (interactive)
-          (select-window-2)
-          (golden-ratio))
-        (defun select-rationed-window-3 ()
-          (interactive)
-          (select-window-3)
-          (golden-ratio))
-        (defun select-rationed-window-4 ()
-          (interactive)
-          (select-window-4)
-          (golden-ratio))
-        (defun select-rationed-window-5 ()
-          (interactive)
-          (select-window-5)
-          (golden-ratio))
-        (defun select-rationed-window-6 ()
-          (interactive)
-          (select-window-6)
-          (golden-ratio))
-        (defun select-rationed-window-7 ()
-          (interactive)
-          (select-window-7)
-          (golden-ratio))
-        (defun select-rationed-window-8 ()
-          (interactive)
-          (select-window-8)
-          (golden-ratio))
-        (defun select-rationed-window-9 ()
-          (interactive)
-          (select-window-9)
-          (golden-ratio))
-
-        (define-key window-numbering-keymap (kbd "M-1") 'select-rationed-window-1)
-        (define-key window-numbering-keymap (kbd "M-2") 'select-rationed-window-2)
-        (define-key window-numbering-keymap (kbd "M-3") 'select-rationed-window-3)
-        (define-key window-numbering-keymap (kbd "M-4") 'select-rationed-window-4)
-        (define-key window-numbering-keymap (kbd "M-5") 'select-rationed-window-5)
-        (define-key window-numbering-keymap (kbd "M-6") 'select-rationed-window-6)
-        (define-key window-numbering-keymap (kbd "M-7") 'select-rationed-window-7)
-        (define-key window-numbering-keymap (kbd "M-8") 'select-rationed-window-8)
-        (define-key window-numbering-keymap (kbd "M-9") 'select-rationed-window-9)
-        (define-key window-numbering-keymap (kbd "M-0") 'select-rationed-window-0))
+        ;; Until golden-ratio "advices" select-window, this is the unofficial fix
+        (add-hook 'buffer-list-update-hook #'golden-ratio)
+        (add-hook 'focus-in-hook #'golden-ratio)
+        (add-hook 'focus-out-hook #'golden-ratio))
     #+END_SRC
 
 *** uniquify
@@ -1283,14 +1251,25 @@
         (setq org-main-file (expand-file-name "main.org" org-directory))
         (setq org-review-file (expand-file-name "learning.org" org-directory))
         (setq org-todo-file (expand-file-name "todo.org" org-directory))
+
+        (defconst fn/org-event-file-name "event.org"
+          "My event planning file name")
+
+        (defconst fn/org-event-file (expand-file-name fn/org-event-file-name org-directory)
+          "My event planning file")
+
+
         (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
 
-        (define-key global-map "\C-cc" 'org-capture)  ;; Use suggested key binding
+        (define-key global-map "\C-cc" 'org-capture) ;; Use suggested key binding
         (setq org-capture-templates
               (list
                (list "t" "Todo" 'entry
                      (list 'file+headline org-todo-file "Todo")
-                     "* INVESTIGATE %?\n   %i\n  %a")
+                     "* INVESTIGATE %?\n   %i")
+               (list "e" "Event" 'entry
+                     (list 'file+headline  fn/org-event-file "Events")
+                     "* %? :event:")
                (list "r" "Review/Remember" 'entry
                      (list 'file+headline org-review-file "Learning Notes" "Review")
                      "* %? :drill:\n  CREATED_ON: %T")))
@@ -1307,6 +1286,7 @@
         (setq org-task-files
               (list
                org-todo-file
+               fn/org-event-file
                org-review-file))
 
         (setq org-agenda-files
@@ -1338,9 +1318,6 @@
       (defun fn/find-main-org-file ()
         (interactive)
         (find-file org-main-file))
-
-      (setq initial-buffer-choice org-main-file)
-
     #+END_SRC
 
 *** org-journal
@@ -2003,6 +1980,7 @@
       (use-package haskell-mode
         :ensure t
         :defer t
+        :mode "\\.hs\\'"
         :init
         (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
         (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
@@ -2338,6 +2316,20 @@
    #+END_SRC
 
 * Scripts
+** Initial View
+   My intial view when Emacs boots up
+
+   #+BEGIN_SRC emacs-lisp
+     ;; (setq initial-buffer-choice org-main-file)
+
+     (add-hook 'after-init-hook (lambda ()
+                                  (message "Setting up initial view")
+                                  (fn/find-main-org-file)
+                                  (other-window 1)
+                                  (org-todo-list)
+                                  (other-window 1)))
+   #+END_SRC
+
 ** Custom Emacs
    Bootstrap different configurations of Emacs for reviewing expert
    configurations and trying different modes
@@ -2714,9 +2706,12 @@
         trigger))
 
     ;; Motion
-    (define-key global-map (kbd "C-` RET") (fn/trigger-key (kbd "C-<return>")))
-    ;; (define-key global-map (kbd "M-` RET") (fn/trigger-key (kbd "M-<return>")))
-    (define-key global-map (kbd "M-C-` RET") (fn/trigger-key (kbd "M-C-<return>")))
+    (define-key global-map (kbd "C-!") (fn/trigger-key (kbd "C-<return>")))
+    (define-key global-map (kbd "M-!") (fn/trigger-key (kbd "M-<return>")))
+
+    ;; Keys
+    (define-key global-map (kbd "M-n") (fn/trigger-key (kbd "DEL")))
+
 
     ;; Buffers
     (define-key global-map (kbd  "C-c n k") 'kill-this-buffer)
@@ -2760,7 +2755,35 @@
   #+BEGIN_SRC emacs-lisp
 
   #+END_SRC
+
+** avy
+   Interesting but I hasn't stuck with me
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package avy
+       :ensure t
+       :defer t
+       :bind (("C-:" . avy-goto-char))
+       :config
+       (avy-setup-default))
+   #+END_SRC
+
+**ssniper
+   Swiper no swiping
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package swiper
+       :ensure t
+       :defer t)
+   #+END_SRC
+** ace-window
+   Not really interested but doing it for bug fixes
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package ace-window
+       :ensure t
+       :bind (("M-p" . ace-window)))
+   #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
-* Meow
