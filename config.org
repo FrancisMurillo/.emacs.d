@@ -741,7 +741,9 @@
                    (project-init-file (expand-file-name fn/project-file current-project-root)))
               (when (file-exists-p project-init-file)
                 (message "Loading project init file for %s" current-project-root)
-                (load project-init-file t)))))
+                (unwind-protect
+                    (load project-init-file t)
+                  (message "There was an error loading %s" project-init-file))))))
 
         (defun fn/load-project-local-file ()
           (interactive)
@@ -750,7 +752,9 @@
                    (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
               (when (file-exists-p project-local-init-file)
                 (message "Loading project local file for %s " current-project-root)
-                (load project-local-init-file t)))))
+                (unwind-protect
+                    (load project-local-init-file t)
+                  (message "There was an error loading %s" project-local-init-file))))))
 
         (lexical-let* ((project-memoized (lambda ()
                                            (lexical-let ((initialized-projects (list ".")))
@@ -1421,103 +1425,6 @@
           (defvar fnr/enable-auto-export-on-save t
             "When non-nil. auto exports org-reveal files on save")))
      #+END_SRC
-
-*** org-present
-    A presentation tool with =org=
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package org-present
-        :ensure t
-        :after org
-        :config
-        (add-hook 'org-present-mode-hook
-                  (lambda ()
-                    (org-present-big)
-                    (org-display-inline-images)
-                    (org-present-hide-cursor)
-                    (org-present-read-only)))
-
-        (add-hook 'org-present-mode-quit-hook
-                  (lambda ()
-                    (org-present-small)
-                    (org-remove-inline-images)
-                    (org-present-show-cursor)
-                    (org-present-read-write)))
-
-        (define-key org-mode-map (kbd "C-c n p") 'org-present))
-    #+END_SRC
-
-*** org-tree-slide
-    Another =org= presentation tool
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package org-tree-slide
-        :ensure t
-        :after org)
-    #+END_SRC
-
-** flyspell
-    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package flyspell
-        :ensure t
-        :defer t
-        :diminish flyspell-mode
-        :init
-         (add-hook 'org-mode-hook 'flyspell-mode t))
-    #+END_SRC
-
-** dired
-    Directory management for Emacs
-
-    #+BEGIN_SRC emacs-lisp
-      (require 'dired-x) ;; Allows multi open marked files
-
-      (setq dired-recursive-copies 'always  ;; Don't ask because I did it
-            dired-recursive-deletes 'always)
-
-      (setq dired-dwim-target t) ;; Split pane copying, be careful though with this
-
-      (setq dired-listing-switches "-alh") ;; Want to see the size with better details
-
-      (dired-async-mode t)
-
-      (add-hook 'dired-mode-hook 'dired-hide-details-mode)
-    #+END_SRC
-
-*** tmtxt
-    Experimental =dired= with =rsync= all thanks to [[https://github.com/tmtxt][tmtxt]]
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package tmtxt-async-tasks
-        :load-path "elisp/tmtxt/"
-        :config
-        (setq-default tat/window-close-delay "10"
-                      tat/window-height 5))
-
-      (use-package tmtxt-dired-async
-        :after tmtxt-async-tasks
-        :config
-        (when (fn/check-command "rsync")
-          (setq-default tda/rsync-arguments "-avzh --progress")
-
-          (define-key dired-mode-map (kbd "C-c C-r") 'tda/rsync)
-          (define-key dired-mode-map (kbd "C-c C-t") 'tda/rsync-delete)
-
-          (define-key dired-mode-map (kbd "C-c C-a") 'tda/rsync-multiple-mark-file)
-          (define-key dired-mode-map (kbd "C-c C-e") 'tda/rsync-multiple-empty-list)
-          (define-key dired-mode-map (kbd "C-c C-d") 'tda/rsync-multiple-remove-item)
-          (define-key dired-mode-map (kbd "C-c C-v") 'tda/rsync-multiple))
-
-        (define-key dired-mode-map (kbd "C-c C-z") 'tda/zip)
-        (define-key dired-mode-map (kbd "C-c C-u") 'tda/unzip)
-
-        (define-key dired-mode-map (kbd "C-c C-s") 'tda/get-files-size)
-
-        (define-key dired-mode-map (kbd "C-c C-q") 'tda/download-to-current-dir)
-        (define-key dired-mode-map (kbd "C-c C-l") 'tda/download-clipboard-link-to-current-dir))
-    #+END_SRC
 * Code Monkey
   Modes for my programming experiences
 
@@ -1535,6 +1442,7 @@
         (setq type-break-interval (* 60 25)
               type-break-good-rest-interva (* 60 5)))
     #+END_SRC
+
 *** auto-compile
     A good mode when editing lisp files
 
@@ -2116,6 +2024,57 @@
     #+END_SRC
 *** Build Tools
     Maybe stack or hack?
+** Elixir
+   The dynamic Haskell in my opinion... or was it Python
+
+*** Mode
+    Main mode for Elixir
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elixir-mode
+        :ensure t
+        :defer t)
+    #+END_SRC
+
+*** Linter
+    A linter is always needed
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package flycheck-elixir
+        :ensure t
+        :after (elixir-mode flycheck)
+        :defer t)
+    #+END_SRC
+
+    Integration with =mix=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package flycheck-mix
+        :ensure t
+        :after (elixir-mode flycheck)
+        :defer t)
+    #+END_SRC
+
+*** Snippets
+    Snippets support via yasnippet
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elixir-yasnippets
+        :ensure t
+        :after (elixir-mode yasnippet)
+        :defer t)
+    #+END_SRC
+
+*** Build Tools
+    Build tool for Elixir
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package alchemist
+        :ensure t
+        :after elixir-mode
+        :defer t)
+    #+END_SRC
+
 ** dotNet
 *** omnisharp
     For C# development
@@ -2249,6 +2208,9 @@
        :defer t
        :bind (("C-c n r" . elfeed))
        :if (fn/check-command "curl")
+       :init
+       ;; Update feeds on startup
+       (add-hook 'after-init-hook 'elfeed-update)
        :config
        (setq elfeed-curl-program-name "curl")
 
@@ -2321,10 +2283,12 @@
 
    #+BEGIN_SRC emacs-lisp
      ;; (setq initial-buffer-choice org-main-file)
+     (setq org-agenda-window-setup 'current-window)
 
      (add-hook 'after-init-hook (lambda ()
                                   (message "Setting up initial view")
                                   (fn/find-main-org-file)
+                                  (split-window-horizontally)
                                   (other-window 1)
                                   (org-todo-list)
                                   (other-window 1)))
@@ -2783,6 +2747,13 @@
      (use-package ace-window
        :ensure t
        :bind (("M-p" . ace-window)))
+   #+END_SRC
+** f3
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package f3
+       :ensure t
+       :defer t)
    #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
