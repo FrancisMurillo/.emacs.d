@@ -299,10 +299,15 @@
        ;; Calls the process *command* and gets it's output, nil if there is an error"
        (condition-case ex
            (with-temp-buffer
-             (apply 'call-process (append
-                                   (list command nil t nil)
-                                   args))
-             (string-trim (buffer-string)))
+             (let ((string-args (mapcar (lambda (arg)
+                                          (cond
+                                           ((numberp arg) (number-to-string arg))
+                                           (t arg)))
+                                        args)))
+               (apply 'call-process (append
+                                     (list command nil t nil)
+                                     string-args))
+               (string-trim (buffer-string))))
          ('error nil)))
 
      (defun fn/check-command (command)
@@ -410,11 +415,13 @@
 
 ** Environment
 *** guru
-   Remember the Emacs's way to do things
+   Remember the Emacs's way to do things, but I think I'm good now. I
+   only use it when I am one handed.
 
     #+BEGIN_SRC emacs-lisp
       (use-package guru-mode
         :ensure t
+        :disabled t ;; Finally graduated from using the arrow keys
         :diminish guru-mode
         :config
         (guru-global-mode t))
@@ -679,7 +686,8 @@
         :ensure t
         :after window-numbering
         :diminish golden-ratio-mode
-        :bind (("C-c q" . golden-ratio))
+        :bind (("C-c q" . golden-ratio)
+               ("C-c n q" . golden-ration-mode))
         :config
         (golden-ratio-mode t)
 
@@ -731,6 +739,18 @@
 
         (defconst fn/project-local-file ".project-locals.el"
           "Project local setting file")
+
+        (defun fn/create-projectile-file ()
+          (interactive)
+          (lexical-let* ((target-dir  (read-directory-name "Where do you want to the .projectile placed?"))
+                         (projectile-file-name ".projectile")
+                         (projectile-file (expand-file-name projectile-file-name target-dir)))
+            (cond
+             ((file-exists-p projectile-file)
+              (message "Projectile file alread exists"))
+             (t
+              (message "Creating %s" projectile-file)
+              (find-file projectile-file)))))
 
         (defun fn/load-project-file ()
           ;; When the project is switched, run a custom initialization file.
@@ -2445,6 +2465,124 @@
         (interactive)
         (fn/bootstrap-new-emacs fn/john-wiegley-home))
     #+END_SRC
+** Window Layouts
+   Split the windows into a nice four panel division. This works even
+   well with [[golden-ratio]].
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/four-way-horizontal-window-layout ()
+       (interactive)
+       (delete-other-windows)
+       (split-window-vertically)
+       (split-window-horizontally)
+       (other-window 2)
+       (split-window-horizontally)
+       (other-window 2))
+
+     (defun fn/four-way-vertical-window-layout ()
+       (interactive)
+       (split-window-vertically)
+       (delete-other-windows)
+       (split-window-horizontally)
+       (other-window 2)
+       (split-window-vertically)
+       (other-window 2))
+
+     (defun fn/three-way-left-window-layout ()
+       (interactive)
+       (delete-other-windows)
+       (split-window-horizontally)
+       (other-window 1)
+       (split-window-vertically)
+       (other-window 2))
+
+     (defun fn/three-way-vertical-window-layout ()
+       (interactive)
+       (delete-other-windows)
+       (split-window-horizontally)
+       )
+   #+END_SRC
+
+** Utility Commands
+   Some commands to get me here and there
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/insert-date ()
+       "Insert time at point, useful when you want to put a date.
+        TODO: Would be useful if you can change formats too"
+       (interactive)
+       (let ((time-format "%Y-%m-%d"))
+         (insert (format-time-string time-format))))
+   #+END_SRC
+
+** Coins.Ph API
+   Some things to help me trade bitcoins, so this section might not be
+   useful to anyone else.
+
+   #+BEGIN_SRC emacs-lisp
+     (require 's)
+
+     (defconst fmc/coin-cli-file (expand-file-name "coiner-cli.py" "~/Fakespace/coins-watcher")
+       "The cli file to interact with")
+
+     (defconst fmc/coin-cli-executor "python"
+       "CLI command to run the script")
+
+     (defun fmc/parse-json (json-text)
+       "My shiv of parsing json into alist, sadly json.el doesn't work in parsing weirdly"
+
+       (lexical-let* ((json-regex "\'\\(\\w+\\)\':\s+\\([a-Z0-9.]+\\)[,\}]")
+                      (json-matches (s-match-strings-all json-regex json-text))
+                      (json-key-values (mapcar #'cdr json-matches)))
+         (mapcar (lambda (pair)
+                   (lexical-let* ((key (car pair))
+                                  (value (cadr pair))
+                                  (symbolic-key key)
+                                  (symolic-value (string-to-number value)))
+                     (cons symbolic-key symolic-value)))
+                 json-key-values)))
+
+     (defun fmc/call-cli (command &optional amount)
+       "Main function to execute fmc commands"
+       (lexical-let* ((coin-cli-buffer (find-file-noselect fmc/coin-cli-file)))
+         (with-current-buffer coin-cli-buffer
+           (lexical-let* ((command-args (list fmc/coin-cli-executor fmc/coin-cli-file))
+                          (action-arg (list command))
+                          (amount-args (list "-a" amount))
+                          (base-args (append command-args action-arg))
+                          (args (if amount (append base-args amount-args)
+                                  base-args))
+                          (cli-output (apply 'fn/run-command args)))
+             (fmc/parse-json (format "\"%s\"" cli-output))))))
+
+     (defun fmc/get-quote ()
+       "Get quote from the bitcoin site"
+       (interactive)
+       (fmc/call-cli "quote"))
+
+     (defun fmc/buy-coin ()
+       "Buy coins"
+       (interactive)
+       (lexical-let* ((amount (read-number "Enter amount: "))
+                      (current-quote (fmc/call-cli "quote"))
+                      (current-buy (cdr (assoc "buy" current-quote)))
+                      (confirm-action (yes-or-no-p (format "Are you sure you to buy %f at %f" amount current-buy))))
+         (when confirm-action
+           (fmc/call-cli "buy" amount)
+           (message "Successfully bought %f at %f" amount current-buy))))
+
+     (defun fmc/sell-coin ()
+       "Sell coins"
+       (interactive)
+       (lexical-let* ((amount (read-number "Enter amount: "))
+                      (current-quote (fmc/call-cli "quote"))
+                      (current-sell (cdr (assoc "sell" current-quote)))
+                      (current-value (* amount current-sell))
+                      (confirm-action (yes-or-no-p (format "Are you sure you to sell %f at %f amounting to %f" amount current-sell current-value))))
+         (when confirm-action
+           (fmc/call-cli "sell" amount)
+           (message "Successfully sold %f at %f" amount current-value))))
+   #+END_SRC
 
 ** starup and shutdown hook
    Small script to update my org files
@@ -2672,37 +2810,6 @@
      (defun fn/find-config-file ()
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
-   #+END_SRC
-** Four way layout
-   Split the windows into a nice four panel division. This works even
-   well with [[golden-ratio]].
-
-   #+BEGIN_SRC emacs-lisp
-     (defun fn/four-way-horizontal-window-layout ()
-       (interactive)
-       (delete-other-windows)
-       (split-window-vertically)
-       (split-window-horizontally)
-       (other-window 2)
-       (split-window-horizontally)
-       (other-window 2))
-
-     (defun fn/four-way-vertical-window-layout ()
-       (interactive)
-       (split-window-vertically)
-       (delete-other-windows)
-       (split-window-horizontally)
-       (other-window 2)
-       (split-window-vertically)
-       (other-window 2))
-
-     (defun fn/three-way-left-window-layout ()
-       (interactive)
-       (delete-other-windows)
-       (split-window-horizontally)
-       (other-window 1)
-       (split-window-vertically)
-       (other-window 2))
    #+END_SRC
 
 * My Bindings
