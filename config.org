@@ -687,7 +687,7 @@
         :after window-numbering
         :diminish golden-ratio-mode
         :bind (("C-c q" . golden-ratio)
-               ("C-c n q" . golden-ration-mode))
+               ("C-c n q" . golden-ratio-mode))
         :config
         (golden-ratio-mode t)
 
@@ -2470,37 +2470,79 @@
    well with [[golden-ratio]].
 
    #+BEGIN_SRC emacs-lisp
-     (defun fn/four-way-horizontal-window-layout ()
-       (interactive)
-       (delete-other-windows)
-       (split-window-vertically)
-       (split-window-horizontally)
-       (other-window 2)
-       (split-window-horizontally)
-       (other-window 2))
+     (require 'dash)
 
-     (defun fn/four-way-vertical-window-layout ()
-       (interactive)
-       (split-window-vertically)
-       (delete-other-windows)
-       (split-window-horizontally)
-       (other-window 2)
-       (split-window-vertically)
-       (other-window 2))
+     (defconst fmw/empty-buffer "*unchained buffer*"
+       "A buffer to represent an empty one")
 
-     (defun fn/three-way-left-window-layout ()
-       (interactive)
-       (delete-other-windows)
-       (split-window-horizontally)
-       (other-window 1)
-       (split-window-vertically)
-       (other-window 2))
+     (defun fmw/restore-buffers (window-movement)
+       "Restore buffers after doing a window layout"
+       (lexical-let ((current-buffers (mapcar 'window-buffer (window-list)))
+                     (empty-buffer (if (get-buffer fmw/empty-buffer)
+                                       (get-buffer fmw/empty-buffer)
+                                     (generate-new-buffer fmw/empty-buffer))))
+         (funcall window-movement)
+         (mapc (lambda (pair)
+                 (lexical-let* ((old-buffer (car pair))
+                                (current-window (cdr pair))
+                                (the-buffer (if old-buffer old-buffer empty-buffer)))
+                   (when current-window
+                     (set-window-buffer current-window the-buffer))))
+               (-zip-fill nil current-buffers (window-list)))))
 
-     (defun fn/three-way-vertical-window-layout ()
+     (defun fmw/four-part-horizontal-window-layout ()
+       "Split the frame into four windows horizontally. I use this when I'm working in a project where the
+        - upper left serves the main file
+        - upper right serves as a secondary file
+        - lower left serves as auxilliary or task buffer
+        - lower right serves a project buffer"
        (interactive)
-       (delete-other-windows)
-       (split-window-horizontally)
-       )
+       (fmw/restore-buffers (lambda ()
+                              (setq golden-ratio-mode t)
+                              (delete-other-windows)
+                              (split-window-vertically)
+                              (split-window-horizontally)
+                              (other-window 2)
+                              (split-window-horizontally)
+                              (other-window 2))))
+
+     (defun fmw/four-part-vertical-window-layout ()
+       "Unlike with the =fn/four-way-horizontal-layout=, I use this more oftenly on dired to make file moving easier
+        (and probably more)"
+       (interactive)
+       (fmw/restore-buffers (lambda ()
+                              (setq golden-ratio-mode t)
+                              (delete-other-windows)
+                              (split-window-vertically)
+                              (split-window-horizontally)
+                              (other-window 2)
+                              (split-window-horizontally)
+                              (other-window 2))))
+
+     (defun fmw/three-part-left-window-layout ()
+       "Like =fn/four-way-horizontal-layout= but fits a smaller screen namely my Raspberry Pi."
+       (interactive)
+       (fmw/restore-buffers (lambda ()
+                              (setq golden-ratio-mode t)
+                              (delete-other-windows)
+                              (split-window-horizontally)
+                              (other-window 1)
+                              (split-window-vertically)
+                              (other-window 2))))
+
+     (defun fmw/three-part-vertical-window-layout ()
+       "An layout seen at a meetup, seems interesting to work with.
+        However, this is disables golden-ration-mode to maintain the delicate origami folds"
+       (interactive)
+       (fmw/restore-buffers (lambda ()
+                              (setq golden-ratio-mode nil)
+                              (delete-other-windows)
+                              (lexical-let* ((total-width (frame-width))
+                                             (one-third-fold  (/ total-width 3)))
+                                ;; Split the right window by a third, negative arguments huh.
+                                (split-window-horizontally (- one-third-fold))
+                                (split-window-horizontally (- one-third-fold))))))
+
    #+END_SRC
 
 ** Utility Commands
@@ -2621,6 +2663,17 @@
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
 
    #+BEGIN_SRC emacs-lisp
+     (require 's)
+
+     (defun fmd/get-title (&optional selected-buffer)
+       "Get the #+TITLE value of the current buffer"
+       (with-current-buffer (if selected-buffer selected-buffer (buffer-name))
+         (lexical-let* ((title-regex "\#\\+TITLE:\s+\\(.*\\)")
+                        (title-match (s-match title-regex (buffer-substring-no-properties (point-min) 1000)))
+                        (title (if title-match (cadr title-match)
+                                 nil)))
+           title)))
+
      (defun fn/compile-media-diary ()
        (interactive)
        (setq md-root "/media/veracrypt1/media-diary"
@@ -2851,9 +2904,10 @@
     (define-key global-map (kbd  "C-c n k") 'kill-this-buffer)
 
     ;; Windows
-    (define-key global-map (kbd "C-c m w h") 'fn/four-way-horizontal-window-layout)
-    (define-key global-map (kbd "C-c m w v") 'fn/four-way-vertical-window-layout)
-    (define-key global-map (kbd "C-c m w t") 'fn/three-way-left-window-layout)
+    (define-key global-map (kbd "C-c m w h") 'fmw/four-part-horizontal-window-layout)
+    (define-key global-map (kbd "C-c m w v") 'fmw/four-part-vertical-window-layout)
+    (define-key global-map (kbd "C-c m w t") 'fmw/three-part-left-window-layout)
+    (define-key global-map (kbd "C-c m w 3") 'fmw/three-part-vertical-window-layout)
 
     ;; System Buffers
     (define-key global-map (kbd "C-c m b m") 'fn/open-message-buffer)
