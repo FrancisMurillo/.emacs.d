@@ -1625,17 +1625,17 @@
         :defer t
         :diminish paredit-mode
         :init
-        (add-hook 'emacs-lisp-mode-hook 'paredit-mode)
-        (add-hook 'ielm-mode-hook 'paredit-mode)
-        (add-hook 'lisp-mode-hook 'paredit-mode)
-        (add-hook 'lisp-interaction-mode-hook 'paredit-mode)
+        (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+        (add-hook 'ielm-mode-hook #'enable-paredit-mode)
+        (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+        (add-hook 'lisp-mode-hook #'enable-paredit-mode)
+        (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode))
+
+      (use-package paredit
+        :after eldoc
         :config
-        (require 'eldoc)
-        (eldoc-add-command
-         'paredit-backward-delete
-         'paredit-close-round))
-
-
+        (eldoc-add-command 'paredit-backward-delete
+                           'paredit-close-round))
     #+END_SRC
 *** Refactor
     Emacs Lisp refactor mode
@@ -2665,14 +2665,19 @@
    #+BEGIN_SRC emacs-lisp
      (require 's)
 
+
+     (defun fmd/get-document-property (key &optional selected-buffer)
+       "Get the property of the document which starts with #+PROPERTY"
+       (with-current-buffer (if selected-buffer selected-buffer (buffer-name))
+         (lexical-let* ((property-regex (format  "\#\\+%s:\s+\\(.*\\)" key))
+                        (property-match (s-match property-regex (buffer-substring-no-properties (point-min) 1000)))
+                        (property (if property-match (cadr property-match)
+                                    nil)))
+           property)))
+
      (defun fmd/get-title (&optional selected-buffer)
        "Get the #+TITLE value of the current buffer"
-       (with-current-buffer (if selected-buffer selected-buffer (buffer-name))
-         (lexical-let* ((title-regex "\#\\+TITLE:\s+\\(.*\\)")
-                        (title-match (s-match title-regex (buffer-substring-no-properties (point-min) 1000)))
-                        (title (if title-match (cadr title-match)
-                                 nil)))
-           title)))
+       (fmd/get-document-property "TITLE" selected-buffer))
 
      (defun fn/compile-media-diary ()
        (interactive)
