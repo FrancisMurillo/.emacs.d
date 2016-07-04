@@ -3,100 +3,56 @@
 #+OPTIONS: toc:4 h:4
 * Introduction
 ** If I Forget
-   No words can describe my awe with Emacs and continue to do so. A text editor with a lisp interpreter, it's concept is so simple and sublime. What joy.
+   No words can describe my awe with Emacs and continue to do so. A text
+   editor with a lisp interpreter, it's concept is so simple and
+   sublime. What joy.
 
-   I remember starting Emacs seriously at around August of 2015. Before then, I picked it up lightly and thought(not use) about it; but what really drove me to use it is.
-   - Growth :: I was using an IDE before and somebody told me that GUIs change but the shell remains the same. I found myself over time exploring keyboard shortcuts, better terminals and Emacs(or maybe vi).
-   - Lightweight :: I had a crappy laptop that always needed to be plugged, had a lot dead pixels, and closes when it overheats; I needed something that would work with what I had.
-   - Linux :: Moving from Windows to Linux forced me to reevaluate the software I used. Adopting a new philosophy and OS pushed me in the right direction
+   I remember starting Emacs seriously at around August of 2015. Before
+   then, I picked it up lightly and thought(not use) about it; but what
+   really drove me to use it is.
 
-   Whatever the reason might have been. I just want to say I'm a happy Emacs user and I find comfort and joy in hearing other people talk and share about it.
+   - Growth ::
+   I was using an IDE before and somebody told me that GUIs change but
+   the shell remains the same. I found myself over time exploring
+   keyboard shortcuts, better terminals and Emacs(or maybe vi).
+   - Lightweight ::
+   I had a crappy laptop that always needed to be plugged, had a lot
+   dead pixels, and closes when it overheats; I needed something that
+   would work with what I had.
+   - Linux ::
+   Moving from Windows to Linux forced me to reevaluate the software I
+   used. Adopting a new philosophy and OS pushed me in the right direction
+
+   Whatever the reason might have been. I just want to say I'm a happy
+   Emacs user and I find comfort and joy in hearing other people talk
+   and share about it.
+
 ** About My Configuration
-   I use org-babel as my configuration file once I heard you can do so. Splitting the configuration to multiple files was the plan but the way it weaves nicely to documentation immediately drew me in.
+   I use org-babel as my configuration file once I heard you can do so.
+   Splitting the configuration to multiple files was the plan but the
+   way it weaves nicely to documentation immediately drew me in.
 
-   You can load this with =(org-babel-load-file "/path/to/file")= if you need to reload any changes.
-
-   This is my =init.el= to allow org-babel to read from it. My only problem is having the static org-mode in the elisp folder, you have to copy the elisp folder as well to make the configuration work as is.
-
-   #+BEGIN_SRC emacs-lisp :tangle no
-     (unless (>= emacs-major-version 24)
-       (message "This config works only for Emacs version 24 and higher")
-       (kill-emacs))
-
-     ;; Helper functions
-     (defun string/ends-with (s ending)
-       "Return non-nil if string S ends with ENDING."
-       (cond ((>= (length s) (length ending))
-              (let ((elength (length ending)))
-                (string= (substring s (- 0 elength)) ending)))
-             (t nil)))
-
-     (require 'cl)
-     (setq load-path
-           (remove-if
-            (lambda (text) (string/ends-with text "org"))
-            load-path))
-
-     ;; customize loading the packages
-     (package-initialize t)
-
-     ;; Modify the hard dependencies
-     ;; org-mode used to be here
-
-     ;; Load the rest of the packages
-     (package-initialize nil)
-
-     ;; Configuration bootstrapping
-     ;; use-package is fundamental to this configuration
-     (unless (package-installed-p 'use-package)
-       (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/"))
-       (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
-       (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
-       (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
-
-       (package-refresh-contents)
-       (package-install 'use-package)
-       (require 'use-package)
-
-       (use-package org
-         :ensure t)
-       (use-package org-plus-contrib
-         :ensure t)
-
-       ;; Weird dependency
-       (use-package dash
-         :ensure t)
-       (kill-emacs))
-
-     ;; This part assumes ony org-babel-load-file is available
-     (setq package-enable-at-startup nil)
-     (org-babel-load-file
-      (expand-file-name "config.org" user-emacs-directory))
-   #+END_SRC
+   You can load this with =(org-babel-load-file "/path/to/file")= if you
+   need to reload any changes or just take any snippet you want. I do my
+   best to make my configuration copy friendly on different environments.
 
    Or with an function instead
 
    #+BEGIN_SRC emacs-lisp
      (defun fn/reload-config ()
-     (interactive)
-     (org-babel-load-file
-      (expand-file-name "config.org" user-emacs-directory)))
+       "Reload my configuration again"
+       (interactive)
+       (org-babel-load-file
+        (expand-file-name fn/config-file user-emacs-directory)))
    #+END_SRC
 
-   Also the code formatting needs to be uniform within the code blocks
-
-   #+BEGIN_SRC emacs-lisp
-     (setq org-src-tab-acts-natively t)
-   #+END_SRC
 * Bootstrap
 ** Lexical Binding
    This makes it so that the file that is produced from tangling this
    file uses lexical scoping and all succeeding files
 
    #+BEGIN_SRC emacs-lisp
-   ;;; -*- lexical-binding: t -*-
-
-  (setq lexical-binding t)
+     (setq lexical-binding t)
    #+END_SRC
 
 ** Package Sources
@@ -116,7 +72,26 @@
 
    #+BEGIN_SRC emacs-lisp
      (require 'use-package)
+
      (setq use-package-verbose t)
+   #+END_SRC
+
+** Org Src
+   Configuration for using the tangling nature of this configuration
+
+   #+BEGIN_SRC emacs-lisp
+     (setq org-src-tab-acts-natively t)
+   #+END_SRC
+
+** Constants
+   Some constants to work with
+
+   #+BEGIN_SRC emacs-lisp
+     (defconst fn/cache-dir-name ".cache"
+       "Place every moving file in this directory")
+
+     (defconst fn/cache-dir (expand-file-name fn/cache-dir-name user-emacs-directory)
+       "Every cached or moving file should be here like with Spacemacs")
    #+END_SRC
 
 * Basic Setup
@@ -126,10 +101,10 @@
    Just some things that relate to me
 
    #+BEGIN_SRC emacs-lisp
-     (defconst personal-file-name "personal.el"
+     (defconst fn/personal-file-name "personal.el"
        "Personal configuration file name")
 
-     (defconst fn/personal-file (expand-file-name personal-file-name user-emacs-directory)
+     (defconst fn/personal-file (expand-file-name fn/personal-file-name user-emacs-directory)
        "Personal configuration file to be loaded")
 
      (load fn/personal-file t)
@@ -169,60 +144,109 @@
     Backups are good, just annoying when things are good
 
    #+BEGIN_SRC emacs-lisp
-     (setq backup-by-copying t
+     (defconst fn/backup-dir-name "backups"
+       "Backup directory name")
+
+     (defconst fn/backup-dir (expand-file-name fn/backup-dir-name fn/cache-dir)
+       "Backup directory")
+
+
+     (defconst fn/auto-save-dir-name "auto-save-list"
+       "Auto save directory name")
+
+     (defconst fn/auto-save-dir (expand-file-name fn/auto-save-dir-name fn/cache-dir)
+       "Auto save directory")
+
+     (setq auto-save-timeout 15
+
+           delete-old-versions t
+           version-control t
+           vc-make-backup-files t
+           backup-by-copying t
            kept-new-versions 10
            kept-old-versions 50
 
-           delete-old-versions t
-           version-conrol t
-           vc-make-backup-files t
-           backup-directory-alist (list (cons "." (expand-file-name "backups" user-emacs-directory)))
-           auto-save-file-name-transforms (list (list ".*" (expand-file-name "auto-save-list/" user-emacs-directory) t)))
+           backup-directory-alist (list
+                                   (cons "." fn/backup-dir))
+
+           auto-save-file-name-transforms (list
+                                           (list ".*" fn/auto-save-dir t)))
    #+END_SRC
 
 ** History
     Save minibuffer history
 
     #+BEGIN_SRC emacs-lisp
-      (setq savehist-file (expand-file-name "savehist" user-emacs-directory))
-      (setq history-length t)
-      (setq history-delete-duplicates t)
-      (setq savehist-save-minibuffer-history 1)
-      (setq savehist-additional-variables
-        '(kill-ring
-          search-ring
-          regexp-search-ring))
+      (defconst fn/savehist-file-name "savehist"
+        "Save history file name")
 
-      (savehist-mode 1)
+      (defconst fn/savehist-file (expand-file-name fn/savehist-file-name fn/cache-dir)
+        "Save history file")
+
+
+      (setq savehist-file fn/savehist-file
+
+            history-length t
+            history-delete-duplicates t
+
+            savehist-save-minibuffer-history t
+            savehist-additional-variables (list 'kill-ring
+                                                'search-ring
+                                                'regexp-search-ring))
+
+      (savehist-mode t)
     #+END_SRC
 
-** Variables
-    Some preset variables
+** Editing
+   Some editing configurations
 
-    #+BEGIN_SRC emacs-lisp
-      (setq whitespace-line-column 10000)
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (setq whitespace-line-column 10000 ;; No line too long font locking please
 
-** Buffer
-    Some buffer configurations
+           ;; C-M-a should go to the beginning of a sentence
+           sentence-end-double-space nil
 
-    #+BEGIN_SRC emacs-lisp
-      (let ((display-table (or standard-display-table (make-display-table))))
-        (set-display-table-slot display-table
-                                'vertical-border (make-glyph-code ?┃))
-        (setq standard-display-table display-table))
-    #+END_SRC
+           require-final-newline t)
+
+     ;; I like tabs but they should just be converted to spaces for equality
+     (setq-default indent-tabs-mode nil)
+   #+END_SRC
+
+** Search
+   You must have this setup, it's like butter and you're the bread.
+
+   #+BEGIN_SRC emacs-lisp
+     (defconst fn/default-search-whitespace-regexp search-whitespace-regexp
+       "Store the default whitespace option")
+
+     (setq search-highlight t)
+
+     ;; This ignores whitespace when searching
+     (setq-default search-whitespace-regexp".*?")
+
+
+     (defun fn/isearch-forward-normally ()
+       "This custom command does i-search without the whitespace skips,
+        the vanilla behavior"
+       (interactive)
+       (let ((search-whitespace-regexp fn/default-search-whitespace-regexp))
+         (isearch-forward)))
+
+
+     (defun fn/isearch-backward-normally ()
+       "Ditto with fn/isearch-foward-normally except backwards."
+       (interactive)
+       (let ((search-whitespace-regexp fn/default-search-whitespace-regexp))
+         (isearch-backward)))
+   #+END_SRC
 
 ** Coding
     Some programming configuration that make sense
 
     #+BEGIN_SRC emacs-lisp
+      ;; Please indent after newline to maintain sanity
       (global-set-key (kbd "RET") 'newline-and-indent)
 
-      ;; Make M-a go to period instead of the beginning of the paragraph
-      (setq sentence-end-double-space nil)
-
-      (setq-default indent-tabs-mode nil)
 
       (make-variable-buffer-local
        (defvar fn/enable-whitespace-cleanup-before-save t
@@ -239,18 +263,19 @@
       (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-before-save)
 
 
-      (setq search-whitespace-regexp ".*?")
+      (temp-buffer-resize-mode t)
 
-      (mouse-avoidance-mode 'cat-and-mouse)
-      (temp-buffer-resize-mode 1)
-
-      (setq auto-save-timeout 15
-            require-final-newline t
-            search-highlight t
-            compilation-window-height 10
-            compilation-scroll-output      'first-error
+      (setq compilation-window-height 10
+            compilation-scroll-output 'first-error
             compilation-ask-about-save nil)
     #+END_SRC
+
+** Mouse
+   I better be a cat
+
+   #+BEGIN_SRC emacs-lisp
+     (mouse-avoidance-mode 'cat-and-mouse)
+   #+END_SRC
 
 ** Commands
     Unlock some commands I need
@@ -565,8 +590,8 @@
               company-tooltip-limit 20
               company-tooltip-align-annotations t)
 
-        (setq company-dabbrev-time-limit 0.1
-              company-dabbrev-code-time-limit 0.1)
+        (setq company-dabbrev-time-limit 0.01
+              company-dabbrev-code-time-limit 0.01)
 
 
         (setq company-backends (list))
@@ -1389,11 +1414,11 @@
           (interactive)
           (add-file-local-variable-prop-line
            'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
-          (fn/insert-private-file-headers))
+          (fm/insert-private-file-headers))
 
         (defun fmj/insert-org-journal-headers ()
           (interactive)
-          (fn/insert-org-gpg-headers)
+          (fm/insert-org-gpg-headers)
 
           (end-of-visual-line)
           (newline-and-indent)
@@ -2985,6 +3010,10 @@
 
     ;; Keys
     (define-key global-map (kbd "M-n") (fn/trigger-key (kbd "DEL")))
+
+    ;; Search
+    (define-key global-map (kbd "C-c n C-s") 'fn/isearch-forward-normally)
+    (define-key global-map (kbd "C-c n C-r") 'fn/isearch-backward-normally)
 
 
     ;; Buffers
