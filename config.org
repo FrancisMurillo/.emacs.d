@@ -87,11 +87,28 @@
    Some constants to work with
 
    #+BEGIN_SRC emacs-lisp
+     (defconst fn/minute-per-second 60
+       "Obviously converting minutes to seconds")
+
      (defconst fn/cache-dir-name ".cache"
        "Place every moving file in this directory")
 
      (defconst fn/cache-dir (expand-file-name fn/cache-dir-name user-emacs-directory)
        "Every cached or moving file should be here like with Spacemacs")
+
+
+     (defconst fn/extra-dir-name "extra"
+       "Anything under the sun you can put here")
+
+     (defconst fn/extra-dir (expand-file-name fn/extra-dir-name user-emacs-directory)
+       "Anything under the sun directory")
+
+
+     (defconst fn/custom-package-dir-name "elisp"
+       "Custom elisp packages directory name")
+
+     (defconst fn/custom-package-dir (expand-file-name fn/custom-package-dir-name user-emacs-directory)
+       "Custom elisp packages directory")
    #+END_SRC
 
 * Basic Setup
@@ -122,26 +139,26 @@
 ** Startup
    Everything related to the startup state
 
-    #+BEGIN_SRC emacs-lisp
-      (setq gc-cons-threshold (* 128 1024 1024)) ;; High memory for Emacs
+   #+BEGIN_SRC emacs-lisp
+     (setq gc-cons-threshold (* 128 1024 1024)) ;; High memory for Emacs
 
-      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-            initial-scratch-message nil)
+     (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
+           initial-scratch-message nil)
    #+END_SRC
 
 ** Environment
-    Some environment configuration.
+   Some environment configuration.
 
-    #+BEGIN_SRC emacs-lisp
-      (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
+   #+BEGIN_SRC emacs-lisp
+     (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
 
-      (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
+     (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
 
-      (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
-    #+END_SRC
+     (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
+   #+END_SRC
 
 ** Backups
-    Backups are good, just annoying when things are good
+   Backups are good, just annoying when things are good
 
    #+BEGIN_SRC emacs-lisp
      (defconst fn/backup-dir-name "backups"
@@ -157,7 +174,9 @@
      (defconst fn/auto-save-dir (expand-file-name fn/auto-save-dir-name fn/cache-dir)
        "Auto save directory")
 
+
      (setq auto-save-timeout 15
+           auto-save-list-file-name fn/auto-save-dir
 
            delete-old-versions t
            version-control t
@@ -174,28 +193,34 @@
    #+END_SRC
 
 ** History
-    Save minibuffer history
+   Save minibuffer history
 
-    #+BEGIN_SRC emacs-lisp
-      (defconst fn/savehist-file-name "savehist"
-        "Save history file name")
+   #+BEGIN_SRC emacs-lisp
+     (defconst fn/savehist-file-name "savehist"
+       "Save history file name")
 
-      (defconst fn/savehist-file (expand-file-name fn/savehist-file-name fn/cache-dir)
-        "Save history file")
+     (defconst fn/savehist-file (expand-file-name fn/savehist-file-name fn/cache-dir)
+       "Save history file")
 
 
-      (setq savehist-file fn/savehist-file
+     (setq savehist-file fn/savehist-file
 
-            history-length t
-            history-delete-duplicates t
+           history-length t
+           history-delete-duplicates t
 
-            savehist-save-minibuffer-history t
-            savehist-additional-variables (list 'kill-ring
-                                                'search-ring
-                                                'regexp-search-ring))
+           savehist-save-minibuffer-history t
+           savehist-additional-variables (list 'kill-ring
+                                               'search-ring
+                                               'regexp-search-ring))
 
-      (savehist-mode t)
-    #+END_SRC
+     (savehist-mode t)
+
+
+     (setq bookmark-file (expand-file-name "bookmarks" fn/cache-dir)
+           bookmark-default-file (expand-file-name "bookmarks-default" fn/cache-dir))
+
+
+   #+END_SRC
 
 ** Editing
    Some editing configurations
@@ -241,34 +266,34 @@
    #+END_SRC
 
 ** Coding
-    Some programming configuration that make sense
+   Some programming configuration that make sense
 
-    #+BEGIN_SRC emacs-lisp
-      ;; Please indent after newline to maintain sanity
-      (global-set-key (kbd "RET") 'newline-and-indent)
-
-
-      (make-variable-buffer-local
-       (defvar fn/enable-whitespace-cleanup-before-save t
-         "When non-nil, delete trailing whitespace on save"))
-
-      (add-to-list 'safe-local-variable-values '(fn/enable-whitespace-cleanup-before-save))
-
-      (defun fn/delete-trailing-whitespace-before-save ()
-        (when fn/enable-whitespace-cleanup-before-save
-          (with-current-buffer (current-buffer)
-            (message "Deleting trailing whitespace in %s" (current-buffer))
-            (delete-trailing-whitespace (point-min) (point-max)))))
-
-      (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-before-save)
+   #+BEGIN_SRC emacs-lisp
+     ;; Please indent after newline to maintain sanity
+     (global-set-key (kbd "RET") 'newline-and-indent)
 
 
-      (temp-buffer-resize-mode t)
+     (make-variable-buffer-local
+      (defvar fn/enable-whitespace-cleanup-before-save t
+        "When non-nil, delete trailing whitespace on save"))
 
-      (setq compilation-window-height 10
-            compilation-scroll-output 'first-error
-            compilation-ask-about-save nil)
-    #+END_SRC
+     (add-to-list 'safe-local-variable-values '(fn/enable-whitespace-cleanup-before-save))
+
+     (defun fn/delete-trailing-whitespace-before-save ()
+       (when fn/enable-whitespace-cleanup-before-save
+         (with-current-buffer (current-buffer)
+           (message "Deleting trailing whitespace in %s" (current-buffer))
+           (delete-trailing-whitespace (point-min) (point-max)))))
+
+     (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-before-save)
+
+
+     (temp-buffer-resize-mode t)
+
+     (setq compilation-window-height 10
+           compilation-scroll-output 'first-error
+           compilation-ask-about-save nil)
+   #+END_SRC
 
 ** Mouse
    I better be a cat
@@ -278,24 +303,24 @@
    #+END_SRC
 
 ** Commands
-    Unlock some commands I need
+   Unlock some commands I need
 
-    #+BEGIN_SRC emacs-lisp
-      (put 'narrow-to-region 'disabled nil)
-      (put 'downcase-region 'disabled nil)
-      (put 'upcase-region 'disabled nil)
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (put 'narrow-to-region 'disabled nil)
+     (put 'downcase-region 'disabled nil)
+     (put 'upcase-region 'disabled nil)
+   #+END_SRC
 
 * Dependencies
   Everything needed to support this more complex configurations
 
 ** async
-    Not really builtin but should be
+   Not really builtin but should be
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package async
-        :ensure t)
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package async
+       :ensure t)
+   #+END_SRC
 
 ** s
    A string library, everyone needs that
@@ -307,13 +332,18 @@
 ** unicode-fonts
    Unicode is an required aesthetic
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package unicode-fonts
-        :ensure t
-        :config
-        (unicode-fonts-setup))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package pcache ;; Required by unicode-fonts
+       :ensure t
+       :init
+       ;; Mentioned here to redirect directory
+       (setq pcache-directory (expand-file-name "pcache/" fn/cache-dir)))
 
+     (use-package unicode-fonts
+       :ensure t
+       :config
+       (unicode-fonts-setup))
+   #+END_SRC
 
 ** execute-shell
    Some external commands might be required, so gotta check them if they
@@ -348,8 +378,11 @@
    For exporting purposes
 
    #+BEGIN_SRC emacs-lisp
+     (defconst fn/htmlize-package-dir (expand-file-name "htmlize-custom/" fn/custom-package-dir)
+       "Htmlize package dir")
+
      (use-package htmlize
-       :load-path "elisp/htmlize-custom/"
+       :load-path fn/htmlize-package-dir
        :after ox-reveal)
    #+END_SRC
 
@@ -357,75 +390,82 @@
   Shell related aspect
 
 ** exec-path-from-shell
-    Command line integration
+   Command line integration
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package exec-path-from-shell
-        :ensure t
-        :config
-        (exec-path-from-shell-initialize))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package exec-path-from-shell
+       :ensure t
+       :config
+       (exec-path-from-shell-initialize))
+   #+END_SRC
 
 ** term
-    An enhancement for =term=
+   An enhancement for =term=
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package term
-        :bind (("C-c n t" . ansi-term))
-        :config
-        (defadvice term-sentinel (around ansi-term-kill-buffer (proc msg))
-          (if (memq (process-status proc) '(signal exit))
-              (let ((buffer (process-buffer proc)))
-                ad-do-it
-                (kill-buffer buffer))
-            ad-do-it))
-        (ad-activate 'term-sentinel)
-        (defadvice ansi-term (before ansi-term-force-shell)
-          (interactive (list (getenv "SHELL"))))
-        (ad-activate 'ansi-term)
-        (add-hook 'term-mode-hook 'goto-address-mode)
-        (add-hook 'term-exec-hook
-                  '(lambda ()
-                     (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package term
+       :bind (("C-c n t" . ansi-term))
+       :config
+       (defadvice term-sentinel (around ansi-term-kill-buffer (proc msg))
+         (if (memq (process-status proc) '(signal exit))
+             (let ((buffer (process-buffer proc)))
+               ad-do-it
+               (kill-buffer buffer))
+           ad-do-it))
+       (ad-activate 'term-sentinel)
+       (defadvice ansi-term (before ansi-term-force-shell)
+         (interactive (list (getenv "SHELL"))))
+       (ad-activate 'ansi-term)
+       (add-hook 'term-mode-hook 'goto-address-mode)
+       (add-hook 'term-exec-hook
+                 '(lambda ()
+                    (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))))
+   #+END_SRC
 
 ** eshell
-    Another enhancement for the shell
+   Another enhancement for the shell
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package eshell
-        :bind (("C-c n e" . eshell))
-        :config
-        (defun fn/eshell-rename-buffer-before-command ()
-          (let* ((last-input
-                  (buffer-substring eshell-last-input-start eshell-last-input-end)))
-            (rename-buffer
-             (format "*eshell[%s]$ %s...*" default-directory last-input) t)))
-        (defun fn/eshell-rename-buffer-after-command ()
-          (rename-buffer
-           (format "*eshell[%s]$ %s*" default-directory
-                   (eshell-previous-input-string 0)) t))
-        (add-hook 'eshell-pre-command-hook
-                  'fn/eshell-rename-buffer-before-command)
-        (add-hook 'eshell-post-command-hook
-                  'fn/eshell-rename-buffer-after-command)
-        (use-package em-smart)
-        (setq eshell-where-to-jump 'begin
-              eshell-review-quick-commands nil
-              eshell-smart-space-goes-to-end t)
-        (add-hook 'eshell-mode-hook
-                  (lambda ()
-                    (eshell-smart-initialize))))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package eshell
+       :bind (("C-c n e" . eshell))
+       :config
+       (setq eshell-directory-name (expand-file-name "eshell" fn/extra-dir))
+
+       (defun fn/eshell-rename-buffer-before-command ()
+         (let* ((last-input
+                 (buffer-substring eshell-last-input-start eshell-last-input-end)))
+           (rename-buffer
+            (format "*eshell[%s]$ %s...*" default-directory last-input) t)))
+
+       (defun fn/eshell-rename-buffer-after-command ()
+         (rename-buffer
+          (format "*eshell[%s]$ %s*" default-directory
+                  (eshell-previous-input-string 0)) t))
+
+       (add-hook 'eshell-pre-command-hook
+                 'fn/eshell-rename-buffer-before-command)
+       (add-hook 'eshell-post-command-hook
+                 'fn/eshell-rename-buffer-after-command
+                 )
+       (use-package em-smart)
+
+       (setq eshell-where-to-jump 'begin
+             eshell-review-quick-commands nil
+             eshell-smart-space-goes-to-end t)
+
+       (add-hook 'eshell-mode-hook
+                 (lambda ()
+                   (eshell-smart-initialize))))
+   #+END_SRC
 ** prodigy
-    Living in the shell requires some genius
+   Living in the shell requires some genius
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package prodigy
-        :ensure t
-        :defer t
-        :bind (("C-c n q" . prodigy)))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package prodigy
+       :ensure t
+       :defer t
+       :bind (("C-c n q" . prodigy)))
+   #+END_SRC
 ** emamux
    Work better with tmux
 
@@ -440,8 +480,8 @@
 
 ** Environment
 *** guru
-   Remember the Emacs's way to do things, but I think I'm good now. I
-   only use it when I am one handed.
+    Remember the Emacs's way to do things, but I think I'm good now. I
+    only use it when I am one handed.
 
     #+BEGIN_SRC emacs-lisp
       (use-package guru-mode
@@ -464,15 +504,15 @@
     #+END_SRC
 
 *** auto-fill
-   Useful mode when writing, keeps things under 80 characters.
+    Useful mode when writing, keeps things under 80 characters.
 
-   #+BEGIN_SRC emacs-lisp
-     (use-package auto-fill
-       :init
-       (add-hook 'text-mode-hook 'turn-on-auto-fill)
-       (diminish 'auto-fill-function)
-       (setq-default fill-column 72))
-   #+END_SRC
+    #+BEGIN_SRC emacs-lisp
+      (use-package auto-fill
+        :init
+        (add-hook 'text-mode-hook 'turn-on-auto-fill)
+        (diminish 'auto-fill-function)
+        (setq-default fill-column 72))
+    #+END_SRC
 
 *** auto-revert
     The more generic revert
@@ -497,7 +537,7 @@
 
 ** Editing
 *** hungry-delete
-   Very useful default delete functionality
+    Very useful default delete functionality
 
     #+BEGIN_SRC emacs-lisp
       (use-package hungry-delete
@@ -634,21 +674,22 @@
         :defer t
         :diminish yas-minor-mode
         :bind (("C-c n y" . yas-new-snippet))
+        :init
+        (add-hook 'prog-mode-hook 'yas/minor-mode-on)
         :config
-        (setq yas-verbosity 3)
+        (setq yas-verbosity 3
+              yas-snippet-dirs (list (expand-file-name "snippets" fn/extra-dir)))
 
         (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
 
         (yas-reload-all)
 
-        (add-hook 'prog-mode-hook 'yas/minor-mode-on)
-
         (defun fn/add-company-yasnippet ()
+          "Add yasnippet to company backends"
           (fn/append-to-backends 'company-yasnippet))
 
         (add-hook 'after-init-hook 'fn/add-company-yasnippet))
-    #+END_SRC
-
+    #+END_SRC3
 * Ergonomic
   Things to assist in managing Emacs
 
@@ -664,7 +705,7 @@
         :bind (("C-c n w" . workgroups-mode))
         :init
         (setq wg-prefix-key (kbd "C-c w")
-              wg-session-file (expand-file-name ".emacs_workgroups" user-emacs-directory))
+              wg-session-file (expand-file-name "workgroups" fn/cache-dir))
 
         (setq wg-morph-on nil)
 
@@ -677,7 +718,7 @@
               wg-mode-line-decor-left-brace "["
               wg-mode-line-decor-right-brace "]"
               wg-mode-line-decor-divider ":"))
-   #+END_SRC
+    #+END_SRC
 
 *** winner
     You got to have those window configuration
@@ -747,13 +788,18 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package recentf
-        :defer t
         :config
-        (recentf-mode 1)
-        (setq recentf-max-menu-items 100)
-        (global-set-key "\C-x\ \C-r" 'recentf-open-files)
-        (setq recentf-exclude '("TAGS" ".*-autoloads\\.el\\'")))
+        (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
+
+              recentf-max-menu-items 100
+
+              recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
+
+        (recentf-mode t)
+
+        (global-set-key (kbd "C-x C-r") 'recentf-open-files))
     #+END_SRC
+
 *** projectile
     Must have a project finder when using a project.
 
@@ -762,6 +808,8 @@
         :ensure t
         :diminish projectile-mode
         :config
+        (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
+              projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
 
         (defconst fn/project-file ".project.el"
           "Project configuration file")
@@ -872,11 +920,15 @@
 
               helm-echo-input-in-header-line t)
 
-        (setq helm-debug-root-directory user-emacs-directory)
+        (setq helm-debug-root-directory fn/cache-dir)
 
         (helm-mode t)
 
+
+        (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir))
+
         (helm-adaptive-mode t)
+
 
         (helm-autoresize-mode t)
 
@@ -942,8 +994,9 @@
         :config
         (keyfreq-mode t)
         (keyfreq-autosave-mode t)
-        (setq keyfreq-file (expand-file-name ".keyfreq" user-emacs-directory)
-              keyfreq-file-lock (expand-file-name ".keyfreq.lock" user-emacs-directory)))
+
+        (setq keyfreq-file (expand-file-name "keyfreq" fn/cache-dir)
+              keyfreq-file-lock (expand-file-name "keyfreq.lock" fn/cache-dir)))
     #+END_SRC
 
 *** which-key
@@ -1018,56 +1071,56 @@
   Visual aesthetics is also a functional thing as well
 
 ** Font
-    I like fixed font specially DejaVu Mono
+   I like fixed font specially DejaVu Mono
 
-    #+BEGIN_SRC emacs-lisp
-      (set-frame-font "DejaVu Sans Mono-8" t t )
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (set-frame-font "DejaVu Sans Mono-8" t t )
+   #+END_SRC
 
 ** Screen
-    I prefer no clutter in my screen so I disable majority of the niceties.
+   I prefer no clutter in my screen so I disable majority of the niceties.
 
-    #+BEGIN_SRC emacs-lisp
-      (defun fn/optimize-visual-space ()
-        (let ((try-set-mode (lambda (mode value)
-                              (when (fboundp 'mode)
-                                (mode value)))))
-          (funcall try-set-mode 'tooltip-mode -1)
-          (funcall try-set-mode 'tool-bar-mode -1)
-          (funcall try-set-mode 'menu-bar-mode -1)
-          (funcall try-set-mode 'fringe-mode 0)))
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/optimize-visual-space ()
+       (let ((try-set-mode (lambda (mode value)
+                             (when (fboundp 'mode)
+                               (mode value)))))
+         (funcall try-set-mode 'tooltip-mode -1)
+         (funcall try-set-mode 'tool-bar-mode -1)
+         (funcall try-set-mode 'menu-bar-mode -1)
+         (funcall try-set-mode 'fringe-mode 0)))
 
-      (fn/optimize-visual-space)
+     (fn/optimize-visual-space)
 
-      (add-hook 'after-init-hook 'toggle-frame-fullscreen)
-    #+END_SRC
+     (add-hook 'after-init-hook 'toggle-frame-fullscreen)
+   #+END_SRC
 
 ** Theme
    I like dark themes, my eyes respond better to it
 
    My chosen themes
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package apropospriate-theme
-        :ensure t
-        :defer t)
+   #+BEGIN_SRC emacs-lisp
+     (use-package apropospriate-theme
+       :ensure t
+       :defer t)
 
-      (use-package base16-theme
-        :ensure t
-        :defer t)
+     (use-package base16-theme
+       :ensure t
+       :defer t)
 
-      (use-package tronesque-theme
-        :ensure t
-        :defer t)
-    #+END_SRC
+     (use-package tronesque-theme
+       :ensure t
+       :defer t)
+   #+END_SRC
 
-    Load the theme if it is a terminal or desktop.
+   Load the theme if it is a terminal or desktop.
 
-    #+BEGIN_SRC emacs-lisp
-      (cond
-       ((window-system) (load-theme 'apropospriate-dark t))
-       ((not (window-system)) (load-theme 'tronesque t)))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (cond
+      ((window-system) (load-theme 'apropospriate-dark t))
+      ((not (window-system)) (load-theme 'tronesque t)))
+   #+END_SRC
 
 ** Aesthetic
    Somewhat more aesthetic than functional
@@ -1155,7 +1208,8 @@
       (use-package zone
         :ensure t
         :config
-        (zone-when-idle 300) ;; 5 minutes is a good enough time
+        (zone-when-idle (* fn/minute-per-second 5))
+
         (setq zone-programs (list))
 
         (setq
@@ -1258,129 +1312,130 @@
   Things to organize life in general
 
 ** epa
-    Encryption is a must
+   Encryption is a must
 
-    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
+   Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
 
-    #+BEGIN_SRC emacs-lisp
-      (require 'epa-file)
-      (epa-file-enable)
+   #+BEGIN_SRC emacs-lisp
+     (require 'epa-file)
+     (epa-file-enable)
 
-      (defun fn/backup-each-save-filter (filename)
-        (let ((ignored-filenames
-               '("\\.gpg$"))
-              (matched-ignored-filename nil))
-          (mapc
-           (lambda (x)
-             (when (string-match x filename)
-               (setq matched-ignored-filename t)))
-           ignored-filenames)
-          (not matched-ignored-filename)))
+     (defun fn/backup-each-save-filter (filename)
+       (let ((ignored-filenames
+              '("\\.gpg$"))
+             (matched-ignored-filename nil))
+         (mapc
+          (lambda (x)
+            (when (string-match x filename)
+              (setq matched-ignored-filename t)))
+          ignored-filenames)
+         (not matched-ignored-filename)))
 
-      (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
+     (setq backup-each-save-filter-function 'fn/backup-each-save-filter)
 
-      (setq enable-local-variables :safe)
+     (setq enable-local-variables :safe)
 
-      (add-to-list 'safe-local-variable-values '(auto-save-default))
-      (add-to-list 'safe-local-variable-values  '(backup-inhibited . t))
-      (add-to-list 'safe-local-variable-values '(epa-file-encrypt-to))
-    #+END_SRC
+     (add-to-list 'safe-local-variable-values '(auto-save-default))
+     (add-to-list 'safe-local-variable-values  '(backup-inhibited . t))
+     (add-to-list 'safe-local-variable-values '(epa-file-encrypt-to))
+   #+END_SRC
 ** org
-    org-mode my buddy. This is filed under external modes since I download a new copy of org mode to be updated.
+   org-mode my buddy. This is filed under external modes since I download a new copy of org mode to be updated.
 
-    Some basic setup which I use =org-drill= and =org-journal=
+   Some basic setup which I use =org-drill= and =org-journal=
 
-    Here is a reference to the  [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Time-Parsing.html][date time format]].
+   Here is a reference to the  [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Time-Parsing.html][date time format]].
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :bind (("C-c l" . org-store-link)
-               ("C-c a" . org-agenda)
-               ("C-c h" . helm-org-in-buffer-headings))
-        :config
-        ;; Config
-        (setq org-log-done 'time)
-
-        ;; Setup
-        (add-to-list 'org-modules 'org-drill)
-
-        ;; Todo
-        (setq org-todo-keywords
-              '((sequence "INVESTIGATE(i)" "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")))
-
-        ;; Capture
-        (setq org-directory
-              (expand-file-name "~/Fakespace/nobody-library"))
-        (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
-
-        (setq org-main-file (expand-file-name "main.org" org-directory))
-        (setq org-review-file (expand-file-name "learning.org" org-directory))
-        (setq org-todo-file (expand-file-name "todo.org" org-directory))
-
-        (defconst fn/org-event-file-name "event.org"
-          "My event planning file name")
-
-        (defconst fn/org-event-file (expand-file-name fn/org-event-file-name org-directory)
-          "My event planning file")
-
-        (setq org-src-window-setup 'current-window)
-
-        (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
-
-        (define-key global-map "\C-cc" 'org-capture) ;; Use suggested key binding
-        (setq org-capture-templates
-              (list
-               (list "t" "Todo" 'entry
-                     (list 'file+headline org-todo-file "Todo")
-                     "* INVESTIGATE %?\n   %i")
-               (list "e" "Event" 'entry
-                     (list 'file+headline  fn/org-event-file "Events")
-                     "* %? :event:")
-               (list "r" "Review/Remember" 'entry
-                     (list 'file+headline org-review-file "Learning Notes" "Review")
-                     "* %? :drill:\n  CREATED_ON: %T")))
-
-        ;; Agenda
-        (setq org-agenda-span 14) ;; Fortnight
-
-        (setq org-planning-files
-              (list
-               org-main-file
-               org-blog-file
-               ))
-
-        (setq org-task-files
-              (list
-               org-todo-file
-               fn/org-event-file
-               org-review-file))
-
-        (setq org-agenda-files
-              (append
-               org-planning-files
-               org-task-files))
-
-        (setq org-refile-targets nil) ;; TODO: Make refile tagets
-
-        ;; org-drill
-        (require 'org-drill)
-        (setq org-drill-scope
-              (list org-review-file))
+   #+BEGIN_SRC emacs-lisp
+     (use-package org
+       :bind (("C-c l" . org-store-link)
+              ("C-c a" . org-agenda)
+              ("C-c h" . helm-org-in-buffer-headings))
+       :config
+       ;; Config
+       (setq org-log-done 'time)
 
 
+       ;; Setup
+       (add-to-list 'org-modules 'org-drill)
 
-        (require 'org-mobile)
-        (setq org-mobile-directory
-              (expand-file-name "mobile" org-directory))
-        (setq org-mobile-inbox-for-pull
-              (expand-file-name "mobile-pull" org-directory))
-        (setq org-mobile-files
-              (list org-review-file)))
-    #+END_SRC
+       ;; Todo
+       (setq org-todo-keywords
+             '((sequence "INVESTIGATE(i)" "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")))
 
-    I prefer to see my main org file on boot
+       ;; Capture
+       (setq org-directory
+             (expand-file-name "~/Fakespace/nobody-library"))
+       (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
-    #+BEGIN_SRC emacs-lisp
+       (setq org-main-file (expand-file-name "main.org" org-directory))
+       (setq org-review-file (expand-file-name "learning.org" org-directory))
+       (setq org-todo-file (expand-file-name "todo.org" org-directory))
+
+       (defconst fn/org-event-file-name "event.org"
+         "My event planning file name")
+
+       (defconst fn/org-event-file (expand-file-name fn/org-event-file-name org-directory)
+         "My event planning file")
+
+       (setq org-src-window-setup 'current-window)
+
+       (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
+
+       (define-key global-map "\C-cc" 'org-capture) ;; Use suggested key binding
+       (setq org-capture-templates
+             (list
+              (list "t" "Todo" 'entry
+                    (list 'file+headline org-todo-file "Todo")
+                    "* INVESTIGATE %?\n   %i")
+              (list "e" "Event" 'entry
+                    (list 'file+headline  fn/org-event-file "Events")
+                    "* %? :event:")
+              (list "r" "Review/Remember" 'entry
+                    (list 'file+headline org-review-file "Learning Notes" "Review")
+                    "* %? :drill:\n  CREATED_ON: %T")))
+
+       ;; Agenda
+       (setq org-agenda-span 14) ;; Fortnight
+
+       (setq org-planning-files
+             (list
+              org-main-file
+              org-blog-file
+              ))
+
+       (setq org-task-files
+             (list
+              org-todo-file
+              fn/org-event-file
+              org-review-file))
+
+       (setq org-agenda-files
+             (append
+              org-planning-files
+              org-task-files))
+
+       (setq org-refile-targets nil) ;; TODO: Make refile tagets
+
+       ;; org-drill
+       (require 'org-drill)
+       (setq org-drill-scope
+             (list org-review-file))
+
+
+
+       (require 'org-mobile)
+       (setq org-mobile-directory
+             (expand-file-name "mobile" org-directory))
+       (setq org-mobile-inbox-for-pull
+             (expand-file-name "mobile-pull" org-directory))
+       (setq org-mobile-files
+             (list org-review-file)))
+   #+END_SRC
+
+   I prefer to see my main org file on boot
+
+   #+BEGIN_SRC emacs-lisp
       (defun fn/find-main-org-file ()
         (interactive)
         (find-file org-main-file))
@@ -1517,13 +1572,28 @@
       (add-hook 'dired-mode-hook 'dired-hide-details-mode)
     #+END_SRC
 
+*** image-dired
+    Text is not enough, images are important too
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package image-dired
+        :ensure t
+        :after image-dired
+        :defer t
+        :config
+        (setq image-dired-dir (expand-file-name "image-dired" fn/cache-dir-name)))
+    #+END_SRC
+
 *** tmtxt
     Experimental =dired= with =rsync= all thanks to [[https://github.com/tmtxt][tmtxt]]
 
     #+BEGIN_SRC emacs-lisp
+      (defconst fn/tmtxt-package-dir (expand-file-name "tmtxt/" fn/custom-package-dir)
+        "tmtxt package directory")
+
       (use-package tmtxt-async-tasks
-        :load-path "elisp/tmtxt/"
-        :defer t
+        :load-path fn/tmtxt-package-dir
+        :defer 2
         :after dired
         :config
         (setq-default tat/window-close-delay "10"
@@ -1532,17 +1602,15 @@
       (use-package tmtxt-dired-async
         :after tmtxt-async-tasks
         :config
-        (when (fn/check-command "rsync")
-          (setq-default tda/rsync-arguments "-avzh --progress")
+        (setq-default tda/rsync-arguments "-avzh --progress")
 
-          (define-key dired-mode-map (kbd "C-c C-r") 'tda/rsync)
-          (define-key dired-mode-map (kbd "C-c C-t") 'tda/rsync-delete)
+        (define-key dired-mode-map (kbd "C-c C-r") 'tda/rsync)
+        (define-key dired-mode-map (kbd "C-c C-t") 'tda/rsync-delete)
 
-          (define-key dired-mode-map (kbd "C-c C-a") 'tda/rsync-multiple-mark-file)
-          (define-key dired-mode-map (kbd "C-c C-e") 'tda/rsync-multiple-empty-list)
-          (define-key dired-mode-map (kbd "C-c C-d") 'tda/rsync-multiple-remove-item)
-          (define-key dired-mode-map (kbd "C-c C-v") 'tda/rsync-multiple))
-
+        (define-key dired-mode-map (kbd "C-c C-a") 'tda/rsync-multiple-mark-file)
+        (define-key dired-mode-map (kbd "C-c C-e") 'tda/rsync-multiple-empty-list)
+        (define-key dired-mode-map (kbd "C-c C-d") 'tda/rsync-multiple-remove-item)
+        (define-key dired-mode-map (kbd "C-c C-v") 'tda/rsync-multiple)
         (define-key dired-mode-map (kbd "C-c C-z") 'tda/zip)
         (define-key dired-mode-map (kbd "C-c C-u") 'tda/unzip)
 
@@ -1551,6 +1619,15 @@
         (define-key dired-mode-map (kbd "C-c C-q") 'tda/download-to-current-dir)
         (define-key dired-mode-map (kbd "C-c C-l") 'tda/download-clipboard-link-to-current-dir))
     #+END_SRC
+
+** tramp
+   Tramp is too good to pass up
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package tramp
+       :config
+       (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)))
+   #+END_SRC
 
 * Code Monkey
   Modes for my programming experiences
@@ -1562,12 +1639,15 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package type-break
-        :init
-        (type-break-mode t)
-        (type-break-query-mode t)
         :config
-        (setq type-break-interval (* 60 25)
-              type-break-good-rest-interva (* 60 5)))
+        (setq type-break-interval (* fn/minute-per-second 25)
+              type-break-good-rest-interva (* fn/minute-per-second 5)
+
+              type-break-file-name (expand-file-name "type-break" fn/cache-dir)
+              type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
+
+        (type-break-mode t)
+        (type-break-query-mode t))
     #+END_SRC
 
 *** auto-compile
@@ -2370,6 +2450,9 @@
        :ensure t
        :defer t
        :config
+
+       (setq emms-directory (expand-file-name "emms" fn/cache-dir))
+
        (emms-standard)
        (emms-default-players)
 
@@ -2588,6 +2671,20 @@
                                 ;; Split the right window by a third, negative arguments huh.
                                 (split-window-horizontally (- one-third-fold))
                                 (split-window-horizontally (- one-third-fold))))))
+
+     (defun fmw/four-part-equal-vertical-window-layout ()
+       "This is for my music conversion but not that mind blowing to do"
+       (interactive)
+       (fmw/restore-buffers (lambda ()
+                              (setq golden-ratio-mode nil)
+                              (delete-other-windows)
+
+                              (split-window-horizontally)
+                              (split-window-horizontally)
+                              (other-window 2)
+
+                              (split-window-horizontally)
+                              (other-window 2))))
 
    #+END_SRC
 
@@ -2977,7 +3074,7 @@
        (find-file (expand-file-name "config.org" user-emacs-directory)))
    #+END_SRC
 
-* My Bindings
+* Custom Bindings
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
@@ -3005,53 +3102,54 @@
         trigger))
 
     ;; Motion
-    (define-key global-map (kbd "C-!") (fn/trigger-key (kbd "C-<return>")))
-    (define-key global-map (kbd "M-!") (fn/trigger-key (kbd "M-<return>")))
+    (global-set-key (kbd "C-!") (fn/trigger-key (kbd "C-<return>")))
+    (global-set-key (kbd "M-!") (fn/trigger-key (kbd "M-<return>")))
 
     ;; Keys
-    (define-key global-map (kbd "M-n") (fn/trigger-key (kbd "DEL")))
+    (global-set-key (kbd "M-n") (fn/trigger-key (kbd "DEL")))
 
     ;; Search
-    (define-key global-map (kbd "C-c n C-s") 'fn/isearch-forward-normally)
-    (define-key global-map (kbd "C-c n C-r") 'fn/isearch-backward-normally)
+    (global-set-key (kbd "C-c n C-s") 'fn/isearch-forward-normally)
+    (global-set-key (kbd "C-c n C-r") 'fn/isearch-backward-normally)
 
 
     ;; Buffers
-    (define-key global-map (kbd  "C-c n k") 'kill-this-buffer)
+    (global-set-key (kbd  "C-c n k") 'kill-this-buffer)
 
     ;; Windows
-    (define-key global-map (kbd "C-c m w h") 'fmw/four-part-horizontal-window-layout)
-    (define-key global-map (kbd "C-c m w v") 'fmw/four-part-vertical-window-layout)
-    (define-key global-map (kbd "C-c m w t") 'fmw/three-part-left-window-layout)
-    (define-key global-map (kbd "C-c m w 3") 'fmw/three-part-vertical-window-layout)
+    (global-set-key (kbd "C-c m w h") 'fmw/four-part-horizontal-window-layout)
+    (global-set-key (kbd "C-c m w v") 'fmw/four-part-vertical-window-layout)
+    (global-set-key (kbd "C-c m w t") 'fmw/three-part-left-window-layout)
+    (global-set-key (kbd "C-c m w 3") 'fmw/three-part-vertical-window-layout)
+    (global-set-key (kbd "C-c m w 4") 'fmw/four-part-equal-vertical-window-layout)
 
     ;; System Buffers
-    (define-key global-map (kbd "C-c m b m") 'fn/open-message-buffer)
+    (global-set-key (kbd "C-c m b m") 'fn/open-message-buffer)
 
     ;; Shell
-    (define-key global-map (kbd "C-c n s") 'shell)
+    (global-set-key (kbd "C-c n s") 'shell)
 
     ;; Commands
-    (define-key global-map (kbd "C-x C-x") (fn/trigger-key (kbd "M-x")))
+    (global-set-key (kbd "C-x C-x") (fn/trigger-key (kbd "M-x")))
 
     ;; Files
-    (define-key global-map (kbd "C-c m b c") 'fn/find-config-file)
-    (define-key global-map (kbd "C-c m b o") 'fn/find-main-org-file)
+    (global-set-key (kbd "C-c m b c") 'fn/find-config-file)
+    (global-set-key (kbd "C-c m b o") 'fn/find-main-org-file)
 
     ;; Functions
-    (define-key global-map (kbd  "C-c m r s") 'fn/startup)
-    (define-key global-map (kbd  "C-c m r c") 'fn/cleanup)
+    (global-set-key (kbd  "C-c m r s") 'fn/startup)
+    (global-set-key (kbd  "C-c m r c") 'fn/cleanup)
 
     ;; Custom Emacs
-    (define-key global-map (kbd  "C-c m e e") 'fn/bootstrap-experimental)
-    (define-key global-map (kbd  "C-c m e s") 'fn/bootstrap-spacemacs)
-    (define-key global-map (kbd  "C-c m e f") 'fn/bootstrap-from-dir)
+    (global-set-key (kbd  "C-c m e e") 'fn/bootstrap-experimental)
+    (global-set-key (kbd  "C-c m e s") 'fn/bootstrap-spacemacs)
+    (global-set-key (kbd  "C-c m e f") 'fn/bootstrap-from-dir)
 
     ;; Review Custom Emacs
-    (define-key global-map (kbd  "C-c m e p") 'fn/bootstrap-steve-purcell)
-    (define-key global-map (kbd  "C-c m e z") 'fn/bootstrap-zak-elep)
-    (define-key global-map (kbd  "C-c m e c") 'fn/bootstrap-sacha-chua)
-    (define-key global-map (kbd  "C-c m e j") 'fn/bootstrap-john-wiegley)
+    (global-set-key (kbd  "C-c m e p") 'fn/bootstrap-steve-purcell)
+    (global-set-key (kbd  "C-c m e z") 'fn/bootstrap-zak-elep)
+    (global-set-key (kbd  "C-c m e c") 'fn/bootstrap-sacha-chua)
+    (global-set-key (kbd  "C-c m e j") 'fn/bootstrap-john-wiegley)
   #+END_SRC
 
 * Sandbox

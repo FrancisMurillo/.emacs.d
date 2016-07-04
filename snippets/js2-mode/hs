@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: hs
-# key: hs
-# --
-console.log('Hello Snippet World');

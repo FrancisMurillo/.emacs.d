@@ -1,2 +1,7 @@
 config.org~ emacs-init.el~ emacs-init.org~ init.el~
 *~
+
+config.el
+
+.cache
+elpa
