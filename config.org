@@ -556,17 +556,21 @@
         :init
         (add-hook 'prog-mode-hook 'company-mode)
         :config
-        (setq company-tooltip-limit 20
-              company-tooltip-align-annotations t
+        (setq company-idle-delay 0.2
+              company-minimum-prefix-length 4
 
-              company-idle-delay 0.01
+              company-begin-commands (list 'self-insert-command))
 
-              company-show-numbers t
-              company-minimum-prefix-length 2
+        (setq company-show-numbers t
+              company-tooltip-limit 20
+              company-tooltip-align-annotations t)
 
-              company-begin-commands '(self-insert-command))
+        (setq company-dabbrev-time-limit 0.1
+              company-dabbrev-code-time-limit 0.1)
 
-        (setq company-backends '(company-elisp company-dabbrev-code))
+
+        (setq company-backends (list))
+        (add-to-list 'company-backends 'company-elisp)
 
         (defun fn/combine-backends (backend new-backend)
           (if (and (listp backend) (member new-backend backend))
@@ -740,6 +744,9 @@
         (defconst fn/project-local-file ".project-locals.el"
           "Project local setting file")
 
+        (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
+          "Project init files")
+
         (defun fn/create-projectile-file ()
           (interactive)
           (lexical-let* ((target-dir  (read-directory-name "Where do you want to the .projectile placed?"))
@@ -760,7 +767,7 @@
             (let* ((current-project-root (projectile-project-root))
                    (project-init-file (expand-file-name fn/project-file current-project-root)))
               (when (file-exists-p project-init-file)
-                (message "Loading project init file for %s" current-project-root)
+                (message "Loading project init file for %s" (projectile-project-name))
                 (unwind-protect
                     (load project-init-file t)
                   (message "There was an error loading %s" project-init-file))))))
@@ -770,8 +777,9 @@
           (when (projectile-project-p)
             (let* ((current-project-root (projectile-project-root))
                    (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
-              (when (file-exists-p project-local-init-file)
-                (message "Loading project local file for %s " current-project-root)
+              (when (and  (file-exists-p project-local-init-file)
+                          (not (member (buffer-file-name) fn/project-init-files)))
+                (message "Loading project local file for %s on %s" (projectile-project-name) (buffer-name))
                 (unwind-protect
                     (load project-local-init-file t)
                   (message "There was an error loading %s" project-local-init-file))))))
@@ -790,7 +798,7 @@
                        (load-project-hook (funcall project-memoized)))
 
           (add-hook 'find-file-hook load-project-hook)
-          (add-hook 'find-dired-hook'load-project-hook))
+          (add-hook 'find-dired-hook load-project-hook))
 
 
         (add-hook 'find-file-hook 'fn/load-project-local-file)
@@ -820,19 +828,26 @@
                ("M-s o" . helm-occur))
         :config
         (require 'helm-config)
-        (setq helm-mode-fuzzy-match t)
-        (setq helm-completion-in-region-fuzzy-match t)
 
         (setq helm-split-window-in-side-p t
               helm-yank-symbol-first t
+
+              helm-mode-fuzzy-match t
+              helm-completion-in-region-fuzzy-match t
               helm-buffers-fuzzy-matching t
               helm-apropos-fuzzy-match t
               helm-recentf-fuzzy-match t
               helm-semantic-fuzzy-match t
               helm-locate-fuzzy-match t
-              helm-ff-file-name-history-use-recentf t
+
               helm-su-or-sudo "su"
-              helm-ff-auto-update-initial-value t)
+
+              helm-ff-file-name-history-use-recentf t
+              helm-ff-auto-update-initial-value t
+
+              helm-echo-input-in-header-line t)
+
+        (setq helm-debug-root-directory user-emacs-directory)
 
         (helm-mode t)
 
@@ -840,15 +855,13 @@
 
         (helm-autoresize-mode t)
 
-
-        (add-hook 'eshell-mode-hook
-                  (lambda ()
-                    (define-key eshell-mode-map
-                      [remap eshell-pcomplete]
-                      'helm-esh-pcomplete)
-                    (define-key eshell-mode-map
-                      (kbd "M-p")
-                      'helm-eshell-history)))
+        (add-hook 'eshell-mode-hook (lambda ()
+                                      (define-key eshell-mode-map
+                                        [remap eshell-pcomplete]
+                                        'helm-esh-pcomplete)
+                                      (define-key eshell-mode-map
+                                        (kbd "M-p")
+                                        'helm-eshell-history)))
 
         (ido-mode -1))
 
@@ -1053,9 +1066,12 @@
         :config
         (global-diff-hl-mode)
         (setq diff-hl-side 'left)
-        (diff-hl-margin-mode)
-        (eval-after-load "magit"
-          '(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)))
+        (diff-hl-margin-mode))
+
+      (use-package diff-hl
+        :after magit
+        :config
+        (add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh))
     #+END_SRC
 *** hl-line
     Highlight the current line
@@ -1482,6 +1498,8 @@
     #+BEGIN_SRC emacs-lisp
       (use-package tmtxt-async-tasks
         :load-path "elisp/tmtxt/"
+        :defer t
+        :after dired
         :config
         (setq-default tat/window-close-delay "10"
                       tat/window-height 5))
@@ -1548,9 +1566,11 @@
       (use-package smartparens
         :diminish smartparens-mode
         :ensure t
-        :config
-        (use-package smartparens-config)
-        (smartparens-global-mode 1))
+        :init
+        (add-hook 'prog-mode-hook 'smartparens-mode))
+
+      (use-package smartparens-config
+        :after smartparens)
     #+END_SRC
 
 *** flycheck
@@ -2047,13 +2067,13 @@
     #+BEGIN_SRC emacs-lisp
       (use-package company-ghc
         :ensure t
-        :after (company haskell-mode)
+        :after (haskell-mode company)
         :config
         (add-to-list 'company-backends 'company-ghc))
 
       (use-package company-ghci
         :ensure t
-        :after (company haskell-mode)
+        :after (haskell-mode company)
         :config
         (add-to-list 'company-backends 'company-ghci))
 
