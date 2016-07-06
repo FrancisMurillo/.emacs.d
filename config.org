@@ -1471,6 +1471,16 @@
            'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
           (fm/insert-private-file-headers))
 
+        (defun fmj/insert-summary-block ()
+          "Insert summary block at point, this is pretty much #+BEGIN_SRC except summary"
+          (interactive)
+          (let ((summary-block
+                 (string-join (list "#+BEGIN_SUMMARY"
+                                    "Something happened but I was too lazy to write it down"
+                                    "#+END_SUMMARY")
+                              "\n")))
+            (insert (concat summary-block "\n")))
+
         (defun fmj/insert-org-journal-headers ()
           (interactive)
           (fm/insert-org-gpg-headers)
@@ -1489,6 +1499,10 @@
               (insert "#+STARTUP: content\n")
               (insert (format-time-string
                        "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
+
+              (fmj/insert-summary-block)
+
+
               (insert (format-time-string
                        "* %Y-%b-%d %a" datim)))))
 
@@ -2698,6 +2712,12 @@
        (interactive)
        (let ((time-format "%Y-%m-%d"))
          (insert (format-time-string time-format))))
+
+     (defun fn/save-and-kill-buffer ()
+       "Save and kill the buffer in one command"
+       (interactive)
+       (call-interactively 'save-buffer)
+       (call-interactively 'kill-this-buffer))
    #+END_SRC
 
 ** Coins.Ph API
@@ -2751,10 +2771,11 @@
        (lexical-let* ((amount (read-number "Enter amount: "))
                       (current-quote (fmc/call-cli "quote"))
                       (current-buy (cdr (assoc "buy" current-quote)))
+                      (current-value (/ amount current-buy))
                       (confirm-action (yes-or-no-p (format "Are you sure you to buy %f at %f" amount current-buy))))
          (when confirm-action
            (fmc/call-cli "buy" amount)
-           (message "Successfully bought %f at %f" amount current-buy))))
+           (message "Successfully bought %f at %f amounting to %f" amount current-buy current-value))))
 
      (defun fmc/sell-coin ()
        "Sell coins"
@@ -3114,7 +3135,8 @@
 
 
     ;; Buffers
-    (global-set-key (kbd  "C-c n k") 'kill-this-buffer)
+    (global-set-key (kbd "C-c n k") 'kill-this-buffer)
+    (global-set-key (kbd "C-c n C-s") 'fn/save-and-kill-buffer)
 
     ;; Windows
     (global-set-key (kbd "C-c m w h") 'fmw/four-part-horizontal-window-layout)
