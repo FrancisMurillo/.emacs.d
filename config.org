@@ -1479,7 +1479,7 @@
                                     "Something happened but I was too lazy to write it down"
                                     "#+END_SUMMARY")
                               "\n")))
-            (insert (concat summary-block "\n")))
+            (insert (concat summary-block "\n"))))
 
         (defun fmj/insert-org-journal-headers ()
           (interactive)
@@ -3136,7 +3136,7 @@
 
     ;; Buffers
     (global-set-key (kbd "C-c n k") 'kill-this-buffer)
-    (global-set-key (kbd "C-c n C-s") 'fn/save-and-kill-buffer)
+    (global-set-key (kbd "C-c n C-k") 'fn/save-and-kill-buffer)
 
     ;; Windows
     (global-set-key (kbd "C-c m w h") 'fmw/four-part-horizontal-window-layout)
@@ -3176,10 +3176,6 @@
 
 * Sandbox
 
-  #+BEGIN_SRC emacs-lisp
-
-  #+END_SRC
-
 ** avy
    Interesting but I hasn't stuck with me
 
@@ -3192,7 +3188,7 @@
        (avy-setup-default))
    #+END_SRC
 
-**ssniper
+** ssniper
    Swiper no swiping
 
    #+BEGIN_SRC emacs-lisp
@@ -3215,6 +3211,7 @@
        :ensure t
        :defer t)
    #+END_SRC
+
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
