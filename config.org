@@ -389,16 +389,6 @@
 * Terminator
   Shell related aspect
 
-** exec-path-from-shell
-   Command line integration
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package exec-path-from-shell
-       :ensure t
-       :config
-       (exec-path-from-shell-initialize))
-   #+END_SRC
-
 ** term
    An enhancement for =term=
 
@@ -635,6 +625,7 @@
 
 
         (setq company-backends (list))
+        (add-to-list 'company-backends 'company-dabbrev)
         (add-to-list 'company-backends 'company-elisp)
 
         (defun fn/combine-backends (backend new-backend)
@@ -1350,87 +1341,58 @@
      (use-package org
        :bind (("C-c l" . org-store-link)
               ("C-c a" . org-agenda)
-              ("C-c h" . helm-org-in-buffer-headings))
+              ("C-c h" . helm-org-in-buffer-headings)
+              ("C-c c" . org-capture))
        :config
-       ;; Config
+       ;; org files
+       (defconst fn/org-directory (expand-file-name "~/Fakespace/nobody-library")
+         "Main library for org files")
+
+       (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-directory)
+         "Main capture org file")
+
+       (defconst fn/org-main-file (expand-file-name "main.org" org-directory)
+         "Main org planning file")
+
+       (defconst fn/org-todo-file (expand-file-name "todo.org" org-directory)
+         "Main org todo file")
+
+       (defconst fn/org-event-file (expand-file-name "event.org" org-directory)
+         "My event planning file")
+
+
+       ;; org-src
+       (setq org-src-window-setup 'current-window)
+
+       ;; org-clock
        (setq org-log-done 'time)
 
 
-       ;; Setup
-       (add-to-list 'org-modules 'org-drill)
-
-       ;; Todo
+       ;; org-todo
        (setq org-todo-keywords
              '((sequence "INVESTIGATE(i)" "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")))
 
-       ;; Capture
-       (setq org-directory
-             (expand-file-name "~/Fakespace/nobody-library"))
-       (setq org-default-notes-file (concat org-directory "/capture.org")) ;; Personal org library
 
-       (setq org-main-file (expand-file-name "main.org" org-directory))
-       (setq org-review-file (expand-file-name "learning.org" org-directory))
-       (setq org-todo-file (expand-file-name "todo.org" org-directory))
-
-       (defconst fn/org-event-file-name "event.org"
-         "My event planning file name")
-
-       (defconst fn/org-event-file (expand-file-name fn/org-event-file-name org-directory)
-         "My event planning file")
-
-       (setq org-src-window-setup 'current-window)
-
-       (setq org-blog-file (expand-file-name "fnlog.org" org-directory))
-
-       (define-key global-map "\C-cc" 'org-capture) ;; Use suggested key binding
+       ;; org-capture
        (setq org-capture-templates
              (list
               (list "t" "Todo" 'entry
-                    (list 'file+headline org-todo-file "Todo")
+                    (list 'file+headline fn/org-todo-file "Todo")
                     "* INVESTIGATE %?\n   %i")
               (list "e" "Event" 'entry
                     (list 'file+headline  fn/org-event-file "Events")
-                    "* %? :event:")
-              (list "r" "Review/Remember" 'entry
-                    (list 'file+headline org-review-file "Learning Notes" "Review")
-                    "* %? :drill:\n  CREATED_ON: %T")))
+                    "* %? :event:")))
 
-       ;; Agenda
+       ;; org-agenda
        (setq org-agenda-span 14) ;; Fortnight
 
-       (setq org-planning-files
-             (list
-              org-main-file
-              org-blog-file
-              ))
-
-       (setq org-task-files
-             (list
-              org-todo-file
-              fn/org-event-file
-              org-review-file))
-
        (setq org-agenda-files
-             (append
-              org-planning-files
-              org-task-files))
+             (list
+              fn/org-main-file
+              fn/org-todo-file))
 
        (setq org-refile-targets nil) ;; TODO: Make refile tagets
-
-       ;; org-drill
-       (require 'org-drill)
-       (setq org-drill-scope
-             (list org-review-file))
-
-
-
-       (require 'org-mobile)
-       (setq org-mobile-directory
-             (expand-file-name "mobile" org-directory))
-       (setq org-mobile-inbox-for-pull
-             (expand-file-name "mobile-pull" org-directory))
-       (setq org-mobile-files
-             (list org-review-file)))
+       )
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -1438,7 +1400,7 @@
    #+BEGIN_SRC emacs-lisp
       (defun fn/find-main-org-file ()
         (interactive)
-        (find-file org-main-file))
+        (find-file fn/org-main-file))
     #+END_SRC
 
 *** org-journal
@@ -1451,7 +1413,7 @@
         :bind (("C-c n j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
         :config
         (setq org-journal-dir
-              (expand-file-name "diary" org-directory))
+              (expand-file-name "diary" fn/org-directory))
 
         (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
               org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
@@ -1515,6 +1477,7 @@
         (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers)))
     #+END_SRC
 
+***
 *** org-reveal
      A nice presentation framework
 
@@ -1556,6 +1519,44 @@
           (defvar fnr/enable-auto-export-on-save t
             "When non-nil. auto exports org-reveal files on save")))
      #+END_SRC
+*** org-drill
+    Flash cards are a must
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package org-drill
+        :after org
+        :config
+        (add-to-list 'org-modules 'org-drill)
+
+        (defconst fn/org-review-file (expand-file-name "learning.org" org-directory)
+          "Main org drill files")
+
+        (add-to-list 'org-capture-templates
+                     (list "r" "Review/Remember" 'entry
+                           (list 'file+headline fn/org-review-file "Learning Notes" "Review")
+                           "* %? :drill:\n  CREATED_ON: %T"))
+
+        (setq org-drill-scope
+              (list fn/org-review-file)))
+    #+END_SRC
+*** org-mobile
+    Mobile org document
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package org-mobile
+        :after org
+        :config
+        (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-directory)
+          "My org mobile directory")
+
+        (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-directory)
+          "My org mobile directory")
+
+        (setq org-mobile-directory  fn/org-mobile-directory
+              org-mobile-inbox-for-pull fn/org-mobile-inbox-directory))
+
+    #+END_SRC
+
 ** flyspell
     Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
@@ -1643,6 +1644,27 @@
        (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)))
    #+END_SRC
 
+** ledger
+   Something to keep track of my finances
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package ledger-mode
+       :ensure t
+       :defer t
+       :init
+       (setq ledger-clear-whole-transactions t))
+
+     (use-package flycheck-ledger
+       :ensure t
+       :after (ledger-mode flycheck))
+   #+END_SRC
+** woman
+   Man pages are nice
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package woman
+       :ensure t)
+   #+END_SRC
 * Code Monkey
   Modes for my programming experiences
 
