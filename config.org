@@ -59,12 +59,19 @@
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
 
    #+BEGIN_SRC emacs-lisp
-     ;; TODO: Make them work with https, apparently it is too slow over the wire
-     (unless (assoc-default "melpa" package-archives)
-       (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-       (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-       (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-       (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/")))
+     (defconst fn/package-archives (list
+                                    (cons "gnu" "http://elpa.gnu.org/packages/")
+                                    (cons "org" "http://orgmode.org/elpa/")
+                                    (cons "melpa" "http://melpa.org/packages/")
+                                    (cons "melpa-stable" "https://stable.melpa.org/packages/"))
+       "List of my packages")
+
+     (mapc (lambda (package-archive)
+             (pcase-let ((`(,name . ,_) package-archive))
+               (unless (assoc-default name package-archives)
+                 (add-to-list 'package-archives package-archive))))
+           fn/package-archives)
+
    #+END_SRC
 
 ** Package Manager
@@ -1351,13 +1358,13 @@
        (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-directory)
          "Main capture org file")
 
-       (defconst fn/org-main-file (expand-file-name "main.org" org-directory)
+       (defconst fn/org-main-file (expand-file-name "main.org" fn/org-directory)
          "Main org planning file")
 
-       (defconst fn/org-todo-file (expand-file-name "todo.org" org-directory)
+       (defconst fn/org-todo-file (expand-file-name "todo.org" fn/org-directory)
          "Main org todo file")
 
-       (defconst fn/org-event-file (expand-file-name "event.org" org-directory)
+       (defconst fn/org-event-file (expand-file-name "event.org" fn/org-directory)
          "My event planning file")
 
 
@@ -2269,6 +2276,14 @@
     #+END_SRC
 *** Build Tools
     Maybe stack or hack?
+** Elm
+   Functional JavaScript frontend
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package elm
+       :ensure t
+       :defer t)
+   #+END_SRC
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python
 
@@ -2485,10 +2500,9 @@
      (use-package emms
        :ensure t
        :defer t
-       :config
-
+       :init
        (setq emms-directory (expand-file-name "emms" fn/cache-dir))
-
+       :config
        (emms-standard)
        (emms-default-players)
 
