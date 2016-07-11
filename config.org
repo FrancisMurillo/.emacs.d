@@ -1565,13 +1565,15 @@
         :config
         (add-to-list 'org-modules 'org-drill)
 
-        (defconst fn/org-review-file (expand-file-name "learning.org" org-directory)
+        (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-directory)
           "Main org drill files")
 
         (add-to-list 'org-capture-templates
                      (list "r" "Review/Remember" 'entry
                            (list 'file+headline fn/org-review-file "Learning Notes" "Review")
-                           "* %? :drill:\n  CREATED_ON: %T"))
+                           "* %? :drill:\n  :CREATED_ON: %T"))
+
+        (add-to-list 'org-agenda-files fn/org-review-file)
 
         (setq org-drill-scope
               (list fn/org-review-file)))
@@ -3134,7 +3136,7 @@
        (newline)
 
        (fmd/insert-document-option "TITLE" (format "Media Diary of %s"
-                                                   (format-time-string "%b. %Y" start-date)))
+    u                                               (format-time-string "%b. %Y" start-date)))
        (fmd/insert-document-option "DATE" (format-time-string "%D" start-date))
        (fmd/insert-document-option "STARTUP" "content")
        (fmd/insert-document-option "OPTIONS" "toc:nil"))
@@ -3274,21 +3276,12 @@
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
-    (defun fn/find-current-key (key)
-      "Find the current key active"
-      (reduce (lambda (x y)
-                (or x y))
-              (mapcar (lambda (map)
-                        (lookup-key map key))
-                      (current-active-maps))
-              :initial-value nil))
-
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
       (lexical-let* ((key-trigger key)
                      (trigger (lambda ()
                                 (interactive)
-                                (let ((key-command (fn/find-current-key key-trigger)))
+                                (let ((key-command (key-binding key-trigger)))
                                   (cond
                                    (key-command
                                     (message "Triggering %s" key-command)
@@ -3298,8 +3291,9 @@
         trigger))
 
     ;; Motion
-    (global-set-key (kbd "C-!") (fn/trigger-key (kbd "C-<return>")))
-    (global-set-key (kbd "M-!") (fn/trigger-key (kbd "M-<return>")))
+    ;; (global-set-key (kbd "C-!") (fn/trigger-key (kbd "C-RET")))
+    ;; (global-set-key (kbd "M-!") (fn/trigger-key (kbd "M-RET")))
+
 
     ;; Keys
     (global-set-key (kbd "M-n") (fn/trigger-key (kbd "DEL")))
