@@ -1374,7 +1374,7 @@
               ("C-c c" . org-capture))
        :config
        ;; org files
-       (defconst fn/org-directory (expand-file-name "~/Fakespace/nobody-library")
+       (defconst fn/org-dir (expand-file-name "~/Fakespace/nobody-library")
          "Main library for org files")
 
        (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-directory)
@@ -1388,6 +1388,9 @@
 
        (defconst fn/org-event-file (expand-file-name "event.org" fn/org-directory)
          "My event planning file")
+
+       ;; org itself
+       (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir))
 
 
        ;; org-src
@@ -1450,7 +1453,7 @@
         :bind (("C-c n j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
         :config
         (setq org-journal-dir
-              (expand-file-name "diary" fn/org-directory))
+              (expand-file-name "diary" fn/org-dir))
 
         (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
               org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
@@ -1565,7 +1568,7 @@
         :config
         (add-to-list 'org-modules 'org-drill)
 
-        (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-directory)
+        (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
           "Main org drill files")
 
         (add-to-list 'org-capture-templates
@@ -1585,10 +1588,10 @@
       (use-package org-mobile
         :after org
         :config
-        (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-directory)
+        (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
           "My org mobile directory")
 
-        (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-directory)
+        (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
           "My org mobile directory")
 
         (setq org-mobile-directory  fn/org-mobile-directory
