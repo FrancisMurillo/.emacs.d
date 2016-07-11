@@ -281,18 +281,18 @@
 
 
      (make-variable-buffer-local
-      (defvar fn/enable-whitespace-cleanup-before-save t
+      (defvar fn/whitespace-cleanup-on-save t
         "When non-nil, delete trailing whitespace on save"))
 
-     (add-to-list 'safe-local-variable-values '(fn/enable-whitespace-cleanup-before-save))
+     (add-to-list 'safe-local-variable-values '(fn/whitespace-cleanup-on-save))
 
-     (defun fn/delete-trailing-whitespace-before-save ()
-       (when fn/enable-whitespace-cleanup-before-save
+     (defun fn/delete-trailing-whitespace-on-save ()
+       (when fn/whitespace-cleanup-on-save
          (with-current-buffer (current-buffer)
            (message "Deleting trailing whitespace in %s" (current-buffer))
            (delete-trailing-whitespace (point-min) (point-max)))))
 
-     (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-before-save)
+     (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-on-save)
 
 
      (temp-buffer-resize-mode t)
@@ -1713,6 +1713,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package type-break
+        :bind (("C-c n C-t" . type-break))
         :config
         (setq type-break-interval (* fn/minute-per-second 25)
               type-break-good-rest-interva (* fn/minute-per-second 5)
@@ -1859,6 +1860,30 @@
         :init
         (define-key prog-mode-map (kbd "M-RET") 'emr-show-refactor-menu)
         (add-hook 'prog-mode-hook 'emr-initialize))
+    #+END_SRC
+*** Formatter
+    Not really but nice to have for a lisp language
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elisp-format
+        :ensure t
+        :defer t
+        :disabled t
+        :config
+        (define-key emacs-lisp-mode-map (kbd "C-c C-f") 'elisp-format-region)
+
+        (make-variable-buffer-local
+         (defvar fn/elisp-format-on-save t
+           "Enable elisp formatting on save"))
+
+        (defun fn/elisp-format-buffer-on-save ()
+          "Format elisp on save"
+          (when fn/elisp-format-on-save
+            (with-current-buffer (current-buffer)
+              (message "Elisp formatting buffer %s" (current-buffer))
+              (elisp-format-buffer))))
+
+        (add-hook 'before-save-hook #'fn/elisp-format-buffer-on-save))
     #+END_SRC
 ** Web
 *** Mode
@@ -2091,7 +2116,7 @@
     #+END_SRC
 
 ** Python
-*** python
+*** Mode
     My favorite programming language, unassuming like Marcy from Peanuts
 
     #+BEGIN_SRC emacs-lisp
@@ -2100,49 +2125,34 @@
         :ensure t)
     #+END_SRC
 
-    Some basic python requirements
+*** Formatter
+    Pep me bro
 
     #+BEGIN_SRC emacs-lisp
       (use-package py-autopep8
         :ensure t
-        :after python
-        :defer t)
-
-      (use-package ein
-        :ensure t
-        :after python
         :defer t
-        :config
-        (setq ein:use-auto-complete t)
-        (setq ein:use-smartrep t))
+        :after python)
     #+END_SRC
 
-*** elpy
-    Making Python an IDE
+*** REPL
+    Using =Ipython= for this
 
     #+BEGIN_SRC emacs-lisp
-      (use-package elpy
+      (use-package ein
         :ensure t
         :defer t
-        :init
-        (add-hook 'python-mode-hook 'elpy-enable)
-
-        (add-hook 'elpy-mode-hook 'flycheck-mode)
-        (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
+        :after python
         :config
-        (setq elpy-python-command "python3")
-        (setq elpy-rpc-python-command "python3")
-        (setq elpy-rpc-backend "jedi")
-        (setq elpy-interactive-python-command "ipython")
-        (elpy-use-ipython)
-
-        (setq elpy-modules (delq 'elpy-module-flycheck elpy-modules))
-
-        (require 'py-autopep8)
-        (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save))
+        (setq ein:use-auto-complete t
+              ein:use-smartrep t))
     #+END_SRC
 
-*** jedi
+    #+BEGIN_SRC emacs-lisp
+
+    #+END_SRC
+
+*** Autocomplete
     The newer Python IDE, [[https://github.com/davidhalter/jedi][Jedi]], much easier to grok.
 
     This requires [[https://pypi.python.org/pypi/pip/][pip]] and the packages  [[https://pypi.python.org/pypi/virtualenv][virtualenv]]. The snippet below is for the hard dependency. Let =jedi:install-server= do the work
@@ -2156,23 +2166,36 @@
     #+END_SRC
 
     #+BEGIN_SRC emacs-lisp
-      (use-package jedi
+      (use-package company-jedi
+        :after company
+        :config
+        (add-to-list 'company-backends 'company-jedi))
+    #+END_SRC
+
+*** IDE
+    Making Python an IDE
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elpy
         :ensure t
         :defer t
         :init
-        (add-hook 'python-mode-hook 'jedi:setup)
-        (add-hook 'python-mode-hook 'jedi:ac-setup)
+        (add-hook 'python-mode-hook 'elpy-enable)
+
+        (add-hook 'elpy-mode-hook 'flycheck-mode)
+        (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
         :config
-        (jedi:install-server)
+        (setq elpy-python-command "python3"
+              elpy-rpc-python-command "python3"
+              elpy-rpc-backend "jedi")
 
-        (define-key jedi-mode-map (kbd "M-.") 'jedi:goto-definition)
-        (define-key jedi-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
-        (define-key jedi-mode-map (kbd "C-M-?") 'jedi:show-doc)
-        (define-key jedi-mode-map (kbd "C-M-/") 'jedi:get-in-function-call)
+        (setq elpy-interactive-python-command "ipython")
+        (elpy-use-ipython)
 
-        (setq elpy-rpc-backend "jedi")
-        (add-to-list 'ac-sources 'ac-source-jedi-direct)
-        (setq jedi:complete-on-dot t))
+        (setq elpy-modules (delq 'elpy-module-flycheck elpy-modules))
+
+        (require 'py-autopep8)
+        (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save))
     #+END_SRC
 
 ** Haskell
@@ -2241,14 +2264,14 @@
         (add-hook 'haskell-mode-hook 'structured-haskell-mode)
         :config
         ;; (define-key shm-map  "\C-j" 'shm/newline-indent)
-        (define-key shm-map  "\M-a" 'shm/goto-parent)
-        (define-key shm-map  "\M-e" 'shm/goto-parent-end)
+        (define-key shm-map (kbd "M-a") 'shm/goto-parent)
+        (define-key shm-map (kbd "M-e") 'shm/goto-parent-end)
         ;; (define-key shm-map  "\C-+" 'shm/add-operand)
-        (define-key shm-map  "\M-r" 'shm/raise)
-        (define-key shm-map  "\M-^" 'shm/delete-indentation)
-        (define-key shm-map  "\M-k" 'shm/kill)
-        (define-key shm-map  "\C-y" 'shm/yank)
-        (define-key shm-map  "\M-k" 'shm/kill-line)
+        (define-key shm-map (kbd "M-r") 'shm/raise)
+        (define-key shm-map (kbd "M-^") 'shm/delete-indentation)
+        (define-key shm-map (kbd "M-k") 'shm/kill)
+        (define-key shm-map (kbd "C-y") 'shm/yank)
+        (define-key shm-map (kbd "M-k") 'shm/kill-line)
         (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
     #+END_SRC
 
@@ -2755,20 +2778,35 @@
      (defconst fmw/empty-buffer "*unchained buffer*"
        "A buffer to represent an empty one")
 
+     (defun fmw/remap-window-buffers (buffer-remapper)
+       "Reassigns the windows with new buffers taking a remapper function over the old ones"
+       (lexical-let* ((current-buffers (mapcar 'window-buffer (window-list)))
+                      (empty-buffer (if (get-buffer fmw/empty-buffer)
+                                        (get-buffer fmw/empty-buffer)
+                                      (generate-new-buffer fmw/empty-buffer)))
+                      (new-buffers (funcall buffer-remapper current-buffers)))
+         (mapc (lambda (pair)
+                 (pcase-let ((`(,current-buffer . ,current-window) pair))
+                   (when current-window
+                     (set-window-buffer current-window
+                                        (if current-buffer current-buffer
+                                          empty-buffer))))
+                 )
+               (-zip-fill nil new-buffers (window-list)))))
+
      (defun fmw/restore-buffers (window-movement)
        "Restore buffers after doing a window layout"
-       (lexical-let ((current-buffers (mapcar 'window-buffer (window-list)))
-                     (empty-buffer (if (get-buffer fmw/empty-buffer)
-                                       (get-buffer fmw/empty-buffer)
-                                     (generate-new-buffer fmw/empty-buffer))))
-         (funcall window-movement)
-         (mapc (lambda (pair)
-                 (lexical-let* ((old-buffer (car pair))
-                                (current-window (cdr pair))
-                                (the-buffer (if old-buffer old-buffer empty-buffer)))
-                   (when current-window
-                     (set-window-buffer current-window the-buffer))))
-               (-zip-fill nil current-buffers (window-list)))))
+       (lexical-let ((mover window-movement))
+         (fmw/remap-window-buffers (lambda (old-buffers)
+                                     (funcall window-movement)
+                                     old-buffers))))
+
+     (defun fmw/rotate-window-buffers (arg)
+       "Rotate the buffers from window to the next like a clock"
+       (interactive "P")
+       (lexical-let ((rotation (if arg arg 1)))
+         (fmw/remap-window-buffers (lambda (old-buffers)
+                                     (-rotate rotation old-buffers)))))
 
      (defun fmw/four-part-horizontal-window-layout ()
        "Split the frame into four windows horizontally. I use this when I'm working in a project where the
@@ -3281,6 +3319,7 @@
     (global-set-key (kbd "C-c m w t") 'fmw/three-part-left-window-layout)
     (global-set-key (kbd "C-c m w 3") 'fmw/three-part-vertical-window-layout)
     (global-set-key (kbd "C-c m w 4") 'fmw/four-part-equal-vertical-window-layout)
+    (global-set-key (kbd "C-c m w r") 'fmw/rotate-window-buffers)
 
     ;; System Buffers
     (global-set-key (kbd "C-c m b m") 'fn/open-message-buffer)
