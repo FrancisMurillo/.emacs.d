@@ -336,6 +336,14 @@
      (use-package s
        :ensure t)
    #+END_SRC
+** f
+   File manipulation library for Emacs
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package f
+       :ensure t)
+   #+END_SRC
+
 ** unicode-fonts
    Unicode is an required aesthetic
 
@@ -350,6 +358,20 @@
        :ensure t
        :config
        (unicode-fonts-setup))
+   #+END_SRC
+
+** exec-path-from-shell
+   The path variable from the shell is need to run commands
+
+   #+BEGIN_SRC emacs-lisp
+     (defconst fn/exec-path-from-shell-package-dir
+       (expand-file-name "exec-path-from-shell/" fn/custom-package-dir)
+       "Htmlize package dir")
+
+     (use-package exec-path-from-shell
+       :load-path fn/exec-path-from-shell-package-dir
+       :config
+       (exec-path-from-shell-initialize))
    #+END_SRC
 
 ** execute-shell
@@ -627,8 +649,8 @@
               company-tooltip-limit 20
               company-tooltip-align-annotations t)
 
-        (setq company-dabbrev-time-limit 0.01
-              company-dabbrev-code-time-limit 0.01)
+        (setq company-dabbrev-time-limit 0.001
+              company-dabbrev-code-time-limit 0.001)
 
 
         (setq company-backends (list))
@@ -1371,9 +1393,6 @@
        ;; org-src
        (setq org-src-window-setup 'current-window)
 
-       ;; org-clock
-       (setq org-log-done 'time)
-
 
        ;; org-todo
        (setq org-todo-keywords
@@ -1399,7 +1418,18 @@
               fn/org-todo-file))
 
        (setq org-refile-targets nil) ;; TODO: Make refile tagets
-       )
+
+       ;; org-clock
+       (setq org-log-done 'time)
+
+       (defun fn/clock-todo-change ()
+         "A nice little hook that clocks in when a todo is change to PENDING"
+         (let ((new-state org-state))
+           (pcase new-state
+             ("PENDING" (org-clock-in))
+             (_ nil))))
+
+       (add-hook 'org-after-todo-state-change-hook 'fn/clock-todo-change))
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -1676,6 +1706,7 @@
   Modes for my programming experiences
 
 ** Support
+   Generic support for coding
 
 *** type-break-mode
     I definitely need to chill out from time to time
@@ -1784,6 +1815,18 @@
         :defer t
         )
     #+END_SRC
+** Helper
+   Specific helper modes
+
+*** npm
+    Call npm with Emacs
+    #+BEGIN_SRC emacs-lisp
+      (use-package npm-mode
+        :ensure t
+        :defer t
+        :bind (("C-c n e" . npm-mode)))
+    #+END_SRC
+
 ** Elisp
 *** Motion
     Makes you a good lisp developer and quite addictive to have
@@ -2188,7 +2231,7 @@
     #+END_SRC
 
 *** Motion
-    The paredit for haskell
+    The paredit for haskell, this weirdly needs [[exec-path-from-shell]] to work
 
     #+BEGIN_SRC emacs-lisp
       (use-package shm
@@ -2279,11 +2322,69 @@
 ** Elm
    Functional JavaScript frontend
 
+*** Mode
+   Elm major mode
+
    #+BEGIN_SRC emacs-lisp
-     (use-package elm
+     (use-package elm-mode
        :ensure t
-       :defer t)
+       :defer t
+       :config
+       nil)
    #+END_SRC
+
+   There is a conflict if you're using this with aggressive indent
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package elm-mode
+       :after aggressive-indent
+       :config
+       (add-hook 'elm-mode-hook
+                 (lambda ()
+                   (setq-local aggressive-indent-mode nil))))
+   #+END_SRC
+
+*** Linter
+    Linter for Elm
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package flycheck-elm
+        :ensure t
+        :after (flycheck elm-mode)
+        :config
+        (flycheck-elm-setup))
+    #+END_SRC
+
+*** Formatter
+    Formatter for Elm, requires =elm-format=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elm-mode
+        :config
+        (setq elm-format-on-save t
+              elm-sort-imports-on-save t))
+
+    #+END_SRC
+*** Autocomplete
+    A needed feature, requires =elm-oracle=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elm-mode
+        :after (elm-mode company)
+        :config
+        (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
+        (add-to-list 'company-backends 'company-elm))
+    #+END_SRC
+
+*** Snippets
+    Snippets too
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package elm-yasnippets
+        :ensure t
+        :after (elm yasnippets))
+    #+END_SRC
+
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python
 
