@@ -1377,16 +1377,16 @@
        (defconst fn/org-dir (expand-file-name "~/Fakespace/nobody-library")
          "Main library for org files")
 
-       (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-directory)
+       (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-dir)
          "Main capture org file")
 
-       (defconst fn/org-main-file (expand-file-name "main.org" fn/org-directory)
+       (defconst fn/org-main-file (expand-file-name "main.org" fn/org-dir)
          "Main org planning file")
 
-       (defconst fn/org-todo-file (expand-file-name "todo.org" fn/org-directory)
+       (defconst fn/org-todo-file (expand-file-name "todo.org" fn/org-dir)
          "Main org todo file")
 
-       (defconst fn/org-event-file (expand-file-name "event.org" fn/org-directory)
+       (defconst fn/org-event-file (expand-file-name "event.org" fn/org-dir)
          "My event planning file")
 
        ;; org itself
