@@ -432,9 +432,15 @@
                (kill-buffer buffer))
            ad-do-it))
        (ad-activate 'term-sentinel)
+
+       ;; Set the term program and ask for a name
        (defadvice ansi-term (before ansi-term-force-shell)
-         (interactive (list (getenv "SHELL"))))
+         (interactive (list (getenv "SHELL")
+                            (let ((term-name (string-trim (read-from-minibuffer "Name the term buffer: "))))
+                              (if (string-empty-p term-name) nil term-name)))))
        (ad-activate 'ansi-term)
+
+
        (add-hook 'term-mode-hook 'goto-address-mode)
        (add-hook 'term-exec-hook
                  '(lambda ()
@@ -1412,6 +1418,7 @@
                     (list 'file+headline  fn/org-event-file "Events")
                     "* %? :event:")))
 
+
        ;; org-agenda
        (setq org-agenda-span 14) ;; Fortnight
 
@@ -1574,7 +1581,7 @@
         (add-to-list 'org-capture-templates
                      (list "r" "Review/Remember" 'entry
                            (list 'file+headline fn/org-review-file "Learning Notes" "Review")
-                           "* %? :drill:\n  :CREATED_ON: %T"))
+                           "* %? :drill:\n  CREATED_ON: %T"))
 
         (add-to-list 'org-agenda-files fn/org-review-file)
 
@@ -3385,6 +3392,13 @@
        :defer t)
    #+END_SRC
 
+** vdiff
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package vdiff
+       :config
+       (define-key vdiff-mode-map (kbd "C-c") vdiff-mode-prefix-map))
+   #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
