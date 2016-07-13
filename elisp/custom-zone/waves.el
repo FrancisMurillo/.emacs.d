@@ -2,6 +2,7 @@
 
 (defvar total-count 0)
 
+;;;###AUTOLOAD
 (defun zone-waves-animate (c col wend)
   (let ((fall-p nil)
         (o (point))
@@ -51,7 +52,7 @@
       )
     fall-p))
 
-
+;;;###AUTOLOAD
 (defun zone-waves ()
   (set 'truncate-lines nil)
   (setq total-count 0)

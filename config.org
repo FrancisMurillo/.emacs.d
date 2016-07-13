@@ -292,7 +292,7 @@
            (message "Deleting trailing whitespace in %s" (current-buffer))
            (delete-trailing-whitespace (point-min) (point-max)))))
 
-     (add-hook 'before-save-hook #'fn/delete-trailing-whitespace-on-save)
+     (add-hook 'before-save-hook 'fn/delete-trailing-whitespace-on-save)
 
 
      (temp-buffer-resize-mode t)
@@ -356,6 +356,7 @@
 
      (use-package unicode-fonts
        :ensure t
+       :disabled t;; For now...
        :config
        (unicode-fonts-setup))
    #+END_SRC
@@ -496,6 +497,15 @@
 
    #+BEGIN_SRC emacs-lisp
      (use-package emamux
+       :ensure t
+       :defer t)
+   #+END_SRC
+
+** docker
+   Containers eh?
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package docker
        :ensure t
        :defer t)
    #+END_SRC
@@ -743,7 +753,22 @@
         (setq wg-mode-line-display-on t
               wg-mode-line-decor-left-brace "["
               wg-mode-line-decor-right-brace "]"
-              wg-mode-line-decor-divider ":"))
+              wg-mode-line-decor-divider ":")
+
+
+        (defun fn/workgroup-init ()
+          "Some initialization when using workgroups"
+          (lexical-let ((current-workgroup-name (wg-workgroup-name (wg-current-workgroup))))
+            (pcase current-workgroup-name
+              ("Personal"  (fn/personal-workgroup-init))
+              (_ nil))))
+
+        (defun fn/personal-workgroup-init ()
+          "My personal setup when working with my personal files"
+          ;; Only one window please
+          (delete-other-windows))
+
+        (add-hook 'wg-after-switch-to-workgroup-hook #'fn/workgroup-init))
     #+END_SRC
 
 *** winner
@@ -1236,19 +1261,17 @@
         :config
         (zone-when-idle (* fn/minute-per-second 5))
 
+        (defconst fn/zone-animation-dir (expand-file-name "elisp/custom-zone/" user-emacs-directory)
+          "Custom zone animation directory")
+
         (setq zone-programs (list))
 
-        (setq
-         zone-animation-directory (expand-file-name "elisp/custom-zone" user-emacs-directory)
-         end-of-buffer-animation (expand-file-name "end-of-buffer.el" zone-animation-directory)
-         waves-animation (expand-file-name "waves.el" zone-animation-directory)
-         )
+        (load-file (expand-file-name "end-of-buffer.el" fn/zone-animation-dir))
+        (add-to-list 'zone-programs 'zone-end-of-buffer)q
 
-        (load-file end-of-buffer-animation)
-        (load-file waves-animation)
-
-        (add-to-list 'zone-programs 'zone-end-of-buffer)
+        (load-file (expand-file-name "waves.el" fn/zone-animation-dir))
         (add-to-list 'zone-programs 'zone-waves))
+
 
       (use-package zone-nyan
         :ensure t
@@ -1256,11 +1279,13 @@
         :config
         (add-to-list 'zone-programs 'zone-nyan))
 
+
       (use-package zone-rainbow
         :ensure t
         :after zone
         :config
         (add-to-list 'zone-programs 'zone-rainbow))
+
 
       (use-package zone-sl
         :ensure t
@@ -1405,15 +1430,15 @@
 
        ;; org-todo
        (setq org-todo-keywords
-             '((sequence "INVESTIGATE(i)" "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")))
-
+             '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
+               (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" )))
 
        ;; org-capture
        (setq org-capture-templates
              (list
               (list "t" "Todo" 'entry
                     (list 'file+headline fn/org-todo-file "Todo")
-                    "* INVESTIGATE %?\n   %i")
+                    "* TODO %?\n   %i")
               (list "e" "Event" 'entry
                     (list 'file+headline  fn/org-event-file "Events")
                     "* %? :event:")))
@@ -1425,7 +1450,8 @@
        (setq org-agenda-files
              (list
               fn/org-main-file
-              fn/org-todo-file))
+              fn/org-todo-file
+              fn/org-event-file))
 
        (setq org-refile-targets nil) ;; TODO: Make refile tagets
 
@@ -1712,7 +1738,9 @@
 
    #+BEGIN_SRC emacs-lisp
      (use-package woman
-       :ensure t)
+       :ensure t
+       :defer t
+       :bind (("C-c n C-w" . woman)))
    #+END_SRC
 * Code Monkey
   Modes for my programming experiences
@@ -1725,13 +1753,14 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package type-break
-        :bind (("C-c n C-t" . type-break))
         :config
         (setq type-break-interval (* fn/minute-per-second 25)
               type-break-good-rest-interva (* fn/minute-per-second 5)
 
               type-break-file-name (expand-file-name "type-break" fn/cache-dir)
               type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
+
+        (global-set-key (kbd "C-c n C-t") 'type-break)
 
         (type-break-mode t)
         (type-break-query-mode t))
@@ -2005,7 +2034,7 @@
 
       (use-package company-tern
         :ensure t
-        :after (tern company)
+        :after company
         :config
         (add-to-list 'company-backends 'company-tern))
     #+END_SRC
@@ -2133,8 +2162,11 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package python
+        :ensure t
         :defer t
-        :ensure t)
+        :config
+        ;; Has a problem with agressive indent
+        (setq-local aggressive-indent-mode nil))
     #+END_SRC
 
 *** Formatter
@@ -2160,25 +2192,22 @@
               ein:use-smartrep t))
     #+END_SRC
 
-    #+BEGIN_SRC emacs-lisp
-
-    #+END_SRC
-
 *** Autocomplete
     The newer Python IDE, [[https://github.com/davidhalter/jedi][Jedi]], much easier to grok.
 
-    This requires [[https://pypi.python.org/pypi/pip/][pip]] and the packages  [[https://pypi.python.org/pypi/virtualenv][virtualenv]]. The snippet below is for the hard dependency. Let =jedi:install-server= do the work
+    This requires [[https://pypi.python.org/pypi/pip/][pip]] and the packages  [[https://pypi.python.org/pypi/virtualenv][virtualenv]].
 
-    #+BEGIN_SRC sh
-      curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-
-      python get-pip.py
-
-      pip install virtualenv
+    #+BEGIN_SRC emacs-lisp
+      (use-package jedi
+        :ensure t
+        :after elpy)
     #+END_SRC
+
+    The actual completion by company
 
     #+BEGIN_SRC emacs-lisp
       (use-package company-jedi
+        :ensure t
         :after company
         :config
         (add-to-list 'company-backends 'company-jedi))
@@ -2197,8 +2226,8 @@
         (add-hook 'elpy-mode-hook 'flycheck-mode)
         (add-hook 'elpy-mode-hook 'py-autopep8-enable-on-save)
         :config
-        (setq elpy-python-command "python3"
-              elpy-rpc-python-command "python3"
+        (setq elpy-python-command "python"
+              elpy-rpc-python-command "python"
               elpy-rpc-backend "jedi")
 
         (setq elpy-interactive-python-command "ipython")
@@ -2293,13 +2322,13 @@
     #+BEGIN_SRC emacs-lisp
       (use-package company-ghc
         :ensure t
-        :after (haskell-mode company)
+        :after company
         :config
         (add-to-list 'company-backends 'company-ghc))
 
       (use-package company-ghci
         :ensure t
-        :after (haskell-mode company)
+        :after company
         :config
         (add-to-list 'company-backends 'company-ghci))
 
@@ -2365,15 +2394,7 @@
        :ensure t
        :defer t
        :config
-       nil)
-   #+END_SRC
-
-   There is a conflict if you're using this with aggressive indent
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package elm-mode
-       :after aggressive-indent
-       :config
+       ;; There is a conflict if you're using this with aggressive indent
        (add-hook 'elm-mode-hook
                  (lambda ()
                    (setq-local aggressive-indent-mode nil))))
@@ -2405,7 +2426,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package elm-mode
-        :after (elm-mode company)
+        :after company
         :config
         (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
         (add-to-list 'company-backends 'company-elm))
@@ -2503,7 +2524,7 @@
 
      (use-package company-auctex
        :ensure t
-       :after auctex
+       :after company
        :config
        (company-auctex-init))
 
@@ -2522,6 +2543,23 @@
         :config
         (require 'haskell-snippets))
     #+END_SRC
+*** Project
+    =virtualenv= is a must
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package virtualenv
+        :ensure t
+        :after python)
+    #+END_SRC
+
+    Or the most updated
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package virtualenvwrapper
+        :ensure t
+        :after python)
+    #+END_SRC
+
 * Random Was Alone
   Anything that just does something useful
 
@@ -2611,8 +2649,7 @@
        (setq elfeed-curl-program-name "curl")
 
        (setq elfeed-feeds (list
-                           (list "http://planet.emacsen.org/atom.xml" 'emacs)
-                           (list "http://sachachua.com/blog/category/emacs/feed" 'emacs)))
+                           (list "http://planet.emacsen.org/atom.xml" 'emacs)))
 
        (setq elfeed-search-filter "@2-weeks-ago +unread "))
    #+END_SRC
@@ -3301,8 +3338,8 @@
         trigger))
 
     ;; Motion
-    ;; (global-set-key (kbd "C-!") (fn/trigger-key (kbd "C-RET")))
-    ;; (global-set-key (kbd "M-!") (fn/trigger-key (kbd "M-RET")))
+    (global-set-key (kbd "C-c m b RET") (fn/trigger-key (kbd "C-RET")))
+    (global-set-key (kbd "C-c m b b RET ") (fn/trigger-key (kbd "M-RET")))
 
 
     ;; Keys
@@ -3396,6 +3433,7 @@
 
    #+BEGIN_SRC emacs-lisp
      (use-package vdiff
+       :defer t
        :config
        (define-key vdiff-mode-map (kbd "C-c") vdiff-mode-prefix-map))
    #+END_SRC

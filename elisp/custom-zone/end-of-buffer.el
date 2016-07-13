@@ -1,6 +1,7 @@
 ;;End of buffeeeeeeeeeeerrrrrrrrrrrr by Joseph Wilk
 (defvar start-total-count 0)
 
+;;;###AUTOLOAD
 (defun zone-end-of-buffer-animate (c col wend)
   (let ((fall-p nil)                    ; todo: move outward
         (o (point))                     ; for terminals w/o cursor hiding
@@ -38,6 +39,7 @@
                 (setq p (+ (point) 1)))))))
     fall-p))
 
+;;;###AUTOLOAD
 (defun zone-end-of-buffer ()
   (set 'truncate-lines nil)
   (setq total-count 0)
