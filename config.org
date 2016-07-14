@@ -589,6 +589,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package aggressive-indent
         :ensure t
+        :disabled t
         :diminish aggressive-indent-mode
         :init
         (add-hook 'prog-mode-hook 'aggressive-indent-mode))
@@ -704,27 +705,27 @@
     Snippet system along with autocomplete is awesome
 
     #+BEGIN_SRC emacs-lisp
-      (use-package yasnippet
-        :ensure t
-        :after company
-        :defer t
-        :diminish yas-minor-mode
-        :bind (("C-c n y" . yas-new-snippet))
-        :init
-        (add-hook 'prog-mode-hook 'yas/minor-mode-on)
-        :config
-        (setq yas-verbosity 3
-              yas-snippet-dirs (list (expand-file-name "snippets" fn/extra-dir)))
+    (use-package yasnippet
+    :ensure t
+    :after company
+    :defer t
+    :diminish yas-minor-mode
+    :bind (("C-c n y" . yas-new-snippet))
+    :init
+    (add-hook 'prog-mode-hook 'yas/minor-mode-on)
+    :config
+    (setq yas-verbosity 3
+    yas-snippet-dirs (list (expand-file-name "snippets" fn/extra-dir)))
 
-        (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
+    (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
 
-        (yas-reload-all)
+    (yas-reload-all)
 
-        (defun fn/add-company-yasnippet ()
-          "Add yasnippet to company backends"
-          (fn/append-to-backends 'company-yasnippet))
+    (defun fn/add-company-yasnippet ()
+    "Add yasnippet to company backends"
+    (fn/append-to-backends 'company-yasnippet))
 
-        (add-hook 'after-init-hook 'fn/add-company-yasnippet))
+    (add-hook 'after-init-hook 'fn/add-company-yasnippet))
     #+END_SRC3
 * Ergonomic
   Things to assist in managing Emacs
@@ -1267,7 +1268,7 @@
         (setq zone-programs (list))
 
         (load-file (expand-file-name "end-of-buffer.el" fn/zone-animation-dir))
-        (add-to-list 'zone-programs 'zone-end-of-buffer)q
+        (add-to-list 'zone-programs 'zone-end-of-buffer)
 
         (load-file (expand-file-name "waves.el" fn/zone-animation-dir))
         (add-to-list 'zone-programs 'zone-waves))
@@ -1294,7 +1295,7 @@
         (add-to-list 'zone-programs 'zone-sl))
     #+END_SRC
 
-** Coding
+** CodingP
    Whatever pertains to coding
 
 *** font-lock
@@ -1358,7 +1359,6 @@
 
       (setq show-paren-style 'expression)
     #+END_SRC
-
 * Organizer
   Things to organize life in general
 
@@ -1421,12 +1421,12 @@
          "My event planning file")
 
        ;; org itself
-       (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir))
+       (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
+             org-directory (concat fn/org-dir "/"))
 
 
        ;; org-src
        (setq org-src-window-setup 'current-window)
-
 
        ;; org-todo
        (setq org-todo-keywords
@@ -1446,6 +1446,8 @@
 
        ;; org-agenda
        (setq org-agenda-span 14) ;; Fortnight
+
+       (setq org-agenda-window-setup 'current-window)
 
        (setq org-agenda-files
              (list
@@ -1471,10 +1473,10 @@
    I prefer to see my main org file on boot
 
    #+BEGIN_SRC emacs-lisp
-      (defun fn/find-main-org-file ()
-        (interactive)
-        (find-file fn/org-main-file))
-    #+END_SRC
+     (defun fn/find-main-org-file ()
+       (interactive)
+       (find-file fn/org-main-file))
+   #+END_SRC
 
 *** org-journal
     Having a journal is good
@@ -1550,54 +1552,55 @@
         (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers)))
     #+END_SRC
 
-***
+    ***
 *** org-reveal
-     A nice presentation framework
+    A nice presentation framework
 
-     #+BEGIN_SRC emacs-lisp
-       (use-package ox-reveal
-         :ensure t
-         :after org
-         :config
-         (setq org-reveal-root "file:////home/fnmurillo/Fakespace/reveal-js")
+    #+BEGIN_SRC emacs-lisp
+      (use-package ox-reveal
+        :ensure t
+        :after org
+        :config
+        (setq org-reveal-root "file:////home/fnmurillo/Fakespace/reveal-js")
 
-         (define-minor-mode fn-reveal-editing
-           "Some editing enhancement when editing org-reveal files"
-           :lighter " FnRevealer"
-           :init-value nil
-           :global nil
-           :keymap (let* ((map (make-sparse-keymap))
-                          (tangle-current-file (lambda ()
-                                                 (interactive)
-                                                 (let* ((current-file (buffer-file-name))
-                                                        (target-file (replace-regexp-in-string ".org" ".js" current-file))
-                                                        (target-lang "javascript"))
-                                                   (org-babel-tangle-file current-file target-file target-lang))))
-                          (export-reveal (lambda ()
-                                           (interactive)
-                                           (message "Exporting %s" (buffer-file-name))
-                                           (org-reveal-export-to-html t))))
-                     (define-key map (kbd "C-c C-n C-p") tangle-current-file)
-                     (define-key map (kbd "C-c C-n C-e") export-reveal)
-                     map)
+        (define-minor-mode fn-reveal-editing
+          "Some editing enhancement when editing org-reveal files"
+          :lighter " FnRevealer"
+          :init-value nil
+          :global nil
+          :keymap (let* ((map (make-sparse-keymap))
+                         (tangle-current-file (lambda ()
+                                                (interactive)
+                                                (let* ((current-file (buffer-file-name))
+                                                       (target-file (replace-regexp-in-string ".org" ".js" current-file))
+                                                       (target-lang "javascript"))
+                                                  (org-babel-tangle-file current-file target-file target-lang))))
+                         (export-reveal (lambda ()
+                                          (interactive)
+                                          (message "Exporting %s" (buffer-file-name))
+                                          (org-reveal-export-to-html t))))
+                    (define-key map (kbd "C-c C-n C-p") tangle-current-file)
+                    (define-key map (kbd "C-c C-n C-e") export-reveal)
+                    map)
 
-           (let ((export-reveal (lambda ()
-                                  (when fnr/enable-auto-export-on-save
-                                    (message "Auto exporting %s" (buffer-file-name))
+          (let ((export-reveal (lambda ()
+                                 (when fnr/enable-auto-export-on-save
+                                   (message "Auto exporting %s" (buffer-file-name))
 
-                                    (org-reveal-export-to-html t)))))
-             (add-hook 'after-save-hook export-reveal t t)))
+                                   (org-reveal-export-to-html t)))))
+            (add-hook 'after-save-hook export-reveal t t)))
 
-         (make-variable-buffer-local
-          (defvar fnr/enable-auto-export-on-save t
-            "When non-nil. auto exports org-reveal files on save")))
-     #+END_SRC
+        (make-variable-buffer-local
+         (defvar fnr/enable-auto-export-on-save t
+           "When non-nil. auto exports org-reveal files on save")))
+    #+END_SRC
 *** org-drill
     Flash cards are a must
 
     #+BEGIN_SRC emacs-lisp
       (use-package org-drill
         :after org
+        :bind (("C-c n d" . org-drill))
         :config
         (add-to-list 'org-modules 'org-drill)
 
@@ -1627,40 +1630,48 @@
         (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
           "My org mobile directory")
 
-        (setq org-mobile-directory  fn/org-mobile-directory
-              org-mobile-inbox-for-pull fn/org-mobile-inbox-directory))
 
+        (setq org-mobile-directory  fn/org-mobile-directory
+              org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
+
+              org-mobile-files (list
+                                fn/org-todo-file
+                                fn/org-event-file
+                                ))
+
+        (global-set-key (kbd "C-c n o p") #'org-mobile-push)
+        (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
     #+END_SRC
 
 ** flyspell
-    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
+   Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package flyspell
-        :ensure t
-        :defer t
-        :diminish flyspell-mode
-        :init
-         (add-hook 'org-mode-hook 'flyspell-mode t))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package flyspell
+       :ensure t
+       :defer t
+       :diminish flyspell-mode
+       :init
+       (add-hook 'org-mode-hook 'flyspell-mode t))
+   #+END_SRC
 
 ** dired
-    Directory management for Emacs
+   Directory management for Emacs
 
-    #+BEGIN_SRC emacs-lisp
-      (require 'dired-x) ;; Allows multi open marked files
+   #+BEGIN_SRC emacs-lisp
+     (require 'dired-x) ;; Allows multi open marked files
 
-      (setq dired-recursive-copies 'always  ;; Don't ask because I did it
-            dired-recursive-deletes 'always)
+     (setq dired-recursive-copies 'always  ;; Don't ask because I did it
+           dired-recursive-deletes 'always)
 
-      (setq dired-dwim-target t) ;; Split pane copying, be careful though with this
+     (setq dired-dwim-target t) ;; Split pane copying, be careful though with this
 
-      (setq dired-listing-switches "-alh") ;; Want to see the size with better details
+     (setq dired-listing-switches "-alh") ;; Want to see the size with better details
 
-      (dired-async-mode t)
+     (dired-async-mode t)
 
-      (add-hook 'dired-mode-hook 'dired-hide-details-mode)
-    #+END_SRC
+     (add-hook 'dired-mode-hook 'dired-hide-details-mode)
+   #+END_SRC
 
 *** image-dired
     Text is not enough, images are important too
@@ -1982,10 +1993,12 @@
       (use-package js2-mode
         :ensure t
         :interpreter (("node" . js2-mode))
-        :mode (("\\.\\(js\\|json\\)$" . js2-mode))
+        :mode (("\\.\\(js\\|json\\)$" . js2-mode)
+               ("\\.\\(jsx\\)$" . js2-jsx-mode))
         :defer t
         :config
         (add-hook 'js-mode-hook 'js2-minor-mode)
+
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
               js2-mode-show-strict-warnings nil))
@@ -2154,6 +2167,17 @@
         :ensure t
         :after js2-mode
         :bind (("C-c C-g" . jsons-print-path)))
+    #+END_SRC
+
+*** Literate Programming
+    Let's support literate programming for JS
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package org-babel-js-setup
+        ;; Pseudo package to setup org-babel with js2-mode
+        :after (org js2-mode)
+        :config
+        (add-to-list 'org-babel-load-languages '(js . t)))
     #+END_SRC
 
 ** Python
@@ -2359,7 +2383,7 @@
         (flycheck-haskell-setup))
     #+END_SRC
 
-***
+    ***
 
 *** Prettify
     My symbols for Haskell
@@ -2387,18 +2411,18 @@
    Functional JavaScript frontend
 
 *** Mode
-   Elm major mode
+    Elm major mode
 
-   #+BEGIN_SRC emacs-lisp
-     (use-package elm-mode
-       :ensure t
-       :defer t
-       :config
-       ;; There is a conflict if you're using this with aggressive indent
-       (add-hook 'elm-mode-hook
-                 (lambda ()
-                   (setq-local aggressive-indent-mode nil))))
-   #+END_SRC
+    #+BEGIN_SRC emacs-lisp
+      (use-package elm-mode
+        :ensure t
+        :defer t
+        :config
+        ;; There is a conflict if you're using this with aggressive indent
+        (add-hook 'elm-mode-hook
+                  (lambda ()
+                    (setq-local aggressive-indent-mode nil))))
+    #+END_SRC
 
 *** Linter
     Linter for Elm
@@ -2415,7 +2439,8 @@
     Formatter for Elm, requires =elm-format=
 
     #+BEGIN_SRC emacs-lisp
-      (use-package elm-mode
+      (use-package *elm-mode-formatter
+        :after elm-mode
         :config
         (setq elm-format-on-save t
               elm-sort-imports-on-save t))
@@ -2425,7 +2450,7 @@
     A needed feature, requires =elm-oracle=
 
     #+BEGIN_SRC emacs-lisp
-      (use-package elm-mode
+      (use-package *elm-mode-autocomplete
         :after company
         :config
         (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
@@ -2717,16 +2742,23 @@
    My intial view when Emacs boots up
 
    #+BEGIN_SRC emacs-lisp
-     ;; (setq initial-buffer-choice org-main-file)
-     (setq org-agenda-window-setup 'current-window)
+     (defconst fn/preferred-text-width 60
+       "Just enough characters to read my windwos")
 
-     (add-hook 'after-init-hook (lambda ()
-                                  (message "Setting up initial view")
-                                  (fn/find-main-org-file)
-                                  (split-window-horizontally)
-                                  (other-window 1)
-                                  (org-todo-list)
-                                  (other-window 1)))
+     (defun fn/setup-initial-view ()
+       "Setup your personal view"
+       (message "Setting up initial view")
+       (let ((text-width (window-text-width)))
+         (fn/find-main-org-file)
+
+         ;; If there is enough width, show the org-todo view
+         (when (>= text-width fn/preferred-text-width)
+           (split-window-horizontally)
+           (other-window 1)
+           (org-todo-list)
+           (other-window 1))))
+
+     (add-hook 'after-init-hook #'fn/setup-initial-view)
    #+END_SRC
 
 ** Custom Emacs
@@ -2942,6 +2974,12 @@
        (interactive)
        (call-interactively 'save-buffer)
        (call-interactively 'kill-this-buffer))
+
+
+     (defun fn/dired-parent ()
+       "Quick command to go to parent dired of buffer immediately"
+       (interactive)
+       (dired ".."))
    #+END_SRC
 
 ** Coins.Ph API
@@ -3374,6 +3412,9 @@
     ;; Files
     (global-set-key (kbd "C-c m b c") 'fn/find-config-file)
     (global-set-key (kbd "C-c m b o") 'fn/find-main-org-file)
+
+    ;; Dired
+    (global-set-key (kbd "C-c m ^") #'fn/dired-parent)
 
     ;; Functions
     (global-set-key (kbd  "C-c m r s") 'fn/startup)
