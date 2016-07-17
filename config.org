@@ -566,23 +566,23 @@
     Useful mode when writing, keeps things under 80 characters.
 
     #+BEGIN_SRC emacs-lisp
-      (use-package auto-fill
-        :init
-        (add-hook 'text-mode-hook 'turn-on-auto-fill)
-        (diminish 'auto-fill-function)
-        (setq-default fill-column 72))
+      (use-feature auto-fill-mode
+                   nil
+                   (add-hook 'text-mode-hook 'turn-on-auto-fill)
+                   (diminish 'auto-fill-function)
+                   (setq-default fill-column 72))
     #+END_SRC
 
 *** auto-revert
     The more generic revert
 
     #+BEGIN_SRC emacs-lisp
-      (use-package auto-revert
-        :diminish auto-revert-mode
-        :init
-        (global-auto-revert-mode t)
-        (setq global-auto-revert-non-file-buffers t
-              auto-revert-verbose nil))
+      (use-feature auto-revert
+                   nil
+                   (global-auto-revert-mode t)
+                   (setq global-auto-revert-non-file-buffers t
+                         auto-revert-verbose nil)
+                   (diminish 'auto-revert-mode))
     #+END_SRC
 
 *** autorevert
@@ -1091,12 +1091,12 @@
     #+END_SRC
 
 *** which-function
-    Likewise with key and funcitons
+    Likewise with key and functions
 
     #+BEGIN_SRC emacs-lisp
-      (use-package which-function
-        :init
-        (which-function-mode t))
+      (use-feature which-function
+                   nil
+                   (which-function-mode t))
     #+END_SRC
 
 *** eldoc
@@ -1221,10 +1221,10 @@
     Got to love that whitespace display
 
     #+BEGIN_SRC emacs-lisp
-      (use-package whitespace-mode
-        :init
-        (global-whitespace-mode t)
-        (diminish 'global-whitespace-mode))
+      (use-feature whitespace-mode
+                   nil
+                   (global-whitespace-mode t)
+                   (diminish 'global-whitespace-mode))
     #+END_SRC
 *** hl-line
     Highlight the current line
@@ -1334,8 +1334,9 @@
     Make things more algebraic
 
     #+BEGIN_SRC emacs-lisp
-      (use-package prettify-symbols-mode
-        :if (version<= "24.4.4" emacs-version))
+      (use-feature prettify-symbols-mode
+                   nil
+                   (version<= "24.4.4" emacs-version))
     #+END_SRC
 
 *** rainbow-delimeter
