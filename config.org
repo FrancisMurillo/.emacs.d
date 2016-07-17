@@ -425,7 +425,19 @@
        "Promise package location")
 
      (use-package promise
-       :load-path fn/promise-package-dir)
+       :load-path fn/promise-package-dir
+       :config
+       (defmacro use-feature (name features &rest body )
+         "A short macro to ease the use of using p-all-features"
+         (list 'p-then
+               (list 'apply '#'p-all-features
+                     `(list ,@(if features
+                                  (mapcar (lambda (feature) (list 'quote feature)) features)
+                                (list (list 'quote 'use-package)))))
+               (list 'lambda (list '_)
+                     (list 'message "Loading feature package %s" `(symbol-name (quote ,name)))
+                     `(progn ,@body)
+                     'nil))))
    #+END_SRC
 
 * Terminator
@@ -544,10 +556,10 @@
     what you get. Besides, I use syntax motions
 
     #+BEGIN_SRC emacs-lisp
-      (use-package visual-line
-        :init
-        (global-visual-line-mode t)
-        (diminish 'visual-line-mode))
+      (use-feature visual-line-mode
+                   nil
+                   (global-visual-line-mode t)
+                   (diminish 'visual-line-mode))
     #+END_SRC
 
 *** auto-fill
@@ -1009,14 +1021,16 @@
         (ido-mode -1))
 
 
-      (use-package helm-projectile
-        :ensure t
-        :after (projectile helm)
-        :bind (("C-c p h" . helm-projectile)
-               ("C-c p p" . helm-projectile-switch-project))
-        :config
-        (setq projectile-completion-system 'helm)
-        (helm-projectile-on))
+      (use-feature helm-projectile
+                   (projectile helm)
+                   (use-package helm-projectile
+                     :ensure t
+                     :bind (("C-c p h" . helm-projectile)
+                            ("C-c p p" . helm-projectile-switch-project))
+                     :demand t
+                     :config
+                     (setq projectile-completion-system 'helm)
+                     (helm-projectile-on)))
 
       (use-package helm-swoop
         :ensure t
@@ -1304,7 +1318,7 @@
         (add-to-list 'zone-programs 'zone-sl))
     #+END_SRC
 
-** CodingP
+** Coding
    Whatever pertains to coding
 
 *** font-lock
@@ -1320,12 +1334,8 @@
     Make things more algebraic
 
     #+BEGIN_SRC emacs-lisp
-      (setq fn/enable-prettify-symbols nil)
-
       (use-package prettify-symbols-mode
-        :if (version<= "24.4.4" emacs-version)
-        :init
-        (setq fn/enable-prettify-symbols t))
+        :if (version<= "24.4.4" emacs-version))
     #+END_SRC
 
 *** rainbow-delimeter
@@ -1445,107 +1455,102 @@
     Configuration for =org-babel=
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :config
-        (setq org-src-window-setup 'current-window))
+      (use-feature org-src
+                   (org)
+                   (setq org-src-window-setup 'current-window))
     #+END_SRC
 
 *** org-todo
     =org-todo= configurations
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :config
-        (setq org-todo-keywords
-              '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
-                (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
+      (use-feature org-todo
+                   (org)
+                   (setq org-todo-keywords
+                         '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
+                           (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
     #+END_SRC
 
 *** org-capture
     More configurations for the capture
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :config
-        (setq org-capture-templates
-              (list
-               (list "t" "Todo" 'entry
-                     (list 'file+headline fn/org-todo-file "Todo")
-                     "* TODO %?\n   %i")
-               (list "e" "Event" 'entry
-                     (list 'file+headline  fn/org-event-file "Events")
-                     "* %? :event:")))
+      (use-feature org-capture
+                   (org)
+                   (setq org-capture-templates
+                         (list
+                          (list "t" "Todo" 'entry
+                                (list 'file+headline fn/org-todo-file "Todo")
+                                "* TODO %?\n   %i")
+                          (list "e" "Event" 'entry
+                                (list 'file+headline  fn/org-event-file "Events")
+                                "* %? :event:")))
 
-        ;; Open org-capture template in one window, not nice but good enough
-        ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
-        (defun fq/org-capture-place-template (&optional inhibit-wconf-store)
-          "Insert the template at the target location, and display the buffer.
+                   ;; Open org-capture template in one window, not nice but good enough
+                   ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
+                   (defun fq/org-capture-place-template (&optional inhibit-wconf-store)
+                     "Insert the template at the target location, and display the buffer.
       When `inhibit-wconf-store', don't store the window configuration, as it
       may have been stored before."
-          (unless inhibit-wconf-store
-            (org-capture-put :return-to-wconf (current-window-configuration)))
+                     (unless inhibit-wconf-store
+                       (org-capture-put :return-to-wconf (current-window-configuration)))
                                               ;(delete-other-windows)
-          (org-switch-to-buffer-other-window
-           (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
-          (widen)
-          (show-all)
-          (goto-char (org-capture-get :pos))
-          (org-set-local 'org-capture-target-marker
-                         (point-marker))
-          (org-set-local 'outline-level 'org-outline-level)
-          (let* ((template (org-capture-get :template))
-                 (type (org-capture-get :type)))
-            (case type
-              ((nil entry) (org-capture-place-entry))
-              (table-line (org-capture-place-table-line))
-              (plain (org-capture-place-plain-text))
-              (item (org-capture-place-item))
-              (checkitem (org-capture-place-item))))
-          (org-capture-mode 1)
-          (org-set-local 'org-capture-current-plist org-capture-plist))
+                     (org-switch-to-buffer-other-window
+                      (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
+                     (widen)
+                     (show-all)
+                     (goto-char (org-capture-get :pos))
+                     (org-set-local 'org-capture-target-marker
+                                    (point-marker))
+                     (org-set-local 'outline-level 'org-outline-level)
+                     (let* ((template (org-capture-get :template))
+                            (type (org-capture-get :type)))
+                       (case type
+                         ((nil entry) (org-capture-place-entry))
+                         (table-line (org-capture-place-table-line))
+                         (plain (org-capture-place-plain-text))
+                         (item (org-capture-place-item))
+                         (checkitem (org-capture-place-item))))
+                     (org-capture-mode 1)
+                     (org-set-local 'org-capture-current-plist org-capture-plist))
 
-        (fset 'org-capture-place-template #'fq/org-capture-place-template))
+                   (fset 'org-capture-place-template #'fq/org-capture-place-template))
     #+END_SRC
 
 *** org-agenda
     More configuration for org-agenda
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :config
-        (setq org-agenda-span 14 ;; Fortnight
+      (use-feature org-agenda
+                   (org)
+                   (setq org-agenda-span 14 ;; Fortnight
 
-              org-agenda-window-setup 'current-window
+                         org-agenda-window-setup 'current-window
 
-              org-agenda-files (list
-                                fn/org-main-file
-                                fn/org-todo-file
-                                fn/org-event-file)
+                         org-agenda-files (list
+                                           fn/org-main-file
+                                           fn/org-todo-file
+                                           fn/org-event-file)
 
-              org-refile-targets nil))
+                         org-refile-targets nil))
     #+END_SRC
 
 *** org-clock
     Configuration for org-clock
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :config
-        (setq org-log-done 'time)
+      (use-feature org-clock
+                   (org)
+                   (setq org-log-done 'time)
 
-        (defun fn/clock-todo-change ()
-          "A nice little hook that clocks in when a todo is change to PENDING"
-          (let ((new-state org-state))
-            (pcase new-state
-              ("PENDING" (org-clock-in))
-              (_ nil))))
+                   (defun fn/clock-todo-change ()
+                     "A nice little hook that clocks in when a todo is change to PENDING"
+                     (let ((new-state org-state))
+                       (pcase new-state
+                         ("PENDING" (org-clock-in))
+                         (_ nil))))
 
-        (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
+                   (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
     #+END_SRC
 
 *** org-journal
@@ -1667,49 +1672,51 @@
     Flash cards are a must
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :bind (("C-c n d" . org-drill))
-        :config
-        (add-to-list 'org-modules 'org-drill)
+      (use-feature org-drill
+                   (org)
+                   (use-package org
+                     :after org
+                     :bind (("C-c n d" . org-drill))
+                     :demand t
+                     :config
+                     (add-to-list 'org-modules 'org-drill)
 
-        (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
-          "Main org drill files")
+                     (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
+                       "Main org drill files")
 
-        (add-to-list 'org-capture-templates
-                     (list "r" "Review/Remember" 'entry
-                           (list 'file+headline fn/org-review-file "Learning Notes" "Review")
-                           "* %? :drill:\n  CREATED_ON: %T"))
+                     (add-to-list 'org-capture-templates
+                                  (list "r" "Review/Remember" 'entry
+                                        (list 'file+headline fn/org-review-file "Learning Notes" "Review")
+                                        "* %? :drill:\n  CREATED_ON: %T"))
 
-        (add-to-list 'org-agenda-files fn/org-review-file)
+                     (add-to-list 'org-agenda-files fn/org-review-file)
 
-        (setq org-drill-scope
-              (list fn/org-review-file)))
+                     (setq org-drill-scope
+                           (list fn/org-review-file))))
     #+END_SRC
 *** org-mobile
     Mobile org document
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org
-        :after org
-        :config
-        (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
-          "My org mobile directory")
+      (use-feature org-mobile
+                   (org)
+                   (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
+                     "My org mobile directory")
 
-        (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
-          "My org mobile directory")
+                   (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
+                     "My org mobile directory")
 
 
-        (setq org-mobile-directory  fn/org-mobile-directory
-              org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
+                   (setq org-mobile-directory  fn/org-mobile-directory
+                         org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
 
-              org-mobile-files (list
-                                fn/org-todo-file
-                                fn/org-event-file
-                                ))
+                         org-mobile-files (list
+                                           fn/org-todo-file
+                                           fn/org-event-file
+                                           ))
 
-        (global-set-key (kbd "C-c n o p") #'org-mobile-push)
-        (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
+                   (global-set-key (kbd "C-c n o p") #'org-mobile-push)
+                   (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
     #+END_SRC
 
 ** flyspell
@@ -2252,9 +2259,10 @@
     Snippet support
 
     #+BEGIN_SRC emacs-lisp
-      (use-package react-snippets
-        :ensure t
-        :after (js2-mode yasnippet))
+      (use-feature react-snippets
+                   (js2-mode yasnippet)
+                   (use-package react-snippets
+                     :ensure t))
     #+END_SRC
 
 *** REPL
@@ -2283,67 +2291,68 @@
     My symbols for JS
 
     #+BEGIN_SRC emacs-lisp
-      (when fn/enable-prettify-symbols
-        (add-hook 'js2-mode-hook
-                  (lambda ()
-                    (push '("function" . ?λ) prettify-symbols-alist)
-                    (push '("arguments" . ?ω) prettify-symbols-alist)
-                    (push '("var" . ?ν) prettify-symbols-alist)
-                    (push '("return" . ?ρ) prettify-symbols-alist)
-                    (push '("this" . ?ι) prettify-symbols-alist)
+      (use-feature prettify-js2
+                   (prettify-symbols-mode js2-mode)
+                   (add-hook 'js2-mode-hook
+                             (lambda ()
+                               (push '("function" . ?λ) prettify-symbols-alist)
+                               (push '("arguments" . ?ω) prettify-symbols-alist)
+                               (push '("var" . ?ν) prettify-symbols-alist)
+                               (push '("return" . ?ρ) prettify-symbols-alist)
+                               (push '("this" . ?ι) prettify-symbols-alist)
 
-                    (push '("for" . ?∫) prettify-symbols-alist)
-                    (push '("in" . ?⊂ ) prettify-symbols-alist)
+                               (push '("for" . ?∫) prettify-symbols-alist)
+                               (push '("in" . ?⊂ ) prettify-symbols-alist)
 
-                    (push '("Object" . ?Θ) prettify-symbols-alist)
+                               (push '("Object" . ?Θ) prettify-symbols-alist)
 
-                    (push '("if" . ?α) prettify-symbols-alist)
-                    (push '("else if" . ?β) prettify-symbols-alist)
-                    (push '("else" . ?γ) prettify-symbols-alist)
+                               (push '("if" . ?α) prettify-symbols-alist)
+                               (push '("else if" . ?β) prettify-symbols-alist)
+                               (push '("else" . ?γ) prettify-symbols-alist)
 
-                    (push '("->" . ?→) prettify-symbols-alist)
-                    (push '("&&" . ?∧) prettify-symbols-alist)
-                    (push '("||" . ?∨) prettify-symbols-alist)
+                               (push '("->" . ?→) prettify-symbols-alist)
+                               (push '("&&" . ?∧) prettify-symbols-alist)
+                               (push '("||" . ?∨) prettify-symbols-alist)
 
-                    (push '("!" . ?¬) prettify-symbols-alist)
-                    (push '("!!" . ?⌐) prettify-symbols-alist)
+                               (push '("!" . ?¬) prettify-symbols-alist)
+                               (push '("!!" . ?⌐) prettify-symbols-alist)
 
-                    (push '("=" . ?⟵) prettify-symbols-alist)
-                    (push '(":" . ?⟵) prettify-symbols-alist)
+                               (push '("=" . ?⟵) prettify-symbols-alist)
+                               (push '(":" . ?⟵) prettify-symbols-alist)
 
-                    (push '("===" . ?≡) prettify-symbols-alist)
-                    (push '("!==" . ?≢) prettify-symbols-alist)
+                               (push '("===" . ?≡) prettify-symbols-alist)
+                               (push '("!==" . ?≢) prettify-symbols-alist)
 
-                    (push '(">=" . ?≧) prettify-symbols-alist)
-                    (push '("<=" . ?≦) prettify-symbols-alist)
+                               (push '(">=" . ?≧) prettify-symbols-alist)
+                               (push '("<=" . ?≦) prettify-symbols-alist)
 
-                    (push '("true" . ?⊤) prettify-symbols-alist)
-                    (push '("false" . ?⊥) prettify-symbols-alist)
+                               (push '("true" . ?⊤) prettify-symbols-alist)
+                               (push '("false" . ?⊥) prettify-symbols-alist)
 
-                    (push '("null" . ?∅) prettify-symbols-alist)
-                    (push '("undefined" . ?↑) prettify-symbols-alist)
+                               (push '("null" . ?∅) prettify-symbols-alist)
+                               (push '("undefined" . ?↑) prettify-symbols-alist)
 
-                    (push '(", ". ?⟼) prettify-symbols-alist)
-                    (push '("{". ?⟹) prettify-symbols-alist)
-                    (push '("},". ?⟺) prettify-symbols-alist)
-                    (push '("}". ?⟸) prettify-symbols-alist)
-                    (push '("};". ?⟽) prettify-symbols-alist)
+                               (push '(", ". ?⟼) prettify-symbols-alist)
+                               (push '("{". ?⟹) prettify-symbols-alist)
+                               (push '("},". ?⟺) prettify-symbols-alist)
+                               (push '("}". ?⟸) prettify-symbols-alist)
+                               (push '("};". ?⟽) prettify-symbols-alist)
 
-                    (push '("(". ?⟖) prettify-symbols-alist)
-                    (push '(")". ?⟕) prettify-symbols-alist)
-                    (push '(");". ?⟕) prettify-symbols-alist)
-                    (push '("),". ?⟗) prettify-symbols-alist)
-                    (push '(").". ?⟗) prettify-symbols-alist)
+                               (push '("(". ?⟖) prettify-symbols-alist)
+                               (push '(")". ?⟕) prettify-symbols-alist)
+                               (push '(");". ?⟕) prettify-symbols-alist)
+                               (push '("),". ?⟗) prettify-symbols-alist)
+                               (push '(").". ?⟗) prettify-symbols-alist)
 
-                    (push '("[". ?⊏) prettify-symbols-alist)
-                    (push '("]". ?⊐) prettify-symbols-alist)
-                    (push '("],". ?⊡) prettify-symbols-alist)
-                    (push '("].". ?⊡) prettify-symbols-alist)
-                    (push '("];". ?⊐) prettify-symbols-alist)
+                               (push '("[". ?⊏) prettify-symbols-alist)
+                               (push '("]". ?⊐) prettify-symbols-alist)
+                               (push '("],". ?⊡) prettify-symbols-alist)
+                               (push '("].". ?⊡) prettify-symbols-alist)
+                               (push '("];". ?⊐) prettify-symbols-alist)
 
-                    (push '(";". ?⟐) prettify-symbols-alist)
+                               (push '(";". ?⟐) prettify-symbols-alist)
 
-                    (prettify-symbols-mode t))))
+                               (prettify-symbols-mode t))))
     #+END_SRC
 *** JSON
     JSON support
@@ -2359,11 +2368,9 @@
     Let's support literate programming for JS
 
     #+BEGIN_SRC emacs-lisp
-      (use-package fp/org-babel-js-setup
-        ;; Pseudo package to setup org-babel with js2-mode
-        :after (org js2-mode)
-        :config
-        (add-to-list 'org-babel-load-languages '(js . t)))
+      (use-feature org-js2-src
+       (org js2-mode)
+       (add-to-list 'org-babel-load-languages '(js . t)))
     #+END_SRC
 
 ** Python
@@ -2477,10 +2484,9 @@
     Let's add a link to =org-babel=
 
     #+BEGIN_SRC emacs-lisp
-      (use-package org-python
-        :after (org python)
-        :config
-        (add-to-list 'org-babel-load-languages '(python .t)))
+      (use-feature org-python-src
+                   (org python)
+                   (add-to-list 'org-babel-load-languages '(python .t)))
     #+END_SRC
 ** Haskell
 *** Mode
@@ -2592,46 +2598,47 @@
     Syntax checker for Haskell
 
     #+BEGIN_SRC emacs-lisp
-      (use-package flycheck-haskell
-        :ensure t
-        :after (flycheck haskell-mode)
-        :init
-        (add-hook 'haskell-mode-hook 'flycheck-mode)
-        :config
-        (flycheck-haskell-setup))
+      (use-feature flycheck-haskell
+                   (flycheck haskell-mode)
+                   (use-package flycheck-haskell
+                     :ensure t
+                     :config
+                     (add-hook 'haskell-mode-hook 'flycheck-mode)
+                     (flycheck-haskell-setup)))
     #+END_SRC
 
 *** Prettify
     My symbols for Haskell
 
     #+BEGIN_SRC emacs-lisp
-      (use-package prettify-haskell-symbols
-        :after prettify-symbols-mode
-        :config
-        (defun fn/prettiy-haskell ()
-          "Some haskell prettifier"
-          (push '("->" . ?→) prettify-symbols-alist)
-          (push '("let" . ?ν) prettify-symbols-alist)
-          (push '("if" . ?α) prettify-symbols-alist)
-          (push '("in" . ?ε) prettify-symbols-alist)
-          (push '("then" . ?σ) prettify-symbols-alist)
-          (push '("else" . ?τ) prettify-symbols-alist)
-          (push '("where" . ?δ) prettify-symbols-alist)
-          (push '("module" . ?θ) prettify-symbols-alist)
-          (push '("data" . ?Τ) prettify-symbols-alist)
-          (push '("deriving" . ?Δ) prettify-symbols-alist)
-          (prettify-symbols-mode t))
+      (use-feature prettify-haskell
+                   (prettify-symbols-mode haskell-mode)
+                   (defun fn/prettiy-haskell ()
+                     "Some haskell prettifier"
+                     (push '("->" . ?→) prettify-symbols-alist)
+                     (push '("let" . ?ν) prettify-symbols-alist)
+                     (push '("if" . ?α) prettify-symbols-alist)
+                     (push '("in" . ?ε) prettify-symbols-alist)
+                     (push '("then" . ?σ) prettify-symbols-alist)
+                     (push '("else" . ?τ) prettify-symbols-alist)
+                     (push '("where" . ?δ) prettify-symbols-alist)
+                     (push '("module" . ?θ) prettify-symbols-alist)
+                     (push '("data" . ?Τ) prettify-symbols-alist)
+                     (push '("deriving" . ?Δ) prettify-symbols-alist)
+                     (prettify-symbols-mode t))
 
-        (add-hook 'haskell-mode-hook #'fn/prettiy-haskell))
+                   (add-hook 'haskell-mode-hook #'fn/prettiy-haskell))
     #+END_SRC
 
 *** Snippets
     Easy snippets for Haskell
 
     #+BEGIN_SRC emacs-lisp
-      (use-package haskell-snippets
-        :ensure t
-        :after (yasnippet haskell-mode))
+      (use-feature haskell-snippets
+                   (yasnippet haskell-mode)
+                   (use-package haskell-snippets
+                     :ensure t
+                     :demand t))
     #+END_SRC
 
 *** Build Tools
@@ -2657,11 +2664,12 @@
     Linter for Elm
 
     #+BEGIN_SRC emacs-lisp
-      (use-package flycheck-elm
-        :ensure t
-        :after (flycheck elm-mode)
-        :config
-        (flycheck-elm-setup))
+      (use-feature flycheck-elm
+                   (flycheck elm-mode)
+                   (use-package flycheck-elm
+                     :ensure t
+                     :config
+                     (flycheck-elm-setup)))
     #+END_SRC
 
 *** Formatter
@@ -2690,9 +2698,10 @@
     Snippets too
 
     #+BEGIN_SRC emacs-lisp
-      (use-package elm-yasnippets
-        :ensure t
-        :after (elm yasnippets))
+      (use-feature elm-yasnippets
+                   (elm yasnippets)
+                   (use-package elm-yasnippets
+                     :ensure t))
     #+END_SRC
 
 ** Elixir
@@ -2711,29 +2720,29 @@
     A linter is always needed
 
     #+BEGIN_SRC emacs-lisp
-      (use-package flycheck-elixir
-        :ensure t
-        :after (elixir-mode flycheck)
-        :defer t)
+      (use-feature flycheck-elixir
+                   (elixir-mode flycheck)
+                   (use-package flycheck-elixir
+                     :ensure t))
     #+END_SRC
 
     Integration with =mix=
 
     #+BEGIN_SRC emacs-lisp
-      (use-package flycheck-mix
-        :ensure t
-        :after (elixir-mode flycheck)
-        :defer t)
+      (use-feature flycheck-mix
+                   (elixir-mode flycheck)
+                   (use-package flycheck-mix
+                     :ensure t))
     #+END_SRC
 
 *** Snippets
     Snippets support via yasnippet
 
     #+BEGIN_SRC emacs-lisp
-      (use-package elixir-yasnippets
-        :ensure t
-        :after (elixir-mode yasnippet)
-        :defer t)
+      (use-feature elixir-yasnippets
+                   (elixir-mode yasnippet)
+                   (use-package elixir-yasnippets
+                     :ensure t))
     #+END_SRC
 
 *** Build Tools
@@ -3637,7 +3646,7 @@
      (use-package vdiff
        :defer t
        :config
-       (define-key vdiff-mode-map (kbd "C-c") vdiff-mode-prefix-map))
+       (define-key vdiffw-mode-map (kbd "C-c") vdiff-mode-prefix-map))
    #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
