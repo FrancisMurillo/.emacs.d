@@ -2453,6 +2453,13 @@
     =virtualenv= is a must
 
     #+BEGIN_SRC emacs-lisp
+      (use-package python-environment
+        :ensure t
+        :init
+        (setq python-environment-directory (expand-file-name "python-environments" fn/cache-dir)))
+    #+END_SRC
+
+    #+BEGIN_SRC emacs-lisp
       (use-package virtualenv
         :ensure t
         :after python)
