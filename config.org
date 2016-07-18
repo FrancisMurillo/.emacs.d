@@ -39,11 +39,16 @@
    Or with an function instead
 
    #+BEGIN_SRC emacs-lisp
-     :(defun fn/reload-config ()
+     (defun fn/reload-config ()
         "Reload my configuration again"
         (interactive)
         (org-babel-load-file
          (expand-file-name fn/config-file user-emacs-directory)))
+
+     (defun fn/dired-emacs-dir ()
+       "Quickly visit emacs directory"
+       (interactive)
+       (dired user-emacs-directory))
    #+END_SRC
 
 * Bootstrap
@@ -1913,8 +1918,7 @@
 
    #+BEGIN_SRC emacs-lisp
      (use-package gnus
-       :config
-       nil)
+       :bind (("C-c n g" . gnus)))
    #+END_SRC
 
 *** gnus-offlineimap
@@ -3223,6 +3227,40 @@
      ;; TODO: Hook for this
    #+END_SRC
 
+** Sensitive Mode
+   When editiing gpg or sensitve files, I would like to avoid backing it
+   up so here is a [[http://anirudhsasikumar.net/blog/2005.01.21.html][minor mode]] to do so.
+
+   #+BEGIN_SRC emacs-lisp
+     (define-minor-mode fq/sensitive-mode
+       "For sensitive files like password lists.
+     It disables backup creation and auto saving.
+
+     With no argument, this command toggles the mode.
+     Non-null prefix argument turns on the mode.
+     Null prefix argument turns off the mode."
+       ;; The initial value.
+       nil
+       ;; The indicator for the mode line.
+       " Sensitive"
+       ;; The minor mode bindings.
+       nil
+       (if (symbol-value fq/sensitive-mode)
+           (progn
+             ;; disable backups
+             (set (make-local-variable 'backup-inhibited) t)
+             ;; disable auto-save
+             (if auto-save-default
+                 (auto-save-mode -1)))
+         ;resort to default value of backup-inhibited
+         (kill-local-variable 'backup-inhibited)
+         ;resort to default auto save setting
+         (if auto-save-default
+             (auto-save-mode 1))))
+
+     (add-to-list 'auto-mode-alist '("\\.gpg\\'" . fq/sensitive-mode))
+   #+END_SRC
+
 ** starup and shutdown hook
    Small script to update my org files
 
@@ -3584,7 +3622,9 @@
     (global-set-key (kbd "C-c m b c") 'fn/find-config-file)
     (global-set-key (kbd "C-c m b o") 'fn/find-main-org-file)
 
+
     ;; Dired
+    (global-set-key (kbd "C-c m d h") 'fn/dired-emacs-dir)
     (global-set-key (kbd "C-c m ^") #'fn/dired-parent)
 
     ;; Functions
