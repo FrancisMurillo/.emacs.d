@@ -1929,16 +1929,15 @@
         :after gnus
         :config
         (prodigy-define-service
-          :name "sync-offline-imap"
+          :name "Offlineimap: Sync"
           :command "offlineimap"
           :cwd "~")
 
         (add-hook 'gnus-before-startup-hook (lambda ()
-                                              (prodigy-start-service (prodigy-find-service "sync-offline-imap"))))
+                                              (prodigy-start-service (prodigy-find-service "Offlineimap: Sync"))))
 
         (add-hook 'gnus-exit-gnus  (lambda ()
-                                     (prodigy-stop-service (prodigy-find-service "sync-offline-imap"))))
-        )
+                                     (prodigy-stop-service (prodigy-find-service "Offlineimap: Sync")))))
     #+END_SRC
 
 * Code Monkey
@@ -2039,11 +2038,12 @@
           (set-window-buffer nil buffer)
           (get-buffer-window buffer))
 
-        (setq magit-display-buffer-function
-              (lambda (buffer)
-                (if magit-display-buffer-noselect
-                    (magit-display-buffer-traditional buffer)
-                  (display-buffer buffer 'fq/display-buffer-full-screen)))))
+        (defun fq/display-magit-on-same-buffer (buffer)
+          (if magit-display-buffer-noselect
+              (magit-display-buffer-traditional buffer)
+            (display-buffer buffer 'fq/display-buffer-full-screen)))
+
+        (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer))
 
       (use-package git-timemachine
         :ensure t
@@ -2258,6 +2258,15 @@
         :after js2-mode
         :bind (("C-c C-b" . web-beautify-js)))
 
+      (use-package jsfmt
+        :ensure t
+        :after js2-mode
+        :config
+        (defun fn/jsfmt-on-js-save ()
+          "When it is js2-mode, allow files to be formatted on save with jsfmt"
+          (add-hook 'before-save-hook 'jsfmt-before-save t t))
+
+        (add-hook 'js2-mode-hook #'fn/jsfmt-on-js-save))
     #+END_SRC
 
 *** Snippets
