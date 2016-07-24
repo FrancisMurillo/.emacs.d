@@ -1975,6 +1975,7 @@
         (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
         :config
         (setq load-prefer-newer t)
+
         (auto-compile-on-load-mode)
         (auto-compile-on-save-mode))
     #+END_SRC
@@ -2064,8 +2065,13 @@
     The silver searcher is a fine tool
 
     #+BEGIN_SRC emacs-lisp
-       (use-package ag
-        :ensure t)
+      (use-package ag
+        :ensure t
+        :config
+        (setq ag-highlight-search t
+
+              ag-reuse-window t
+              ag-reuse-buffers t))
     #+END_SRC
 
     With [[helm]]
@@ -2799,7 +2805,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature company-robe
-                   (robe company)
+                    (robe company)
                    (add-to-list 'company-backends 'company-robe))
     #+END_SRC
 
