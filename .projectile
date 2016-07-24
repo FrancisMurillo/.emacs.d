@@ -1,8 +1,7 @@
--/auto-save-list
--/backups
--/elpa
+-/.cache
 
 -/.git
 
--/elisp
+-/elpa
+
 -/.python-environments

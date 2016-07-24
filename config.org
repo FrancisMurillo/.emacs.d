@@ -721,11 +721,10 @@
                    (fn/combine-backends backend new-backend))
                  company-backends)))
 
-        (setq fn/company-prog-backends '(company-dabbrev-code company-keywords))
+        (setq fn/company-prog-backends (list 'company-dabbrev-code))
 
         (defun fn/backend-with-prog ()
-          (fn/append-to-backends 'company-keywords)
-          (fn/append-to-backends 'company-dabbrev-code))
+          (fn/append-to-backends 'company-keywords))
 
         (add-hook 'after-init-hook 'fn/backend-with-prog))
     #+END_SRC
@@ -961,7 +960,8 @@
         (add-hook 'find-dired-hook 'fn/load-project-local-file)
 
         (projectile-global-mode t)
-        (setq projectile-indexing-method 'native)
+        (setq projectile-indexing-method 'native
+              projectile-enable-caching t)
 
         (add-to-list 'projectile-project-root-files "config.xml"))
     #+END_SRC
@@ -2003,13 +2003,8 @@
         :init
         (add-hook 'prog-mode-hook 'flycheck-mode)
         :config
-        (setq flycheck-highlighting-mode 'sexps)
-
-        (defun fn/tweak-flycheck-python ()
-          ;; TODO:When python get slow in flycheck, highlighting mode should be set to lines instead
-          )
-
-        (add-hook 'python-mode-hook 'fn/tweak-flycheck-python))
+        (setq flycheck-highlighting-mode 'lines
+              flycheck-check-syntax-automatically '(save mode-enabled)))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -2065,6 +2060,23 @@
         :defer t
         )
     #+END_SRC
+*** ag
+    The silver searcher is a fine tool
+
+    #+BEGIN_SRC emacs-lisp
+       (use-package ag
+        :ensure t)
+    #+END_SRC
+
+    With [[helm]]
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature helm-ag
+                   (helm ag)
+                   (use-package helm-ag
+                     :ensure t))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -2240,7 +2252,9 @@
         :diminish tern-mode
         :after js2-mode
         :init
-        (add-hook 'js2-mode-hook 'tern-mode))
+        (add-hook 'js2-mode-hook 'tern-mode)
+        :config
+        (setq tern-idle-time 10.0))
 
       (use-package company-tern
         :ensure t
@@ -2769,6 +2783,46 @@
         :defer t)
     #+END_SRC
 
+** Ruby
+
+*** Mode
+    I'll be using =enh-ruby-mode=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package enh-ruby-mode
+        :ensure t
+        :mode (("\\.\\(rb\\|json\\)$" . enh-ruby-mode)))
+    #+END_SRC
+
+*** Completion
+    Still using [[company]] with [[robe]]
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature company-robe
+                   (robe company)
+                   (add-to-list 'company-backends 'company-robe))
+    #+END_SRC
+
+*** IDE
+    Almost
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package robe
+        :ensure t
+        :after enh-ruby-mode
+        :init
+        (add-hook 'enh-ruby-mode-hook 'robe-mode))
+    #+END_SRC
+
+*** Project
+    Ruby has it's own environment
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package rvm
+        :ensure t
+        :after robe)
+    #+END_SRC
+
 ** dotNet
 *** omnisharp
     For C# development
@@ -3269,6 +3323,36 @@
 
      (add-to-list 'auto-mode-alist '("\\.gpg\\'" . fq/sensitive-mode))
    #+END_SRC
+** Variable Namer
+   Some quick means to insert variables
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fmn/map-head-tail (header tailer xs)
+       "Map the head and tail separately"
+       (pcase xs
+         (`nil nil)
+         (`(,head . ,tail) (append
+                            (list (funcall header head))
+                            (mapcar tailer tail)))))
+
+     (defun fmn/insert-camel-case (name)
+       "At point, insert a given name as camelCase"
+       (interactive "sCamel Case a variable name(varName):")
+       (lexical-let* ((separator "")
+                      (var-tokens (split-string name " " t))
+                      (var-pieces (fmn/map-head-tail #'downcase
+                                                     #'upcase-initials
+                                                     var-tokens)))
+         (insert (string-join var-pieces separator))))
+
+     (defun fmn/insert-hyphenated (name)
+       "At point, insert a given name as hyphen-ated"
+       (interactive "sHyphenate variable name(var-name):")
+       (lexical-let* ((separator "-")
+                      (var-tokens (split-string name " " t))
+                      (var-pieces (mapcar #'downcase var-tokens)))
+         (insert (string-join var-pieces separator))))
+   #+END_SRC
 
 ** starup and shutdown hook
    Small script to update my org files
@@ -3288,21 +3372,6 @@
      (define-key global-map "\C-cms" 'fn/startup)
      (define-key global-map "\C-cmc"'fn/cleanup)
    #+END_SRC
-
-** projectile-init script
-   This script runs .projectile-hook.el in each project root to ease development
-
-   #+BEGIN_SRC emacs-lisp
-     (defun fn/load-projectile-hook ()
-       (interactive)
-       (mapcar (lambda (project)
-        (setq fn/current-project (expand-file-name project))
-        (load
-         (expand-file-name ".projectile-hook" fn/current-project)
-         t))
- projectile-known-projects))
-   #+END_SRC
-
 ** Create media diary
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
 
