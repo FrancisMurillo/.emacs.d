@@ -923,9 +923,9 @@
                    (project-init-file (expand-file-name fn/project-file current-project-root)))
               (when (file-exists-p project-init-file)
                 (message "Loading project init file for %s" (projectile-project-name))
-                (unwind-protect
+                (condition-case ex
                     (load project-init-file t)
-                  (message "There was an error loading %s" project-init-file))))))
+                 ('error (message "There was an error loading %s" project-init-file)))))))
 
         (defun fn/load-project-local-file ()
           (interactive)
@@ -935,9 +935,15 @@
               (when (and  (file-exists-p project-local-init-file)
                           (not (member (buffer-file-name) fn/project-init-files)))
                 (message "Loading project local file for %s on %s" (projectile-project-name) (buffer-name))
-                (unwind-protect
+                (condition-case ex
                     (load project-local-init-file t)
-                  (message "There was an error loading %s" project-local-init-file))))))
+                  ('error (message "There was an error loading %s" project-local-init-file)))))))
+
+
+        ;; This must go before load-project-hook
+        (add-hook 'find-file-hook #'fn/load-project-local-file t)
+        (add-hook 'find-dired-hook #'fn/load-project-local-file t)
+
 
         (lexical-let* ((project-memoized (lambda ()
                                            (lexical-let ((initialized-projects (list ".")))
@@ -954,10 +960,6 @@
 
           (add-hook 'find-file-hook load-project-hook)
           (add-hook 'find-dired-hook load-project-hook))
-
-
-        (add-hook 'find-file-hook 'fn/load-project-local-file)
-        (add-hook 'find-dired-hook 'fn/load-project-local-file)
 
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native
@@ -2230,11 +2232,12 @@
     A must have for Javascript development
 
     #+BEGIN_SRC emacs-lisp
+      (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-package-dir)
+        "My performance customization on tern")
+
       (use-package tern
-        :ensure t
-        :defer t
+        :load-path fn/tern-package-dir
         :diminish tern-mode
-        :after js2-mode
         :init
         (add-hook 'js2-mode-hook 'tern-mode)
         :config
