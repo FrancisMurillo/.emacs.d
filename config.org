@@ -870,16 +870,16 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package recentf
+        :bind (("C-x C-r" . recentf-open-files))
         :config
         (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
 
               recentf-max-menu-items 100
+              recentf-max-saved-items 100
 
               recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
 
-        (recentf-mode t)
-
-        (global-set-key (kbd "C-x C-r") 'recentf-open-files))
+        (recentf-mode t))
     #+END_SRC
 
 *** projectile
@@ -1882,28 +1882,6 @@
         (defengine youtube
           "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
     #+END_SRC
-
-** elfeed
-   RSS Reader in Emacs
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package elfeed
-       :ensure t
-       :defer t
-       :bind (("C-c n r" . elfeed))
-       :init
-       ;; Update feeds on startup
-       (add-hook 'after-init-hook 'elfeed-update)
-       :config
-       (setq elfeed-curl-program-name "curl")
-
-       (setq elfeed-feeds (list
-                           (list "http://planet.emacsen.org/atom.xml" 'emacs)
-                           (list "https://emacs.stackexchange.com/feeds" 'emacs)))
-
-       (setq elfeed-search-filter "@2-weeks-ago +unread "))
-   #+END_SRC
-
 ** woman
    Man pages are nice
 
