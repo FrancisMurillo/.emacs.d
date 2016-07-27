@@ -662,10 +662,10 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package undo-tree
-        :diminish undo-tree-mode
         :ensure t
-        :config
-        (global-undo-tree-mode 1))
+        :defer t
+        :diminish undo-tree-mode
+        :bind (("C-c n C-_" . undo-tree-visualize)))
     #+END_SRC
 
 ** Completion
@@ -674,8 +674,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package hippie-exp
+        :bind (("M-/" . hippie-expand))
         :config
-        (global-set-key (kbd "M-/") 'hippie-expand)
         (setq hippie-expand-try-functions-list
               '(
                 try-expand-dabbrev
