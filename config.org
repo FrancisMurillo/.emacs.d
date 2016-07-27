@@ -40,10 +40,10 @@
 
    #+BEGIN_SRC emacs-lisp
      (defun fn/reload-config ()
-        "Reload my configuration again"
-        (interactive)
-        (org-babel-load-file
-         (expand-file-name fn/config-file user-emacs-directory)))
+       "Reload my configuration again"
+       (interactive)
+       (org-babel-load-file
+        (expand-file-name fn/config-file user-emacs-directory)))
 
      (defun fn/dired-emacs-dir ()
        "Quickly visit emacs directory"
@@ -315,6 +315,12 @@
    #+BEGIN_SRC emacs-lisp
      (mouse-avoidance-mode 'cat-and-mouse)
    #+END_SRC
+** Others
+   Some other configurations that I can't classify yet
+
+   #+BEGIN_SRC emacs-lisp
+     (setq auth-sources (list (list  :source "~/.authinfo.gpg")))
+   #+END_SRC
 
 ** Commands
    Unlock some commands I need
@@ -324,7 +330,6 @@
      (put 'downcase-region 'disabled nil)
      (put 'upcase-region 'disabled nil)
    #+END_SRC
-
 * Dependencies
   Everything needed to support this more complex configurations
 
@@ -538,6 +543,14 @@
        :ensure t
        :defer t)
    #+END_SRC
+
+   Something to edit =Dockerfile=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package dockerfile-mode
+        :ensure t
+        :mode (("Dockerfile\\'" . dockerfile-mode)))
+    #+END_SRC
 
 * Editor
   Anything to do with editing in Emacs
@@ -983,39 +996,41 @@
                ("C-x b" . helm-mini)
                ("C-x C-b" . helm-buffers-list)
                ("C-x C-f" . helm-find-files)
-               ("M-s o" . helm-occur))
+               ("M-s o" . helm-occur)
+               ("C-c C-/" . helm-dabbrev))
         :config
         (require 'helm-config)
 
-        (setq helm-split-window-in-side-p t
-              helm-yank-symbol-first t
+        ;; core & utils
+        (setq helm-yank-symbol-first t
 
-              helm-mode-fuzzy-match t
-              helm-completion-in-region-fuzzy-match t
-              helm-buffers-fuzzy-matching t
-              helm-apropos-fuzzy-match t
-              helm-recentf-fuzzy-match t
-              helm-semantic-fuzzy-match t
-              helm-locate-fuzzy-match t
+              helm-mode-fuzzy-match nil
 
-              helm-su-or-sudo "su"
+              helm-su-or-sudo "sudo"
 
-              helm-ff-file-name-history-use-recentf t
-              helm-ff-auto-update-initial-value t
+              helm-input-idle-delay (/ 1 60.0) ;; 60fps
+              helm-exit-idle-delay (/ 1 60.0)  ;; ditto
 
-              helm-echo-input-in-header-line t)
+              helm-echo-input-in-header-line t
 
-        (setq helm-debug-root-directory fn/cache-dir)
+              helm-split-window-default-side 'same
+
+              helm-debug-root-directory fn/cache-dir)
 
         (helm-mode t)
 
+        ;; files & command
+        (setq helm-ff-file-name-history-use-recentf t
+              helm-ff-auto-update-initial-value t
 
-        (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir))
+              helm-M-x-always-save-history t)
+
+
+        ;; adaptive
+        (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
+              helm-adaptive-history-length 100)
 
         (helm-adaptive-mode t)
-
-
-        (helm-autoresize-mode t)
 
         (add-hook 'eshell-mode-hook (lambda ()
                                       (define-key eshell-mode-map
@@ -1027,7 +1042,6 @@
 
         (ido-mode -1))
 
-
       (use-feature helm-projectile
                    (projectile helm)
                    (use-package helm-projectile
@@ -1038,23 +1052,6 @@
                      :config
                      (setq projectile-completion-system 'helm)
                      (helm-projectile-on)))
-
-      (use-package helm-swoop
-        :ensure t
-        :after helm
-        :bind (("M-i" . helm-swoop)
-               ("C-c M-i" . helm-multi-swoop))
-        :config
-        (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
-        (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
-        (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
-        (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
-
-      (use-package wgrep-helm
-        :ensure t
-        :after helm
-        :config
-        (setq wgrep-auto-save-buffer t))
     #+END_SRC
 
 ** Help
@@ -1127,7 +1124,9 @@
       (use-package helm-descbinds
         :ensure t
         :after helm
-        :bind (("C-h b" . helm-descbinds)))
+        :bind (("C-h b" . helm-descbinds))
+        :config
+        (setq helm-descbinds-window-style 'same))
     #+END_SRC
 
 *** helm-describe-modes
@@ -2063,6 +2062,28 @@
                      :ensure t))
     #+END_SRC
 
+*** helm-swoop
+    Something to speed up searching
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package helm-swoop
+        :ensure t
+        :after helm
+        :bind (("M-i" . helm-swoop)
+               ("C-c M-i" . helm-multi-swoop))
+        :config
+        (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
+        (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
+        (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
+        (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
+
+      (use-package wgrep-helm
+        :ensure t
+        :after helm
+        :config
+        (setq wgrep-auto-save-buffer t))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -2888,6 +2909,43 @@
         (twittering-icon-mode t)
         (setq twittering-convert-fix-size 24))
     #+END_SRC
+** jabber
+   Listen to chat notifications
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package jabber
+       :ensure t
+       :bind (("C-c n C-j" . jabber-connect-all))
+       :config
+       ;; account set at personal
+       ;; core
+       (setq jabber-auto-reconnect t
+             jabber-version-show nil)
+
+       ;; chat
+       (setq jabber-chat-buffer-format "*-jabber-%n-*")
+
+       ;; history
+       (setq jabber-history-enabled t
+             jabber-history-dir (expand-file-name "jabber-history" fn/cache-dir))
+
+       ;; mode
+       (setq jabber-mode-line-mode t)
+
+       ;; chat states
+       (setq jabber-chatstates-confirm nil)
+
+       ;; avatar
+       (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
+             jabber-vcard-avatars-publish nil
+             jabber-vcard-avatars-retrieve nil)
+
+       ;; roster
+       (setq jabber-roster-show-title nil
+             jabber-roster-line-format "%c %-25n %u %-8s  %S"
+             jabber-roster-buffer "*-jabber-*"))
+   #+END_SRC
+
 ** bbdb
     People organization
 
@@ -2913,7 +2971,7 @@
        (emms-standard)
        (emms-default-players)
 
-       (setq emms-source-file-default-directory "~/Music/")
+       (setq emms-source-file-default-directory "~/Musicbox/")
 
        (setq emms-info-asynchronously nil
              emms-playlist-buffer-name "*Music*")
