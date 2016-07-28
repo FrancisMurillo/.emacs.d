@@ -383,6 +383,7 @@
 
      (use-package exec-path-from-shell
        :load-path fn/exec-path-from-shell-package-dir
+       :disabled t
        :config
        (exec-path-from-shell-initialize))
    #+END_SRC
