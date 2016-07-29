@@ -3047,7 +3047,7 @@
      (defun fn/setup-initial-view ()
        "Setup your personal view"
        (message "Setting up initial view")
-       (let ((text-width (window-text-width)))
+       (let ((text-width (/ (window-text-width) 2.0)))
          (fn/find-main-org-file)
 
          ;; If there is enough width, show the org-todo view
