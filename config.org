@@ -2925,49 +2925,57 @@
    Listen to chat notifications
 
    #+BEGIN_SRC emacs-lisp
-     (use-package jabber
-       :ensure t
-       :bind (("C-c n C-j" . jabber-connect-all))
-       :config
-       ; account set at personal
-       ;; core
-       (setq jabber-auto-reconnect t
-             jabber-version-show nil)
+          (use-package jabber
+            :ensure t
+            :bind (("C-c n C-j" . jabber-connect-all))
+            :config
+            ; account set at personal
+            ;; core
+            (setq jabber-auto-reconnect t
+                  jabber-version-show nil)
 
-       ;; chat
-       (setq jabber-chat-buffer-format "*-jabber-%n-*")
+            (defconst fn/jabber-roster-buffer-name "*-jabber-*"
+              "My custom name for the jabber buffer")
 
-       ;; history
-       (setq jabber-history-enabled t
-             jabber-history-dir (expand-file-name "jabber-history" fn/cache-dir))
+            ;; chat
+            (setq jabber-chat-buffer-format "*-jabber-%n-*")
 
-       ;; mode
-       (setq jabber-mode-line-mode t)
+            ;; history
+            (setq jabber-history-enabled t
+                  jabber-history-dir (expand-file-name "jabber-history" fn/cache-dir))
 
-       ;; chat states
-       (setq jabber-chatstates-confirm nil)
+            ;; mode
+            (setq jabber-mode-line-mode t)
 
-       ;; avatar
-       (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
-             jabber-vcard-avatars-publish nil
-             jabber-vcard-avatars-retrieve nil)
+            ;; chat states
+            (setq jabber-chatstates-confirm nil)
 
-       ;; libnotify
-       (setq jabber-libnotify-method 'shell
-             jabber-libnotify-urgency "high")
+            ;; avatar
+            (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
+                  jabber-vcard-avatars-publish nil
+                  jabber-vcard-avatars-retrieve nil)
 
-
-       ;; alerts
-       (setq jabber-alert-message-hooks nil)
-
-       (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
-       (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
+            ;; libnotify
+            (setq jabber-libnotify-method 'shell
+                  jabber-libnotify-urgency "high")
 
 
-       ;; roster
-       (setq jabber-roster-show-title nil
-             jabber-roster-line-format "%c %-25n %u %-8s  %S"
-             jabber-roster-buffer "*-jabber-*"))
+            ;; alerts
+            (setq jabber-alert-message-hooks nil)
+
+            (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
+            (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
+
+
+            ;; roster
+            (setq jabber-roster-show-title nil
+                  jabber-roster-line-format "%c %-25n %u %-8s  %S"
+                  jabber-roster-buffer fn/jabber-roster-buffer-name)
+
+            (defun fn/display-jabber-roster-buffer ()
+              "Show jabber roster buffer"
+              (interactive)
+              (display-buffer fn/jabber-roster-buffer-name)))
    #+END_SRC
 
 ** bbdb
@@ -3768,6 +3776,9 @@
     ;; Files
     (global-set-key (kbd "C-c m b c") 'fn/find-config-file)
     (global-set-key (kbd "C-c m b o") 'fn/find-main-org-file)
+
+    ;; Special Buffers
+    (global-set-key (kbd "C-c m b j") 'fn/display-jabber-roster-buffer)
 
 
     ;; Dired
