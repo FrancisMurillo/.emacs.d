@@ -1051,6 +1051,9 @@
                      :demand t
                      :config
                      (setq projectile-completion-system 'helm)
+
+                     (setq projectile-switch-project-action 'helm-projectile)
+
                      (helm-projectile-on)))
     #+END_SRC
 
@@ -2881,6 +2884,15 @@
         (company-auctex-init))
     #+END_SRC
 
+*** Linter
+    Something similar but for spelling
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature flyspell-auctex
+                   (flyspell auctex)
+                   (add-hook 'latex-mode-hook #'flyspell-mode))
+    #+END_SRC
+
 *** REPL
     Something like that but rather a preview for every edit
 
@@ -2917,7 +2929,7 @@
        :ensure t
        :bind (("C-c n C-j" . jabber-connect-all))
        :config
-       ;; account set at personal
+       ; account set at personal
        ;; core
        (setq jabber-auto-reconnect t
              jabber-version-show nil)
@@ -2939,6 +2951,18 @@
        (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
              jabber-vcard-avatars-publish nil
              jabber-vcard-avatars-retrieve nil)
+
+       ;; libnotify
+       (setq jabber-libnotify-method 'shell
+             jabber-libnotify-urgency "high")
+
+
+       ;; alerts
+       (setq jabber-alert-message-hooks nil)
+
+       (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
+       (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
+
 
        ;; roster
        (setq jabber-roster-show-title nil
