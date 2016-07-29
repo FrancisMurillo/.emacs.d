@@ -5,3 +5,5 @@ config.el
 
 .cache
 elpa
+
+personal.el
