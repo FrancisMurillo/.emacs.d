@@ -2034,6 +2034,15 @@
         (global-git-gutter-mode t))
     #+END_SRC
 
+**** magit-svn
+     Support for SVN with the awesome =magit= interface
+
+     #+BEGIN_SRC emacs-lisp
+       (use-package magit-svn
+         :ensure t
+         :after magit)
+     #+END_SRC
+
 *** gist
     GitHub integration with gists
 
