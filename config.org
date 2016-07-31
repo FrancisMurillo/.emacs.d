@@ -1102,24 +1102,18 @@
                                                              (label-format
                                                               (concat
                                                                "%-"
-                                                               (number-to-string (+ label-offset
-                                                                                    max-label-length))
+                                                               (number-to-string  max-label-length)
                                                                "s"))
 
                                                              (description-format
-                                                              (concat "%-s"))
+                                                             "%-s")
 
                                                              (display-formatter
                                                               (lambda (name description)
                                                                 (concat
-                                                                 (s-pad-right
-                                                                  max-text-length
-                                                                  " "
-                                                                  name)
-
-                                                                 "   "
-                                                                 "||> "
-                                                                 description))))
+                                                                 (format label-format name)
+                                                                 " ||>  "
+                                                                 (format description-format description)))))
                                                 (lambda (pair)
                                                   (lexical-let*
                                                       ((unique-path (car pair))
