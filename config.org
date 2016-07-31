@@ -1054,7 +1054,6 @@
                              ("C-c p p" . helm-projectile-switch-project))
                       :demand t
                       :config
-                      (setq projectile-completion-system 'helm)
 
                       (defun fn/custom-helm-completion (prompt choices)
                         "Just a custom helm completion for projection"
@@ -1070,10 +1069,14 @@
                                                        (string-join
                                                         (-drop-last (length split-relative-path) split-path)
                                                         (f-path-separator)))))
-                             (map-head (lambda (f pair)
-                                         (list (funcall f (car pair)) (cdr pair))))
+                             (as-pair (lambda (ish)
+                                        (if (listp ish)
+                                            ish (cons ish ish))))
                              (swap-pair (lambda (pair)
                                           (cons (cdr pair) (car pair))))
+                             (map-car (lambda (f pair)
+                                        (cons (funcall f (car pair))
+                                              (cdr pair))))
                              (pair-as-label (lambda (pairs)
                                               (lexical-let* ((labels (mapcar #'cdr pairs))
                                                              (label-lengths (mapcar #'length labels))
@@ -1105,16 +1108,22 @@
                                                        (display-name
                                                         (funcall fn-notation unique-path))
                                                        (display-description
-                                                        (funcall fn-notation parent-path)))
-                                                    (format display-format display-name display-description))))))
+                                                        (funcall fn-notation parent-path))
+
+                                                       (display-label
+                                                        (format display-format
+                                                                display-name
+                                                                display-description)))
+                                                    (cons display-label (cdr pair)))))))
                              (refined-choices (f-uniquify-alist choices))
                              (mapped-choices
                               (mapcar (-compose
                                        (funcall pair-as-label refined-choices)
-                                       swap-pair)
+                                       swap-pair
+                                       as-pair)
                                       refined-choices)))
-                          (car(helm-comp-read prompt mapped-choices
-                                              :must-match 'confirm))))
+                          (helm-comp-read prompt mapped-choices
+                                          :must-match 'confirm)))
 
                       (setq projectile-completion-system #'fn/custom-helm-completion)
 
