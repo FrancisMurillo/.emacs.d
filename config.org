@@ -997,6 +997,7 @@
                ("C-x C-f" . helm-find-files)
                ("M-s o" . helm-occur)
                ("C-c C-/" . helm-dabbrev))
+        :demand t
         :config
         (require 'helm-config)
 
@@ -1046,7 +1047,7 @@
      A nice assist for projectile
 
      #+BEGIN_SRC emacs-lisp
-       `(use-feature helm-projectile
+       (use-feature helm-projectile
                     (projectile helm)
                     (use-package helm-projectile
                       :ensure t
@@ -1054,13 +1055,12 @@
                              ("C-c p p" . helm-projectile-switch-project))
                       :demand t
                       :config
-
                       (defun fn/custom-helm-completion (prompt choices)
                         "Just a custom helm completion for projection"
                         (lexical-let*
-                            ((fn-notation (lambda (path)
-                                            (lexical-let ((fn-separator " |> ")
-                                                          (fn-pieces (f-split path)))
+                            ((fn-separator " |> ")
+                             (fn-notation (lambda (path)
+                                            (lexical-let ((fn-pieces (f-split path)))
                                               (string-join (reverse fn-pieces) fn-separator))))
                              (relative-parent-path (lambda (path relative-path)
                                                      (lexical-let
@@ -1069,6 +1069,7 @@
                                                        (string-join
                                                         (-drop-last (length split-relative-path) split-path)
                                                         (f-path-separator)))))
+
                              (as-pair (lambda (ish)
                                         (if (listp ish)
                                             ish (cons ish ish))))
@@ -1077,25 +1078,48 @@
                              (map-car (lambda (f pair)
                                         (cons (funcall f (car pair))
                                               (cdr pair))))
-                             (pair-as-label (lambda (pairs)
-                                              (lexical-let* ((labels (mapcar #'cdr pairs))
-                                                             (label-lengths (mapcar #'length labels))
 
-                                                             (max-label-length (apply #'max label-lengths))
+                             (pair-as-label (lambda (pairs)
+                                              (lexical-let* ((labels
+                                                                 (mapcar #'cdr pairs))
+                                                             (label-lengths
+                                                              (mapcar
+                                                               (-compose
+                                                                #'length
+                                                                fn-notation)
+                                                               labels))
+
+                                                             (max-label-length
+                                                              (apply #'max label-lengths))
+
+                                                             (label-offset 1)
+
+                                                             ;; NOTE: Assumes the same window is used for Helm
+                                                             (max-text-length
+                                                              (window-text-width))
+
 
                                                              (label-format
                                                               (concat
                                                                "%-"
-                                                               (number-to-string (+ 5 max-label-length))
+                                                               (number-to-string (+ label-offset
+                                                                                    max-label-length))
                                                                "s"))
 
                                                              (description-format
                                                               (concat "%-s"))
 
-                                                             (display-format
-                                                              (format "%s <|> %s"
-                                                                      label-format
-                                                                      description-format)))
+                                                             (display-formatter
+                                                              (lambda (name description)
+                                                                (concat
+                                                                 (s-pad-right
+                                                                  max-text-length
+                                                                  " "
+                                                                  name)
+
+                                                                 "   "
+                                                                 "||> "
+                                                                 description))))
                                                 (lambda (pair)
                                                   (lexical-let*
                                                       ((unique-path (car pair))
@@ -1111,11 +1135,37 @@
                                                         (funcall fn-notation parent-path))
 
                                                        (display-label
-                                                        (format display-format
-                                                                display-name
-                                                                display-description)))
+                                                        (funcall display-formatter
+                                                                 display-name
+                                                                 display-description)))
                                                     (cons display-label (cdr pair)))))))
-                             (refined-choices (f-uniquify-alist choices))
+                             (uniquify-choices
+                              (lambda (choices)
+                                ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
+                                (lexical-let* ((is-dir
+                                                (lambda (path)
+                                                  (string-equal (f-path-separator)
+                                                                (s-right 1 path))))
+
+                                               (map-pair
+                                                (lambda (f pair)
+                                                  (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
+                                               (remove-last-separator
+                                                (lambda (text)
+                                                  (s-left (1- (length text)) text)))
+                                               (add-separator
+                                                (lambda (text)
+                                                  (concat text (f-path-separator)))))
+                                  (if (-any is-dir choices)
+                                      (funcall
+                                       (-compose
+                                        (-partial #'mapcar (-partial map-pair add-separator))
+                                        #'f-uniquify-alist
+                                        (-partial #'mapcar remove-last-separator))
+                                       choices)
+                                    choices)
+                                  (f-uniquify-alist choices))))
+                             (refined-choices (funcall uniquify-choices choices))
                              (mapped-choices
                               (mapcar (-compose
                                        (funcall pair-as-label refined-choices)
@@ -1125,9 +1175,7 @@
                           (helm-comp-read prompt mapped-choices
                                           :must-match 'confirm)))
 
-                      (setq projectile-completion-system #'fn/custom-helm-completion)
-
-                      (setq projectile-switch-project-action 'helm-projectile)))
+                      (setq projectile-completion-system #'fn/custom-helm-completion)))
      #+END_SRC
 
 ** Help
