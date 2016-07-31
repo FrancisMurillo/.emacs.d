@@ -988,7 +988,6 @@
       (use-package helm
         :ensure t
         :diminish helm-mode
-        :defer 2
         :bind (("M-x" . helm-M-x)
                ("C-c f" . helm-recentf)
                ("C-h a" . helm-apropos)
@@ -1041,21 +1040,86 @@
                                         'helm-eshell-history)))
 
         (ido-mode -1))
-
-      (use-feature helm-projectile
-                   (projectile helm)
-                   (use-package helm-projectile
-                     :ensure t
-                     :bind (("C-c p h" . helm-projectile)
-                            ("C-c p p" . helm-projectile-switch-project))
-                     :demand t
-                     :config
-                     (setq projectile-completion-system 'helm)
-
-                     (setq projectile-switch-project-action 'helm-projectile)
-
-                     (helm-projectile-on)))
     #+END_SRC
+
+**** helm-projectile
+     A nice assist for projectile
+
+     #+BEGIN_SRC emacs-lisp
+       `(use-feature helm-projectile
+                    (projectile helm)
+                    (use-package helm-projectile
+                      :ensure t
+                      :bind (("C-c p h" . helm-projectile)
+                             ("C-c p p" . helm-projectile-switch-project))
+                      :demand t
+                      :config
+                      (setq projectile-completion-system 'helm)
+
+                      (defun fn/custom-helm-completion (prompt choices)
+                        "Just a custom helm completion for projection"
+                        (lexical-let*
+                            ((fn-notation (lambda (path)
+                                            (lexical-let ((fn-separator " |> ")
+                                                          (fn-pieces (f-split path)))
+                                              (string-join (reverse fn-pieces) fn-separator))))
+                             (relative-parent-path (lambda (path relative-path)
+                                                     (lexical-let
+                                                         ((split-path (f-split path))
+                                                          (split-relative-path (f-split relative-path)))
+                                                       (string-join
+                                                        (-drop-last (length split-relative-path) split-path)
+                                                        (f-path-separator)))))
+                             (map-head (lambda (f pair)
+                                         (list (funcall f (car pair)) (cdr pair))))
+                             (swap-pair (lambda (pair)
+                                          (cons (cdr pair) (car pair))))
+                             (pair-as-label (lambda (pairs)
+                                              (lexical-let* ((labels (mapcar #'cdr pairs))
+                                                             (label-lengths (mapcar #'length labels))
+
+                                                             (max-label-length (apply #'max label-lengths))
+
+                                                             (label-format
+                                                              (concat
+                                                               "%-"
+                                                               (number-to-string (+ 5 max-label-length))
+                                                               "s"))
+
+                                                             (description-format
+                                                              (concat "%-s"))
+
+                                                             (display-format
+                                                              (format "%s <|> %s"
+                                                                      label-format
+                                                                      description-format)))
+                                                (lambda (pair)
+                                                  (lexical-let*
+                                                      ((unique-path (car pair))
+                                                       (full-path (cdr pair))
+                                                       (parent-path
+                                                        (funcall relative-parent-path
+                                                                 full-path
+                                                                 unique-path))
+
+                                                       (display-name
+                                                        (funcall fn-notation unique-path))
+                                                       (display-description
+                                                        (funcall fn-notation parent-path)))
+                                                    (format display-format display-name display-description))))))
+                             (refined-choices (f-uniquify-alist choices))
+                             (mapped-choices
+                              (mapcar (-compose
+                                       (funcall pair-as-label refined-choices)
+                                       swap-pair)
+                                      refined-choices)))
+                          (car(helm-comp-read prompt mapped-choices
+                                              :must-match 'confirm))))
+
+                      (setq projectile-completion-system #'fn/custom-helm-completion)
+
+                      (setq projectile-switch-project-action 'helm-projectile)))
+     #+END_SRC
 
 ** Help
    Helper functions ere
@@ -1292,20 +1356,30 @@
       (use-package zone
         :ensure t
         :config
-        (zone-when-idle (* fn/minute-per-second 5))
+        (defconst fn/zone-idle-time (* fn/minute-per-second 5)
+          "Time for zone to zone")
+
+        (zone-when-idle fn/zone-idle-time)
 
         (defconst fn/zone-animation-dir (expand-file-name "elisp/custom-zone/" user-emacs-directory)
           "Custom zone animation directory")
 
-        (setq zone-programs (list))
+        (setq zone-programs (list)))
 
-        (load-file (expand-file-name "end-of-buffer.el" fn/zone-animation-dir))
-        (add-to-list 'zone-programs 'zone-end-of-buffer)
+      ;; Custom zone
+      (use-package zone-end-of-buffer
+        :load-path fn/zone-animation-dir
+        :after zone
+        :config
+        (add-to-list 'zone-programs 'zone-end-of-buffer))
 
-        (load-file (expand-file-name "waves.el" fn/zone-animation-dir))
+      (use-package zone-waves
+        :load-path fn/zone-animation-dir
+        :after zone
+        :config
         (add-to-list 'zone-programs 'zone-waves))
 
-
+      ;; Packaged zones
       (use-package zone-nyan
         :ensure t
         :after zone
@@ -1390,6 +1464,17 @@
     #+END_SRC
 * Organizer
   Things to organize life in general
+
+** alert
+   A nice alert box would be nice
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package alert
+       :ensure t
+       :defer t
+       :config
+       (setq alert-default-style 'libnotify))
+   #+END_SRC
 
 ** epa
    Encryption is a must
@@ -1932,18 +2017,30 @@
     I definitely need to chill out from time to time
 
     #+BEGIN_SRC emacs-lisp
-      (use-package type-break
-        :config
-        (setq type-break-interval (* fn/minute-per-second 25)
-              type-break-good-rest-interva (* fn/minute-per-second 5)
+            (use-package type-break
+              :config
+              (setq type-break-interval (* fn/minute-per-second 25)
+                    type-break-good-rest-interva (* fn/minute-per-second 5)
 
-              type-break-file-name (expand-file-name "type-break" fn/cache-dir)
-              type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
+                    type-break-file-name (expand-file-name "type-break" fn/cache-dir)
+                    type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
 
-        (global-set-key (kbd "C-c n C-t") 'type-break)
+              (global-set-key (kbd "C-c n C-t") 'type-break)
 
-        (type-break-mode t)
-        (type-break-query-mode t))
+              (type-break-mode t)
+              (type-break-query-mode t))
+
+            ;; Prevent zoning on type break
+            (use-feature type-break-no-zone
+                         (zone type-break)
+                         (defun fn/disable-zone-on-type-break (type-breaker)
+                           "The name pretty much gives it away"
+                           (let ((current-zone-idle-time (elt zone-timer 2)))
+                             (zone-when-idle 0)
+                             (apply type-breaker (list))
+                             (zone-when-idle current-zone-idle-time)))
+
+                         (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
     #+END_SRC
 
 *** auto-compile
@@ -2419,6 +2516,19 @@
       (use-feature org-js2-src
        (org js2-mode)
        (add-to-list 'org-babel-load-languages '(js . t)))
+    #+END_SRC
+
+** Java
+*** Mode
+    Already a built in mode
+
+*** IDE
+    How I hate that word specially when talking about Java
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package jdee
+        :ensure t
+        :after java)
     #+END_SRC
 
 ** Python
@@ -2984,7 +3094,7 @@
             (defun fn/display-jabber-roster-buffer ()
               "Show jabber roster buffer"
               (interactive)
-              (display-buffer fn/jabber-roster-buffer-name)))
+              (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
    #+END_SRC
 
 ** bbdb
@@ -3440,6 +3550,21 @@
          (insert (string-join var-pieces separator))))
    #+END_SRC
 
+** Dired Shortcuts
+   Some shortcuts with the common folder
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/dired-download-dir ()
+       "Just a quick shortcut to my directory folder"
+       (interactive)
+       (dired "~/Downloads"))
+
+     (defun fn/dired-mountain-dir ()
+       "Just a quick shortcut to my mountain folder"
+       (interactive)
+       (dired "~/Mountain"))
+   #+END_SRC
+
 ** starup and shutdown hook
    Small script to update my org files
 
@@ -3748,6 +3873,7 @@
                                     (message "No key bound to %s" key-trigger)))))))
         trigger))
 
+
     ;; Motion
     (global-set-key (kbd "C-c m b RET") (fn/trigger-key (kbd "C-RET")))
     (global-set-key (kbd "C-c m b b RET ") (fn/trigger-key (kbd "M-RET")))
@@ -3791,7 +3917,10 @@
 
 
     ;; Dired
-    (global-set-key (kbd "C-c m d h") 'fn/dired-emacs-dir)
+    (global-set-key (kbd "C-c m d h") #'fn/dired-emacs-dir)
+    (global-set-key (kbd "C-c m d d") #'fn/dired-download-dir)
+    (global-set-key (kbd "C-c m d m") #'fn/dired-mountain-dir)
+
     (global-set-key (kbd "C-c m ^") #'fn/dired-parent)
 
     ;; Functions

@@ -1,4 +1,5 @@
 ;;Waves by Joseph Wilk
+(require 'zone)
 
 (defvar total-count 0)
 
@@ -88,3 +89,7 @@
             (zone-waves-animate (zone-cpos p) (current-column) wend)))
         ;; assuming current-column has not changed...
         ))))
+
+(provide 'zone-waves)
+
+;;; zone-waves.el ends here

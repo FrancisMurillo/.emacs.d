@@ -1,4 +1,6 @@
 ;;End of buffeeeeeeeeeeerrrrrrrrrrrr by Joseph Wilk
+(require 'zone)
+
 (defvar start-total-count 0)
 
 ;;;###AUTOLOAD
@@ -108,3 +110,7 @@
             ))
         ;; assuming current-column has not changed...
         ))))
+
+(provide 'zone-end-of-buffer)
+
+;;; end-of-buffer.el ends here
