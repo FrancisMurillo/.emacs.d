@@ -3653,7 +3653,7 @@
        (fmd/get-document-property "TITLE" selected-buffer))
 
 
-     (defconst fmd/md-root "/media/veracrypt1/media-diary"
+     (defconst fmd/md-root "/mnt/veracrypt1/media-diary"
        "The media diary directory")
 
      (defconst fmd/md-summary-file-name "media-diary.org"
@@ -3768,7 +3768,7 @@
        (newline)
 
        (fmd/insert-document-option "TITLE" (format "Media Diary of %s"
-    u                                               (format-time-string "%b. %Y" start-date)))
+                                                   (format-time-string "%b. %Y" start-date)))
        (fmd/insert-document-option "DATE" (format-time-string "%D" start-date))
        (fmd/insert-document-option "STARTUP" "content")
        (fmd/insert-document-option "OPTIONS" "toc:nil"))
@@ -3799,7 +3799,7 @@
                          (apply 'encode-time (parse-time-string start-date-text)))))
          (lexical-let* ((render-header
                          (lambda ()
-                           (fmd/insert-file-headers)
+                           (fmd/insert-file-headers md-start-date)
                            (fmd/insert-org-header fmd/md-title)))
                         (render-note-section
                          (lambda ()
