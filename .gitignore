@@ -7,3 +7,4 @@ config.el
 elpa
 
 personal.el
+extra/**

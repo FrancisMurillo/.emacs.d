@@ -1047,127 +1047,127 @@
      A nice assist for projectile
 
      #+BEGIN_SRC emacs-lisp
-              (use-feature helm-projectile
-                           (projectile helm)
-                           (use-package helm-projectile
-                             :ensure t
-                             :bind (("C-c p h" . helm-projectile)
-                                    ("C-c p p" . helm-projectile-switch-project))
-                             :demand t
-                             :config
-                             (defun fn/custom-helm-completion (prompt choices)
-                               "Just a custom helm completion for projection"
-                               (lexical-let*
-                                   ((fn-separator "..")
-                                    (fn-notation (lambda (path)
-                                                   (lexical-let ((fn-pieces (f-split path)))
-                                                     (string-join (reverse fn-pieces) fn-separator))))
-                                    (relative-parent-path (lambda (path relative-path)
-                                                            (lexical-let
-                                                                ((split-path (f-split path))
-                                                                 (split-relative-path (f-split relative-path)))
-                                                              (string-join
-                                                               (-drop-last (length split-relative-path) split-path)
-                                                               (f-path-separator)))))
+       (use-feature helm-projectile
+                    (projectile helm)
+                    (use-package helm-projectile
+                      :ensure t
+                      :bind (("C-c p h" . helm-projectile)
+                             ("C-c p p" . helm-projectile-switch-project))
+                      :demand t
+                      :config
+                      (defun fn/custom-helm-completion (prompt choices)
+                        "Just a custom helm completion for projection"
+                        (lexical-let*
+                            ((fn-separator "..")
+                             (fn-notation (lambda (path)
+                                            (lexical-let ((fn-pieces (f-split path)))
+                                              (string-join (reverse fn-pieces) fn-separator))))
+                             (relative-parent-path (lambda (path relative-path)
+                                                     (lexical-let
+                                                         ((split-path (f-split path))
+                                                          (split-relative-path (f-split relative-path)))
+                                                       (string-join
+                                                        (-drop-last (length split-relative-path) split-path)
+                                                        (f-path-separator)))))
 
-                                    (as-pair (lambda (ish)
-                                               (if (listp ish)
-                                                   ish (cons ish ish))))
-                                    (swap-pair (lambda (pair)
-                                                 (cons (cdr pair) (car pair))))
-                                    (map-car (lambda (f pair)
-                                               (cons (funcall f (car pair))
-                                                     (cdr pair))))
+                             (as-pair (lambda (ish)
+                                        (if (listp ish)
+                                            ish (cons ish ish))))
+                             (swap-pair (lambda (pair)
+                                          (cons (cdr pair) (car pair))))
+                             (map-car (lambda (f pair)
+                                        (cons (funcall f (car pair))
+                                              (cdr pair))))
 
-                                    (pair-as-label (lambda (pairs)
-                                                     (lexical-let* ((labels
-                                                                        (mapcar #'cdr pairs))
-                                                                    (label-lengths
-                                                                     (mapcar
-                                                                      (-compose
-                                                                       #'length
-                                                                       fn-notation)
-                                                                      labels))
+                             (pair-as-label (lambda (pairs)
+                                              (lexical-let* ((labels
+                                                                 (mapcar #'cdr pairs))
+                                                             (label-lengths
+                                                              (mapcar
+                                                               (-compose
+                                                                #'length
+                                                                fn-notation)
+                                                               labels))
 
-                                                                    (max-label-length
-                                                                     (apply #'max label-lengths))
+                                                             (max-label-length
+                                                              (apply #'max label-lengths))
 
-                                                                    (label-offset 1)
+                                                             (label-offset 1)
 
-                                                                    ;; NOTE: Assumes the same window is used for Helm
-                                                                    (max-text-length
-                                                                     (window-text-width))
+                                                             ;; NOTE: Assumes the same window is used for Helm
+                                                             (max-text-length
+                                                              (window-text-width))
 
 
-                                                                    (label-format
-                                                                     "%-s")
+                                                             (label-format
+                                                              "%-s")
 
-                                                                    (description-format
-                                                                    "%-s")
+                                                             (description-format
+                                                             "%-s")
 
-                                                                    (display-formatter
-                                                                     (lambda (name description)
-                                                                       (concat
-                                                                        (format label-format name)
-                                                                        "  |->  "
-                                                                        (format description-format description)
-                                                                        "  <-|"))))
-                                                       (lambda (pair)
-                                                         (lexical-let*
-                                                             ((unique-path (car pair))
-                                                              (full-path (cdr pair))
-                                                              (parent-path
-                                                               (funcall relative-parent-path
-                                                                        full-path
-                                                                        unique-path))
+                                                             (display-formatter
+                                                              (lambda (name description)
+                                                                (concat
+                                                                 (format label-format name)
+                                                                 "  |->  "
+                                                                 (format description-format description)
+                                                                 "  <-|"))))
+                                                (lambda (pair)
+                                                  (lexical-let*
+                                                      ((unique-path (car pair))
+                                                       (full-path (cdr pair))
+                                                       (parent-path
+                                                        (funcall relative-parent-path
+                                                                 full-path
+                                                                 unique-path))
 
-                                                              (display-name
-                                                               (funcall fn-notation unique-path))
-                                                              (display-description
-                                                               (funcall fn-notation parent-path))
+                                                       (display-name
+                                                        (funcall fn-notation unique-path))
+                                                       (display-description
+                                                        (funcall fn-notation parent-path))
 
-                                                              (display-label
-                                                               (funcall display-formatter
-                                                                        display-name
-                                                                        display-description)))
-                                                           (cons display-label (cdr pair)))))))
-                                    (uniquify-choices
-                                     (lambda (choices)
-                                       ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
-                                       (lexical-let* ((is-dir
-                                                       (lambda (path)
-                                                         (string-equal (f-path-separator)
-                                                                       (s-right 1 path))))
+                                                       (display-label
+                                                        (funcall display-formatter
+                                                                 display-name
+                                                                 display-description)))
+                                                    (cons display-label (cdr pair)))))))
+                             (uniquify-choices
+                              (lambda (choices)
+                                ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
+                                (lexical-let* ((is-dir
+                                                (lambda (path)
+                                                  (string-equal (f-path-separator)
+                                                                (s-right 1 path))))
 
-                                                      (map-pair
-                                                       (lambda (f pair)
-                                                         (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
-                                                      (remove-last-separator
-                                                       (lambda (text)
-                                                         (s-left (1- (length text)) text)))
-                                                      (add-separator
-                                                       (lambda (text)
-                                                         (concat text (f-path-separator)))))
-                                         (if (-any is-dir choices)
-                                             (funcall
-                                              (-compose
-                                               (-partial #'mapcar (-partial map-pair add-separator))
-                                               #'f-uniquify-alist
-                                               (-partial #'mapcar remove-last-separator))
-                                              choices)
-                                           choices)
-                                         (f-uniquify-alist choices))))
-                                    (refined-choices (funcall uniquify-choices choices))
-                                    (mapped-choices
-                                     (mapcar (-compose
-                                              (funcall pair-as-label refined-choices)
-                                              swap-pair
-                                              as-pair)
-                                             refined-choices)))
-                                 (helm-comp-read prompt mapped-choices
-                                                 :must-match 'confirm)))
+                                               (map-pair
+                                                (lambda (f pair)
+                                                  (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
+                                               (remove-last-separator
+                                                (lambda (text)
+                                                  (s-left (1- (length text)) text)))
+                                               (add-separator
+                                                (lambda (text)
+                                                  (concat text (f-path-separator)))))
+                                  (if (-any is-dir choices)
+                                      (funcall
+                                       (-compose
+                                        (-partial #'mapcar (-partial map-pair add-separator))
+                                        #'f-uniquify-alist
+                                        (-partial #'mapcar remove-last-separator))
+                                       choices)
+                                    choices)
+                                  (f-uniquify-alist choices))))
+                             (refined-choices (funcall uniquify-choices choices))
+                             (mapped-choices
+                              (mapcar (-compose
+                                       (funcall pair-as-label refined-choices)
+                                       swap-pair
+                                       as-pair)
+                                      refined-choices)))
+                          (helm-comp-read prompt mapped-choices
+                                          :must-match 'confirm)))
 
-                             (setq projectile-completion-system #'fn/custom-helm-completion)))
+                      (setq projectile-completion-system #'fn/custom-helm-completion)))
      #+END_SRC
 
 ** Help
@@ -2041,20 +2041,46 @@
     Just a small script to sync my =offlineimap=
 
     #+BEGIN_SRC emacs-lisp
-      (use-package prodigy
-        :after gnus
-        :config
-        (prodigy-define-service
-          :name "Offlineimap: Sync"
-          :command "offlineimap"
-          :cwd "~")
+      (use-feature gnus-prodigy
+                   (prodigy gnus)
+                   (defconst fn/gnus-offlineimap-service-name "Offlineimap: Sync"
+                     "My offlineimap syncer")
 
-        (add-hook 'gnus-before-startup-hook (lambda ()
-                                              (prodigy-start-service (prodigy-find-service "Offlineimap: Sync"))))
+                   (prodigy-define-service
+                     :name fn/gnus-offlineimap-service-name
+                     :command "offlineimap"
+                     :cwd "~")
 
-        (add-hook 'gnus-exit-gnus  (lambda ()
-                                     (prodigy-stop-service (prodigy-find-service "Offlineimap: Sync")))))
+                   (add-hook 'gnus-before-startup-hook
+                             (lambda ()
+                               (prodigy-start-service
+                                   (prodigy-find-service fn/gnus-offlineimap-service-name))))
+
+                   (add-hook 'gnus-exit-gnus-hook
+                             (lambda ()
+                               (prodigy-stop-service
+                                   (prodigy-find-service fn/gnus-offlineimap-service-name)))))
     #+END_SRC
+
+** emacsshot
+   Sometimes when you just need proof
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package emacsshot
+       :ensure t
+       :bind (("C-c n C-c w" . emacsshot-snap-window)
+              ("C-c n C-c f" . emacsshot-snap-frame))
+       :config
+       (defconst fn/emacsshot-dir (expand-file-name "emacsshot" fn/extra-dir)
+         "My screenshot directory")
+
+       (unless (f-exists? fn/emacsshot-dir)
+         (make-directory fn/emacsshot-dir))
+
+       (setq emacsshot-with-timestamp t
+             emacsshot-snap-frame-filename (expand-file-name "my-frame.png" fn/emacsshot-dir)
+             emacsshot-snap-window-filename (expand-file-name "my-window.png" fn/emacsshot-dir)))
+   #+END_SRC
 
 * Code Monkey
   Modes for my programming experiences
