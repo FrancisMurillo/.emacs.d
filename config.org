@@ -3642,19 +3642,37 @@
      (defun fmd/get-document-property (key &optional selected-buffer)
        "Get the property of the document which starts with #+PROPERTY"
        (with-current-buffer (if selected-buffer selected-buffer (buffer-name))
-         (lexical-let* ((property-regex (format  "\#\\+%s:\s+\\(.*\\)" key))
+         (lexical-let* ((property-regex (format "\#\\+%s:\s+\\(.*\\)" key))
                         (property-match (s-match property-regex (buffer-substring-no-properties (point-min) (point-max))))
                         (property (if property-match (cadr property-match)
                                     nil)))
            property)))
 
+     (defun fmd/get-document-block-property (key &optional selected-buffer)
+       "Like with fmd/get-document-property but finds a block summary #+BEGIN_key #+END_key"
+       (with-current-buffer (if selected-buffer selected-buffer (buffer-name))
+         (lexical-let* ((property-regex (format "#\\+BEGIN_%s\n\\([\0-\377[:nonascii:]]*\\)\n#\\+END_%s" key key))
+                        (property-match (s-match property-regex (buffer-substring-no-properties (point-min) (point-max))))
+                        (property (if property-match (s-trim (cadr property-match))
+                                    nil)))
+           property)))
+
+
      (defun fmd/get-title (&optional selected-buffer)
        "Get the #+TITLE value of the current buffer"
        (fmd/get-document-property "TITLE" selected-buffer))
 
+     (defun fmd/get-summary (&optional selected-buffer)
+       "Get the #+BEGIN_SUMMARY section of the buffer"
+       (fmd/get-document-block-property "SUMMARY" selected-buffer))
 
-     (defconst fmd/md-root "/mnt/veracrypt1/media-diary"
+
+     (defconst fmd/md-root "/mnt/veracrypt1/media-diary/compile/"
        "The media diary directory")
+
+     (defconst fmd/md-compile-date-filter (expand-file-name ".date" fmd/md-root)
+       "The media diary directory")
+
 
      (defconst fmd/md-summary-file-name "media-diary.org"
        "The media diary directory")
@@ -3685,6 +3703,9 @@
        "Photo format for the compilation")
 
      (defconst fmd/md-summary-default-text "Something profound happened but I forgot like Dory"
+       "The default text to be displayed")
+
+     (defconst fmd/md-journal-summary-default-text "Looks like I forgot to write something this day"
        "The default text to be displayed")
 
 
@@ -3769,7 +3790,7 @@
 
        (fmd/insert-document-option "TITLE" (format "Media Diary of %s"
                                                    (format-time-string "%b. %Y" start-date)))
-       (fmd/insert-document-option "DATE" (format-time-string "%D" start-date))
+       (fmd/insert-document-option "DATE" (format-time-string "%Y-%m" start-date))
        (fmd/insert-document-option "STARTUP" "content")
        (fmd/insert-document-option "OPTIONS" "toc:nil"))
 
@@ -3791,9 +3812,10 @@
 
 
      (defun fmd/compile-media-diary ()
-       "Compile the media diary"
+       "Compile the media diary, the diary must be compiled first with the shell script"
        (interactive)
-       (lexical-let* ((md-prefix (read-input "Input year-month[yyyy-mm]:" "2016-06"))
+       (lexical-let* ((md-prefix (s-trim (shell-command-to-string
+                                          (format "cat %s" fmd/md-compile-date-filter))))
                       (md-start-date
                        (lexical-let ((start-date-text (format "%s-01 00:00:00" md-prefix)))
                          (apply 'encode-time (parse-time-string start-date-text)))))
@@ -3817,17 +3839,24 @@
                                                     (journal-time (plist-get journal-piece 'datetime))
                                                     (journal-base-title (format-time-string fmd/md-datetime-format journal-time))
                                                     (journal-title
-                                                     (progn
-                                                       (lexical-let ((journal-buffer (find-file-noselect journal-file))
-                                                                     (journal-buffer-title nil))
-                                                         (setq journal-buffer-title (fmd/get-title journal-buffer))
-                                                         (kill-buffer journal-buffer)
-                                                         journal-buffer-title)))
+                                                     (lexical-let ((journal-buffer (find-file-noselect journal-file)))
+                                                       (prog1
+                                                           (fmd/get-title journal-buffer)
+                                                         (kill-buffer journal-buffer))))
+                                                    (journal-summary
+                                                     (lexical-let ((journal-buffer (find-file-noselect journal-file)))
+                                                       (prog1
+                                                           (fmd/get-summary journal-buffer)
+                                                         (kill-buffer journal-buffer))))
                                                     (journal-full-title
                                                      (format "%s - %s" journal-base-title journal-title)))
                                        (fmd/insert-org-link (concat "file:" fmd/md-journal-dir-name "/" journal-file-name)
                                                             journal-full-title)
                                        (funcall demote-first)
+
+                                       (newline-and-indent)
+                                       (insert (or journal-summary fmd/md-journal-summary-default-text))
+
                                        (org-set-property "CREATED_ON"
                                                          (format-time-string "%F %T" journal-time))))
                                    journal-files))))
@@ -3883,7 +3912,25 @@
 
            (beginning-of-buffer)
            (org-set-startup-visibility)
-           (save-buffer))))
+           (save-buffer)
+
+           (fmd/build-media-diary-html))))
+
+     (defun fmd/build-media-diary-html ()
+       "Build the current diary as an html org project"
+       (interactive)
+       (org-publish
+        (list "fmd-html"
+              :base-directory fmd/md-root
+              :base-extension "org"
+              :publishing-directory fmd/md-root
+              :recursive t
+              :publishing-function 'org-html-publish-to-html
+              :html-extension "html"
+              :headline-levels 4
+              :section-numbers nil
+              :with-toc nil)
+        t))
    #+END_SRC
 
 ** Open standard buffers
