@@ -2030,37 +2030,12 @@
        :bind (("C-c n C-w" . woman)))
    #+END_SRC
 ** gnus
-   The ultimate mail browser
+   The ultimate mail browser, majority of the configuration is in =~/.gnus=
 
    #+BEGIN_SRC emacs-lisp
      (use-package gnus
        :bind (("C-c n g" . gnus)))
    #+END_SRC
-
-*** gnus-offlineimap
-    Just a small script to sync my =offlineimap=
-
-    #+BEGIN_SRC emacs-lisp
-      (use-feature gnus-prodigy
-                   (prodigy gnus)
-                   (defconst fn/gnus-offlineimap-service-name "Offlineimap: Sync"
-                     "My offlineimap syncer")
-
-                   (prodigy-define-service
-                     :name fn/gnus-offlineimap-service-name
-                     :command "offlineimap"
-                     :cwd "~")
-
-                   (add-hook 'gnus-before-startup-hook
-                             (lambda ()
-                               (prodigy-start-service
-                                   (prodigy-find-service fn/gnus-offlineimap-service-name))))
-
-                   (add-hook 'gnus-exit-gnus-hook
-                             (lambda ()
-                               (prodigy-stop-service
-                                   (prodigy-find-service fn/gnus-offlineimap-service-name)))))
-    #+END_SRC
 
 ** emacsshot
    Sometimes when you just need proof
