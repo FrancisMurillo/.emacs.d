@@ -1055,119 +1055,168 @@
                              ("C-c p p" . helm-projectile-switch-project))
                       :demand t
                       :config
-                      (defun fn/custom-helm-completion (prompt choices)
+
+                      (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
+                        "Just a constant name for the completion buffer")
+
+
+                      (defface fmc/completion-label-face  '((t (:weight bold :height 1.1)))
+                        "Label face")
+
+                      (defface fmc/completion-delimiter-face '((t (:weight light :height 0.9)))
+                        "Delimiter face")
+
+
+                      (defface fmc/completion-description-face '((t (:weight extra-light :height 0.9)))
+                        "Description face")
+
+
+                      (defvar fmc/completion-label-face 'fmc/completion-label-face
+                        "Label face var")
+
+
+                      (defvar fmc/completion-delimiter-face 'fmc/completion-delimiter-face
+                        "Delimiter face var")
+
+                      (defvar fmc/completion-description-face 'fmc/completion-description-face
+                        "Description face var")
+
+
+                      (defconst fmc/reverse-notation-separator ".."
+                        "My reversed separator")
+
+                      (defconst fmc/completion-separator ">>"
+                        "My completion separator")
+
+
+                      (defun fmc/custom-helm-completion (prompt choices)
                         "Just a custom helm completion for projection"
                         (lexical-let*
-                            ((fn-separator "..")
-                             (fn-notation (lambda (path)
-                                            (lexical-let ((fn-pieces (f-split path)))
-                                              (string-join (reverse fn-pieces) fn-separator))))
-                             (relative-parent-path (lambda (path relative-path)
-                                                     (lexical-let
-                                                         ((split-path (f-split path))
-                                                          (split-relative-path (f-split relative-path)))
-                                                       (string-join
-                                                        (-drop-last (length split-relative-path) split-path)
-                                                        (f-path-separator)))))
+                            ((fn-notation
+                              (lambda (path)
+                                (lexical-let ((fn-pieces (f-split path)))
+                                  (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
+                             (relative-parent-path
+                              (lambda (path relative-path)
+                                (lexical-let
+                                    ((split-path (f-split path))
+                                     (split-relative-path (f-split relative-path)))
+                                  (string-join
+                                   (-drop-last (length split-relative-path) split-path)
+                                   (f-path-separator)))))
 
-                             (as-pair (lambda (ish)
-                                        (if (listp ish)
-                                            ish (cons ish ish))))
-                             (swap-pair (lambda (pair)
-                                          (cons (cdr pair) (car pair))))
-                             (map-car (lambda (f pair)
-                                        (cons (funcall f (car pair))
-                                              (cdr pair))))
+                             (as-pair
+                              (lambda (ish)
+                                (if (listp ish)
+                                    ish (cons ish ish))))
+                             (map-car
+                              (lambda (f pair)
+                                (cons (funcall f (car pair))
+                                      (cdr pair))))
 
-                             (pair-as-label (lambda (pairs)
-                                              (lexical-let* ((labels
-                                                                 (mapcar #'cdr pairs))
-                                                             (label-lengths
-                                                              (mapcar
-                                                               (-compose
-                                                                #'length
-                                                                fn-notation)
-                                                               labels))
+                             (pair-as-label
+                              (lambda (pairs)
+                                (lexical-let*
+                                    ((display-formatter
+                                      (lambda (name description)
+                                        (format "%-s %s %-s"
+                                                name
+                                                fmc/completion-separator
+                                                description))))
+                                  (lambda (pair)
+                                    (lexical-let*
+                                        ((unique-path (car pair))
+                                         (full-path (cdr pair))
+                                         (parent-path
+                                          (funcall relative-parent-path
+                                                   full-path
+                                                   unique-path))
 
-                                                             (max-label-length
-                                                              (apply #'max label-lengths))
+                                         (display-name
+                                          (funcall fn-notation unique-path))
+                                         (display-description
+                                          (funcall fn-notation parent-path))
 
-                                                             (label-offset 1)
-
-                                                             ;; NOTE: Assumes the same window is used for Helm
-                                                             (max-text-length
-                                                              (window-text-width))
-
-
-                                                             (label-format
-                                                              "%-s")
-
-                                                             (description-format
-                                                             "%-s")
-
-                                                             (display-formatter
-                                                              (lambda (name description)
-                                                                (concat
-                                                                 (format label-format name)
-                                                                 "  |->  "
-                                                                 (format description-format description)
-                                                                 "  <-|"))))
-                                                (lambda (pair)
-                                                  (lexical-let*
-                                                      ((unique-path (car pair))
-                                                       (full-path (cdr pair))
-                                                       (parent-path
-                                                        (funcall relative-parent-path
-                                                                 full-path
-                                                                 unique-path))
-
-                                                       (display-name
-                                                        (funcall fn-notation unique-path))
-                                                       (display-description
-                                                        (funcall fn-notation parent-path))
-
-                                                       (display-label
-                                                        (funcall display-formatter
-                                                                 display-name
-                                                                 display-description)))
-                                                    (cons display-label (cdr pair)))))))
+                                         (display-label
+                                          (funcall display-formatter
+                                                   display-name
+                                                   display-description)))
+                                      (cons display-label (cdr pair)))))))
                              (uniquify-choices
                               (lambda (choices)
                                 ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
-                                (lexical-let* ((is-dir
-                                                (lambda (path)
-                                                  (string-equal (f-path-separator)
-                                                                (s-right 1 path))))
+                                (lexical-let*
+                                    ((is-dir
+                                      (lambda (path)
+                                        (string-equal (f-path-separator)
+                                                      (s-right 1 path))))
 
-                                               (map-pair
-                                                (lambda (f pair)
-                                                  (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
-                                               (remove-last-separator
-                                                (lambda (text)
-                                                  (s-left (1- (length text)) text)))
-                                               (add-separator
-                                                (lambda (text)
-                                                  (concat text (f-path-separator)))))
-                                  (if (-any is-dir choices)
-                                      (funcall
-                                       (-compose
-                                        (-partial #'mapcar (-partial map-pair add-separator))
-                                        #'f-uniquify-alist
-                                        (-partial #'mapcar remove-last-separator))
-                                       choices)
-                                    choices)
-                                  (f-uniquify-alist choices))))
-                             (refined-choices (funcall uniquify-choices choices))
+                                     (swap-pair (lambda (pair)
+                                                  (cons (cdr pair) (car pair))))
+                                     (map-pair
+                                      (lambda (f pair)
+                                        (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
+
+                                     (remove-last-separator
+                                      (lambda (text)
+                                        (s-left (1- (length text)) text)))
+                                     (add-separator
+                                      (lambda (text)
+                                        (concat text (f-path-separator)))))
+                                  (mapcar (-compose
+                                           swap-pair)
+                                          (if (-any is-dir choices)
+                                              ;; Remove separator, uniquify and add separator back
+                                              ;; Weird performance shiznit
+                                              (funcall
+                                               (-compose
+                                                (-partial #'mapcar (-partial map-pair add-separator))
+                                                #'f-uniquify-alist
+                                                (-partial #'mapcar remove-last-separator))
+                                               choices)
+                                            (f-uniquify-alist choices))))))
+                             (refined-choices  (funcall uniquify-choices choices))
                              (mapped-choices
                               (mapcar (-compose
                                        (funcall pair-as-label refined-choices)
-                                       swap-pair
                                        as-pair)
                                       refined-choices)))
-                          (helm-comp-read prompt mapped-choices
-                                          :must-match 'confirm)))
+                          (prog1
+                              (helm-comp-read prompt mapped-choices
+                                              :buffer fmc/completion-buffer-name
+                                              :must-match 'confirm)
+                            (kill-buffer fmc/completion-buffer-name))))
 
-                      (setq projectile-completion-system #'fn/custom-helm-completion)))
+
+                      (defun fmc/custom-completion-fontify (&optional this-buffer)
+                        "Special fontify a buffer"
+                        (with-current-buffer (or this-buffer (current-buffer))
+                          (setq-local font-lock-mode t)
+
+                          (let ((line-regex (format
+                                             "\\(.*\\) \\(%s\\) \\(.*\\)"
+                                             fmc/completion-separator)))
+
+                            (font-lock-add-keywords
+                             nil
+                             (list
+                              (list line-regex 2
+                                    'fmc/completion-delimiter-face t)
+                              (list line-regex 1
+                                    'fmc/completion-label-face t t)
+                              (list line-regex 3
+                                    'fmc/completion-description-face t)))
+
+                            (font-lock-fontify-buffer))))
+
+                      (defun fmc/custom-completion-buffer-fontify ()
+                        "Fontify the unique buffer"
+                        (when (get-buffer fmc/completion-buffer-name)
+                          (fmc/custom-completion-fontify fmc/completion-buffer-name)))
+
+                      (add-hook 'helm--minor-mode-hook #'fmc/custom-completion-buffer-fontify)
+
+                      (setq projectile-completion-system #'fmc/custom-helm-completion)))
      #+END_SRC
 
 ** Help
@@ -3215,6 +3264,7 @@
 
      (defun fn/setup-initial-view ()
        "Setup your personal view"
+       (interactive)
        (message "Setting up initial view")
        (let ((text-width (/ (window-text-width) 2.0)))
          (fn/find-main-org-file)
@@ -3228,7 +3278,10 @@
 
        (select-frame-set-input-focus (selected-frame)))
 
-     (add-hook 'after-init-hook #'fn/setup-initial-view)
+     (add-hook
+      'after-init-hook #'fn/setup-initial-view
+      t ;; Must be after full screen action
+      )
    #+END_SRC
 
 ** Custom Emacs
