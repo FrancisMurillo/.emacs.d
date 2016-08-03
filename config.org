@@ -1191,23 +1191,17 @@
                       (defun fmc/custom-completion-fontify (&optional this-buffer)
                         "Special fontify a buffer"
                         (with-current-buffer (or this-buffer (current-buffer))
-                          (setq-local font-lock-mode t)
-
                           (let ((line-regex (format
                                              "\\(.*\\) \\(%s\\) \\(.*\\)"
                                              fmc/completion-separator)))
-
-                            (font-lock-add-keywords
-                             nil
+                            (font-lock-add-keywords nil
                              (list
                               (list line-regex 2
                                     'fmc/completion-delimiter-face t)
                               (list line-regex 1
                                     'fmc/completion-label-face t t)
                               (list line-regex 3
-                                    'fmc/completion-description-face t)))
-
-                            (font-lock-fontify-buffer))))
+                                    'fmc/completion-description-face t))))))
 
                       (defun fmc/custom-completion-buffer-fontify ()
                         "Fontify the unique buffer"
