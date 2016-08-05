@@ -427,6 +427,15 @@
        :load-path fn/htmlize-package-dir
        :after ox-reveal)
    #+END_SRC
+** request
+   I love them request library like in Python
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package request
+       :ensure t
+       :defer t)
+   #+END_SRC
+
 ** promise
    Something to help with package configuration
 
@@ -1915,7 +1924,8 @@
        :defer t
        :diminish flyspell-mode
        :init
-       (add-hook 'org-mode-hook 'flyspell-mode t))
+       (add-hook 'org-mode-hook 'flyspell-mode t)
+       (add-hook 'prog-mode-hook 'flyspell-prog-mode t))
    #+END_SRC
 
 ** dired
@@ -2080,6 +2090,15 @@
        :bind (("C-c n g" . gnus)))
    #+END_SRC
 
+** conkeror
+   Conkeror magic
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package conkeror-minor-mode
+       :ensure t
+       :defer t)
+   #+END_SRC
+
 ** emacsshot
    Sometimes when you just need proof
 
@@ -2163,6 +2182,18 @@
 
       (use-package smartparens-config
         :after smartparens)
+    #+END_SRC
+*** paredit-everywhere
+    [[paredit]] also works well with other modes as well but not really
+    primarily
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package paredit-everywhere
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'prog-mode-hook #'paredit-mode))
+
     #+END_SRC
 
 *** flycheck
@@ -2314,10 +2345,9 @@
         (add-hook 'lisp-mode-hook #'enable-paredit-mode)
         (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode))
 
-      (use-package paredit
-        :after eldoc
-        :config
-        (eldoc-add-command 'paredit-backward-delete
+      (use-feature paredit-eldoc
+                   (eldoc)
+                   (eldoc-add-command 'paredit-backward-delete
                            'paredit-close-round))
     #+END_SRC
 *** Refactor
@@ -2472,6 +2502,28 @@
         :config
         (add-to-list 'company-backends 'company-tern))
     #+END_SRC
+
+**** emacs-tern-project-dialog
+     A simple GUI to manage tern
+
+     #+BEGIN_SRC emacs-lisp
+       (defconst fn/widget-mvc-dir
+         (expand-file-name "emacs-widget-mvc/" fn/custom-package-dir)
+         "Custom wdiget-mvc dir")
+
+       (use-package widget-mvc
+         :load-path fn/widget-mvc-dir
+         :after tern)
+
+
+       (defconst fn/tern-project-dialog-dir
+         (expand-file-name "emacs-tern-project-dialog/" fn/custom-package-dir)
+         "Custom emacs-tern-project-dialog dir")
+
+       (use-package tern-project-dialog
+         :load-path fn/tern-project-dialog-dir
+         :after widget-mvc)
+     #+END_SRC
 
 *** Formatter
     Formatter for js
@@ -4014,7 +4066,7 @@
                                     (message "Triggering %s" key-command)
                                     (command-execute key-command))
                                    (t
-                                    (message "No key bound to %s" key-trigger)))))))
+                                   (message "No key bound to %s" key-trigger)))))))
         trigger))
 
 
@@ -4025,6 +4077,8 @@
 
     ;; Keys
     (global-set-key (kbd "M-n") (fn/trigger-key (kbd "DEL")))
+
+
 
     ;; Search
     (global-set-key (kbd "C-c n C-s") 'fn/isearch-forward-normally)
@@ -4049,8 +4103,6 @@
     ;; Shell
     (global-set-key (kbd "C-c n s") 'shell)
 
-    ;; Commands
-    (global-set-key (kbd "C-x C-x") (fn/trigger-key (kbd "M-x")))
 
     ;; Files
     (global-set-key (kbd "C-c m b c") 'fn/find-config-file)

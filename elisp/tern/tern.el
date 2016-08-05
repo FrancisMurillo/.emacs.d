@@ -218,6 +218,8 @@ list of strings, giving the binary name and arguments.")
     (tern-run-request
      (lambda (err data)
        ;; HACK: Parse data only if it is the last request
+       (unless (= tern-activity-since-command (1- generation))
+         (message "Dropping request"))
        (when (= tern-activity-since-command (1- generation))
          (cond ((not err)
                 (dolist (file files)
@@ -296,17 +298,19 @@ list of strings, giving the binary name and arguments.")
       (if (and tern-last-argument-hints (eq (car tern-last-argument-hints) opening-paren))
           (tern-show-argument-hints)
         (lexical-let ((generation tern-command-generation))
-          (tern-run-query lambda (data)
-                          ;; HACK: Parse data only if it is the last request
-                          (when (= tern-activity-since-command (1- generation))
-                            (let ((type (tern-parse-function-type data)))
-                              (when type
-                                (setf tern-last-argument-hints (cons opening-paren type))
-                                (tern-show-argument-hints)))
-                            `((type . "type")
-                              (preferFunction . t))
-                            opening-paren
-                            :silent)))))))
+          (tern-run-query (lambda (data)
+                            ;; HACK: Parse data only if it is the last request
+                            (unless (= tern-activity-since-command (1- generation))
+                              (message "Dropping request"))
+                            (when (= tern-activity-since-command (1- generation))
+                              (let ((type (tern-parse-function-type data)))
+                                (when type
+                                  (setf tern-last-argument-hints (cons opening-paren type))
+                                  (tern-show-argument-hints)))))
+                          `((type . "type")
+                            (preferFunction . t))
+                          opening-paren
+                          :silent))))))
 
 (defun tern-skip-matching-brackets (end-chars)
   (let ((depth 0) (end (+ (point) 500)))
@@ -324,6 +328,7 @@ list of strings, giving the binary name and arguments.")
         (name (or (cdr (assq 'exprName data)) (cdr (assq 'name data)) "fn"))
         (deactivate-mark nil))
     (when (string-match-p "^fn(" type)
+      (debug)
       (with-temp-buffer
         (insert type)
         (goto-char 4)
