@@ -328,7 +328,6 @@ list of strings, giving the binary name and arguments.")
         (name (or (cdr (assq 'exprName data)) (cdr (assq 'name data)) "fn"))
         (deactivate-mark nil))
     (when (string-match-p "^fn(" type)
-      (debug)
       (with-temp-buffer
         (insert type)
         (goto-char 4)
