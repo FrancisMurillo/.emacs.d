@@ -23,6 +23,9 @@
        (lambda (text) (string/ends-with text "org"))
        load-path))
 
+
+(setq load-prefer-newer t)
+
 ;; customize loading the packages
 (package-initialize t)
 

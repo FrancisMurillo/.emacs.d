@@ -433,9 +433,29 @@
    #+BEGIN_SRC emacs-lisp
      (use-package request
        :ensure t
-       :defer t)
+       :defer t
+       :config
+       (setq request-storage-directory (expand-file-name "request" fn/cache-dir)))
    #+END_SRC
 
+** log4e
+   Nice logging library
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package log4e
+       :ensure t)
+   #+END_SRC
+
+** auto-compile
+   Automatic compilation of package files
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package auto-compile
+       :ensure t
+       :config
+       (auto-compile-on-load-mode)
+       (auto-compile-on-save-mode))
+   #+END_SRC
 ** promise
    Something to help with package configuration
 
@@ -563,6 +583,15 @@
         :ensure t
         :mode (("Dockerfile\\'" . dockerfile-mode)))
     #+END_SRC
+
+** memory-usage
+   Nice to know if my baby is getting to fat to quick
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package memory-usage
+       :ensure t
+       :bind (("C-c n m" . memory-usage)))
+   #+END_SRC
 
 * Editor
   Anything to do with editing in Emacs
@@ -1577,7 +1606,9 @@
        :ensure t
        :defer t
        :config
-       (setq alert-default-style 'libnotify))
+       (setq alert-default-style 'libnotify
+             alert-log-messages t ;; redundant
+             alert-fade-time 2))
    #+END_SRC
 
 ** epa
@@ -1927,8 +1958,7 @@
        :defer t
        :diminish flyspell-mode
        :init
-       (add-hook 'org-mode-hook 'flyspell-mode t)
-       (add-hook 'prog-mode-hook 'flyspell-prog-mode t))
+       (add-hook 'org-mode-hook 'flyspell-mode t))
    #+END_SRC
 
 ** dired
@@ -2131,7 +2161,7 @@
 *** type-break-mode
     I definitely need to chill out from time to time
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
             (use-package type-break
               :config
               (setq type-break-interval (* fn/minute-per-second 25)
@@ -2156,22 +2186,6 @@
                              (zone-when-idle current-zone-idle-time)))
 
                          (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
-    #+END_SRC
-
-*** auto-compile
-    A good mode when editing lisp files
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package auto-compile
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
-        :config
-        (setq load-prefer-newer t)
-
-        (auto-compile-on-load-mode)
-        (auto-compile-on-save-mode))
     #+END_SRC
 *** smartparens
     This is as handy as =paredit=
@@ -2523,60 +2537,73 @@
         (setq twittering-convert-fix-size 24))
     #+END_SRC
 ** jabber
+
    Listen to chat notifications
 
    #+BEGIN_SRC emacs-lisp
-          (use-package jabber
-            :ensure t
-            :bind (("C-c n C-j" . jabber-connect-all))
-            :config
-            ; account set at personal
-            ;; core
-            (setq jabber-auto-reconnect t
-                  jabber-version-show nil)
+     (use-package jabber
+       :ensure t
+       :bind (("C-c n C-j" . jabber-connect-all))
+       :config
+                                             ; account set at personal
+       ;; core
+       (setq jabber-auto-reconnect t
+             jabber-version-show nil)
 
-            (defconst fn/jabber-roster-buffer-name "*-jabber-*"
-              "My custom name for the jabber buffer")
+       (defconst fn/jabber-roster-buffer-name "*-jabber-*"
+         "My custom name for the jabber buffer")
 
-            ;; chat
-            (setq jabber-chat-buffer-format "*-jabber-%n-*")
+       ;; chat
+       (setq jabber-chat-buffer-format "*-jabber-%n-*")
 
-            ;; history
-            (setq jabber-history-enabled t
-                  jabber-history-dir (expand-file-name "jabber-history" fn/cache-dir))
+       ;; history
+       (setq jabber-history-enabled t
+             jabber-history-dir (expand-file-name "jabber-history" fn/cache-dir))
 
-            ;; mode
-            (setq jabber-mode-line-mode t)
+       ;; mode
+       (setq jabber-mode-line-mode t)
 
-            ;; chat states
-            (setq jabber-chatstates-confirm nil)
+       ;; chat states
+       (setq jabber-chatstates-confirm nil)
 
-            ;; avatar
-            (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
-                  jabber-vcard-avatars-publish nil
-                  jabber-vcard-avatars-retrieve nil)
+       ;; avatar
+       (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
+             jabber-vcard-avatars-publish nil
+             jabber-vcard-avatars-retrieve nil)
 
-            ;; libnotify
-            (setq jabber-libnotify-method 'shell
-                  jabber-libnotify-urgency "high")
-
-
-            ;; alerts
-            (setq jabber-alert-message-hooks nil)
-
-            (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
-            (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
+       ;; libnotify
+       (setq jabber-libnotify-method 'shell
+             jabber-libnotify-urgency "high")
 
 
-            ;; roster
-            (setq jabber-roster-show-title nil
-                  jabber-roster-line-format "%c %-25n %u %-8s  %S"
-                  jabber-roster-buffer fn/jabber-roster-buffer-name)
+       ;; alerts
+       (setq jabber-alert-message-hooks nil)
 
-            (defun fn/display-jabber-roster-buffer ()
-              "Show jabber roster buffer"
-              (interactive)
-              (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
+       (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
+       (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
+
+
+       (require 'log4e)
+
+       (log4e:deflogger "cbox" "%t: %m" "%H:%M:%S")
+       (cbox--log-enable-logging)
+
+       (defun fn/jabber-cbox-notify (from buffer text title)
+         (cbox--log-info "Hey. %s pinged you." from)
+         (cbox--log-open-log))
+
+       (add-to-list 'jabber-alert-message-hooks #'fn/jabber-cbox-notify)
+
+
+       ;; roster
+       (setq jabber-roster-show-title nil
+             jabber-roster-line-format "%c %-25n %u %-8s  %S"
+             jabber-roster-buffer fn/jabber-roster-buffer-name)
+
+       (defun fn/display-jabber-roster-buffer ()
+         "Show jabber roster buffer"
+         (interactive)
+         (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
    #+END_SRC
 
 ** bbdb
@@ -3009,7 +3036,7 @@
    Some quick means to insert variables
 
    #+BEGIN_SRC emacs-lisp
-     (defun fmn/map-head-tail (header tailer xs)
+     (defun fmv/map-head-tail (header tailer xs)
        "Map the head and tail separately"
        (pcase xs
          (`nil nil)
@@ -3017,7 +3044,7 @@
                             (list (funcall header head))
                             (mapcar tailer tail)))))
 
-     (defun fmn/insert-camel-case (name)
+     (defun fmv/insert-camel-case (name)
        "At point, insert a given name as camelCase"
        (interactive "sCamel Case a variable name(varName):")
        (lexical-let* ((separator "")
@@ -3027,7 +3054,7 @@
                                                      var-tokens)))
          (insert (string-join var-pieces separator))))
 
-     (defun fmn/insert-hyphenated (name)
+     (defun fmv/insert-hyphenated (name)
        "At point, insert a given name as hyphen-ated"
        (interactive "sHyphenate variable name(var-name):")
        (lexical-let* ((separator "-")
@@ -3455,6 +3482,11 @@
     (global-set-key (kbd "C-c m d m") #'fn/dired-mountain-dir)
 
     (global-set-key (kbd "C-c m ^") #'fn/dired-parent)
+
+
+    ;; Namer
+    (global-set-key (kbd "C-c m v c") #'fmv/insert-camel-case)
+    (global-set-key (kbd "C-c m v h") #'fmv/insert-hyphenated)
 
     ;; Functions
     (global-set-key (kbd  "C-c m r s") 'fn/startup)

@@ -13,6 +13,8 @@
 (require 'url)
 (require 'url-http)
 
+(require 'deferred)
+
 (defvar tern-known-port nil)
 (defvar tern-server nil)
 (defvar tern-explicit-port nil)
@@ -172,7 +174,19 @@ list of strings, giving the binary name and arguments.")
                   (text . ,(buffer-string))) found))))
     (nreverse found)))
 
+
+(defvar tern--current-request nil)
+(defvar tern--request-timer nil)
+
 (defun tern-run-request (f doc)
+  (unless tern--request-timer
+    (run-with-idle-timer 0.300 t
+                         (lambda ()
+                           (when tern--current-request
+                             (let ((current-request tern--current-request))
+                               (setq tern--current-request nil)
+                               (tern-find-server current-request))))))
+
   (let ((buffer (current-buffer))
         (retrying nil)
         callback runner)
@@ -194,11 +208,13 @@ list of strings, giving the binary name and arguments.")
                                   (funcall callback nil err)
                                 (tern-find-server callback old-port))))
                            (t (funcall f err data))))))
-    (tern-find-server callback)))
+
+    (setq tern--current-request callback)))
+
 
 (defun tern-run-query (f query pos &optional mode)
   (when (stringp query) (setf query `((type . ,query))))
-  (lexical-let (( generation (cl-incf tern-command-generation))
+  (let (( generation (cl-incf tern-command-generation))
         (doc `((query . ,query)))
         (files (and (eq mode :full-file) (tern-modified-sibling-buffers)))
         file-name
