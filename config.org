@@ -1602,13 +1602,15 @@
    A nice alert box would be nice
 
    #+BEGIN_SRC emacs-lisp
+     (defconst fn/alert-package-dir (expand-file-name "alert/" fn/custom-package-dir)
+       "My customized alert package")
+
      (use-package alert
-       :ensure t
+       :load-path fn/alert-package-dir
        :defer t
        :config
        (setq alert-default-style 'libnotify
-             alert-log-messages t ;; redundant
-             alert-fade-time 2))
+             alert-log-messages t))
    #+END_SRC
 
 ** epa
