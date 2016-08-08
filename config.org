@@ -333,6 +333,18 @@
 * Dependencies
   Everything needed to support this more complex configurations
 
+** dash
+   Functionally elisp
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package dash
+       :ensure t)
+
+     (use-package dash-functional
+       :ensure t
+       :after dash)
+   #+END_SRC
+
 ** async
    Not really builtin but should be
 
@@ -355,6 +367,7 @@
      (use-package f
        :ensure t)
    #+END_SRC
+
 
 ** unicode-fonts
    Unicode is an required aesthetic
@@ -1096,6 +1109,21 @@
                              ("C-c p p" . helm-projectile-switch-project))
                       :demand t
                       :config
+                      (require 'dash)
+                      (require 's)
+                      (require 'f)
+
+
+                      (defun fn/uniquify-project-files (project-files &rest args)
+                        "Customize how projectile files are displayed"
+                        (lexical-let* ((swap-pair (lambda (pair)
+                                                    (cons (cdr pair) (car pair))))
+                                       (uniquifier (-compose
+                                                    (-partial #'mapcar swap-pair)
+                                                    #'f-uniquify-alist)))
+                          (funcall uniquifier (apply project-files args))))
+
+                      ;; (advice-add #'projectile-current-project-files :around  #'fn/uniquify-project-files)
 
                       (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
                         "Just a constant name for the completion buffer")
@@ -1236,13 +1264,13 @@
                                              "\\(.*\\) \\(%s\\) \\(.*\\)"
                                              fmc/completion-separator)))
                             (font-lock-add-keywords nil
-                             (list
-                              (list line-regex 2
-                                    'fmc/completion-delimiter-face t)
-                              (list line-regex 1
-                                    'fmc/completion-label-face t t)
-                              (list line-regex 3
-                                    'fmc/completion-description-face t))))))
+                                                    (list
+                                                     (list line-regex 2
+                                                           'fmc/completion-delimiter-face t)
+                                                     (list line-regex 1
+                                                           'fmc/completion-label-face t t)
+                                                     (list line-regex 3
+                                                           'fmc/completion-description-face t))))))
 
                       (defun fmc/custom-completion-buffer-fontify ()
                         "Fontify the unique buffer"
@@ -1689,7 +1717,14 @@
     #+BEGIN_SRC emacs-lisp
       (use-feature org-src
                    (org)
-                   (setq org-src-window-setup 'current-window))
+                   (setq org-src-window-setup 'current-window)
+
+                   (defun fn/org-src-inhibit-save-window-configuration ()
+                     "Disable org-src from saving the window configuration"
+                     ;; HACK: This uses an internal variable, might be unstable
+                     (setq org-src--saved-temp-window-config nil))
+
+                   (add-hook 'org-src-mode-hook #'fn/org-src-inhibit-save-window-configuration))
     #+END_SRC
 
 *** org-todo
@@ -2250,18 +2285,13 @@
         :init
         (setq magit-push-always-verify t)
         :config
-        ;; Show magit-status in same window
-        (defun fq/display-on-same-buffer (buffer alist)
-          (set-window-dedicated-p nil nil)
-          (set-window-buffer nil buffer)
-          (get-buffer-window buffer))
-
         (defun fq/display-magit-on-same-buffer (buffer)
           (if magit-display-buffer-noselect
               (magit-display-buffer-traditional buffer)
-            (display-buffer buffer 'fq/display-buffer-full-screen)))
+            (display-buffer-same-window buffer nil)))
 
-        (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer))
+        (setq magit-inhibit-save-previous-winconf t
+              magit-display-buffer-function #'fq/display-magit-on-same-buffer))
 
       (use-package git-timemachine
         :ensure t
@@ -2503,7 +2533,10 @@
 *** Autocomplete
     A must have for Javascript development
 
-    #+BEGIN_SRC emacs-lisp
+    Sadly, =tern= slows me down somehow so I will be temporarily
+    disabling it.
+
+    #+BEGIN_SRC emacs-lisp :tangle no
       (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-package-dir)
         "My performance customization on tern")
 
@@ -2547,7 +2580,7 @@
        :ensure t
        :bind (("C-c n C-j" . jabber-connect-all))
        :config
-                                             ; account set at personal
+       ;; account set at personal
        ;; core
        (setq jabber-auto-reconnect t
              jabber-version-show nil)
@@ -2583,19 +2616,6 @@
 
        (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
        (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
-
-
-       (require 'log4e)
-
-       (log4e:deflogger "cbox" "%t: %m" "%H:%M:%S")
-       (cbox--log-enable-logging)
-
-       (defun fn/jabber-cbox-notify (from buffer text title)
-         (cbox--log-info "Hey. %s pinged you." from)
-         (cbox--log-open-log))
-
-       (add-to-list 'jabber-alert-message-hooks #'fn/jabber-cbox-notify)
-
 
        ;; roster
        (setq jabber-roster-show-title nil
