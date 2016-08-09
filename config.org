@@ -1711,8 +1711,8 @@
        (find-file fn/org-main-file))
    #+END_SRC
 
-*** org-babel
-    Configuration for =org-babel=
+*** org-src
+    Configuration for =org-src=
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-src
@@ -3526,51 +3526,6 @@
   #+END_SRC
 
 * Sandbox
-
-** avy
-   Interesting but I hasn't stuck with me
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package avy
-       :ensure t
-       :defer t
-       :bind (("C-:" . avy-goto-char))
-       :config
-       (avy-setup-default))
-   #+END_SRC
-
-** ssniper
-   Swiper no swiping
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package swiper
-       :ensure t
-       :defer t)
-   #+END_SRC
-** ace-window
-   Not really interested but doing it for bug fixes
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package ace-window
-       :ensure t
-       :bind (("M-p" . ace-window)))
-   #+END_SRC
-** f3
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package f3
-       :ensure t
-       :defer t)
-   #+END_SRC
-
-** vdiff
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package vdiff
-       :defer t
-       :config
-       (define-key vdiffw-mode-map (kbd "C-c") vdiff-mode-prefix-map))
-   #+END_SRC
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
