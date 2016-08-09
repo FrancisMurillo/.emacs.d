@@ -2274,8 +2274,6 @@
 *** magit
     Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
 
-    There is a sad version requirement for 24.4 to use the latest code.
-
     #+BEGIN_SRC emacs-lisp
       (use-package magit
         :ensure t
@@ -2290,8 +2288,9 @@
               (magit-display-buffer-traditional buffer)
             (display-buffer-same-window buffer nil)))
 
-        (setq magit-inhibit-save-previous-winconf t
-              magit-display-buffer-function #'fq/display-magit-on-same-buffer))
+        (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
+
+        (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration))
 
       (use-package git-timemachine
         :ensure t
