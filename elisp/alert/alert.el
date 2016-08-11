@@ -451,7 +451,7 @@ definition:
                              persistent continue never-persist append)
   "Programmatically add an alert configuration rule.
 
-Normally, users should custoimze `alert-user-configuration'.
+Normally, users should customize `alert-user-configuration'.
 This facility is for module writers and users that need to do
 things the Lisp way.
 
@@ -1003,6 +1003,7 @@ Here are some more typical examples of usage:
                     info (if (not (memq :never-persist info))
                              (append info (list :never-persist never-per))
                            info))
+
               (when
                   (or style           ; :style always "matches", for testing
                       (not

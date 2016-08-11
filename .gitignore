@@ -8,3 +8,5 @@ elpa
 
 personal.el
 extra/**
+.cask/
+/*.el
