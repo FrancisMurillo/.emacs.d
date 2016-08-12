@@ -93,8 +93,8 @@
 
    #+BEGIN_SRC emacs-lisp
      (setq org-confirm-babel-evaluate nil
-           org-src-fontify-natively t
-           org-src-tab-acts-natively t)
+        org-src-fontify-natively t
+        org-src-tab-acts-natively t)
    #+END_SRC
 
 ** Constants
@@ -3256,8 +3256,19 @@
        ;; alerts
        (setq jabber-alert-message-hooks nil)
 
-       (add-to-list 'jabber-alert-message-hooks #'jabber-message-libnotify)
-       (add-to-list 'jabber-alert-message-hooks #'jabber-message-echo)
+       (add-hook 'jabber-alert-message-hooks #'jabber-message-libnotify)
+       (add-hook 'jabber-alert-message-hooks #'jabber-message-echo)
+
+       (use-feature jabber-alert-custom
+                    (jabber alert)
+                    (defun fn/jabber-message-notify (from buffer text title)
+                      "Just a small unobtrusive notifcation"
+                      (alert (format "%s pinged you" from)
+                             :category 'cbox
+                             :style 'fringe
+                             :serverity 'high))
+
+                    (add-to-list 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
        ;; roster
        (setq jabber-roster-show-title nil
