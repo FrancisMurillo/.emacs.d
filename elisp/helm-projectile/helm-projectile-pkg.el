@@ -1,0 +1,1 @@
+(define-package "helm-projectile" "20160807.313" "Helm integration for Projectile" '((helm "1.7.7") (projectile "0.14.0") (dash "1.5.0") (cl-lib "0.3")) :stars '(#("17" 0 2 (font-lock-face paradox-star-face))) :url "https://github.com/bbatsov/helm-projectile" :keywords '("project" "convenience"))

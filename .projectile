@@ -1,7 +1,11 @@
 -/.cache
+-/.cask
+
 
 -/.git
 
 -/elpa
 
 -/.python-environments
+
+-/haskell-fun

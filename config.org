@@ -1113,10 +1113,13 @@
      A nice assist for projectile
 
      #+BEGIN_SRC emacs-lisp
+       (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-package-dir)
+         "My custom helm projectile package")
+
        (use-feature helm-projectile
                     (projectile helm)
                     (use-package helm-projectile
-                      :ensure t
+                      :load-path fn/helm-projectile-package-dir
                       :bind (("C-c p h" . helm-projectile)
                              ("C-c p p" . helm-projectile-switch-project))
                       :demand t
@@ -1124,6 +1127,7 @@
                       (require 'dash)
                       (require 's)
                       (require 'f)
+
 
                       (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
                         "Just a constant name for the completion buffer")
@@ -1247,7 +1251,12 @@
                           (mapcar (-compose
                                        (funcall pair-as-label refined-paths)
                                        as-pair)
-                                      refined-paths)))
+                                  refined-paths)))
+
+                      ;; CUSTOM: Customized helm-projectile
+                      (setq helm-source-projectile-projects--mapper #'fmc/uniquify-project-paths
+                            helm-source-projectile-files--mapper #'fmc/uniquify-project-paths
+                            helm-source-projectile-directories--mapper #'fmc/uniquify-project-paths)
 
 
                       (defun fmc/custom-helm-completion (prompt choices)
@@ -2325,14 +2334,23 @@
          :after magit)
      #+END_SRC
 
+*** github-clone
+    I clone too much, I need an army... er a tool
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package github-clone
+        :ensure t
+        :config
+        (setq github-clone-url-slot :clone-url))
+    #+END_SRC
+
 *** gist
     GitHub integration with gists
 
     #+BEGIN_SRC emacs-lisp
       (use-package gist
         :ensure t
-        :defer t
-        )
+        :defer t)
     #+END_SRC
 *** ag
     The silver searcher is a fine tool
