@@ -320,6 +320,9 @@
 
    #+BEGIN_SRC emacs-lisp
      (setq auth-sources (list (list  :source "~/.authinfo.gpg")))
+
+     (setq browse-url-browser-function 'browse-url-generic
+           browse-url-generic-program "conkeror")
    #+END_SRC
 
 ** Commands
@@ -367,7 +370,6 @@
      (use-package f
        :ensure t)
    #+END_SRC
-
 
 ** unicode-fonts
    Unicode is an required aesthetic
@@ -494,6 +496,16 @@
 
 * Terminator
   Shell related aspect
+
+** nsm
+   The network security manager for Emacs
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package nsm
+       :config
+       (setq nsm-settings-file (expand-file-name "network-security.data" fn/cache-dir)
+             network-security-level 'high))
+   #+END_SRC
 
 ** term
    An enhancement for =term=
@@ -1113,18 +1125,6 @@
                       (require 's)
                       (require 'f)
 
-
-                      (defun fn/uniquify-project-files (project-files &rest args)
-                        "Customize how projectile files are displayed"
-                        (lexical-let* ((swap-pair (lambda (pair)
-                                                    (cons (cdr pair) (car pair))))
-                                       (uniquifier (-compose
-                                                    (-partial #'mapcar swap-pair)
-                                                    #'f-uniquify-alist)))
-                          (funcall uniquifier (apply project-files args))))
-
-                      ;; (advice-add #'projectile-current-project-files :around  #'fn/uniquify-project-files)
-
                       (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
                         "Just a constant name for the completion buffer")
 
@@ -1157,9 +1157,8 @@
                       (defconst fmc/completion-separator ">>"
                         "My completion separator")
 
-
-                      (defun fmc/custom-helm-completion (prompt choices)
-                        "Just a custom helm completion for projection"
+                      (defun fmc/uniquify-project-paths (project-paths)
+                        "Customize how projectile files and more are displayed"
                         (lexical-let*
                             ((fn-notation
                               (lambda (path)
@@ -1211,8 +1210,8 @@
                                                    display-name
                                                    display-description)))
                                       (cons display-label (cdr pair)))))))
-                             (uniquify-choices
-                              (lambda (choices)
+                             (uniquify-paths
+                              (lambda (paths)
                                 ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
                                 (lexical-let*
                                     ((is-dir
@@ -1234,7 +1233,7 @@
                                         (concat text (f-path-separator)))))
                                   (mapcar (-compose
                                            swap-pair)
-                                          (if (-any is-dir choices)
+                                          (if (-any is-dir paths)
                                               ;; Remove separator, uniquify and add separator back
                                               ;; Weird performance shiznit
                                               (funcall
@@ -1242,19 +1241,22 @@
                                                 (-partial #'mapcar (-partial map-pair add-separator))
                                                 #'f-uniquify-alist
                                                 (-partial #'mapcar remove-last-separator))
-                                               choices)
-                                            (f-uniquify-alist choices))))))
-                             (refined-choices  (funcall uniquify-choices choices))
-                             (mapped-choices
-                              (mapcar (-compose
-                                       (funcall pair-as-label refined-choices)
+                                               paths)
+                                            (f-uniquify-alist paths))))))
+                             (refined-paths  (funcall uniquify-paths project-paths)))
+                          (mapcar (-compose
+                                       (funcall pair-as-label refined-paths)
                                        as-pair)
-                                      refined-choices)))
-                          (prog1
-                              (helm-comp-read prompt mapped-choices
+                                      refined-paths)))
+
+
+                      (defun fmc/custom-helm-completion (prompt choices)
+                        "Just a custom helm completion for projection"
+                        (prog1
+                              (helm-comp-read prompt (fmc/uniquify-project-paths choices)
                                               :buffer fmc/completion-buffer-name
                                               :must-match 'confirm)
-                            (kill-buffer fmc/completion-buffer-name))))
+                            (kill-buffer fmc/completion-buffer-name)))
 
 
                       (defun fmc/custom-completion-fontify (&optional this-buffer)
@@ -2082,10 +2084,19 @@
        :ensure t
        :defer t
        :init
-       (setq ledger-clear-whole-transactions t))
+       (setq ledger-clear-whole-transactions t)
+
+       ;; Encrypting my ledger
+       ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
+       (setq ledger-reports
+             '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
+               ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
+               ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
+               ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)"))))
 
      (use-package flycheck-ledger
        :ensure t
+       :disabled t ;; Flycheck-ledger does not work with an encrypted ledger... for now
        :after flycheck
        :init
        (add-hook 'ledger-mode-hook 'flycheck-mode))
@@ -2157,8 +2168,8 @@
    The ultimate mail browser, majority of the configuration is in =~/.gnus=
 
    #+BEGIN_SRC emacs-lisp
-     (use-package gnus
-       :bind (("C-c n g" . gnus)))
+          (use-package gnus
+            :bind (("C-c n g" . gnus)))
    #+END_SRC
 
 ** conkeror
@@ -2263,7 +2274,8 @@
         (add-hook 'prog-mode-hook 'flycheck-mode)
         :config
         (setq flycheck-highlighting-mode 'lines
-              flycheck-check-syntax-automatically '(save mode-enabled)))
+              flycheck-check-syntax-automatically '(save mode-enabled)
+              flycheck-checker-error-threshold nil))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -3751,6 +3763,45 @@
        "Just a quick shortcut to my mountain folder"
        (interactive)
        (dired "~/Mountain"))
+   #+END_SRC
+
+** Summarize Text
+   Inspired from text summarizing my email, here is my generic version
+   of it.
+
+   #+BEGIN_SRC emacs-lisp
+     (defun fn/text-summarizing (&optional text)
+       "Summarize text for easier comprehension"
+       (lexical-let ((raw-text (or text
+                                   (buffer-substring-no-properties (point-min) (point-max))))
+                     (summary-file (make-temp-file ".summary")))
+         (with-temp-file summary-file
+           (insert raw-text))
+         (deferred:nextc
+           (deferred:process-shell
+             "sumy" "lex-rank"
+             "--length" "5"
+             "--file" summary-file)
+           (lambda (summary-output)
+             (prog1
+                 (s-split "\n" (s-trim-right summary-output))
+               (delete-file summary-file))))))
+
+     (defun fn/text-summarize (&optional text)
+       "This just returns the result of fn/text-summarizing immediately"
+       (interactive)
+       (lexical-let ((raw-text (or text
+                                   (buffer-substring-no-properties (point-min) (point-max))))
+                     (summary-file (make-temp-file ".summary")))
+         (with-temp-file summary-file
+           (insert raw-text))
+         (prog1
+             (s-split "\n"
+                      (fn/run-command "sumy" "lex-rank"
+                                      "--length" "5"
+                                      "--file" summary-file))
+           (delete-file summary-file))))
+
    #+END_SRC
 
 ** starup and shutdown hook
