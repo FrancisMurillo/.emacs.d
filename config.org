@@ -111,6 +111,13 @@
        "Every cached or moving file should be here like with Spacemacs")
 
 
+     (defconst fn/lib-dir-name "lib"
+       "External non-standard files directory")
+
+     (defconst fn/lib-dir (expand-file-name fn/lib-dir-name user-emacs-directory)
+       "External library directory")
+
+
      (defconst fn/extra-dir-name "extra"
        "Anything under the sun you can put here")
 
@@ -2374,7 +2381,8 @@
     #+BEGIN_SRC emacs-lisp
       (use-package dumb-jump
         :ensure t
-        :bind (("C-c n C-d g" . dumb-jump-go)))
+        :bind (("C-c n C-d g" . dumb-jump-go)
+               ("C-c n C-d b" . dumb-jump-back)))
     #+END_SRC
 
 *** helm-swoop
@@ -2412,6 +2420,14 @@
     #+END_SRC
 
 ** Elisp
+*** Mode
+    This editor is the mode
+
+    #+BEGIN_SRC emacs-lisp
+      (define-key emacs-lisp-mode-map (kbd "C-c n h f") #'find-function-at-point)
+      (define-key emacs-lisp-mode-map (kbd "C-c n h v") #'find-variable-at-point)
+    #+END_SRC
+
 *** Motion
     Makes you a good lisp developer and quite addictive to have
 
@@ -2735,7 +2751,9 @@
     #+BEGIN_SRC emacs-lisp
       (use-package jdee
         :ensure t
-        :after java)
+        :after java
+        :config
+        (setq jdee-server-dir (expand-file-name "jdee-server/" fn/lib-dir)))
     #+END_SRC
 
 ** Python
