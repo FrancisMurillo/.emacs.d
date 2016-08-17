@@ -261,7 +261,7 @@
      (setq search-highlight t)
 
      ;; This ignores whitespace when searching
-     (setq-default search-whitespace-regexp".*?")
+     (setq-default search-whitespace-regexp ".*?")
 
 
      (defun fn/isearch-forward-normally ()
@@ -901,8 +901,8 @@
         (window-numbering-mode t)
 
         (defun fn/tweak-window-numbering-faces ()
-          (custom-set-faces
-           '(window-numbering-face ((t (:foreground "tomato" :weight extra-bold))) t)))
+          (set-face-attribute 'window-numbering-face nil
+                              :foreground "tomato" :weight 'extra-bold))
 
         (fn/tweak-window-numbering-faces)
 
@@ -2102,13 +2102,6 @@
                ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
                ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
                ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)"))))
-
-     (use-package flycheck-ledger
-       :ensure t
-       :disabled t ;; Flycheck-ledger does not work with an encrypted ledger... for now
-       :after flycheck
-       :init
-       (add-hook 'ledger-mode-hook 'flycheck-mode))
    #+END_SRC
 ** engine
     Instant search with Emacs, sign me up.
@@ -2340,6 +2333,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package github-clone
         :ensure t
+        :bind (("C-c n G c" . github-clone))
         :config
         (setq github-clone-url-slot :clone-url))
     #+END_SRC
@@ -2372,6 +2366,15 @@
                    (helm ag)
                    (use-package helm-ag
                      :ensure t))
+    #+END_SRC
+
+*** dumb-jump
+    Dump jumping with =ag=
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package dumb-jump
+        :ensure t
+        :bind (("C-c n C-d g" . dumb-jump-go)))
     #+END_SRC
 
 *** helm-swoop
@@ -2566,7 +2569,7 @@
     Sadly, =tern= slows me down somehow so I will be temporarily
     disabling it.
 
-    #+BEGIN_SRC emacs-lisp :tangle no
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-package-dir)
         "My performance customization on tern")
 

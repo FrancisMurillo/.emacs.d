@@ -317,7 +317,7 @@ list of strings, giving the binary name and arguments.")
           (tern-run-query (lambda (data)
                             ;; HACK: Parse data only if it is the last request
                             (unless (= tern-activity-since-command (1- generation))
-                              (message "Dropping request"))
+                              (message "Dropping update  request"))
                             (when (= tern-activity-since-command (1- generation))
                               (let ((type (tern-parse-function-type data)))
                                 (when type
