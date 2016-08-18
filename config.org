@@ -932,10 +932,86 @@
         (setq split-width-threshold nil
               golden-ratio-adjust-factor 1.0)
 
-        ;; Until golden-ratio "advices" select-window, this is the unofficial fix
-        (add-hook 'buffer-list-update-hook #'golden-ratio)
-        (add-hook 'focus-in-hook #'golden-ratio)
-        (add-hook 'focus-out-hook #'golden-ratio))
+
+        (use-feature golend-workgroups
+                     (workgroups2)
+
+                     ;; When switching workgroups, make sure the screen is rationed correctly
+
+                     (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
+
+
+        (use-feature golden-window-numbering
+                     (window-numbering)
+
+                     ;; This is my hack to combine window-numbering and golden-ratio
+                     ;; On window selection, apply golden-ratio afterwards
+
+                     (defun select-rationed-window-1 ()
+                       "Select window number 1 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-1)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-2 ()
+                       "Select window number 2 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-2)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-3 ()
+                       "Select window number 3 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-3)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-4 ()
+                       "Select window number 4 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-4)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-5 ()
+                       "Select window number 5 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-5)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-6 ()
+                       "Select window number 6 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-6)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-7 ()
+                       "Select window number 7 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-7)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-8 ()
+                       "Select window number 8 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-8)
+                       (golden-ratio))
+
+                     (defun select-rationed-window-9 ()
+                       "Select window number 9 and then apply golden-ratio to it"
+                       (interactive)
+                       (select-window-9)
+                       (golden-ratio))
+
+                     ;; NOTE: There must be a better way to compose key triggers
+                     (define-key window-numbering-keymap (kbd "M-1") 'select-rationed-window-1)
+                     (define-key window-numbering-keymap (kbd "M-2") 'select-rationed-window-2)
+                     (define-key window-numbering-keymap (kbd "M-3") 'select-rationed-window-3)
+                     (define-key window-numbering-keymap (kbd "M-4") 'select-rationed-window-4)
+                     (define-key window-numbering-keymap (kbd "M-5") 'select-rationed-window-5)
+                     (define-key window-numbering-keymap (kbd "M-6") 'select-rationed-window-6)
+                     (define-key window-numbering-keymap (kbd "M-7") 'select-rationed-window-7)
+                     (define-key window-numbering-keymap (kbd "M-8") 'select-rationed-window-8)
+                     (define-key window-numbering-keymap (kbd "M-9") 'select-rationed-window-9)
+                     (define-key window-numbering-keymap (kbd "M-0") 'select-rationed-window-0)))
     #+END_SRC
 
 *** uniquify
@@ -2023,12 +2099,16 @@
    #+BEGIN_SRC emacs-lisp
      (require 'dired-x) ;; Allows multi open marked files
 
-     (setq dired-recursive-copies 'always  ;; Don't ask because I did it
-           dired-recursive-deletes 'always)
+     (setq dired-dwim-target t
 
-     (setq dired-dwim-target t) ;; Split pane copying, be careful though with this
+           dired-listing-switches "-alh"
 
-     (setq dired-listing-switches "-alh") ;; Want to see the size with better details
+           dired-recursive-copies 'always ;; Don't ask because I did it
+           dired-recursive-deletes 'always
+
+           dired-isearch-filenames t
+
+           dired-copy-preserve-time t)
 
      (dired-async-mode t)
 
@@ -2383,6 +2463,15 @@
         :ensure t
         :bind (("C-c n C-d g" . dumb-jump-go)
                ("C-c n C-d b" . dumb-jump-back)))
+    #+END_SRC
+
+*** ggtags                                                      :exprimental:
+    Jump and go is really a must needed feature
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package ggtags
+        :ensure t
+        :defer t)
     #+END_SRC
 
 *** helm-swoop
