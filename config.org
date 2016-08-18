@@ -3891,6 +3891,12 @@
        "Just a quick shortcut to my mountain folder"
        (interactive)
        (dired "~/Mountain"))
+
+
+     (defun fn/dired-fakespace-dir ()
+       "Just a quick shortcut to my fakespace folder"
+       (interactive)
+       (dired "~/Fakespace"))
    #+END_SRC
 
 ** Summarize Text
@@ -4334,6 +4340,7 @@
     (global-set-key (kbd "C-c m d h") #'fn/dired-emacs-dir)
     (global-set-key (kbd "C-c m d d") #'fn/dired-download-dir)
     (global-set-key (kbd "C-c m d m") #'fn/dired-mountain-dir)
+    (global-set-key (kbd "C-c m d f") #'fn/dired-fakespace-dir)
 
     (global-set-key (kbd "C-c m ^") #'fn/dired-parent)
 
