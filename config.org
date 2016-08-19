@@ -163,6 +163,12 @@
    #+BEGIN_SRC emacs-lisp
      (setq gc-cons-threshold (* 128 1024 1024)) ;; High memory for Emacs
 
+     (setq garbage-collection-messages t) ;; Tell me if gc it occurs
+
+     ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
+     (run-with-idle-timer 30 t #'garbage-collect)
+
+
      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
            initial-scratch-message nil)
    #+END_SRC
@@ -931,6 +937,11 @@
 
         (setq split-width-threshold nil
               golden-ratio-adjust-factor 1.0)
+
+
+        ;; Frame entry exit fix
+        (add-hook 'focus-in-hook #'golden-ratio)
+        (add-hook 'focus-out-hook #'golden-ratio)
 
 
         (use-feature golend-workgroups
@@ -2513,8 +2524,25 @@
     This editor is the mode
 
     #+BEGIN_SRC emacs-lisp
-      (define-key emacs-lisp-mode-map (kbd "C-c n h f") #'find-function-at-point)
-      (define-key emacs-lisp-mode-map (kbd "C-c n h v") #'find-variable-at-point)
+      (require 'dash)
+
+      (defun fn/find-definition-at-point ()
+        "This is find-function-at-point and find-variable-at-point meld into one"
+        (interactive)
+        (-if-let
+            (point-pair (cond
+                         ((symbolp (variable-at-point))
+                          (find-variable-noselect
+                           (variable-at-point)
+                           nil))
+                         ((function-called-at-point) (condition-case ex
+                                                         (find-function-noselect (function-called-at-point) t)
+                                                       ('error nil)))
+                         (t nil)))
+            (switch-to-buffer (car point-pair))
+            (message "Could not find function or symbol definition or might be builtin")))
+
+      (define-key emacs-lisp-mode-map (kbd "C-c m j") #'fn/find-definition-at-point)
     #+END_SRC
 
 *** Motion
@@ -3406,7 +3434,7 @@
                       (alert (format "%s pinged you" from)
                              :category 'cbox
                              :style 'fringe
-                             :serverity 'high))
+                             :severity 'high))
 
                     (add-to-list 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
@@ -3892,7 +3920,6 @@
        (interactive)
        (dired "~/Mountain"))
 
-
      (defun fn/dired-fakespace-dir ()
        "Just a quick shortcut to my fakespace folder"
        (interactive)
@@ -4275,7 +4302,7 @@
        (find-file (expand-file-name "config.org" user-emacs-directory)))
    #+END_SRC
 
-* Custom Bindings
+* Key Bindings
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
@@ -4366,6 +4393,15 @@
   #+END_SRC
 
 * Sandbox
+
+  #+BEGIN_SRC emacs-lisp
+    (defconst fn/elk-package-dir  (expand-file-name "elk" fn/custom-package-dir)
+      "My elk package dir")
+
+    (use-package elk
+      :load-path fn/elk-package-dir)
+  #+END_SRC
+
 * Reference
   - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
   - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
