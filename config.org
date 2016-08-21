@@ -547,31 +547,30 @@
      (use-package eshell
        :bind (("C-c n x e" . eshell))
        :config
-       (setq eshell-directory-name (expand-file-name "eshell" fn/extra-dir))
+       ;; core
+       (setq eshell-directory-name (expand-file-name "eshell" fn/cache-dir)
+             eshell-prefer-lisp-functions t)
 
-       (defun fn/eshell-rename-buffer-before-command ()
-         (let* ((last-input
-                 (buffer-substring eshell-last-input-start eshell-last-input-end)))
-           (rename-buffer
-            (format "*eshell[%s]$ %s...*" default-directory last-input) t)))
+       ;; history
+       nil
 
-       (defun fn/eshell-rename-buffer-after-command ()
-         (rename-buffer
-          (format "*eshell[%s]$ %s*" default-directory
-                  (eshell-previous-input-string 0)) t))
-
-       (add-hook 'eshell-pre-command-hook 'fn/eshell-rename-buffer-before-command)
-       (add-hook 'eshell-post-command-hook 'fn/eshell-rename-buffer-after-command)
-       (use-package em-smart)
 
        (setq eshell-where-to-jump 'begin
              eshell-review-quick-commands nil
-             eshell-smart-space-goes-to-end t)
+             eshell-smart-space-goes-to-end t))
 
+     (use-package em-smart
+       :after eshell
+       :config
        (add-hook 'eshell-mode-hook
                  (lambda ()
                    (eshell-smart-initialize))))
+
+     (use-package pcomplete
+       :ensure t)
    #+END_SRC
+
+***
 ** prodigy
    Living in the shell requires some genius
 
@@ -4364,11 +4363,11 @@
 * Sandbox
 
   #+BEGIN_SRC emacs-lisp
-    (defconst fn/elk-package-dir  (expand-file-name "elk" fn/custom-package-dir)
-      "My elk package dir")
+        (defconst fn/elk-package-dir  (expand-file-name "elk" fn/custom-package-dir)
+          "My elk package dir")
 
-    (use-package elk
-      :load-path fn/elk-package-dir)
+        (use-package elk
+          :load-path fn/elk-package-dir)
   #+END_SRC
 
 * Reference

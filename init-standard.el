@@ -70,6 +70,7 @@
 (org-babel-load-file
  (expand-file-name fn/config-file user-emacs-directory))
 
+
 ;; Environement specific files, don't commit that file
 (defcustom fn/post-config-file ".init-extension.el"
   "Post script to load after the main configuration loads")
