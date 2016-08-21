@@ -93,8 +93,8 @@
 
    #+BEGIN_SRC emacs-lisp
      (setq org-confirm-babel-evaluate nil
-        org-src-fontify-natively t
-        org-src-tab-acts-natively t)
+           org-src-fontify-natively t
+           org-src-tab-acts-natively t)
    #+END_SRC
 
 ** Constants
@@ -337,7 +337,6 @@
      (setq browse-url-browser-function 'browse-url-generic
            browse-url-generic-program "conkeror")
    #+END_SRC
-
 ** Commands
    Unlock some commands I need
 
@@ -434,14 +433,6 @@
                                      string-args))
                (string-trim (buffer-string))))
          ('error nil)))
-
-     (defun fn/check-command (command)
-       ;; Another alias to *fn/run-command* but this time logs an output if the command does not exist
-       (if (fn/run-command command)
-           t
-         (progn
-           (message "Command *%s* is not available" command)
-           nil)))
    #+END_SRC
 
 ** htmlize
@@ -554,7 +545,7 @@
 
    #+BEGIN_SRC emacs-lisp
      (use-package eshell
-       :bind (("C-c n e" . eshell))
+       :bind (("C-c n x e" . eshell))
        :config
        (setq eshell-directory-name (expand-file-name "eshell" fn/extra-dir))
 
@@ -569,11 +560,8 @@
           (format "*eshell[%s]$ %s*" default-directory
                   (eshell-previous-input-string 0)) t))
 
-       (add-hook 'eshell-pre-command-hook
-                 'fn/eshell-rename-buffer-before-command)
-       (add-hook 'eshell-post-command-hook
-                 'fn/eshell-rename-buffer-after-command
-                 )
+       (add-hook 'eshell-pre-command-hook 'fn/eshell-rename-buffer-before-command)
+       (add-hook 'eshell-post-command-hook 'fn/eshell-rename-buffer-after-command)
        (use-package em-smart)
 
        (setq eshell-where-to-jump 'begin
@@ -616,11 +604,11 @@
 
    Something to edit =Dockerfile=
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package dockerfile-mode
-        :ensure t
-        :mode (("Dockerfile\\'" . dockerfile-mode)))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package dockerfile-mode
+       :ensure t
+       :mode (("Dockerfile\\'" . dockerfile-mode)))
+   #+END_SRC
 
 ** memory-usage
    Nice to know if my baby is getting to fat to quick
@@ -697,23 +685,10 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-package hungry-delete
+        :ensure t
         :diminish hungry-delete-mode
-        :ensure t
-        :init
-        (add-hook 'prog-mode-hook 'hungry-delete-mode)
-        (add-hook 'org-mode-hook 'hungry-delete-mode))
-    #+END_SRC
-
-*** aggressive-indent
-    Maintaining indentation is awesome
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package aggressive-indent
-        :ensure t
-        :disabled t
-        :diminish aggressive-indent-mode
-        :init
-        (add-hook 'prog-mode-hook 'aggressive-indent-mode))
+        :bind (("C-c n C-d C-d" . hungry-delete-forward)
+               ("C-c n C-d DEL" . hungry-delete-backward)))
     #+END_SRC
 
 *** expand-region
@@ -1098,7 +1073,7 @@
                 (message "Loading project init file for %s" (projectile-project-name))
                 (condition-case ex
                     (load project-init-file t)
-                 ('error (message "There was an error loading %s" project-init-file)))))))
+                  ('error (message "There was an error loading %s" project-init-file)))))))
 
         (defun fn/load-project-local-file ()
           (interactive)
@@ -1343,8 +1318,8 @@
                                             (f-uniquify-alist paths))))))
                              (refined-paths  (funcall uniquify-paths project-paths)))
                           (mapcar (-compose
-                                       (funcall pair-as-label refined-paths)
-                                       as-pair)
+                                   (funcall pair-as-label refined-paths)
+                                   as-pair)
                                   refined-paths)))
 
                       ;; CUSTOM: Customized helm-projectile
@@ -1356,10 +1331,10 @@
                       (defun fmc/custom-helm-completion (prompt choices)
                         "Just a custom helm completion for projection"
                         (prog1
-                              (helm-comp-read prompt (fmc/uniquify-project-paths choices)
-                                              :buffer fmc/completion-buffer-name
-                                              :must-match 'confirm)
-                            (kill-buffer fmc/completion-buffer-name)))
+                            (helm-comp-read prompt (fmc/uniquify-project-paths choices)
+                                            :buffer fmc/completion-buffer-name
+                                            :must-match 'confirm)
+                          (kill-buffer fmc/completion-buffer-name)))
 
 
                       (defun fmc/custom-completion-fontify (&optional this-buffer)
@@ -2202,59 +2177,59 @@
                ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)"))))
    #+END_SRC
 ** engine
-    Instant search with Emacs, sign me up.
+   Instant search with Emacs, sign me up.
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package engine-mode
-        :ensure t
-        :config
-        (engine-mode t)
+   #+BEGIN_SRC emacs-lisp
+     (use-package engine-mode
+       :ensure t
+       :config
+       (engine-mode t)
 
-        (engine/set-keymap-prefix (kbd "C-c s"))
-        (setq engine/browser-function 'browse-url-firefox)
+       (engine/set-keymap-prefix (kbd "C-c s"))
+       (setq engine/browser-function 'browse-url-firefox)
 
-        (defengine amazon
-          "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=%s")
+       (defengine amazon
+         "http://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=%s")
 
-        (defengine duckduckgo
-          "https://duckduckgo.com/?q=%s"
-          :keybinding "d")
+       (defengine duckduckgo
+         "https://duckduckgo.com/?q=%s"
+         :keybinding "d")
 
-        (defengine emacsgo
-          "https://duckduckgo.com/?q=emacs+%s"
-          :keybinding "e")
+       (defengine emacsgo
+         "https://duckduckgo.com/?q=emacs+%s"
+         :keybinding "e")
 
-        (defengine github
-          "https://github.com/search?ref=simplesearch&q=%s"
-          :keybinding "g")
+       (defengine github
+         "https://github.com/search?ref=simplesearch&q=%s"
+         :keybinding "g")
 
-        (defengine project-gutenberg
-          "http://www.gutenberg.org/ebooks/search/?query=%s")
+       (defengine project-gutenberg
+         "http://www.gutenberg.org/ebooks/search/?query=%s")
 
-        (defengine rfcs
-          "http://pretty-rfc.herokuapp.com/search?q=%s")
+       (defengine rfcs
+         "http://pretty-rfc.herokuapp.com/search?q=%s")
 
-        (defengine stack-overflow
-          "https://stackoverflow.com/search?q=%s"
-          :keybinding "t")
+       (defengine stack-overflow
+         "https://stackoverflow.com/search?q=%s"
+         :keybinding "t")
 
-        (defengine twitter
-          "https://twitter.com/search?q=%s")
+       (defengine twitter
+         "https://twitter.com/search?q=%s")
 
-        (defengine wikipedia
-          "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
-          :keybinding "w"
-          :docstring "Searchin' the wikis.")
+       (defengine wikipedia
+         "http://www.wikipedia.org/search-redirect.php?language=en&go=Go&search=%s"
+         :keybinding "w"
+         :docstring "Searchin' the wikis.")
 
-        (defengine wiktionary
-          "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
+       (defengine wiktionary
+         "https://www.wikipedia.org/search-redirect.php?family=wiktionary&language=en&go=Go&search=%s")
 
-        (defengine wolfram-alpha
-          "http://www.wolframalpha.com/input/?i=%s")
+       (defengine wolfram-alpha
+         "http://www.wolframalpha.com/input/?i=%s")
 
-        (defengine youtube
-          "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
-    #+END_SRC
+       (defengine youtube
+         "http://www.youtube.com/results?aq=f&oq=&search_query=%s"))
+   #+END_SRC
 ** woman
    Man pages are nice
 
@@ -2268,8 +2243,8 @@
    The ultimate mail browser, majority of the configuration is in =~/.gnus=
 
    #+BEGIN_SRC emacs-lisp
-          (use-package gnus
-            :bind (("C-c n g" . gnus)))
+     (use-package gnus
+       :bind (("C-c n g" . gnus)))
    #+END_SRC
 
 ** conkeror
@@ -2311,30 +2286,30 @@
     I definitely need to chill out from time to time
 
     #+BEGIN_SRC emacs-lisp :tangle no
-            (use-package type-break
-              :config
-              (setq type-break-interval (* fn/minute-per-second 25)
-                    type-break-good-rest-interva (* fn/minute-per-second 5)
+      (use-package type-break
+        :config
+        (setq type-break-interval (* fn/minute-per-second 25)
+              type-break-good-rest-interva (* fn/minute-per-second 5)
 
-                    type-break-file-name (expand-file-name "type-break" fn/cache-dir)
-                    type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
+              type-break-file-name (expand-file-name "type-break" fn/cache-dir)
+              type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
 
-              (global-set-key (kbd "C-c n C-t") 'type-break)
+        (global-set-key (kbd "C-c n C-t") 'type-break)
 
-              (type-break-mode t)
-              (type-break-query-mode t))
+        (type-break-mode t)
+        (type-break-query-mode t))
 
-            ;; Prevent zoning on type break
-            (use-feature type-break-no-zone
-                         (zone type-break)
-                         (defun fn/disable-zone-on-type-break (type-breaker)
-                           "The name pretty much gives it away"
-                           (let ((current-zone-idle-time (elt zone-timer 2)))
-                             (zone-when-idle 0)
-                             (apply type-breaker (list))
-                             (zone-when-idle current-zone-idle-time)))
+      ;; Prevent zoning on type break
+      (use-feature type-break-no-zone
+                   (zone type-break)
+                   (defun fn/disable-zone-on-type-break (type-breaker)
+                     "The name pretty much gives it away"
+                     (let ((current-zone-idle-time (elt zone-timer 2)))
+                       (zone-when-idle 0)
+                       (apply type-breaker (list))
+                       (zone-when-idle current-zone-idle-time)))
 
-                         (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
+                   (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
     #+END_SRC
 *** smartparens
     This is as handy as =paredit=
@@ -2424,18 +2399,6 @@
          :ensure t
          :after magit)
      #+END_SRC
-
-*** github-clone
-    I clone too much, I need an army... er a tool
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package github-clone
-        :ensure t
-        :bind (("C-c n G c" . github-clone))
-        :config
-        (setq github-clone-url-slot :clone-url))
-    #+END_SRC
-
 *** gist
     GitHub integration with gists
 
@@ -2516,7 +2479,7 @@
       (use-package npm-mode
         :ensure t
         :defer t
-        :bind (("C-c n e" . npm-mode)))
+        :bind (("C-c n n" . npm-mode)))
     #+END_SRC
 
 ** Elisp
@@ -2540,7 +2503,7 @@
                                                        ('error nil)))
                          (t nil)))
             (switch-to-buffer (car point-pair))
-            (message "Could not find function or symbol definition or might be builtin")))
+          (message "Could not find function or symbol definition or might be builtin")))
 
       (define-key emacs-lisp-mode-map (kbd "C-c m j") #'fn/find-definition-at-point)
     #+END_SRC
@@ -2563,7 +2526,7 @@
       (use-feature paredit-eldoc
                    (eldoc)
                    (eldoc-add-command 'paredit-backward-delete
-                           'paredit-close-round))
+                                      'paredit-close-round))
     #+END_SRC
 *** Refactor
     Emacs Lisp refactor mode
@@ -2662,9 +2625,25 @@
         :config
         (add-hook 'js-mode-hook 'js2-minor-mode)
 
+        (defun fn/indent-buffer ()
+          "The editor itself is the best formatter"
+          (interactive)
+          (indent-region (point-min) (point-max)))
+
+        (defun fn/indent-after-save ()
+          "Indent buffer after saving to make handling the editor sane.
+      This somehow disregards SVN formatting in favor of the editor"
+          (add-hook 'after-save-hook #'fn/indent-buffer))
+
+        (add-hook 'js2-jsx-mode-hook #'fn/indent-after-save nil t)
+        (add-hook 'js2-jsx-mode-hook #'fn/indent-buffer nil t)
+
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
-              js2-mode-show-strict-warnings nil))
+              js2-mode-show-strict-warnings nil
+
+              js2-include-node-externs t
+              js2-include-browser-externs t))
 
       (use-package js-doc
         :ensure t
@@ -2721,23 +2700,28 @@
         (add-to-list 'company-backends 'company-tern))
     #+END_SRC
 *** Formatter
-    Formatter for js
+    Formatter for js, choose your poison. I tried the three and still am.
 
     #+BEGIN_SRC emacs-lisp
       (use-package web-beautify
         :ensure t
-        :after js2-mode
-        :bind (("C-c C-b" . web-beautify-js)))
+        :after js2-mode)
 
       (use-package jsfmt
         :ensure t
         :after js2-mode
         :config
-        (defun fn/jsfmt-on-js-save ()
-          "When it is js2-mode, allow files to be formatted on save with jsfmt"
-          (add-hook 'before-save-hook 'jsfmt-before-save t t))
+        (define-key js2-mode-map (kbd "C-c b b") #'jsfmt))
 
-        (add-hook 'js2-mode-hook #'fn/jsfmt-on-js-save))
+      (use-package eslint-fix
+        :ensure t
+        :after js2-mode
+        :config
+        (defun fn/eslint-fix-after-save ()
+          "Apply eslint fix after save"
+          (add-hook 'after-save-hook #'eslint-fix nil t))
+
+        (add-hook 'js2-mode-hook #'fn/eslint-fix-after-save))
     #+END_SRC
 
 *** Snippets
@@ -2854,8 +2838,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-js2-src
-       (org js2-mode)
-       (add-to-list 'org-babel-load-languages '(js . t)))
+                   (org js2-mode)
+                   (add-to-list 'org-babel-load-languages '(js . t)))
     #+END_SRC
 
 ** Java
@@ -3270,7 +3254,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature company-robe
-                    (robe company)
+                   (robe company)
                    (add-to-list 'company-backends 'company-robe))
     #+END_SRC
 
@@ -3317,21 +3301,21 @@
 *** Mode
     Actual mode to do the job
 
-   #+BEGIN_SRC emacs-lisp
-     (use-package auctex
-       :ensure t
-       :defer t
-       :init
-       (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-       (add-hook 'latex-mode-hook 'turn-on-reftex)
-       (add-hook 'latex-mode-hook 'flyspell-mode)
-       (setq reftex-plug-into-AUCTex t)
-       :config
-       (setq TeX-auto-save t
-             TeX-parse-self t)
+    #+BEGIN_SRC emacs-lisp
+      (use-package auctex
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+        (add-hook 'latex-mode-hook 'turn-on-reftex)
+        (add-hook 'latex-mode-hook 'flyspell-mode)
+        (setq reftex-plug-into-AUCTex t)
+        :config
+        (setq TeX-auto-save t
+              TeX-parse-self t)
 
-       (setq-default TeX-master nil))
-   #+END_SRC
+        (setq-default TeX-master nil))
+    #+END_SRC
 
 *** Autocomplete
     Autocomplete obviously
@@ -3368,19 +3352,19 @@
   Anything that just does something useful
 
 ** twittering
-    Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
+   Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package twittering-mode
-        :ensure t
-        :defer t
-        :init
-        (setq twittering-auth-method 'oauth)
-        (setq twittering-use-master-password t)
-        :config
-        (twittering-icon-mode t)
-        (setq twittering-convert-fix-size 24))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package twittering-mode
+       :ensure t
+       :defer t
+       :init
+       (setq twittering-auth-method 'oauth)
+       (setq twittering-use-master-password t)
+       :config
+       (twittering-icon-mode t)
+       (setq twittering-convert-fix-size 24))
+   #+END_SRC
 ** jabber
 
    Listen to chat notifications
@@ -3450,16 +3434,16 @@
    #+END_SRC
 
 ** bbdb
-    People organization
+   People organization
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package bbdb
-        :ensure t
-        :defer t
-        :config
-        (bbdb-initialize)
-        (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
-    #+END_SRC
+   #+BEGIN_SRC emacs-lisp
+     (use-package bbdb
+       :ensure t
+       :defer t
+       :config
+       (bbdb-initialize)
+       (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
+   #+END_SRC
 
 ** emms
    This controls the music player.
@@ -3827,21 +3811,6 @@
            (fmc/call-cli "sell" amount)
            (message "Successfully sold %f at %f" amount current-value))))
    #+END_SRC
-
-** Prevent Editing In Code Block
-   This is to prevent me from directly editing a code block without
-   going to =org-src= first. More of a safety feature.
-
-   #+BEGIN_SRC emacs-lisp
-     (defun fm/prevent-direct-editing-in-code-blocks (begin end)
-       "Prevent direct editing in code blocks, I don't want to edit without abandon"
-       (when (org-in-src-block-p t)
-         (setq-local buffer-read-only t)
-         (message "Hey! You're directly editing the code blocks. Check the source Luke.")))
-
-     ;; TODO: Hook for this
-   #+END_SRC
-
 ** Sensitive Mode
    When editiing gpg or sensitve files, I would like to avoid backing it
    up so here is a [[http://anirudhsasikumar.net/blog/2005.01.21.html][minor mode]] to do so.
@@ -3867,9 +3836,9 @@
              ;; disable auto-save
              (if auto-save-default
                  (auto-save-mode -1)))
-         ;resort to default value of backup-inhibited
+                                             ;resort to default value of backup-inhibited
          (kill-local-variable 'backup-inhibited)
-         ;resort to default auto save setting
+                                             ;resort to default auto save setting
          (if auto-save-default
              (auto-save-mode 1))))
 
@@ -3964,7 +3933,6 @@
            (delete-file summary-file))))
 
    #+END_SRC
-
 ** starup and shutdown hook
    Small script to update my org files
 
@@ -3980,8 +3948,8 @@
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
 
-     (define-key global-map "\C-cms" 'fn/startup)
-     (define-key global-map "\C-cmc"'fn/cleanup)
+     (define-key global-map (kbd "C-c m s") 'fn/startup)
+     (define-key global-map (kbd "C-c m c") 'fn/cleanup)
    #+END_SRC
 ** Create media diary
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
@@ -4317,7 +4285,7 @@
                                     (message "Triggering %s" key-command)
                                     (command-execute key-command))
                                    (t
-                                   (message "No key bound to %s" key-trigger)))))))
+                                    (message "No key bound to %s" key-trigger)))))))
         trigger))
 
 
@@ -4352,7 +4320,8 @@
     (global-set-key (kbd "C-c m b m") 'fn/open-message-buffer)
 
     ;; Shell
-    (global-set-key (kbd "C-c n s") 'shell)
+    (global-set-key (kbd "C-c n x s") 'shell)
+
 
 
     ;; Files
