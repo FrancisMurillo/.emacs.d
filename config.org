@@ -143,7 +143,7 @@
        "Personal configuration file name")
 
      (defconst fn/personal-file (expand-file-name fn/personal-file-name user-emacs-directory)
-       "Personal configuration file to be loaded")
+       "Personal configuration file to be loaded. This is symlinked in another private repository")
 
      (load fn/personal-file t)
    #+END_SRC
@@ -1168,7 +1168,6 @@
 
               helm-debug-root-directory fn/cache-dir)
 
-        (helm-mode t)
 
         ;; files & command
         (setq helm-ff-file-name-history-use-recentf t
@@ -1369,6 +1368,19 @@
 
                       (setq projectile-completion-system #'fmc/custom-helm-completion)))
      #+END_SRC
+
+*** ivy
+    A lighter and faster library than [[helm]] that uses the minibuffer
+    instead of a separate window.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package ivy
+        :ensure t
+        :bind (("M-x" . counsel-M-x))
+        :config
+        (ivy-mode t) ;; TODO: For now
+        (setq ivy-use-virtual-buffers t))
+    #+END_SRC
 
 ** Help
    Helper functions ere
@@ -3382,7 +3394,8 @@
        :ensure t
        :bind (("C-c n C-j" . jabber-connect-all))
        :config
-       ;; account set at personal
+       ;; account set at personal.el
+
        ;; core
        (setq jabber-auto-reconnect t
              jabber-version-show nil)
@@ -3439,6 +3452,19 @@
          "Show jabber roster buffer"
          (interactive)
          (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
+   #+END_SRC
+
+** slack
+   =Slack= is awesome.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package slack
+       :ensure t
+       :bind (("C-c n S s" . slack-start)
+              ("C-c n S c" . slack-ws-close))
+       :config
+       (setq slack-buffer-emojify t
+             slack-prefer-current-team t))
    #+END_SRC
 
 ** bbdb
