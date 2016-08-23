@@ -2583,6 +2583,35 @@
 
         (add-hook 'before-save-hook #'fn/elisp-format-buffer-on-save))
     #+END_SRC
+*** Testing
+    Some testing libraries
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package buttercup
+        :ensure t
+        :defer t)
+    #+END_SRC
+
+*** Project
+    Some packages to help making packages
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package cask-mode
+        :ensure t
+        :defer t)
+
+      (use-package header2
+        :ensure t
+        :config
+        (add-hook 'emacs-lisp-mode-hook 'auto-make-header))
+
+      (use-package overseer
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'emacs-lisp-mode-hook #'overseer-mode))
+    #+END_SRC
+
 ** Web
 *** Mode
     The defacto mode for web development
@@ -3460,10 +3489,11 @@
    #+BEGIN_SRC emacs-lisp
      (use-package slack
        :ensure t
-       :bind (("C-c n S s" . slack-start)
-              ("C-c n S c" . slack-ws-close))
+       :bind (("C-c n S" . slack-start))
        :config
-       (setq slack-buffer-emojify t
+       (setq slack-enable-emoji nil
+             slack-buffer-emojify nil
+             slack-typing-visibility 'buffer
              slack-prefer-current-team t))
    #+END_SRC
 
@@ -4398,11 +4428,11 @@
 * Sandbox
 
   #+BEGIN_SRC emacs-lisp
-        (defconst fn/elk-package-dir  (expand-file-name "elk" fn/custom-package-dir)
-          "My elk package dir")
+    (defconst fn/elk-package-dir  "~/Fakespace/elk.el"
+      "My elk package dir")
 
-        (use-package elk
-          :load-path fn/elk-package-dir)
+    (use-package elk
+      :load-path fn/elk-package-dir)
   #+END_SRC
 
 * Reference
