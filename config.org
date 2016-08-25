@@ -596,8 +596,7 @@
        "Prodigy dir")
 
      (use-package prodigy
-       :load-path fn/prodigy-dir
-       :demand t
+       :ensure t
        :bind (("C-c n P" . prodigy)))
    #+END_SRC
 ** emamux
@@ -1038,8 +1037,8 @@
         :config
         (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
 
-              recentf-max-menu-items 100
-              recentf-max-saved-items 100
+              recentf-max-menu-items 1000
+              recentf-max-saved-items 1000
 
               recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
 
@@ -2583,6 +2582,31 @@
 
         (add-hook 'before-save-hook #'fn/elisp-format-buffer-on-save))
     #+END_SRC
+*** Prettify
+    Prettify some symbols to make it visible.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature prettify-elisp
+                   (prettify-symbols-mode)
+                   (add-hook 'emacs-lisp-mode-hook
+                             (lambda ()
+                               (push '("require". ?∈) prettify-symbols-alist)
+                               (push '("require". ?∋) prettify-symbols-alist)
+
+                               (push '("defun". ?∫) prettify-symbols-alist)
+                               (push '("lambda". ?λ) prettify-symbols-alist)
+
+                               (push '("defvar" . ?ν) prettify-symbols-alist)
+
+                               (push '("and" . ?∧) prettify-symbols-alist)
+                               (push '("or" . ?∨) prettify-symbols-alist)
+
+                               (push '("t" . ?⊤) prettify-symbols-alist)
+                               (push '("nil" . ?⊥) prettify-symbols-alist)
+
+                               (prettify-symbols-mode t))))
+    #+END_SRC
+
 *** Testing
     Some testing libraries
 
@@ -2684,8 +2708,7 @@
       This somehow disregards SVN formatting in favor of the editor"
           (add-hook 'after-save-hook #'fn/indent-buffer))
 
-        (add-hook 'js2-jsx-mode-hook #'fn/indent-after-save nil t)
-        (add-hook 'js2-jsx-mode-hook #'fn/indent-buffer nil t)
+        (add-hook 'js2-jsx-mode-hook #'fn/indent-after-save t t)
 
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
@@ -2740,13 +2763,15 @@
         :init
         (add-hook 'js2-mode-hook 'tern-mode)
         :config
-        (setq tern-idle-time 10.0))
+        (setq tern-idle-time 10.0)
 
-      (use-package company-tern
-        :ensure t
-        :after company
-        :config
-        (add-to-list 'company-backends 'company-tern))
+        (use-package company-tern
+          :ensure t
+          :after company
+          :config
+          (add-to-list 'company-backends 'company-tern)))
+
+
     #+END_SRC
 *** Formatter
     Formatter for js, choose your poison. I tried the three and still am.
@@ -3101,18 +3126,19 @@
     Company for Haskell
 
     #+BEGIN_SRC emacs-lisp
-      (use-package company-ghc
-        :ensure t
-        :after company
-        :init
-        (add-to-list 'company-backends 'company-ghc))
+      (use-feature company-haskell
+                   (haskell-mode)
+                   (use-package company-ghc
+                     :ensure t
+                     :after company
+                     :init
+                     (add-to-list 'company-backends 'company-ghc))
 
-      (use-package company-ghci
-        :ensure t
-        :after company
-        :init
-        (add-to-list 'company-backends 'company-ghci))
-
+                   (use-package company-ghci
+                     :ensure t
+                     :after company
+                     :init
+                     (add-to-list 'company-backends 'company-ghci)))
     #+END_SRC
 *** Formatter
     Formatter for Haskell
@@ -3372,7 +3398,7 @@
     #+BEGIN_SRC  emacs-lisp
       (use-package company-auctex
         :ensure t
-        :after company
+        :after auctex
         :config
         (company-auctex-init))
     #+END_SRC
