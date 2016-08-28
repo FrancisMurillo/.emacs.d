@@ -495,7 +495,10 @@
                (list 'lambda (list '_)
                      (list 'message "Loading feature package %s" `(symbol-name (quote ,name)))
                      `(progn ,@body)
-                     'nil))))
+                     'nil)))
+
+       ;; Indent like =use-packaghe=
+       (put 'use-feature 'lisp-indent-function 'defun))
    #+END_SRC
 
 * Terminator
@@ -657,9 +660,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature visual-line-mode
-                   nil
-                   (global-visual-line-mode t)
-                   (diminish 'visual-line-mode))
+        nil
+        (global-visual-line-mode t)
+        (diminish 'visual-line-mode))
     #+END_SRC
 
 *** auto-fill
@@ -667,10 +670,10 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature auto-fill-mode
-                   nil
-                   (add-hook 'text-mode-hook 'turn-on-auto-fill)
-                   (diminish 'auto-fill-function)
-                   (setq-default fill-column 72))
+        nil
+        (add-hook 'text-mode-hook 'turn-on-auto-fill)
+        (diminish 'auto-fill-function)
+        (setq-default fill-column 72))
     #+END_SRC
 
 *** auto-revert
@@ -678,11 +681,11 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature auto-revert
-                   nil
-                   (global-auto-revert-mode t)
-                   (setq global-auto-revert-non-file-buffers t
-                         auto-revert-verbose nil)
-                   (diminish 'auto-revert-mode))
+        nil
+        (global-auto-revert-mode t)
+        (setq global-auto-revert-non-file-buffers t
+              auto-revert-verbose nil)
+        (diminish 'auto-revert-mode))
     #+END_SRC
 
 *** autorevert
@@ -935,84 +938,84 @@
 
 
         (use-feature golend-workgroups
-                     (workgroups2)
+          (workgroups2)
 
-                     ;; When switching workgroups, make sure the screen is rationed correctly
+          ;; When switching workgroups, make sure the screen is rationed correctly
 
-                     (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
+          (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
 
 
         (use-feature golden-window-numbering
-                     (window-numbering)
+          (window-numbering)
 
-                     ;; This is my hack to combine window-numbering and golden-ratio
-                     ;; On window selection, apply golden-ratio afterwards
+          ;; This is my hack to combine window-numbering and golden-ratio
+          ;; On window selection, apply golden-ratio afterwards
 
-                     (defun select-rationed-window-1 ()
-                       "Select window number 1 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-1)
-                       (golden-ratio))
+          (defun select-rationed-window-1 ()
+            "Select window number 1 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-1)
+            (golden-ratio))
 
-                     (defun select-rationed-window-2 ()
-                       "Select window number 2 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-2)
-                       (golden-ratio))
+          (defun select-rationed-window-2 ()
+            "Select window number 2 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-2)
+            (golden-ratio))
 
-                     (defun select-rationed-window-3 ()
-                       "Select window number 3 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-3)
-                       (golden-ratio))
+          (defun select-rationed-window-3 ()
+            "Select window number 3 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-3)
+            (golden-ratio))
 
-                     (defun select-rationed-window-4 ()
-                       "Select window number 4 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-4)
-                       (golden-ratio))
+          (defun select-rationed-window-4 ()
+            "Select window number 4 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-4)
+            (golden-ratio))
 
-                     (defun select-rationed-window-5 ()
-                       "Select window number 5 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-5)
-                       (golden-ratio))
+          (defun select-rationed-window-5 ()
+            "Select window number 5 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-5)
+            (golden-ratio))
 
-                     (defun select-rationed-window-6 ()
-                       "Select window number 6 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-6)
-                       (golden-ratio))
+          (defun select-rationed-window-6 ()
+            "Select window number 6 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-6)
+            (golden-ratio))
 
-                     (defun select-rationed-window-7 ()
-                       "Select window number 7 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-7)
-                       (golden-ratio))
+          (defun select-rationed-window-7 ()
+            "Select window number 7 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-7)
+            (golden-ratio))
 
-                     (defun select-rationed-window-8 ()
-                       "Select window number 8 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-8)
-                       (golden-ratio))
+          (defun select-rationed-window-8 ()
+            "Select window number 8 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-8)
+            (golden-ratio))
 
-                     (defun select-rationed-window-9 ()
-                       "Select window number 9 and then apply golden-ratio to it"
-                       (interactive)
-                       (select-window-9)
-                       (golden-ratio))
+          (defun select-rationed-window-9 ()
+            "Select window number 9 and then apply golden-ratio to it"
+            (interactive)
+            (select-window-9)
+            (golden-ratio))
 
-                     ;; NOTE: There must be a better way to compose key triggers
-                     (define-key window-numbering-keymap (kbd "M-1") 'select-rationed-window-1)
-                     (define-key window-numbering-keymap (kbd "M-2") 'select-rationed-window-2)
-                     (define-key window-numbering-keymap (kbd "M-3") 'select-rationed-window-3)
-                     (define-key window-numbering-keymap (kbd "M-4") 'select-rationed-window-4)
-                     (define-key window-numbering-keymap (kbd "M-5") 'select-rationed-window-5)
-                     (define-key window-numbering-keymap (kbd "M-6") 'select-rationed-window-6)
-                     (define-key window-numbering-keymap (kbd "M-7") 'select-rationed-window-7)
-                     (define-key window-numbering-keymap (kbd "M-8") 'select-rationed-window-8)
-                     (define-key window-numbering-keymap (kbd "M-9") 'select-rationed-window-9)
-                     (define-key window-numbering-keymap (kbd "M-0") 'select-rationed-window-0)))
+          ;; NOTE: There must be a better way to compose key triggers
+          (define-key window-numbering-keymap (kbd "M-1") 'select-rationed-window-1)
+          (define-key window-numbering-keymap (kbd "M-2") 'select-rationed-window-2)
+          (define-key window-numbering-keymap (kbd "M-3") 'select-rationed-window-3)
+          (define-key window-numbering-keymap (kbd "M-4") 'select-rationed-window-4)
+          (define-key window-numbering-keymap (kbd "M-5") 'select-rationed-window-5)
+          (define-key window-numbering-keymap (kbd "M-6") 'select-rationed-window-6)
+          (define-key window-numbering-keymap (kbd "M-7") 'select-rationed-window-7)
+          (define-key window-numbering-keymap (kbd "M-8") 'select-rationed-window-8)
+          (define-key window-numbering-keymap (kbd "M-9") 'select-rationed-window-9)
+          (define-key window-numbering-keymap (kbd "M-0") 'select-rationed-window-0)))
     #+END_SRC
 
 *** uniquify
@@ -1194,180 +1197,180 @@
          "My custom helm projectile package")
 
        (use-feature helm-projectile
-                    (projectile helm)
-                    (use-package helm-projectile
-                      :load-path fn/helm-projectile-package-dir
-                      :bind (("C-c p h" . helm-projectile)
-                             ("C-c p p" . helm-projectile-switch-project))
-                      :demand t
-                      :config
-                      (require 'dash)
-                      (require 's)
-                      (require 'f)
+         (projectile helm)
+         (use-package helm-projectile
+           :load-path fn/helm-projectile-package-dir
+           :bind (("C-c p h" . helm-projectile)
+                  ("C-c p p" . helm-projectile-switch-project))
+           :demand t
+           :config
+           (require 'dash)
+           (require 's)
+           (require 'f)
 
 
-                      (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
-                        "Just a constant name for the completion buffer")
+           (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
+             "Just a constant name for the completion buffer")
 
 
-                      (defface fmc/completion-label-face  '((t (:weight bold :height 1.1)))
-                        "Label face")
+           (defface fmc/completion-label-face  '((t (:weight bold :height 1.1)))
+             "Label face")
 
-                      (defface fmc/completion-delimiter-face '((t (:weight light :height 0.9)))
-                        "Delimiter face")
-
-
-                      (defface fmc/completion-description-face '((t (:weight extra-light :height 0.9)))
-                        "Description face")
+           (defface fmc/completion-delimiter-face '((t (:weight light :height 0.9)))
+             "Delimiter face")
 
 
-                      (defvar fmc/completion-label-face 'fmc/completion-label-face
-                        "Label face var")
+           (defface fmc/completion-description-face '((t (:weight extra-light :height 0.9)))
+             "Description face")
 
 
-                      (defvar fmc/completion-delimiter-face 'fmc/completion-delimiter-face
-                        "Delimiter face var")
-
-                      (defvar fmc/completion-description-face 'fmc/completion-description-face
-                        "Description face var")
+           (defvar fmc/completion-label-face 'fmc/completion-label-face
+             "Label face var")
 
 
-                      (defconst fmc/reverse-notation-separator ".."
-                        "My reversed separator")
+           (defvar fmc/completion-delimiter-face 'fmc/completion-delimiter-face
+             "Delimiter face var")
 
-                      (defconst fmc/completion-separator ">>"
-                        "My completion separator")
-
-                      (defun fmc/uniquify-project-paths (project-paths)
-                        "Customize how projectile files and more are displayed"
-                        (lexical-let*
-                            ((fn-notation
-                              (lambda (path)
-                                (lexical-let ((fn-pieces (f-split path)))
-                                  (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
-                             (relative-parent-path
-                              (lambda (path relative-path)
-                                (lexical-let
-                                    ((split-path (f-split path))
-                                     (split-relative-path (f-split relative-path)))
-                                  (string-join
-                                   (-drop-last (length split-relative-path) split-path)
-                                   (f-path-separator)))))
-
-                             (as-pair
-                              (lambda (ish)
-                                (if (listp ish)
-                                    ish (cons ish ish))))
-                             (map-car
-                              (lambda (f pair)
-                                (cons (funcall f (car pair))
-                                      (cdr pair))))
-
-                             (pair-as-label
-                              (lambda (pairs)
-                                (lexical-let*
-                                    ((display-formatter
-                                      (lambda (name description)
-                                        (format "%-s %s %-s"
-                                                name
-                                                fmc/completion-separator
-                                                description))))
-                                  (lambda (pair)
-                                    (lexical-let*
-                                        ((unique-path (car pair))
-                                         (full-path (cdr pair))
-                                         (parent-path
-                                          (funcall relative-parent-path
-                                                   full-path
-                                                   unique-path))
-
-                                         (display-name
-                                          (funcall fn-notation unique-path))
-                                         (display-description
-                                          (funcall fn-notation parent-path))
-
-                                         (display-label
-                                          (funcall display-formatter
-                                                   display-name
-                                                   display-description)))
-                                      (cons display-label (cdr pair)))))))
-                             (uniquify-paths
-                              (lambda (paths)
-                                ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
-                                (lexical-let*
-                                    ((is-dir
-                                      (lambda (path)
-                                        (string-equal (f-path-separator)
-                                                      (s-right 1 path))))
-
-                                     (swap-pair (lambda (pair)
-                                                  (cons (cdr pair) (car pair))))
-                                     (map-pair
-                                      (lambda (f pair)
-                                        (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
-
-                                     (remove-last-separator
-                                      (lambda (text)
-                                        (s-left (1- (length text)) text)))
-                                     (add-separator
-                                      (lambda (text)
-                                        (concat text (f-path-separator)))))
-                                  (mapcar (-compose
-                                           swap-pair)
-                                          (if (-any is-dir paths)
-                                              ;; Remove separator, uniquify and add separator back
-                                              ;; Weird performance shiznit
-                                              (funcall
-                                               (-compose
-                                                (-partial #'mapcar (-partial map-pair add-separator))
-                                                #'f-uniquify-alist
-                                                (-partial #'mapcar remove-last-separator))
-                                               paths)
-                                            (f-uniquify-alist paths))))))
-                             (refined-paths  (funcall uniquify-paths project-paths)))
-                          (mapcar (-compose
-                                   (funcall pair-as-label refined-paths)
-                                   as-pair)
-                                  refined-paths)))
-
-                      ;; CUSTOM: Customized helm-projectile
-                      (setq helm-source-projectile-projects--mapper #'fmc/uniquify-project-paths
-                            helm-source-projectile-files--mapper #'fmc/uniquify-project-paths
-                            helm-source-projectile-directories--mapper #'fmc/uniquify-project-paths)
+           (defvar fmc/completion-description-face 'fmc/completion-description-face
+             "Description face var")
 
 
-                      (defun fmc/custom-helm-completion (prompt choices)
-                        "Just a custom helm completion for projection"
-                        (prog1
-                            (helm-comp-read prompt (fmc/uniquify-project-paths choices)
-                                            :buffer fmc/completion-buffer-name
-                                            :must-match 'confirm)
-                          (kill-buffer fmc/completion-buffer-name)))
+           (defconst fmc/reverse-notation-separator ".."
+             "My reversed separator")
+
+           (defconst fmc/completion-separator ">>"
+             "My completion separator")
+
+           (defun fmc/uniquify-project-paths (project-paths)
+             "Customize how projectile files and more are displayed"
+             (lexical-let*
+                 ((fn-notation
+                   (lambda (path)
+                     (lexical-let ((fn-pieces (f-split path)))
+                       (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
+                  (relative-parent-path
+                   (lambda (path relative-path)
+                     (lexical-let
+                         ((split-path (f-split path))
+                          (split-relative-path (f-split relative-path)))
+                       (string-join
+                        (-drop-last (length split-relative-path) split-path)
+                        (f-path-separator)))))
+
+                  (as-pair
+                   (lambda (ish)
+                     (if (listp ish)
+                         ish (cons ish ish))))
+                  (map-car
+                   (lambda (f pair)
+                     (cons (funcall f (car pair))
+                           (cdr pair))))
+
+                  (pair-as-label
+                   (lambda (pairs)
+                     (lexical-let*
+                         ((display-formatter
+                           (lambda (name description)
+                             (format "%-s %s %-s"
+                                     name
+                                     fmc/completion-separator
+                                     description))))
+                       (lambda (pair)
+                         (lexical-let*
+                             ((unique-path (car pair))
+                              (full-path (cdr pair))
+                              (parent-path
+                               (funcall relative-parent-path
+                                        full-path
+                                        unique-path))
+
+                              (display-name
+                               (funcall fn-notation unique-path))
+                              (display-description
+                               (funcall fn-notation parent-path))
+
+                              (display-label
+                               (funcall display-formatter
+                                        display-name
+                                        display-description)))
+                           (cons display-label (cdr pair)))))))
+                  (uniquify-paths
+                   (lambda (paths)
+                     ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
+                     (lexical-let*
+                         ((is-dir
+                           (lambda (path)
+                             (string-equal (f-path-separator)
+                                           (s-right 1 path))))
+
+                          (swap-pair (lambda (pair)
+                                       (cons (cdr pair) (car pair))))
+                          (map-pair
+                           (lambda (f pair)
+                             (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
+
+                          (remove-last-separator
+                           (lambda (text)
+                             (s-left (1- (length text)) text)))
+                          (add-separator
+                           (lambda (text)
+                             (concat text (f-path-separator)))))
+                       (mapcar (-compose
+                                swap-pair)
+                               (if (-any is-dir paths)
+                                   ;; Remove separator, uniquify and add separator back
+                                   ;; Weird performance shiznit
+                                   (funcall
+                                    (-compose
+                                     (-partial #'mapcar (-partial map-pair add-separator))
+                                     #'f-uniquify-alist
+                                     (-partial #'mapcar remove-last-separator))
+                                    paths)
+                                 (f-uniquify-alist paths))))))
+                  (refined-paths  (funcall uniquify-paths project-paths)))
+               (mapcar (-compose
+                        (funcall pair-as-label refined-paths)
+                        as-pair)
+                       refined-paths)))
+
+           ;; CUSTOM: Customized helm-projectile
+           (setq helm-source-projectile-projects--mapper #'fmc/uniquify-project-paths
+                 helm-source-projectile-files--mapper #'fmc/uniquify-project-paths
+                 helm-source-projectile-directories--mapper #'fmc/uniquify-project-paths)
 
 
-                      (defun fmc/custom-completion-fontify (&optional this-buffer)
-                        "Special fontify a buffer"
-                        (with-current-buffer (or this-buffer (current-buffer))
-                          (let ((line-regex (format
-                                             "\\(.*\\) \\(%s\\) \\(.*\\)"
-                                             fmc/completion-separator)))
-                            (font-lock-add-keywords nil
-                                                    (list
-                                                     (list line-regex 2
-                                                           'fmc/completion-delimiter-face t)
-                                                     (list line-regex 1
-                                                           'fmc/completion-label-face t t)
-                                                     (list line-regex 3
-                                                           'fmc/completion-description-face t))))))
+           (defun fmc/custom-helm-completion (prompt choices)
+             "Just a custom helm completion for projection"
+             (prog1
+                 (helm-comp-read prompt (fmc/uniquify-project-paths choices)
+                                 :buffer fmc/completion-buffer-name
+                                 :must-match 'confirm)
+               (kill-buffer fmc/completion-buffer-name)))
 
-                      (defun fmc/custom-completion-buffer-fontify ()
-                        "Fontify the unique buffer"
-                        (when (get-buffer fmc/completion-buffer-name)
-                          (fmc/custom-completion-fontify fmc/completion-buffer-name)))
 
-                      (add-hook 'helm--minor-mode-hook #'fmc/custom-completion-buffer-fontify)
+           (defun fmc/custom-completion-fontify (&optional this-buffer)
+             "Special fontify a buffer"
+             (with-current-buffer (or this-buffer (current-buffer))
+               (let ((line-regex (format
+                                  "\\(.*\\) \\(%s\\) \\(.*\\)"
+                                  fmc/completion-separator)))
+                 (font-lock-add-keywords nil
+                                         (list
+                                          (list line-regex 2
+                                                'fmc/completion-delimiter-face t)
+                                          (list line-regex 1
+                                                'fmc/completion-label-face t t)
+                                          (list line-regex 3
+                                                'fmc/completion-description-face t))))))
 
-                      (setq projectile-completion-system #'fmc/custom-helm-completion)))
+           (defun fmc/custom-completion-buffer-fontify ()
+             "Fontify the unique buffer"
+             (when (get-buffer fmc/completion-buffer-name)
+               (fmc/custom-completion-fontify fmc/completion-buffer-name)))
+
+           (add-hook 'helm--minor-mode-hook #'fmc/custom-completion-buffer-fontify)
+
+           (setq projectile-completion-system #'fmc/custom-helm-completion)))
      #+END_SRC
 
 *** ivy
@@ -1427,8 +1430,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature which-function
-                   nil
-                   (which-function-mode t))
+        nil
+        (which-function-mode t))
     #+END_SRC
 
 *** eldoc
@@ -1556,9 +1559,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature whitespace-mode
-                   nil
-                   (global-whitespace-mode t)
-                   (diminish 'global-whitespace-mode))
+        nil
+        (global-whitespace-mode t)
+        (diminish 'global-whitespace-mode))
     #+END_SRC
 *** hl-line
     Highlight the current line
@@ -1679,8 +1682,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature prettify-symbols-mode
-                   nil
-                   (version<= "24.4.4" emacs-version))
+        nil
+        (version<= "24.4.4" emacs-version))
     #+END_SRC
 
 *** rainbow-delimeter
@@ -1819,24 +1822,24 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-src
-                   (org)
-                   (setq org-src-window-setup 'current-window)
+        (org)
+        (setq org-src-window-setup 'current-window)
 
-                   (defun fn/org-src-inhibit-save-window-configuration ()
-                     "Disable org-src from saving the window configuration"
-                     ;; HACK: This uses an internal variable, might be unstable
-                     (setq org-src--saved-temp-window-config nil))
+        (defun fn/org-src-inhibit-save-window-configuration ()
+          "Disable org-src from saving the window configuration"
+          ;; HACK: This uses an internal variable, might be unstable
+          (setq org-src--saved-temp-window-config nil))
 
-                   (add-hook 'org-src-mode-hook #'fn/org-src-inhibit-save-window-configuration))
+        (add-hook 'org-src-mode-hook #'fn/org-src-inhibit-save-window-configuration))
 
       (use-feature org-src-alert
-                   (org alert)
-                   nil)
+        (org alert)
+        nil)
       (use-feature org-todo
-                   (org)
-                   (setq org-todo-keywords
-                         '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
-                           (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
+        (org)
+        (setq org-todo-keywords
+              '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
+                (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
     #+END_SRC
 
 *** org-capture
@@ -1844,45 +1847,45 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-capture
-                   (org)
-                   (setq org-capture-templates
-                         (list
-                          (list "t" "Todo" 'entry
-                                (list 'file+headline fn/org-todo-file "Todo")
-                                "* TODO %?\n   %i")
-                          (list "e" "Event" 'entry
-                                (list 'file+headline  fn/org-event-file "Events")
-                                "* %? :event:")))
+        (org)
+        (setq org-capture-templates
+              (list
+               (list "t" "Todo" 'entry
+                     (list 'file+headline fn/org-todo-file "Todo")
+                     "* TODO %?\n   %i")
+               (list "e" "Event" 'entry
+                     (list 'file+headline  fn/org-event-file "Events")
+                     "* %? :event:")))
 
-                   ;; Open org-capture template in one window, not nice but good enough
-                   ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
-                   (defun fq/org-capture-place-template (&optional inhibit-wconf-store)
-                     "Insert the template at the target location, and display the buffer.
+        ;; Open org-capture template in one window, not nice but good enough
+        ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
+        (defun fq/org-capture-place-template (&optional inhibit-wconf-store)
+          "Insert the template at the target location, and display the buffer.
       When `inhibit-wconf-store', don't store the window configuration, as it
       may have been stored before."
-                     (unless inhibit-wconf-store
-                       (org-capture-put :return-to-wconf (current-window-configuration)))
+          (unless inhibit-wconf-store
+            (org-capture-put :return-to-wconf (current-window-configuration)))
                                               ;(delete-other-windows)
-                     (org-switch-to-buffer-other-window
-                      (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
-                     (widen)
-                     (show-all)
-                     (goto-char (org-capture-get :pos))
-                     (org-set-local 'org-capture-target-marker
-                                    (point-marker))
-                     (org-set-local 'outline-level 'org-outline-level)
-                     (let* ((template (org-capture-get :template))
-                            (type (org-capture-get :type)))
-                       (case type
-                         ((nil entry) (org-capture-place-entry))
-                         (table-line (org-capture-place-table-line))
-                         (plain (org-capture-place-plain-text))
-                         (item (org-capture-place-item))
-                         (checkitem (org-capture-place-item))))
-                     (org-capture-mode 1)
-                     (org-set-local 'org-capture-current-plist org-capture-plist))
+          (org-switch-to-buffer-other-window
+           (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
+          (widen)
+          (show-all)
+          (goto-char (org-capture-get :pos))
+          (org-set-local 'org-capture-target-marker
+                         (point-marker))
+          (org-set-local 'outline-level 'org-outline-level)
+          (let* ((template (org-capture-get :template))
+                 (type (org-capture-get :type)))
+            (case type
+              ((nil entry) (org-capture-place-entry))
+              (table-line (org-capture-place-table-line))
+              (plain (org-capture-place-plain-text))
+              (item (org-capture-place-item))
+              (checkitem (org-capture-place-item))))
+          (org-capture-mode 1)
+          (org-set-local 'org-capture-current-plist org-capture-plist))
 
-                   (fset 'org-capture-place-template #'fq/org-capture-place-template))
+        (fset 'org-capture-place-template #'fq/org-capture-place-template))
     #+END_SRC
 
 *** org-agenda
@@ -1890,17 +1893,17 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-agenda
-                   (org)
-                   (setq org-agenda-span 14 ;; Fortnight
+        (org)
+        (setq org-agenda-span 14 ;; Fortnight
 
-                         org-agenda-window-setup 'current-window
+              org-agenda-window-setup 'current-window
 
-                         org-agenda-files (list
-                                           fn/org-main-file
-                                           fn/org-todo-file
-                                           fn/org-event-file)
+              org-agenda-files (list
+                                fn/org-main-file
+                                fn/org-todo-file
+                                fn/org-event-file)
 
-                         org-refile-targets nil))
+              org-refile-targets nil))
     #+END_SRC
 
 *** org-clock
@@ -1908,17 +1911,17 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-clock
-                   (org)
-                   (setq org-log-done 'time)
+        (org)
+        (setq org-log-done 'time)
 
-                   (defun fn/clock-todo-change ()
-                     "A nice little hook that clocks in when a todo is change to PENDING"
-                     (let ((new-state org-state))
-                       (pcase new-state
-                         ("PENDING" (org-clock-in))
-                         (_ nil))))
+        (defun fn/clock-todo-change ()
+          "A nice little hook that clocks in when a todo is change to PENDING"
+          (let ((new-state org-state))
+            (pcase new-state
+              ("PENDING" (org-clock-in))
+              (_ nil))))
 
-                   (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
+        (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
     #+END_SRC
 
 *** org-journal
@@ -2041,50 +2044,50 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-drill
-                   (org)
-                   (use-package org
-                     :after org
-                     :bind (("C-c n d" . org-drill))
-                     :demand t
-                     :config
-                     (add-to-list 'org-modules 'org-drill)
+        (org)
+        (use-package org
+          :after org
+          :bind (("C-c n d" . org-drill))
+          :demand t
+          :config
+          (add-to-list 'org-modules 'org-drill)
 
-                     (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
-                       "Main org drill files")
+          (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
+            "Main org drill files")
 
-                     (add-to-list 'org-capture-templates
-                                  (list "r" "Review/Remember" 'entry
-                                        (list 'file+headline fn/org-review-file "Learning Notes" "Review")
-                                        "* %? :drill:\n  CREATED_ON: %T"))
+          (add-to-list 'org-capture-templates
+                       (list "r" "Review/Remember" 'entry
+                             (list 'file+headline fn/org-review-file "Learning Notes" "Review")
+                             "* %? :drill:\n  CREATED_ON: %T"))
 
-                     (add-to-list 'org-agenda-files fn/org-review-file)
+          (add-to-list 'org-agenda-files fn/org-review-file)
 
-                     (setq org-drill-scope
-                           (list fn/org-review-file))))
+          (setq org-drill-scope
+                (list fn/org-review-file))))
     #+END_SRC
 *** org-mobile
     Mobile org document
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-mobile
-                   (org)
-                   (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
-                     "My org mobile directory")
+        (org)
+        (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
+          "My org mobile directory")
 
-                   (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
-                     "My org mobile directory")
+        (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
+          "My org mobile directory")
 
 
-                   (setq org-mobile-directory  fn/org-mobile-directory
-                         org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
+        (setq org-mobile-directory  fn/org-mobile-directory
+              org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
 
-                         org-mobile-files (list
-                                           fn/org-todo-file
-                                           fn/org-event-file
-                                           ))
+              org-mobile-files (list
+                                fn/org-todo-file
+                                fn/org-event-file
+                                ))
 
-                   (global-set-key (kbd "C-c n o p") #'org-mobile-push)
-                   (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
+        (global-set-key (kbd "C-c n o p") #'org-mobile-push)
+        (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
     #+END_SRC
 
 ** flyspell
@@ -2322,15 +2325,15 @@
 
       ;; Prevent zoning on type break
       (use-feature type-break-no-zone
-                   (zone type-break)
-                   (defun fn/disable-zone-on-type-break (type-breaker)
-                     "The name pretty much gives it away"
-                     (let ((current-zone-idle-time (elt zone-timer 2)))
-                       (zone-when-idle 0)
-                       (apply type-breaker (list))
-                       (zone-when-idle current-zone-idle-time)))
+        (zone type-break)
+        (defun fn/disable-zone-on-type-break (type-breaker)
+          "The name pretty much gives it away"
+          (let ((current-zone-idle-time (elt zone-timer 2)))
+            (zone-when-idle 0)
+            (apply type-breaker (list))
+            (zone-when-idle current-zone-idle-time)))
 
-                   (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
+        (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
     #+END_SRC
 *** smartparens
     This is as handy as =paredit=
@@ -2446,9 +2449,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature helm-ag
-                   (helm ag)
-                   (use-package helm-ag
-                     :ensure t))
+        (helm ag)
+        (use-package helm-ag
+          :ensure t))
     #+END_SRC
 
 *** dumb-jump
@@ -2546,9 +2549,9 @@
         (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode))
 
       (use-feature paredit-eldoc
-                   (eldoc)
-                   (eldoc-add-command 'paredit-backward-delete
-                                      'paredit-close-round))
+        (eldoc)
+        (eldoc-add-command 'paredit-backward-delete
+                           'paredit-close-round))
     #+END_SRC
 
 *** Refactor
@@ -2591,51 +2594,51 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature prettify-elisp
-                   (prettify-symbols-mode)
-                   (add-hook 'emacs-lisp-mode-hook
-                             (lambda ()
-                               (push '("require" . ?∈) prettify-symbols-alist)
-                               (push '("provide" . ?∋) prettify-symbols-alist)
+        (prettify-symbols-mode)
+        (add-hook 'emacs-lisp-mode-hook
+                  (lambda ()
+                    (push '("require" . ?∈) prettify-symbols-alist)
+                    (push '("provide" . ?∋) prettify-symbols-alist)
 
-                               (push '("defun" . ?∫) prettify-symbols-alist)
-                               (push '("lambda" . ?λ) prettify-symbols-alist)
-                               (push '("interactive" . ?Ι) prettify-symbols-alist)
+                    (push '("defun" . ?∫) prettify-symbols-alist)
+                    (push '("lambda" . ?λ) prettify-symbols-alist)
+                    (push '("interactive" . ?Ι) prettify-symbols-alist)
 
-                               (push '("&rest" . ?…) prettify-symbols-alist)
-                               (push '("&optional" . ?⁇) prettify-symbols-alist)
+                    (push '("&rest" . ?…) prettify-symbols-alist)
+                    (push '("&optional" . ?⁇) prettify-symbols-alist)
 
-                               (push '("defvar" . ?ν) prettify-symbols-alist)
-                               (push '("define" . ?δ) prettify-symbols-alist)
+                    (push '("defvar" . ?ν) prettify-symbols-alist)
+                    (push '("define" . ?δ) prettify-symbols-alist)
 
-                               (push '("let" . ?▷) prettify-symbols-alist)
-                               (push '("let*" . ?▶) prettify-symbols-alist)
+                    (push '("let" . ?▷) prettify-symbols-alist)
+                    (push '("let*" . ?▶) prettify-symbols-alist)
 
-                               (push '("lexical-let" . ?▭) prettify-symbols-alist)
-                               (push '("lexical-let*" . ?▬) prettify-symbols-alist)
+                    (push '("lexical-let" . ?▭) prettify-symbols-alist)
+                    (push '("lexical-let*" . ?▬) prettify-symbols-alist)
 
-                               (push '("letrec" . ?●) prettify-symbols-alist)
+                    (push '("letrec" . ?●) prettify-symbols-alist)
 
-                               (push '("and" . ?∧) prettify-symbols-alist)
-                               (push '("or" . ?∨) prettify-symbols-alist)
-                               (push '("not" . ?¬) prettify-symbols-alist)
+                    (push '("and" . ?∧) prettify-symbols-alist)
+                    (push '("or" . ?∨) prettify-symbols-alist)
+                    (push '("not" . ?¬) prettify-symbols-alist)
 
-                               (push '("t" . ?⊤) prettify-symbols-alist)
-                               (push '("nil" . ?⊥) prettify-symbols-alist)
-
-
-                               (push '("funcall" . ?→) prettify-symbols-alist)
-                               (push '("apply". ?↦) prettify-symbols-alist)
+                    (push '("t" . ?⊤) prettify-symbols-alist)
+                    (push '("nil" . ?⊥) prettify-symbols-alist)
 
 
-                               (push '("setq" . ?≔) prettify-symbols-alist)
-                               (push '("setf". ?≕) prettify-symbols-alist)
+                    (push '("funcall" . ?→) prettify-symbols-alist)
+                    (push '("apply". ?↦) prettify-symbols-alist)
 
 
-                               (push '("list" . ?∅) prettify-symbols-alist)
-                               (push '("cons" . ?⊕) prettify-symbols-alist)
+                    (push '("setq" . ?≔) prettify-symbols-alist)
+                    (push '("setf". ?≕) prettify-symbols-alist)
 
 
-                               (prettify-symbols-mode t))))
+                    (push '("list" . ?∅) prettify-symbols-alist)
+                    (push '("cons" . ?⊕) prettify-symbols-alist)
+
+
+                    (prettify-symbols-mode t))))
     #+END_SRC
 
 *** Testing
@@ -2835,9 +2838,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature react-snippets
-                   (js2-mode yasnippet)
-                   (use-package react-snippets
-                     :ensure t))
+        (js2-mode yasnippet)
+        (use-package react-snippets
+          :ensure t))
     #+END_SRC
 
 *** REPL
@@ -2867,67 +2870,67 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature prettify-js2
-                   (prettify-symbols-mode js2-mode)
-                   (add-hook 'js2-mode-hook
-                             (lambda ()
-                               (push '("function" . ?λ) prettify-symbols-alist)
-                               (push '("arguments" . ?ω) prettify-symbols-alist)
-                               (push '("var" . ?ν) prettify-symbols-alist)
-                               (push '("return" . ?ρ) prettify-symbols-alist)
-                               (push '("this" . ?ι) prettify-symbols-alist)
+        (prettify-symbols-mode js2-mode)
+        (add-hook 'js2-mode-hook
+                  (lambda ()
+                    (push '("function" . ?λ) prettify-symbols-alist)
+                    (push '("arguments" . ?ω) prettify-symbols-alist)
+                    (push '("var" . ?ν) prettify-symbols-alist)
+                    (push '("return" . ?ρ) prettify-symbols-alist)
+                    (push '("this" . ?ι) prettify-symbols-alist)
 
-                               (push '("for" . ?∫) prettify-symbols-alist)
-                               (push '("in" . ?⊂ ) prettify-symbols-alist)
+                    (push '("for" . ?∫) prettify-symbols-alist)
+                    (push '("in" . ?⊂ ) prettify-symbols-alist)
 
-                               (push '("Object" . ?Θ) prettify-symbols-alist)
+                    (push '("Object" . ?Θ) prettify-symbols-alist)
 
-                               (push '("if" . ?α) prettify-symbols-alist)
-                               (push '("else if" . ?β) prettify-symbols-alist)
-                               (push '("else" . ?γ) prettify-symbols-alist)
+                    (push '("if" . ?α) prettify-symbols-alist)
+                    (push '("else if" . ?β) prettify-symbols-alist)
+                    (push '("else" . ?γ) prettify-symbols-alist)
 
-                               (push '("->" . ?→) prettify-symbols-alist)
-                               (push '("&&" . ?∧) prettify-symbols-alist)
-                               (push '("||" . ?∨) prettify-symbols-alist)
+                    (push '("->" . ?→) prettify-symbols-alist)
+                    (push '("&&" . ?∧) prettify-symbols-alist)
+                    (push '("||" . ?∨) prettify-symbols-alist)
 
-                               (push '("!" . ?¬) prettify-symbols-alist)
-                               (push '("!!" . ?⌐) prettify-symbols-alist)
+                    (push '("!" . ?¬) prettify-symbols-alist)
+                    (push '("!!" . ?⌐) prettify-symbols-alist)
 
-                               (push '("=" . ?⟵) prettify-symbols-alist)
-                               (push '(":" . ?⟵) prettify-symbols-alist)
+                    (push '("=" . ?⟵) prettify-symbols-alist)
+                    (push '(":" . ?⟵) prettify-symbols-alist)
 
-                               (push '("===" . ?≡) prettify-symbols-alist)
-                               (push '("!==" . ?≢) prettify-symbols-alist)
+                    (push '("===" . ?≡) prettify-symbols-alist)
+                    (push '("!==" . ?≢) prettify-symbols-alist)
 
-                               (push '(">=" . ?≧) prettify-symbols-alist)
-                               (push '("<=" . ?≦) prettify-symbols-alist)
+                    (push '(">=" . ?≧) prettify-symbols-alist)
+                    (push '("<=" . ?≦) prettify-symbols-alist)
 
-                               (push '("true" . ?⊤) prettify-symbols-alist)
-                               (push '("false" . ?⊥) prettify-symbols-alist)
+                    (push '("true" . ?⊤) prettify-symbols-alist)
+                    (push '("false" . ?⊥) prettify-symbols-alist)
 
-                               (push '("null" . ?∅) prettify-symbols-alist)
-                               (push '("undefined" . ?↑) prettify-symbols-alist)
+                    (push '("null" . ?∅) prettify-symbols-alist)
+                    (push '("undefined" . ?↑) prettify-symbols-alist)
 
-                               (push '(", ". ?⟼) prettify-symbols-alist)
-                               (push '("{". ?⟹) prettify-symbols-alist)
-                               (push '("},". ?⟺) prettify-symbols-alist)
-                               (push '("}". ?⟸) prettify-symbols-alist)
-                               (push '("};". ?⟽) prettify-symbols-alist)
+                    (push '(", ". ?⟼) prettify-symbols-alist)
+                    (push '("{". ?⟹) prettify-symbols-alist)
+                    (push '("},". ?⟺) prettify-symbols-alist)
+                    (push '("}". ?⟸) prettify-symbols-alist)
+                    (push '("};". ?⟽) prettify-symbols-alist)
 
-                               (push '("(". ?⟖) prettify-symbols-alist)
-                               (push '(")". ?⟕) prettify-symbols-alist)
-                               (push '(");". ?⟕) prettify-symbols-alist)
-                               (push '("),". ?⟗) prettify-symbols-alist)
-                               (push '(").". ?⟗) prettify-symbols-alist)
+                    (push '("(". ?⟖) prettify-symbols-alist)
+                    (push '(")". ?⟕) prettify-symbols-alist)
+                    (push '(");". ?⟕) prettify-symbols-alist)
+                    (push '("),". ?⟗) prettify-symbols-alist)
+                    (push '(").". ?⟗) prettify-symbols-alist)
 
-                               (push '("[". ?⊏) prettify-symbols-alist)
-                               (push '("]". ?⊐) prettify-symbols-alist)
-                               (push '("],". ?⊡) prettify-symbols-alist)
-                               (push '("].". ?⊡) prettify-symbols-alist)
-                               (push '("];". ?⊐) prettify-symbols-alist)
+                    (push '("[". ?⊏) prettify-symbols-alist)
+                    (push '("]". ?⊐) prettify-symbols-alist)
+                    (push '("],". ?⊡) prettify-symbols-alist)
+                    (push '("].". ?⊡) prettify-symbols-alist)
+                    (push '("];". ?⊐) prettify-symbols-alist)
 
-                               (push '(";". ?⟐) prettify-symbols-alist)
+                    (push '(";". ?⟐) prettify-symbols-alist)
 
-                               (prettify-symbols-mode t))))
+                    (prettify-symbols-mode t))))
     #+END_SRC
 *** JSON
     JSON support
@@ -2944,8 +2947,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-js2-src
-                   (org js2-mode)
-                   (add-to-list 'org-babel-load-languages '(js . t)))
+        (org js2-mode)
+        (add-to-list 'org-babel-load-languages '(js . t)))
     #+END_SRC
 
 ** Java
@@ -3067,8 +3070,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature org-python-src
-                   (org python)
-                   (add-to-list 'org-babel-load-languages '(python .t)))
+        (org python)
+        (add-to-list 'org-babel-load-languages '(python .t)))
     #+END_SRC
 ** Haskell
 *** Mode
@@ -3151,18 +3154,18 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature company-haskell
-                   (haskell-mode company)
-                   (use-package company-ghc
-                     :ensure t
-                     :after company
-                     :init
-                     (add-to-list 'company-backends 'company-ghc))
+        (haskell-mode company)
+        (use-package company-ghc
+          :ensure t
+          :after company
+          :init
+          (add-to-list 'company-backends 'company-ghc))
 
-                   (use-package company-ghci
-                     :ensure t
-                     :after company
-                     :init
-                     (add-to-list 'company-backends 'company-ghci)))
+        (use-package company-ghci
+          :ensure t
+          :after company
+          :init
+          (add-to-list 'company-backends 'company-ghci)))
     #+END_SRC
 
 *** Formatter
@@ -3183,13 +3186,13 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature flycheck-haskell
-                   (flycheck haskell-mode)
-                   (use-package flycheck-haskell
-                     :ensure t
-                     :init
-                     (add-hook 'haskell-mode-hook 'flycheck-mode)
-                     :config
-                     (flycheck-haskell-setup)))
+        (flycheck haskell-mode)
+        (use-package flycheck-haskell
+          :ensure t
+          :init
+          (add-hook 'haskell-mode-hook 'flycheck-mode)
+          :config
+          (flycheck-haskell-setup)))
     #+END_SRC
 
 *** Prettify
@@ -3197,22 +3200,22 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature prettify-haskell
-                   (prettify-symbols-mode haskell-mode)
-                   (defun fn/prettiy-haskell ()
-                     "Some haskell prettifier"
-                     (push '("->" . ?→) prettify-symbols-alist)
-                     (push '("let" . ?ν) prettify-symbols-alist)
-                     (push '("if" . ?α) prettify-symbols-alist)
-                     (push '("in" . ?ε) prettify-symbols-alist)
-                     (push '("then" . ?σ) prettify-symbols-alist)
-                     (push '("else" . ?τ) prettify-symbols-alist)
-                     (push '("where" . ?δ) prettify-symbols-alist)
-                     (push '("module" . ?θ) prettify-symbols-alist)
-                     (push '("data" . ?Τ) prettify-symbols-alist)
-                     (push '("deriving" . ?Δ) prettify-symbols-alist)
-                     (prettify-symbols-mode t))
+        (prettify-symbols-mode haskell-mode)
+        (defun fn/prettiy-haskell ()
+          "Some haskell prettifier"
+          (push '("->" . ?→) prettify-symbols-alist)
+          (push '("let" . ?ν) prettify-symbols-alist)
+          (push '("if" . ?α) prettify-symbols-alist)
+          (push '("in" . ?ε) prettify-symbols-alist)
+          (push '("then" . ?σ) prettify-symbols-alist)
+          (push '("else" . ?τ) prettify-symbols-alist)
+          (push '("where" . ?δ) prettify-symbols-alist)
+          (push '("module" . ?θ) prettify-symbols-alist)
+          (push '("data" . ?Τ) prettify-symbols-alist)
+          (push '("deriving" . ?Δ) prettify-symbols-alist)
+          (prettify-symbols-mode t))
 
-                   (add-hook 'haskell-mode-hook #'fn/prettiy-haskell))
+        (add-hook 'haskell-mode-hook #'fn/prettiy-haskell))
     #+END_SRC
 
 *** Snippets
@@ -3220,10 +3223,10 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature haskell-snippets
-                   (yasnippet haskell-mode)
-                   (use-package haskell-snippets
-                     :ensure t
-                     :demand t))
+        (yasnippet haskell-mode)
+        (use-package haskell-snippets
+          :ensure t
+          :demand t))
     #+END_SRC
 
 *** Build Tools
@@ -3250,11 +3253,11 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature flycheck-elm
-                   (flycheck elm-mode)
-                   (use-package flycheck-elm
-                     :ensure t
-                     :config
-                     (flycheck-elm-setup)))
+        (flycheck elm-mode)
+        (use-package flycheck-elm
+          :ensure t
+          :config
+          (flycheck-elm-setup)))
     #+END_SRC
 
 *** Formatter
@@ -3284,9 +3287,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature elm-yasnippets
-                   (elm yasnippets)
-                   (use-package elm-yasnippets
-                     :ensure t))
+        (elm yasnippets)
+        (use-package elm-yasnippets
+          :ensure t))
     #+END_SRC
 
 ** Elixir
@@ -3306,18 +3309,18 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature flycheck-elixir
-                   (elixir-mode flycheck)
-                   (use-package flycheck-elixir
-                     :ensure t))
+        (elixir-mode flycheck)
+        (use-package flycheck-elixir
+          :ensure t))
     #+END_SRC
 
     Integration with =mix=
 
     #+BEGIN_SRC emacs-lisp
       (use-feature flycheck-mix
-                   (elixir-mode flycheck)
-                   (use-package flycheck-mix
-                     :ensure t))
+        (elixir-mode flycheck)
+        (use-package flycheck-mix
+          :ensure t))
     #+END_SRC
 
 *** Snippets
@@ -3325,9 +3328,9 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature elixir-yasnippets
-                   (elixir-mode yasnippet)
-                   (use-package elixir-yasnippets
-                     :ensure t))
+        (elixir-mode yasnippet)
+        (use-package elixir-yasnippets
+          :ensure t))
     #+END_SRC
 
 *** Build Tools
@@ -3355,8 +3358,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature company-robe
-                   (robe company)
-                   (add-to-list 'company-backends 'company-robe))
+        (robe company)
+        (add-to-list 'company-backends 'company-robe))
     #+END_SRC
 
 *** IDE
@@ -3434,8 +3437,8 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature flyspell-auctex
-                   (flyspell auctex)
-                   (add-hook 'latex-mode-hook #'flyspell-mode))
+        (flyspell auctex)
+        (add-hook 'latex-mode-hook #'flyspell-mode))
     #+END_SRC
 
 *** REPL
@@ -3514,15 +3517,15 @@
        (add-hook 'jabber-alert-message-hooks #'jabber-message-echo)
 
        (use-feature jabber-alert-custom
-                    (jabber alert)
-                    (defun fn/jabber-message-notify (from buffer text title)
-                      "Just a small unobtrusive notifcation"
-                      (alert (format "%s pinged you" from)
-                             :category 'cbox
-                             :style 'fringe
-                             :severity trivial))
+         (jabber alert)
+         (defun fn/jabber-message-notify (from buffer text title)
+           "Just a small unobtrusive notifcation"
+           (alert (format "%s pinged you" from)
+                  :category 'cbox
+                  :style 'fringe
+                  :severity trivial))
 
-                    (add-to-list 'jabber-alert-message-hooks #'fn/jabber-message-notify))
+         (add-to-list 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
        ;; roster
        (setq jabber-roster-show-title nil
