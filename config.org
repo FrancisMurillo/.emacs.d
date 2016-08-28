@@ -1025,7 +1025,7 @@
         (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
     #+END_SRC
 
-** Buffers
+** Interface
    Anything related to buffers
 
 *** recentf
@@ -1150,6 +1150,8 @@
         :demand t
         :config
         (require 'helm-config)
+
+        (helm-mode t)
 
         ;; core & utils
         (setq helm-yank-symbol-first t
@@ -1377,7 +1379,6 @@
         :ensure t
         :bind (("M-x" . counsel-M-x))
         :config
-        (ivy-mode t) ;; TODO: For now
         (setq ivy-use-virtual-buffers t))
     #+END_SRC
 
@@ -2201,6 +2202,7 @@
    #+BEGIN_SRC emacs-lisp
      (use-package engine-mode
        :ensure t
+       :defer t
        :config
        (engine-mode t)
 
@@ -2432,6 +2434,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package ag
         :ensure t
+        :demand t
         :config
         (setq ag-highlight-search t
 
@@ -2547,6 +2550,7 @@
                    (eldoc-add-command 'paredit-backward-delete
                                       'paredit-close-round))
     #+END_SRC
+
 *** Refactor
     Emacs Lisp refactor mode
 
@@ -2590,19 +2594,46 @@
                    (prettify-symbols-mode)
                    (add-hook 'emacs-lisp-mode-hook
                              (lambda ()
-                               (push '("require". ?∈) prettify-symbols-alist)
-                               (push '("require". ?∋) prettify-symbols-alist)
+                               (push '("require" . ?∈) prettify-symbols-alist)
+                               (push '("provide" . ?∋) prettify-symbols-alist)
 
-                               (push '("defun". ?∫) prettify-symbols-alist)
-                               (push '("lambda". ?λ) prettify-symbols-alist)
+                               (push '("defun" . ?∫) prettify-symbols-alist)
+                               (push '("lambda" . ?λ) prettify-symbols-alist)
+                               (push '("interactive" . ?Ι) prettify-symbols-alist)
+
+                               (push '("&rest" . ?…) prettify-symbols-alist)
+                               (push '("&optional" . ?⁇) prettify-symbols-alist)
 
                                (push '("defvar" . ?ν) prettify-symbols-alist)
+                               (push '("define" . ?δ) prettify-symbols-alist)
+
+                               (push '("let" . ?▷) prettify-symbols-alist)
+                               (push '("let*" . ?▶) prettify-symbols-alist)
+
+                               (push '("lexical-let" . ?▭) prettify-symbols-alist)
+                               (push '("lexical-let*" . ?▬) prettify-symbols-alist)
+
+                               (push '("letrec" . ?●) prettify-symbols-alist)
 
                                (push '("and" . ?∧) prettify-symbols-alist)
                                (push '("or" . ?∨) prettify-symbols-alist)
+                               (push '("not" . ?¬) prettify-symbols-alist)
 
                                (push '("t" . ?⊤) prettify-symbols-alist)
                                (push '("nil" . ?⊥) prettify-symbols-alist)
+
+
+                               (push '("funcall" . ?→) prettify-symbols-alist)
+                               (push '("apply". ?↦) prettify-symbols-alist)
+
+
+                               (push '("setq" . ?≔) prettify-symbols-alist)
+                               (push '("setf". ?≕) prettify-symbols-alist)
+
+
+                               (push '("list" . ?∅) prettify-symbols-alist)
+                               (push '("cons" . ?⊕) prettify-symbols-alist)
+
 
                                (prettify-symbols-mode t))))
     #+END_SRC
@@ -2626,7 +2657,8 @@
 
       (use-package header2
         :ensure t
-        :config
+        :functions auto-make-header
+        :init
         (add-hook 'emacs-lisp-mode-hook 'auto-make-header))
 
       (use-package overseer
@@ -2758,10 +2790,10 @@
         "My performance customization on tern")
 
       (use-package tern
-        :load-path fn/tern-package-dir
+        :ensure t
         :diminish tern-mode
         :init
-        (add-hook 'js2-mode-hook 'tern-mode)
+        (add-hook 'js2-mode-hook #'tern-mode)
         :config
         (setq tern-idle-time 10.0)
 
@@ -2938,10 +2970,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package python
         :ensure t
-        :defer t
-        :config
-        ;; Has a problem with agressive indent
-        (setq-local aggressive-indent-mode nil))
+        :defer t)
     #+END_SRC
 
 *** Formatter
@@ -2961,7 +2990,6 @@
       (use-package ein
         :ensure t
         :defer t
-        :after python
         :config
         (setq ein:use-auto-complete t
               ein:use-smartrep t))
@@ -2975,17 +3003,13 @@
     #+BEGIN_SRC emacs-lisp
       (use-package jedi
         :ensure t
-        :after elpy)
-    #+END_SRC
-
-    The actual completion by company
-
-    #+BEGIN_SRC emacs-lisp
-      (use-package company-jedi
-        :ensure t
-        :after company
+        :after elpy
         :config
-        (add-to-list 'company-backends 'company-jedi))
+        (use-package company-jedi
+          :ensure t
+          :after company
+          :config
+          (add-to-list 'company-backends 'company-jedi)))
     #+END_SRC
 
 *** IDE
@@ -3127,7 +3151,7 @@
 
     #+BEGIN_SRC emacs-lisp
       (use-feature company-haskell
-                   (haskell-mode)
+                   (haskell-mode company)
                    (use-package company-ghc
                      :ensure t
                      :after company
@@ -3140,6 +3164,7 @@
                      :init
                      (add-to-list 'company-backends 'company-ghci)))
     #+END_SRC
+
 *** Formatter
     Formatter for Haskell
 
@@ -3161,8 +3186,9 @@
                    (flycheck haskell-mode)
                    (use-package flycheck-haskell
                      :ensure t
-                     :config
+                     :init
                      (add-hook 'haskell-mode-hook 'flycheck-mode)
+                     :config
                      (flycheck-haskell-setup)))
     #+END_SRC
 
@@ -4457,8 +4483,14 @@
     (defconst fn/elk-package-dir  "~/Fakespace/elk.el"
       "My elk package dir")
 
+    (defconst fn/elk-magic-package-dir  "~/Fakespace/elk-magic.el"
+      "My elk-magic package dir.")
+
     (use-package elk
       :load-path fn/elk-package-dir)
+
+    (use-package elk-magic
+      :load-path fn/elk-magic-package-dir)
   #+END_SRC
 
 * Reference
