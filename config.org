@@ -465,6 +465,15 @@
        :ensure t)
    #+END_SRC
 
+** ctable
+   Might be needed for some awesome display
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package ctable
+       :ensure t
+       :defer t)
+   #+END_SRC
+
 ** auto-compile
    Automatic compilation of package files
 
@@ -2477,6 +2486,8 @@
     Something to speed up searching
 
     #+BEGIN_SRC emacs-lisp
+      (require 'dash)
+
       (use-package helm-swoop
         :ensure t
         :after helm
@@ -2486,7 +2497,10 @@
         (define-key helm-swoop-map (kbd "C-r") 'helm-previous-line)
         (define-key helm-swoop-map (kbd "C-s") 'helm-next-line)
         (define-key helm-multi-swoop-map (kbd "C-r") 'helm-previous-line)
-        (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line))
+        (define-key helm-multi-swoop-map (kbd "C-s") 'helm-next-line)
+
+
+        (setq helm-swoop-pre-input-function (-const "")))
 
       (use-package wgrep-helm
         :ensure t
@@ -2601,11 +2615,13 @@
                     (push '("provide" . ?∋) prettify-symbols-alist)
 
                     (push '("defun" . ?∫) prettify-symbols-alist)
+                    (push '("defun*" . ?∮) prettify-symbols-alist)
                     (push '("lambda" . ?λ) prettify-symbols-alist)
                     (push '("interactive" . ?Ι) prettify-symbols-alist)
 
                     (push '("&rest" . ?…) prettify-symbols-alist)
                     (push '("&optional" . ?⁇) prettify-symbols-alist)
+                    (push '("&key" . ?∴) prettify-symbols-alist)
 
                     (push '("defvar" . ?ν) prettify-symbols-alist)
                     (push '("define" . ?δ) prettify-symbols-alist)
@@ -4494,6 +4510,24 @@
 
     (use-package elk-magic
       :load-path fn/elk-magic-package-dir)
+
+    (use-package polymode
+      :ensure t
+      :defer t)
+
+    (defconst fn/meghnada-emacs-package-dir (expand-file-name "meghanada-emacs" fn/custom-package-dir)
+      "Meghanda emacs package")
+
+    (use-package meghanada-mode
+      :load-path fn/meghnada-emacs-package-dir
+      :config
+      (add-hook
+       'meghanada-mode-hook
+       (lambda ()
+         (require 'company-meghanda)
+         (add-to-list 'company-backends '(company-meghanada :with company-dabbrev-code))
+         (setq company-transformers '(company-sort-by-backend-importance))
+         (add-hook 'before-save-hook 'delete-trailing-whitespace))))
   #+END_SRC
 
 * Reference
