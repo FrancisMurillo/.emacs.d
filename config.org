@@ -154,14 +154,13 @@
    #+BEGIN_SRC emacs-lisp
      (defgroup fn nil
        "My namespace for customizing my configuration")
-
    #+END_SRC
 
 ** Startup
    Everything related to the startup state
 
    #+BEGIN_SRC emacs-lisp
-     (setq gc-cons-threshold (* 128 1024 1024)) ;; High memory for Emacs
+     (setq gc-cons-threshold (* 256 1024 1024)) ;; High memory for Emacs
 
      (setq garbage-collection-messages t) ;; Tell me if gc it occurs
 
@@ -1208,7 +1207,7 @@
        (use-feature helm-projectile
          (projectile helm)
          (use-package helm-projectile
-           :load-path fn/helm-projectile-package-dir
+           :ensure t
            :bind (("C-c p h" . helm-projectile)
                   ("C-c p p" . helm-projectile-switch-project))
            :demand t
@@ -4409,24 +4408,30 @@
   Here is where all the key binding I mapped to
 
   #+BEGIN_SRC emacs-lisp
+    (define-prefix-command 'fn-standard-prefix-map)
+    (define-prefix-command 'fn-custom-prefix-map)
+
+    (global-set-key (kbd "C-c n") fn-standard-prefix-map)
+    (global-set-key (kbd "C-c m") fn-custom-prefix-map)
+
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
       (lexical-let* ((key-trigger key)
-                     (trigger (lambda ()
-                                (interactive)
-                                (let ((key-command (key-binding key-trigger)))
-                                  (cond
-                                   (key-command
-                                    (message "Triggering %s" key-command)
-                                    (command-execute key-command))
-                                   (t
-                                    (message "No key bound to %s" key-trigger)))))))
+          (trigger (lambda ()
+                     (interactive)
+                     (let ((key-command (key-binding key-trigger)))
+                       (cond
+                        (key-command
+                         (message "Triggering %s" key-command)
+                         (command-execute key-command))
+                        (t
+                         (message "No key bound to %s" key-trigger)))))))
         trigger))
 
 
     ;; Motion
-    (global-set-key (kbd "C-c m b RET") (fn/trigger-key (kbd "C-RET")))
-    (global-set-key (kbd "C-c m b b RET ") (fn/trigger-key (kbd "M-RET")))
+    (define-key fn-custom-prefix-map (kbd "b RET") (fn/trigger-key (kbd "C-RET")))
+    (define-key fn-custom-prefix-map (kbd "b b RET ") (fn/trigger-key (kbd "M-RET")))
 
 
     ;; Keys
@@ -4435,65 +4440,65 @@
 
 
     ;; Search
-    (global-set-key (kbd "C-c n C-s") 'fn/isearch-forward-normally)
-    (global-set-key (kbd "C-c n C-r") 'fn/isearch-backward-normally)
+    (define-key fn-standard-prefix-map (kbd "C-s") 'fn/isearch-forward-normally)
+    (define-key fn-standard-prefix-map (kbd "C-r") 'fn/isearch-backward-normally)
 
 
     ;; Buffers
-    (global-set-key (kbd "C-c n k") 'kill-this-buffer)
-    (global-set-key (kbd "C-c n C-k") 'fn/save-and-kill-buffer)
+    (define-key fn-standard-prefix-map (kbd "k") 'kill-this-buffer)
+    (define-key fn-standard-prefix-map (kbd "C-k") 'fn/save-and-kill-buffer)
 
     ;; Windows
-    (global-set-key (kbd "C-c m w h") 'fmw/four-part-horizontal-window-layout)
-    (global-set-key (kbd "C-c m w v") 'fmw/four-part-vertical-window-layout)
-    (global-set-key (kbd "C-c m w t") 'fmw/three-part-left-window-layout)
-    (global-set-key (kbd "C-c m w 3") 'fmw/three-part-vertical-window-layout)
-    (global-set-key (kbd "C-c m w 4") 'fmw/four-part-equal-vertical-window-layout)
-    (global-set-key (kbd "C-c m w r") 'fmw/rotate-window-buffers)
+    (define-key fn-custom-prefix-map (kbd "w h") 'fmw/four-part-hoal-window-layout)
+    (define-key fn-custom-prefix-map (kbd "w v") 'fmw/four-part-vertical-window-layout)
+    (define-key fn-custom-prefix-map (kbd "w t") 'fmw/three-part-left-window-layout)
+    (define-key fn-custom-prefix-map (kbd "w 3") 'fmw/three-part-vertical-window-layout)
+    (define-key fn-custom-prefix-map (kbd "w 4") 'fmw/four-part-equal-vertical-window-layout)
+    (define-key fn-custom-prefix-map (kbd "w r") 'fmw/rotate-window-buffers)
 
     ;; System Buffers
-    (global-set-key (kbd "C-c m b m") 'fn/open-message-buffer)
+    (define-key fn-custom-prefix-map (kbd "b m") 'fn/open-message-buffer)
 
     ;; Shell
-    (global-set-key (kbd "C-c n x s") 'shell)
+    (define-key fn-standard-prefix-map (kbd "x s") 'shell)
 
 
 
     ;; Files
-    (global-set-key (kbd "C-c m b c") 'fn/find-config-file)
-    (global-set-key (kbd "C-c m b o") 'fn/find-main-org-file)
+    (define-key fn-custom-prefix-map (kbd "b c") 'fn/find-config-file)
+    (define-key fn-custom-prefix-map (kbd "b o") 'fn/find-main-org-file)
 
     ;; Special Buffers
-    (global-set-key (kbd "C-c m b j") 'fn/display-jabber-roster-buffer)
+    (define-key fn-custom-prefix-map (kbd "b j") 'fn/display-jabber-roster-buffer)
 
 
     ;; Dired
-    (global-set-key (kbd "C-c m d h") #'fn/dired-emacs-dir)
-    (global-set-key (kbd "C-c m d d") #'fn/dired-download-dir)
-    (global-set-key (kbd "C-c m d m") #'fn/dired-mountain-dir)
-    (global-set-key (kbd "C-c m d f") #'fn/dired-fakespace-dir)
+    (define-key fn-custom-prefix-map (kbd "d h") #'fn/dired-emacs-dir)
+    (define-key fn-custom-prefix-map (kbd "d d") #'fn/dired-download-dir)
+    (define-key fn-custom-prefix-map (kbd "d m") #'fn/dired-mountain-dir)
+    (define-key fn-custom-prefix-map (kbd "d f") #'fn/dired-fakespace-dir)
 
-    (global-set-key (kbd "C-c m ^") #'fn/dired-parent)
+    (define-key fn-custom-prefix-map (kbd "^") #'fn/dired-parent)
 
 
     ;; Namer
-    (global-set-key (kbd "C-c m v c") #'fmv/insert-camel-case)
-    (global-set-key (kbd "C-c m v h") #'fmv/insert-hyphenated)
+    (define-key fn-custom-prefix-map (kbd "v c") #'fmv/insert-camel-case)
+    (define-key fn-custom-prefix-map (kbd "v h") #'fmv/insert-hyphenated)
 
     ;; Functions
-    (global-set-key (kbd  "C-c m r s") 'fn/startup)
-    (global-set-key (kbd  "C-c m r c") 'fn/cleanup)
+    (define-key fn-custom-prefix-map (kbd  "r s") 'fn/startup)
+    (define-key fn-custom-prefix-map (kbd  "r c") 'fn/cleanup)
 
     ;; Custom Emacs
-    (global-set-key (kbd  "C-c m e e") 'fn/bootstrap-experimental)
-    (global-set-key (kbd  "C-c m e s") 'fn/bootstrap-spacemacs)
-    (global-set-key (kbd  "C-c m e f") 'fn/bootstrap-from-dir)
+    (define-key fn-custom-prefix-map (kbd  "e e") 'fn/bootstrap-experimental)
+    (define-key fn-custom-prefix-map (kbd  "e s") 'fn/bootstrap-spacemacs)
+    (define-key fn-custom-prefix-map (kbd  "e f") 'fn/bootstrap-from-dir)
 
     ;; Review Custom Emacs
-    (global-set-key (kbd  "C-c m e p") 'fn/bootstrap-steve-purcell)
-    (global-set-key (kbd  "C-c m e z") 'fn/bootstrap-zak-elep)
-    (global-set-key (kbd  "C-c m e c") 'fn/bootstrap-sacha-chua)
-    (global-set-key (kbd  "C-c m e j") 'fn/bootstrap-john-wiegley)
+    (define-key fn-custom-prefix-map (kbd  "e p") 'fn/bootstrap-steve-purcell)
+    (define-key fn-custom-prefix-map (kbd  "e z") 'fn/bootstrap-zak-elep)
+    (define-key fn-custom-prefix-map (kbd  "e c") 'fn/bootstrap-sacha-chua)
+    (define-key fn-custom-prefix-map (kbd  "e j") 'fn/bootstrap-john-wiegley)
   #+END_SRC
 
 * Sandbox
