@@ -930,7 +930,7 @@
       (use-package workgroups2
         :ensure t
         :bind (:map fn-standard-prefix-map
-                    ("n w" . workgroups-mode))
+                    ("w" . workgroups-mode))
         :init
         (setq wg-prefix-key (kbd "C-c w")
               wg-session-file (expand-file-name "workgroups" fn/cache-dir))
@@ -1830,7 +1830,7 @@
          "My event planning file")
 
        (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
-             org-directory (concat fn/org-dir "/")))
+          org-directory (concat fn/org-dir "/")))
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -1920,32 +1920,55 @@
         (org)
         (setq org-agenda-span 14 ;; Fortnight
 
-              org-agenda-window-setup 'current-window
+           org-agenda-window-setup 'current-window
 
-              org-agenda-files (list
-                                fn/org-main-file
-                                fn/org-todo-file
-                                fn/org-event-file)
-
-              org-refile-targets nil))
+           org-agenda-files (list
+                             fn/org-main-file
+                             fn/org-todo-file
+                             fn/org-event-file)))
     #+END_SRC
 
-*** org-clock
-    Configuration for org-clock
+*** org-refile
+    Some refiling actions perhaps?
 
     #+BEGIN_SRC emacs-lisp
-      (use-feature org-clock
+      (use-feature org-archive
         (org)
-        (setq org-log-done 'time)
+        (setq org-log-refile 'time
+           org-refile-targets nil))
+    #+END_SRC
 
-        (defun fn/clock-todo-change ()
-          "A nice little hook that clocks in when a todo is change to PENDING"
-          (let ((new-state org-state))
-            (pcase new-state
-              ("PENDING" (org-clock-in))
-              (_ nil))))
+*** org-archiving
+    Archiving is needed to avoid bloating.
 
-        (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
+    #+BEGIN_SRC emacs-lisp
+      (use-feature org-refile
+        (org)
+        (defconst fn/org-archive-file (expand-file-name "archive.org" fn/org-dir)
+          "My archiving file.  Handy in just one neat location.")
+
+        (defconst fn/org-archive-format "* %s"
+          "Just archive under the file header.")
+
+
+        (setq org-archive-location
+           (format
+            "%s::%s"
+            fn/org-archive-file
+            fn/org-archive-format))
+
+
+        (defun fn/org-archive-done-agenda-tasks ()
+          "Archive done agenda tasks."
+          (message "Archiving done agenda tasks.")
+          (org-map-entries
+           (lambda ()
+             (when (org-entry-is-done-p)
+               (org-archive-subtree)))
+           t 'agenda))
+
+        ;; Archive done tasks on m
+        (add-hook 'after-init-hook #'fn/org-archive-done-agenda-tasks))
     #+END_SRC
 
 *** org-journal
@@ -2068,6 +2091,24 @@
            (defvar fnr/enable-auto-export-on-save t
              "When non-nil. auto exports org-reveal files on save"))))
     #+END_SRC
+*** org-clock
+    Configuration for org-clock
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature org-clock
+        (org)
+        (setq org-log-done 'time)
+
+        (defun fn/clock-todo-change ()
+          "A nice little hook that clocks in when a todo is change to PENDING"
+          (let ((new-state org-state))
+            (pcase new-state
+              ("PENDING" (org-clock-in))
+              (_ nil))))
+
+        (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
+    #+END_SRC
+
 *** org-drill
     Flash cards are a must
 
@@ -3656,6 +3697,15 @@
 
        (define-key emms-volume-minor-mode-map (kbd "C-c -") 'emms-volume-minus)
        (define-key emms-volume-minor-mode-map (kbd "C-c +") 'emms-volume-plus))
+   #+END_SRC
+
+** figlet
+   Annoying people with text
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package figlet
+       :ensure t
+       :defer t)
    #+END_SRC
 
 * Scripts
