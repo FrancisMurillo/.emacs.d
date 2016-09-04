@@ -232,14 +232,14 @@
    Backups are good, just annoying when things are good
 
    #+BEGIN_SRC emacs-lisp
-     (defconst fn/backup-dir-name "backups"
+     (defconst fn/backup-dir-name "backups/"
        "Backup directory name")
 
      (defconst fn/backup-dir (expand-file-name fn/backup-dir-name fn/cache-dir)
        "Backup directory")
 
 
-     (defconst fn/auto-save-dir-name "auto-save-list"
+     (defconst fn/auto-save-dir-name "auto-save-list/"
        "Auto save directory name")
 
      (defconst fn/auto-save-dir (expand-file-name fn/auto-save-dir-name fn/cache-dir)
@@ -256,11 +256,16 @@
            kept-new-versions 10
            kept-old-versions 50
 
-           backup-directory-alist (list
-                                   (cons "." fn/backup-dir))
+           backup-directory-alist
+           (list
+            (cons "." fn/backup-dir))
 
-           auto-save-file-name-transforms (list
-                                           (list ".*" fn/auto-save-dir t)))
+           auto-save-list-file-prefix
+           fn/auto-save-dir
+
+           auto-save-file-name-transforms
+           (list
+            (list ".*" fn/auto-save-dir t)))
    #+END_SRC
 
 ** History
@@ -1830,7 +1835,7 @@
          "My event planning file")
 
        (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
-          org-directory (concat fn/org-dir "/")))
+             org-directory (concat fn/org-dir "/")))
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -1920,12 +1925,12 @@
         (org)
         (setq org-agenda-span 14 ;; Fortnight
 
-           org-agenda-window-setup 'current-window
+              org-agenda-window-setup 'current-window
 
-           org-agenda-files (list
-                             fn/org-main-file
-                             fn/org-todo-file
-                             fn/org-event-file)))
+              org-agenda-files (list
+                                fn/org-main-file
+                                fn/org-todo-file
+                                fn/org-event-file)))
     #+END_SRC
 
 *** org-refile
@@ -1935,7 +1940,7 @@
       (use-feature org-archive
         (org)
         (setq org-log-refile 'time
-           org-refile-targets nil))
+              org-refile-targets nil))
     #+END_SRC
 
 *** org-archiving
@@ -1952,10 +1957,10 @@
 
 
         (setq org-archive-location
-           (format
-            "%s::%s"
-            fn/org-archive-file
-            fn/org-archive-format))
+              (format
+               "%s::%s"
+               fn/org-archive-file
+               fn/org-archive-format))
 
 
         (defun fn/org-archive-done-agenda-tasks ()
@@ -2201,10 +2206,21 @@
     #+BEGIN_SRC emacs-lisp
       (use-package image-dired
         :ensure t
-        :after image-dired
+        :after dired
         :defer t
         :config
-        (setq image-dired-dir (expand-file-name "image-dired" fn/cache-dir-name)))
+        (setq image-dired-dir (expand-file-name "image-dired" fn/cache-dir-name)
+
+              image-dired-gallery-dir image-dired-dir
+
+              image-dired-db-file
+              (expand-file-name ".image-dired_db" image-dired-dir)
+              image-dired-temp-image-file
+              (expand-file-name ".image-dired_temp" image-dired-dir)
+              image-dired-temp-image-file
+              (expand-file-name ".image-dired_rotate_temp" image-dired-dir)
+
+              image-dired-main-image-directory "~/Pictures"))
     #+END_SRC
 
 *** tmtxt
