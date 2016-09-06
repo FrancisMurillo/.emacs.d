@@ -940,7 +940,7 @@
         :init
         (setq wg-prefix-key (kbd "C-c w")
               wg-session-file (expand-file-name "workgroups" fn/cache-dir))
-
+        :config
         (setq wg-morph-on nil)
 
         (setq wg-emacs-exit-save-behavior           'save
@@ -953,6 +953,19 @@
               wg-mode-line-decor-left-brace "["
               wg-mode-line-decor-right-brace "]"
               wg-mode-line-decor-divider ":")
+
+        (use-feature spaceline-workgroup
+          (spaceline)
+          (spaceline-define-segment workgroups
+            "Name of the current workgroup."
+            (when
+                (and
+                 (fboundp 'wg-current-workgroup)
+                 (fboundp 'wg-workgroup-name)
+                 (stringp (wg-workgroup-name (wg-current-workgroup))))
+              (wg-workgroup-name (wg-current-workgroup))))
+
+          (spaceline-toggle-workgroups-on))
 
 
         (defun fn/workgroup-init ()
@@ -1703,6 +1716,14 @@
           "Time for zone to zone")
 
         (zone-when-idle fn/zone-idle-time)
+
+        (defun fn/focused-zone (orig-zone &rest args)
+          "Only show one window while zoning."
+          (save-window-excursion
+            (delete-other-windows)
+            (apply orig-zone args)))
+
+        (advice-add #'zone :around #'fn/focused-zone)
 
         (setq zone-programs (list)))
 
