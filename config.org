@@ -1028,7 +1028,7 @@
         (add-hook 'focus-out-hook #'golden-ratio)
 
 
-        (use-feature golend-workgroups
+        (use-feature golden-workgroups
           (workgroups2)
           ;; When switching workgroups, make sure the screen is rationed correctly
           (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
@@ -1292,16 +1292,15 @@
                    (lambda (f pair)
                      (cons (funcall f (car pair))
                            (cdr pair))))
-
                   (pair-as-label
                    (lambda (pairs)
                      (lexical-let*
                          ((display-formatter
                            (lambda (name description)
                              (format "%-s %s %-s"
-                                     name
-                                     fmc/completion-separator
-                                     description))))
+                                     (propertize name 'font-lock-face 'fmc/completion-label-face)
+                                     (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-separator)
+                                     (propertize description 'font-lock-face 'fmc/completion-description-face)))))
                        (lambda (pair)
                          (lexical-let*
                              ((unique-path (car pair))
@@ -1360,12 +1359,6 @@
                         as-pair)
                        refined-paths)))
 
-           ;; CUSTOM: Customized helm-projectile
-           (setq helm-source-projectile-projects--mapper #'fmc/uniquify-project-paths
-                 helm-source-projectile-files--mapper #'fmc/uniquify-project-paths
-                 helm-source-projectile-directories--mapper #'fmc/uniquify-project-paths)
-
-
            (defun fmc/custom-helm-completion (prompt choices)
              "Just a custom helm completion for projection"
              (prog1
@@ -1373,29 +1366,6 @@
                                  :buffer fmc/completion-buffer-name
                                  :must-match 'confirm)
                (kill-buffer fmc/completion-buffer-name)))
-
-
-           (defun fmc/custom-completion-fontify (&optional this-buffer)
-             "Special fontify a buffer"
-             (with-current-buffer (or this-buffer (current-buffer))
-               (let ((line-regex (format
-                                  "\\(.*\\) \\(%s\\) \\(.*\\)"
-                                  fmc/completion-separator)))
-                 (font-lock-add-keywords nil
-                                         (list
-                                          (list line-regex 2
-                                                'fmc/completion-delimiter-face t)
-                                          (list line-regex 1
-                                                'fmc/completion-label-face t t)
-                                          (list line-regex 3
-                                                'fmc/completion-description-face t))))))
-
-           (defun fmc/custom-completion-buffer-fontify ()
-             "Fontify the unique buffer"
-             (when (get-buffer fmc/completion-buffer-name)
-               (fmc/custom-completion-fontify fmc/completion-buffer-name)))
-
-           (add-hook 'helm--minor-mode-hook #'fmc/custom-completion-buffer-fontify)
 
            (setq projectile-completion-system #'fmc/custom-helm-completion)))
      #+END_SRC
