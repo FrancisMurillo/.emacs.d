@@ -530,6 +530,7 @@
    #+BEGIN_SRC emacs-lisp
      (use-package auto-compile
        :ensure t
+       :demand t
        :config
        (auto-compile-on-load-mode)
        (auto-compile-on-save-mode))
@@ -1173,7 +1174,6 @@
                ("C-h a" . helm-apropos)
                ("C-h r" . helm-info-emacs)
                ("C-x b" . helm-mini)
-               ("C-x C-b" . helm-buffers-list)
                ("C-x C-f" . helm-find-files)
                ("M-s o" . helm-occur)
                ("C-c C-/" . helm-dabbrev))
@@ -1186,34 +1186,32 @@
         ;; core & utils
         (setq helm-yank-symbol-first t
 
-              helm-mode-fuzzy-match nil
+           helm-mode-fuzzy-match nil
 
-              helm-su-or-sudo "sudo"
+           helm-su-or-sudo "sudo"
 
-              helm-input-idle-delay (/ 1 60.0) ;; 60fps
-              helm-exit-idle-delay (/ 1 60.0)  ;; ditto
+           helm-input-idle-delay (/ 1 60.0) ;; 60fps
+           helm-exit-idle-delay (/ 1 60.0)  ;; ditto
 
-              helm-echo-input-in-header-line nil ;; If the theme does not block it
+           helm-echo-input-in-header-line nil ;; If the theme does not block it
 
-              helm-split-window-default-side 'same
+           helm-split-window-default-side 'same
 
-              helm-debug-root-directory fn/cache-dir)
+           helm-debug-root-directory fn/cache-dir)
 
 
         ;; files & command
         (setq helm-ff-file-name-history-use-recentf t
-              helm-ff-auto-update-initial-value t
+           helm-ff-auto-update-initial-value t
 
-              helm-M-x-always-save-history t)
+           helm-M-x-always-save-history t)
 
 
         ;; adaptive
         (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
-              helm-adaptive-history-length 100)
+           helm-adaptive-history-length 100)
 
-        (helm-adaptive-mode t)
-
-        (ido-mode -1))
+        (helm-adaptive-mode t))
     #+END_SRC
 
 **** helm-projectile
@@ -1370,6 +1368,23 @@
            (setq projectile-completion-system #'fmc/custom-helm-completion)))
      #+END_SRC
 
+**** helm-smex
+     =smex= is faster than =helm-M-x=
+
+     #+BEGIN_SRC emacs-lisp
+       (use-package smex
+         :ensure t
+         :demand t
+         :config
+         (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
+            smex-history-length (or helm-adaptive-history-length 100)))
+
+       (use-package helm-smex
+         :ensure t
+         :after smex
+         :bind (("M-x" . helm-smex)))
+     #+END_SRC
+
 *** ivy
     A lighter and faster library than [[helm]] that uses the minibuffer
     instead of a separate window.
@@ -1495,6 +1510,17 @@
         :config
         (setq paradox-github-token t))
     #+END_SRC
+
+**** helm-flx
+     Flex matching is strong
+
+     #+BEGIN_SRC emacs-lisp
+       (use-package helm-flx
+         :ensure t
+         :after helm
+         :config
+         (helm-flx-mode t))
+     #+END_SRC
 
 * Artist
   Visual aesthetics is also a functional thing as well
@@ -3762,7 +3788,9 @@
    #+BEGIN_SRC emacs-lisp
      (use-package figlet
        :ensure t
-       :defer t)
+       :defer t
+       :config
+       (setq figlet-default-font "slant"))
    #+END_SRC
 
 * Scripts
