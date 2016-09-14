@@ -546,14 +546,24 @@
        :load-path fn/promise-package-dir
        :demand t
        :config
+       (defmacro use-function (name function &rest body)
+         (let ((function-name-var (make-symbol "function-name")))
+           `(let ((,function-name-var ,(symbol-name name)))
+              (message "Checking function %s" ,function-name-var)
+              (if (not (fboundp (quote ,function)))
+                  (message "Function does not exist")
+                (message "Loading function %s" ,function-name-var)
+                ,@body
+                (message "Configured function %s" ,function-name-var)))))
+
        (defmacro use-feature (name features &rest body)
          (let ((now-var (make-symbol "now"))
                (elapsed-var (make-symbol "elapsed"))
                (feature-name-var (make-symbol "feature-name")))
            `(promise-then
              (apply #'promise-all-features (list ,@(if features
-                                                 (mapcar (lambda (feature) (list 'quote feature)) features)
-                                               (list (list 'quote 'use-package)))))
+                                                       (mapcar (lambda (feature) (list 'quote feature)) features)
+                                                     (list (list 'quote 'use-package)))))
              (lambda (loaded-features)
                (let ((,feature-name-var ,(symbol-name name))
                      (,now-var (current-time)))
@@ -571,7 +581,8 @@
                    nil))))))
 
        ;; Indent like =use-packagh=
-       (put 'use-feature 'lisp-indent-function 'defun))
+       (put 'use-feature 'lisp-indent-function 'defun)
+       (put 'use-function 'lisp-indent-function 'defun))
    #+END_SRC
 
 * Terminator
@@ -676,7 +687,8 @@
      (use-package prodigy
        :ensure t
        :bind (:map fn-standard-prefix-map
-                   ("P" . prodigy)))
+                   ("P" . prodigy))
+       :demand t)
    #+END_SRC
 ** emamux
    Work better with tmux
@@ -2755,8 +2767,8 @@
     Prettify some symbols to make it visible.
 
     #+BEGIN_SRC emacs-lisp
-      (use-feature prettify-elisp
-        (prettify-symbols-mode)
+      (use-function prettify-elisp
+        prettify-symbols-mode
         (add-hook
          'emacs-lisp-mode-hook
          (lambda ()
@@ -3038,68 +3050,70 @@
     My symbols for JS
 
     #+BEGIN_SRC emacs-lisp
-      (use-feature prettify-js2
-        (prettify-symbols-mode js2-mode)
-        (add-hook 'js2-mode-hook
-                  (lambda ()
-                    (push '("function" . ?λ) prettify-symbols-alist)
-                    (push '("arguments" . ?ω) prettify-symbols-alist)
-                    (push '("var" . ?ν) prettify-symbols-alist)
-                    (push '("return" . ?ρ) prettify-symbols-alist)
-                    (push '("this" . ?ι) prettify-symbols-alist)
+      (use-function prettify-js2
+        prettify-symbols-mode
+        (use-feature prettify-js2
+          (js2-mode)
+          (add-hook 'js2-mode-hook
+                    (lambda ()
+                      (push '("function" . ?λ) prettify-symbols-alist)
+                      (push '("arguments" . ?ω) prettify-symbols-alist)
+                      (push '("var" . ?ν) prettify-symbols-alist)
+                      (push '("return" . ?ρ) prettify-symbols-alist)
+                      (push '("this" . ?ι) prettify-symbols-alist)
 
-                    (push '("for" . ?∫) prettify-symbols-alist)
-                    (push '("in" . ?⊂ ) prettify-symbols-alist)
+                      (push '("for" . ?∫) prettify-symbols-alist)
+                      (push '("in" . ?⊂ ) prettify-symbols-alist)
 
-                    (push '("Object" . ?Θ) prettify-symbols-alist)
+                      (push '("Object" . ?Θ) prettify-symbols-alist)
 
-                    (push '("if" . ?α) prettify-symbols-alist)
-                    (push '("else if" . ?β) prettify-symbols-alist)
-                    (push '("else" . ?γ) prettify-symbols-alist)
+                      (push '("if" . ?α) prettify-symbols-alist)
+                      (push '("else if" . ?β) prettify-symbols-alist)
+                      (push '("else" . ?γ) prettify-symbols-alist)
 
-                    (push '("->" . ?→) prettify-symbols-alist)
-                    (push '("&&" . ?∧) prettify-symbols-alist)
-                    (push '("||" . ?∨) prettify-symbols-alist)
+                      (push '("->" . ?→) prettify-symbols-alist)
+                      (push '("&&" . ?∧) prettify-symbols-alist)
+                      (push '("||" . ?∨) prettify-symbols-alist)
 
-                    (push '("!" . ?¬) prettify-symbols-alist)
-                    (push '("!!" . ?⌐) prettify-symbols-alist)
+                      (push '("!" . ?¬) prettify-symbols-alist)
+                      (push '("!!" . ?⌐) prettify-symbols-alist)
 
-                    (push '("=" . ?⟵) prettify-symbols-alist)
-                    (push '(":" . ?⟵) prettify-symbols-alist)
+                      (push '("=" . ?⟵) prettify-symbols-alist)
+                      (push '(":" . ?⟵) prettify-symbols-alist)
 
-                    (push '("===" . ?≡) prettify-symbols-alist)
-                    (push '("!==" . ?≢) prettify-symbols-alist)
+                      (push '("===" . ?≡) prettify-symbols-alist)
+                      (push '("!==" . ?≢) prettify-symbols-alist)
 
-                    (push '(">=" . ?≧) prettify-symbols-alist)
-                    (push '("<=" . ?≦) prettify-symbols-alist)
+                      (push '(">=" . ?≧) prettify-symbols-alist)
+                      (push '("<=" . ?≦) prettify-symbols-alist)
 
-                    (push '("true" . ?⊤) prettify-symbols-alist)
-                    (push '("false" . ?⊥) prettify-symbols-alist)
+                      (push '("true" . ?⊤) prettify-symbols-alist)
+                      (push '("false" . ?⊥) prettify-symbols-alist)
 
-                    (push '("null" . ?∅) prettify-symbols-alist)
-                    (push '("undefined" . ?↑) prettify-symbols-alist)
+                      (push '("null" . ?∅) prettify-symbols-alist)
+                      (push '("undefined" . ?↑) prettify-symbols-alist)
 
-                    (push '(", ". ?⟼) prettify-symbols-alist)
-                    (push '("{". ?⟹) prettify-symbols-alist)
-                    (push '("},". ?⟺) prettify-symbols-alist)
-                    (push '("}". ?⟸) prettify-symbols-alist)
-                    (push '("};". ?⟽) prettify-symbols-alist)
+                      (push '(", ". ?⟼) prettify-symbols-alist)
+                      (push '("{". ?⟹) prettify-symbols-alist)
+                      (push '("},". ?⟺) prettify-symbols-alist)
+                      (push '("}". ?⟸) prettify-symbols-alist)
+                      (push '("};". ?⟽) prettify-symbols-alist)
 
-                    (push '("(". ?⟖) prettify-symbols-alist)
-                    (push '(")". ?⟕) prettify-symbols-alist)
-                    (push '(");". ?⟕) prettify-symbols-alist)
-                    (push '("),". ?⟗) prettify-symbols-alist)
-                    (push '(").". ?⟗) prettify-symbols-alist)
+                      (push '("(". ?⟖) prettify-symbols-alist)
+                      (push '(")". ?⟕) prettify-symbols-alist)
+                      (push '(");". ?⟕) prettify-symbols-alist)
+                      (push '("),". ?⟗) prettify-symbols-alist)
+                      (push '(").". ?⟗) prettify-symbols-alist)
 
-                    (push '("[". ?⊏) prettify-symbols-alist)
-                    (push '("]". ?⊐) prettify-symbols-alist)
-                    (push '("],". ?⊡) prettify-symbols-alist)
-                    (push '("].". ?⊡) prettify-symbols-alist)
-                    (push '("];". ?⊐) prettify-symbols-alist)
+                      (push '("[". ?⊏) prettify-symbols-alist)
+                      (push '("]". ?⊐) prettify-symbols-alist)
+                      (push '("],". ?⊡) prettify-symbols-alist)
+                      (push '("].". ?⊡) prettify-symbols-alist)
+                      (push '("];". ?⊐) prettify-symbols-alist)
 
-                    (push '(";". ?⟐) prettify-symbols-alist)
+                      (push '(";". ?⟐) prettify-symbols-alist)
 
-                    (prettify-symbols-mode t))))
+                      (prettify-symbols-mode t)))))
     #+END_SRC
 *** JSON
     JSON support
