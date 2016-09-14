@@ -127,11 +127,19 @@
        "Anything under the sun directory")
 
 
-     (defconst fn/custom-package-dir-name "elisp"
+     (defconst fn/custom-module-dir-name "modules"
        "Custom elisp packages directory name")
 
-     (defconst fn/custom-package-dir (expand-file-name fn/custom-package-dir-name user-emacs-directory)
+     (defconst fn/custom-module-dir (expand-file-name fn/custom-module-dir-name fn/library-dir)
        "Custom elisp packages directory")
+
+     (defconst fn/custom-script-dir-name "scripts"
+       "Custom elisp script directory name")
+
+     (defconst fn/custom-script-dir (expand-file-name fn/custom-script-dir-name fn/library-dir)
+       "Custom elisp script directory")
+
+     (add-to-list 'load-path fn/custom-script-dir)
    #+END_SRC
 
 * Basic Setup
@@ -444,7 +452,7 @@
 
      (use-package unicode-fonts
        :ensure t
-       :disabled t
+       :demand t
        :config
        (unicode-fonts-setup))
    #+END_SRC
@@ -454,7 +462,7 @@
 
    #+BEGIN_SRC emacs-lisp
      (defconst fn/exec-path-from-shell-package-dir
-       (expand-file-name "exec-path-from-shell/" fn/custom-package-dir)
+       (expand-file-name "exec-path-from-shell/" fn/custom-module-dir)
        "Htmlize package dir")
 
      (use-package exec-path-from-shell
@@ -489,7 +497,7 @@
    For exporting purposes
 
    #+BEGIN_SRC emacs-lisp
-     (defconst fn/htmlize-package-dir (expand-file-name "htmlize-custom/" fn/custom-package-dir)
+     (defconst fn/htmlize-package-dir (expand-file-name "htmlize-custom/" fn/custom-module-dir)
        "Htmlize package dir")
 
      (use-package htmlize
@@ -539,7 +547,7 @@
    Something to help with package configuration
 
    #+BEGIN_SRC emacs-lisp
-     (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-package-dir)
+     (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-module-dir)
        "Promise package location")
 
      (use-package promise
@@ -681,7 +689,7 @@
    Living in the shell requires some genius
 
    #+BEGIN_SRC emacs-lisp
-     (defconst fn/prodigy-dir (expand-file-name "prodigy/" fn/custom-package-dir)
+     (defconst fn/prodigy-dir (expand-file-name "prodigy/" fn/custom-module-dir)
        "Prodigy dir")
 
      (use-package prodigy
@@ -1231,7 +1239,7 @@
      A nice assist for projectile
 
      #+BEGIN_SRC emacs-lisp
-       (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-package-dir)
+       (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-module-dir)
          "My custom helm projectile package")
 
        (use-feature helm-projectile
@@ -1447,6 +1455,7 @@
       (use-package which-key
         :ensure t
         :diminish which-key-mode
+        :demand t
         :config
         (which-key-mode t))
     #+END_SRC
@@ -1633,7 +1642,7 @@
 *** space-line
     A nice way of making a mode line
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :tangle no
       (use-package spaceline
         :ensure t
         :demand t
@@ -1831,6 +1840,16 @@
 
       (setq show-paren-style 'expression)
     #+END_SRC
+** Mode Line
+   The mode line customization.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package mode-line
+       :load-path fn/custom-script-dir
+       :defer 0)
+
+   #+END_SRC
+
 * Organizer
   Things to organize life in general
 
@@ -1838,12 +1857,12 @@
    A nice alert box would be nice
 
    #+BEGIN_SRC emacs-lisp
-     (defconst fn/alert-package-dir (expand-file-name "alert/" fn/custom-package-dir)
+     (defconst fn/alert-package-dir (expand-file-name "alert/" fn/custom-module-dir)
        "My customized alert package")
 
      (use-package alert
        :load-path fn/alert-package-dir
-       :defer t
+       :demand t
        :config
        (setq alert-default-style 'libnotify
              alert-log-messages t)
@@ -2303,7 +2322,7 @@
     Experimental =dired= with =rsync= all thanks to [[https://github.com/tmtxt][tmtxt]]
 
     #+BEGIN_SRC emacs-lisp
-      (defconst fn/tmtxt-package-dir (expand-file-name "tmtxt/" fn/custom-package-dir)
+      (defconst fn/tmtxt-package-dir (expand-file-name "tmtxt/" fn/custom-module-dir)
         "tmtxt package directory")
 
       (use-package tmtxt-async-tasks
@@ -2539,14 +2558,18 @@
         (add-hook 'prog-mode-hook 'flycheck-mode)
         :config
         (setq flycheck-highlighting-mode 'lines
-              flycheck-check-syntax-automatically '(save mode-enabled)
-              flycheck-checker-error-threshold nil))
+           flycheck-check-syntax-automatically '(save mode-enabled)
+           flycheck-checker-error-threshold nil))
 
       (use-package flycheck-pos-tip
         :ensure t
         :after flycheck
         :config
         (flycheck-pos-tip-mode t))
+
+      (use-package flycheck-status-emoji
+        :ensure t
+        :after flycheck)
     #+END_SRC
 
 *** magit
@@ -2969,7 +2992,7 @@
     disabling it.
 
     #+BEGIN_SRC emacs-lisp
-      (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-package-dir)
+      (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-module-dir)
         "My performance customization on tern")
 
       (use-package tern
@@ -3383,23 +3406,25 @@
     My symbols for Haskell
 
     #+BEGIN_SRC emacs-lisp
-      (use-feature prettify-haskell
-        (prettify-symbols-mode haskell-mode)
-        (defun fn/prettiy-haskell ()
-          "Some haskell prettifier"
-          (push '("->" . ?→) prettify-symbols-alist)
-          (push '("let" . ?ν) prettify-symbols-alist)
-          (push '("if" . ?α) prettify-symbols-alist)
-          (push '("in" . ?ε) prettify-symbols-alist)
-          (push '("then" . ?σ) prettify-symbols-alist)
-          (push '("else" . ?τ) prettify-symbols-alist)
-          (push '("where" . ?δ) prettify-symbols-alist)
-          (push '("module" . ?θ) prettify-symbols-alist)
-          (push '("data" . ?Τ) prettify-symbols-alist)
-          (push '("deriving" . ?Δ) prettify-symbols-alist)
-          (prettify-symbols-mode t))
+      (use-function prettify-haskell
+        prettify-symbols-mode
+        (use-feature prettify-haskell
+          (prettify-symbols-mode haskell-mode)
+          (defun fn/prettiy-haskell ()
+            "Some haskell prettifier"
+            (push '("->" . ?→) prettify-symbols-alist)
+            (push '("let" . ?ν) prettify-symbols-alist)
+            (push '("if" . ?α) prettify-symbols-alist)
+            (push '("in" . ?ε) prettify-symbols-alist)
+            (push '("then" . ?σ) prettify-symbols-alist)
+            (push '("else" . ?τ) prettify-symbols-alist)
+            (push '("where" . ?δ) prettify-symbols-alist)
+            (push '("module" . ?θ) prettify-symbols-alist)
+            (push '("data" . ?Τ) prettify-symbols-alist)
+            (push '("deriving" . ?Δ) prettify-symbols-alist)
+            (prettify-symbols-mode t))
 
-        (add-hook 'haskell-mode-hook #'fn/prettiy-haskell))
+          (add-hook 'haskell-mode-hook #'fn/prettiy-haskell)))
     #+END_SRC
 
 *** Snippets
@@ -4713,7 +4738,7 @@
       :ensure t
       :defer t)
 
-    (defconst fn/meghnada-emacs-package-dir (expand-file-name "meghanada-emacs" fn/custom-package-dir)
+    (defconst fn/meghnada-emacs-package-dir (expand-file-name "meghanada-emacs" fn/custom-module-dir)
       "Meghanda emacs package")
 
     (use-package meghanada-mode

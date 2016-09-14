@@ -31,6 +31,17 @@
 
 (setq load-prefer-newer t)
 
+
+(require 'package)
+
+(defconst fn/library-dir (expand-file-name "lib" user-emacs-directory)
+  "A library directory for the dependencies.")
+
+(defconst fn/package-dir (expand-file-name "packages" fn/library-dir)
+  "A library for my emacs packages.")
+
+(setq package-user-dir fn/package-dir)
+
 ;; customize loading the packages
 (package-initialize t)
 
@@ -47,7 +58,7 @@
 
   (package-refresh-contents)
   (package-install 'use-package)
-  (require 'use-package)
+
 
   (use-package org
     :ensure t)
@@ -55,6 +66,8 @@
     :ensure t)
 
   (kill-emacs))
+
+(require 'use-package)
 
 (defcustom fn/pre-config-file "pre-config.el"
   "File script to load before the main configuration loads, useful for setting options")

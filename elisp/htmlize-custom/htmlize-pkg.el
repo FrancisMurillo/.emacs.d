@@ -1,1 +1,0 @@
-(define-package "htmlize" "20130207.1202" "Convert buffer text and decorations to HTML. Customized to work with because of some issue with font-lock" 'nil :keywords '("hypermedia" "extensions" "hack"))

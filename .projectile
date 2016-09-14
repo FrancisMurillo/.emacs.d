@@ -5,8 +5,8 @@
 -/.git
 -.git
 
--/elpa
 -/lib
+-/extra
 
 -/.python-environments
 
