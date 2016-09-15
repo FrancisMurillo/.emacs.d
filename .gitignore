@@ -11,4 +11,7 @@ extra/**
 .cask/
 /*.el
 
-lib/*
+lib/sandbox
+lib/packages
+!lib/modules
+!lib/scripts
