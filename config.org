@@ -1530,7 +1530,13 @@
         :bind (:map fn-standard-prefix-map
                     ("p" . paradox-list-packages))
         :config
-        (setq paradox-github-token t))
+        (setq paradox-github-token t)
+
+        (use-feature icon-paradox
+          (all-the-icons)
+          (add-to-list
+           'all-the-icons-mode-icon-alist
+           (list 'paradox-menu-mode 'all-the-icons-faicon "briefcase"))))
     #+END_SRC
 
 **** helm-flx
@@ -1587,6 +1593,10 @@
        :defer t)
 
      (use-package tronesque-theme
+       :ensure t
+       :defer t)
+
+     (use-package material-theme
        :ensure t
        :defer t)
    #+END_SRC
@@ -1844,10 +1854,17 @@
    The mode line customization.
 
    #+BEGIN_SRC emacs-lisp
-     (use-package mode-line
+     (use-package all-the-icons
+       :ensure t
+       :demand t
+       :config
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'fundamental-mode 'all-the-icons-faicon "pencil")))
+
+     (use-package moder
        :load-path fn/custom-script-dir
        :defer 0)
-
    #+END_SRC
 
 * Organizer

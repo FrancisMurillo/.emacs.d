@@ -85,37 +85,37 @@
   "Update the extra mode-line colours based on a mapping to theme."
   (interactive)
   (let* ((theme (car custom-enabled-themes))
-      (primary-alist (plist-get (cadr (assoc theme mode-theme-line-color-alist)) :primary))
-      (secondary-alist (plist-get (cadr (assoc theme mode-theme--line-color-alist)) :secondary)))
+         (primary-alist (plist-get (cadr (assoc theme mode-theme-line-color-alist)) :primary))
+         (secondary-alist (plist-get (cadr (assoc theme mode-theme-line-color-alist)) :secondary)))
     (if (and primary-alist secondary-alist)
         (setq mode-line-c1-primary (car primary-alist)
-           mode-line-c2-primary (cadr primary-alist)
-           mode-line-fg-primary (caddr primary-alist)
-           mode-line-c1-secondary (car secondary-alist)
-           mode-line-c2-secondary (cadr secondary-alist)
-           mode-line-fg-secondary (caddr secondary-alist))
+              mode-line-c2-primary (cadr primary-alist)
+              mode-line-fg-primary (caddr primary-alist)
+              mode-line-c1-secondary (car secondary-alist)
+              mode-line-c2-secondary (cadr secondary-alist)
+              mode-line-fg-secondary (caddr secondary-alist))
       (setq mode-line-fg-primary "white"
-         mode-line-fg-secondary "white"))))
+            mode-line-fg-secondary "white"))))
 
 
 (defun mode-line-set-style ()
   "Set the style of the mode-line separator"
   (interactive)
   (let* ((styles
-       '(("arrow" xpm-arrow-left xpm-arrow-right)
-         ("curve" xpm-curve-left xpm-curve-right)
-         ("bolts" xpm-colon xpm-colon-alt)
-         ("slash-/\\" xpm-slash-left xpm-slash-right)
-         ("slash-//" xpm-slash-left xpm-slash-left)
-         ("slash-\\/" xpm-slash-right xpm-slash-left)
-         ("slash-\\\\" xpm-slash-right xpm-slash-right)
-         ("gradient" xpm-gradient xpm-gradient)))
-      (result (assoc (completing-read "Style: " styles) styles)))
+          '(("arrow" xpm-arrow-left xpm-arrow-right)
+            ("curve" xpm-curve-left xpm-curve-right)
+            ("bolts" xpm-colon xpm-colon-alt)
+            ("slash-/\\" xpm-slash-left xpm-slash-right)
+            ("slash-//" xpm-slash-left xpm-slash-left)
+            ("slash-\\/" xpm-slash-right xpm-slash-left)
+            ("slash-\\\\" xpm-slash-right xpm-slash-right)
+            ("gradient" xpm-gradient xpm-gradient)))
+         (result (assoc (completing-read "Style: " styles) styles)))
     (defalias 'xpm-right (caddr result))
     (defalias 'xpm-left (cadr result))))
 
-(defalias 'xpm-right 'xpm-curve-right)
-(defalias 'xpm-left  'xpm-curve-left)
+(defalias 'xpm-right 'xpm-arrow-right)
+(defalias 'xpm-left  'xpm-arrow-left)
 
 (defvar mode-line-minor-modes nil)
 (defvar mode-line-arrow-shape 'arrow)
@@ -123,11 +123,11 @@
     (bg &optional fg)
   (if bg
       (let ((cface (intern (concat "mode-line-"
-                                 bg
-                                 "-"
-                                 (if fg
-                                     (format "%s" fg)
-                                   "white")))))
+                                   bg
+                                   "-"
+                                   (if fg
+                                       (format "%s" fg)
+                                     "white")))))
         (make-face cface)
         (if fg
             (if (eq fg 0)
@@ -148,7 +148,7 @@
 (defun mode-line-make-left
     (string color1 &optional color2 localmap)
   (let ((plface (mode-line-make-face color1))
-      (arrow  (and color2 (not (string= color1 color2)))))
+        (arrow  (and color2 (not (string= color1 color2)))))
     (concat
      (if (or (not string) (string= string ""))
          ""
@@ -174,7 +174,7 @@
 (defun mode-line-make-right
     (string color2 &optional color1 localmap)
   (let ((plface (mode-line-make-face color2))
-      (arrow  (and color1 (not (string= color1 color2)))))
+        (arrow  (and color1 (not (string= color1 color2)))))
     (concat
      (if arrow
          (propertize " " 'display
@@ -184,7 +184,7 @@
                                             (setq mode-line-arrow-shape 'arrow)
                                             (force-mode-line-update))))
        "")
-     (if arrow
+     (if arrown
          (propertize " " 'face plface)
        "")
      (if string
@@ -199,20 +199,20 @@
 (defun mode-line-make-fill (color)
   ;; justify right by filling with spaces to right fringe, 20 should be calculated
   (let ((plface (mode-line-make-face color))
-      (amount (- (window-total-width)
-                 (+ (- 37 (* (face-attribute 'default :height) 0.11238))
-                    (if (eq (get-buffer-window) mode-line-current-window)
-                        (+ (length (-mode-line-get-weather "%(weather)"))
-                           (length (-mode-line-get-weather "%(sunrise)  %(sunset)"))
-                           (if (and (boundp 'yahoo-weather-info) yahoo-weather-mode) 4 0))
-                      0)
-                    ;; (length (mode-line-flycheck-status))
-                    ;; (length (format-mode-line "%l:%c"))
-                    ;; (if mark-active (length (mode-line-region-info)) 0)
-                    ;; (if (and (fboundp 'boop-format-results)
-                    ;;          (eq (get-buffer-window) mode-line-current-window))
-                    ;;     (+ 1 (length  (boop-format-results))) 0)
-                    (length (-mode-line-get-temp))))))
+        (amount (- (window-total-width)
+                   (+ (- 37 (* (face-attribute 'default :height) 0.11238))
+                      (if (eq (get-buffer-window) mode-line-current-window)
+                          (+ (length (-mode-line-get-weather "%(weather)"))
+                             (length (-mode-line-get-weather "%(sunrise)  %(sunset)"))
+                             (if (and (boundp 'yahoo-weather-info) yahoo-weather-mode) 4 0))
+                        0)
+                      ;; (length (mode-line-flycheck-status))
+                      ;; (length (format-mode-line "%l:%c"))
+                      ;; (if mark-active (length (mode-line-region-info)) 0)
+                      ;; (if (and (fboundp 'boop-format-results)
+                      ;;          (eq (get-buffer-window) mode-line-current-window))
+                      ;;     (+ 1 (length  (boop-format-results))) 0)
+                      (length (-mode-line-get-temp))))))
     (propertize " " 'display `((space :align-to ,amount)) 'face plface)))
 
 
@@ -249,7 +249,7 @@
         (cond ((listp result)
                (format-mode-line result))
               ((not (or (stringp result)
-                     (null result)))
+                        (null result)))
                (progn " ERR"))
               (t
                result)))
@@ -263,7 +263,7 @@
   (let ((icon (all-the-icons-icon-for-buffer)))
     (concat
      (when (or (symbolp icon) ;; This implies it's the major mode
-              mode-line-process)
+               mode-line-process)
        (propertize
         (format-mode-line " %m")
         'face `(:height 0.8 :foreground ,(mode-line-fg) :background ,(mode-line-c1))
@@ -276,9 +276,9 @@
 
 (defun mode-line-project-id (&rest args)
   (lexical-let ((default-props
-        (list 'face (list :height 0.8))).)
+                  (list 'face (list :height 0.8))).)
     (if (and (fboundp 'projectile-project-name)
-           (projectile-project-name))
+             (projectile-project-name))
         (format
          " | %s |"
          (propertize
@@ -293,11 +293,11 @@
 (defun mode-line-buffer-id (&rest args)
   (if (and (fboundp 'projectile-project-root))
       (let* ((buf (or (buffer-file-name) (buffer-name)))
-          (proj (ignore-errors (projectile-project-root)) )
-          (name (if (buffer-file-name)
-                    (or (cadr (split-string buf proj))
-                       (format-mode-line "%b"))
-                  (format-mode-line "%b"))))
+             (proj (ignore-errors (projectile-project-root)) )
+             (name (if (buffer-file-name)
+                       (or (cadr (split-string buf proj))
+                           (format-mode-line "%b"))
+                     (format-mode-line "%b"))))
         (propertize (format "  %s" name)
                     'face `(:height 0.8)
                     'help-echo (format "Major-mode: `%s`" major-mode)))
@@ -306,13 +306,13 @@
 (defun mode-line-flycheck-status (&rest args)
   (when (fboundp 'flycheck-status-emoji-mode-line-text)
     (let* ((text (cadr (flycheck-status-emoji-mode-line-text)))
-        (fg (cond
-             ((not mode-line/colour-flycheck?) (mode-line-fg))
-             ((string-match "Disabled" text) (mode-line-fg))
-             ((string-match "Running" text) (mode-line-fg))
-             ((string-match "⚠" text) (face-attribute 'warning :foreground))
-             ((string-match "✖" text) (face-attribute 'error :foreground))
-             (t (face-attribute 'success :foreground)))))
+           (fg (cond
+                ((not mode-line/colour-flycheck?) (mode-line-fg))
+                ((string-match "Disabled" text) (mode-line-fg))
+                ((string-match "Running" text) (mode-line-fg))
+                ((string-match "⚠" text) (face-attribute 'warning :foreground))
+                ((string-match "✖" text) (face-attribute 'error :foreground))
+                (t (face-attribute 'success :foreground)))))
       (concat
        (when (and
               vc-mode
@@ -358,6 +358,8 @@
        'face `(:height 0.8 :foreground ,(mode-line-fg) :background ,(mode-line-c1))
        'display '(raise 0.1)))))
 
+
+
 (defun mode-line-modified ()
   "Indicates if the buffer is modified."
   (let* ((config-alist
@@ -388,21 +390,6 @@
      'face
      (list
       :family (funcall icon-font-function)))))
-
-(setq-default mode-line-format
-   (list "%e"
-      (list :eval
-         (quote
-          (condition-case ex
-              (concat
-               (mode-line-modified)
-               (mode-line-window-number  'left  nil  )
-               (mode-line-make-left "meow" (mode-line-c1) (mode-line-c2))
-               (mode-line-mode-icon)
-               (mode-line-project-id)
-               (mode-line-buffer-id)
-               (mode-line-process))
-            ('error (error-message-string ex)))))))
 
 (provide 'mode-line)
 

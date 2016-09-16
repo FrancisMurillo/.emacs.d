@@ -123,43 +123,49 @@ static char * arrow_left[] = {
            (if color2 color2 "None"))
    'xpm t :ascent 'center))
 
-(defun xpm-arrow-left (color1 color2)
+(defun xpm-arrow-left (color1 color2 &optional width height)
   "Return an XPM left arrow string representing."
-  (create-image
-   (format "/* XPM */
+  (lexical-let* ((forward-dots
+       (lambda (dots width)
+         (apply
+          #'concat
+          (mapcar
+           (lambda (n)
+             (if (<= n dots) "." " "))
+           (number-sequence 1 width)))))
+      (triangle-dots
+       (lambda (width height)
+         (lexical-let* ((factor (* 2.0 (float width) (/ (float height))))
+             (half-height (/ height 2.0)))
+           (string-join
+            (mapcar
+             (lambda (h)
+               (lexical-let* ((normal-width
+                    (if (<= h half-height)
+                        h
+                      (1+ (- height h))))
+                   (dots (round (* normal-width factor)))
+                   (inner-dots (funcall forward-dots dots width)))
+                 (format "\"%s\"" inner-dots)))
+             (number-sequence 1 height))
+            ","))))
+      (final-width (if width width 14))
+      (final-height (if height height 26))
+      (arrow-text
+       (funcall triangle-dots final-width final-height)))
+    (create-image
+     (format "/* XPM */
 static char * arrow_left[] = {
-\"14 26 2 1\",
+\"%d %d 2 1\",
 \". c %s\",
 \"  c %s\",
-\".             \",
-\"..            \",
-\"...           \",
-\"....          \",
-\".....         \",
-\"......        \",
-\".......       \",
-\"........      \",
-\".........     \",
-\"..........    \",
-\"...........   \",
-\"............  \",
-\"............. \",
-\"............. \",
-\"............  \",
-\"...........   \",
-\"..........    \",
-\".........     \",
-\"........      \",
-\".......       \",
-\"......        \",
-\".....         \",
-\"....          \",
-\"...           \",
-\"..            \",
-\".             \"};"
-           (if color1 color1 "None")
-           (if color2 color2 "None"))
-   'xpm t :ascent 'center))
+%s};"
+             final-width
+             final-height
+             (if color1 color1 "None")
+             (if color2 color2 "None")
+             arrow-text)
+     'xpm t :ascent 'center)))
 
 (defun xpm-arrow-right (color1 color2)
   "Return an XPM right arrow string representing."
@@ -348,16 +354,16 @@ static char * gradient_left[] = {
 \"abcdefghijkl\",
 \"abcdefghijkl\"};"
              c1
-             (gradient-color-blend (color-values c2) (color-values c1) 0.1)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.2)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.3)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.4)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.5)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.6)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.7)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.8)
-             (gradient-color-blend (color-values c2) (color-values c1) 0.9)
-             (gradient-color-blend (color-values c2) (color-values c1) 1.0)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.1)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.2)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.3)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.4)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.5)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.6)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.7)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.8)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 0.9)
+             (xpm-gradient-color-blend (color-values c2) (color-values c1) 1.0)
              c2)
      'xpm t :ascent 'center)))
 
