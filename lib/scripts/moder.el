@@ -87,6 +87,19 @@
        (moder-weight 'ultra-bold)
        (moder-height 1.0)))
 
+;;* Private
+(defvar moder--current-window nil)
+
+(defun moder--update-current-window (windows)
+  "Update moder--current-window with WINDOWS."
+  (when (not (minibuffer-window-active-p (frame-selected-window)))
+    (setq moder--current-window (selected-window))))
+(add-function :before pre-redisplay-function 'moder--update-current-window)
+
+(defun moder--current-window-p ()
+  "Check if current window."
+  (eq (frame-selected-window) moder--current-window))
+
 
 ;;* Piece
 (defun moder-piece-modified ()
@@ -136,6 +149,7 @@
   "A piece for the workgroup name."
   (when (and (fboundp 'wg-current-workgroup)
            (fboundp 'wg-workgroup-name)
+           (fboundp 'workgroups-mode)
            (not (null workgroups-mode)))
     (format " %s " (wg-workgroup-name (wg-current-workgroup)))))
 
@@ -152,21 +166,52 @@
   "A piece for process name."
   (format-mode-line mode-line-process))
 
+(defun moder-piece-frame-delay ()
+  "A piece for frame delay."
+  (when (boundp 'fn/current-frame-delay)
+    (when (moder--current-window-p)
+      (if (<= fn/current-frame-delay 10.0)
+          (format " %.3fms "  fn/current-frame-delay)
+        (format " !ms ")))))
+
 
 (defun moder-piece-right-separator (inner-color outer-color)
-  "A piece for an arror right with INNER-COLOR and OUTER-COLOR."
+  "A piece for an separator left with INNER-COLOR and OUTER-COLOR."
   (propertize
    " "
    'display
    (xpm-arrow-left inner-color outer-color 8 16)))
 
+(defun moder-piece-left-separator (inner-color outer-color)
+  "A piece for an seperator left with INNER-COLOR and OUTER-COLOR."
+  (propertize
+   " "
+   'display
+   (xpm-arrow-right inner-color outer-color 8 16)))
+
 (defun moder-right-separator (inner-color outer-color text)
   "Attaches the separator at the end of with INNER-COLOR, OUTER-COLOR and TEXT."
-  (concat
-   text
-   (moder-piece-right-separator inner-color outer-color)))
+  (if text
+      (concat
+       text
+       (moder-piece-right-separator inner-color outer-color))
+    nil))
 
-(defun moder-text-properties (text)
+(defun moder-left-separator (inner-color outer-color text)
+  "Attaches the separator at the end of with INNER-COLOR, OUTER-COLOR and TEXT."
+  (if text
+      (concat
+       text
+       (moder-piece-left-separator inner-color outer-color))
+    nil))
+
+(defun moder-last-text-properties (text)
+  "Get TEXT properties."
+  (if (null text)
+      nil
+    (-flatten-n 1 (get-text-property (1- (length text)) 'face text))))
+
+(defun moder-first-text-properties (text)
   "Get TEXT properties."
   (if (null text)
       nil
@@ -175,7 +220,7 @@
 (defun moder-separated (separator-fn &rest texts)
   "Attaches SEPARATOR-FN at TEXTS."
   (lexical-let* ((new-texts (list))
-      (current-texts (-reject #'null texts))
+      (current-texts  (-reject #'string-empty-p (-reject #'null texts)))
       (this-text nil)
       (next-text nil)
       (this-properties nil)
@@ -185,21 +230,27 @@
       (interleave-text nil))
     (while (not (null current-texts))
       (setq this-text (car current-texts)
-         this-properties (moder-text-properties this-text)
+         this-properties (moder-last-text-properties this-text)
          this-background (plist-get this-properties :background))
       (setq next-text (cadr current-texts)
          next-background nil)
       (when next-text
-        (setq next-properties (moder-text-properties next-text)
+        (setq next-properties (moder-first-text-properties next-text)
            next-background (plist-get next-properties :background)))
       (setq interleave-text (funcall separator-fn this-background next-background))
       (push this-text new-texts)
-      (push interleave-text new-texts)
+      (when next-text
+        (push interleave-text new-texts))
       (setq current-texts (cdr current-texts)))
     (apply #'concat
-       (append
-        (reverse new-texts)
-        (list (funcall separator-fn this-background nil))))))
+       (reverse new-texts))))
+
+(defun moder-closing-separator (separator-fn text)
+  "Add a final separator for text"
+  (let ((background (plist-get (moder-last-text-properties text) :background)))
+    (concat
+     text
+     (funcall separator-fn background nil))))
 
 
 ;;* Main configuration
@@ -208,25 +259,32 @@
       (list :eval
          (quote
           (condition-case ex
-              (moder-separated
-               #'moder-piece-right-separator
-               (->> (moder-piece-modified)
-                    (moder-default-text-style)
-                    (moder-background "#bdc3c7"))
-               (->> (moder-piece-mode)
-                    (moder-background "#27ae60"))
-               (->> (moder-piece-workgroup-name)
-                    (moder-default-text-style)
-                    (moder-background "#f1c40f"))
-               (->> (moder-piece-project-name)
-                    (moder-default-text-style)
-                    (moder-background "#e67e22"))
-               (->> (moder-piece-buffer-name)
-                    (moder-default-text-style)
-                    (moder-background "#e74c3c"))
-               (->> (moder-piece-process)
-                    (moder-default-text-style)
-                    (moder-background "#7f8c8d")))
+              (moder-closing-separator
+               #'moder-piece-left-separator
+               (moder-separated
+                #'moder-piece-right-separator
+                (moder-separated
+                 #'moder-piece-right-separator
+                 (->> (moder-piece-modified)
+                      (moder-default-text-style)
+                      (moder-background "#bdc3c7"))
+                 (->> (moder-piece-mode)
+                      (moder-background "#27ae60"))
+                 (->> (moder-piece-workgroup-name)
+                      (moder-default-text-style)
+                      (moder-background "#f1c40f"))
+                 (->> (moder-piece-project-name)
+                      (moder-default-text-style)
+                      (moder-background "#e67e22"))
+                 (->> (moder-piece-buffer-name)
+                      (moder-default-text-style)
+                      (moder-background "#e74c3c"))
+                 (->> (moder-piece-process)
+                      (moder-default-text-style)
+                      (moder-background "#7f8c8d")))
+                (->> (moder-piece-frame-delay)
+                     (moder-default-text-style)
+                     (moder-background "#95a5a6"))))
             ('error (error-message-string ex)))))))
 
 

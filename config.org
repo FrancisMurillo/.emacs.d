@@ -1860,7 +1860,11 @@
        :config
        (add-to-list
         'all-the-icons-mode-icon-alist
-        (list 'fundamental-mode 'all-the-icons-faicon "pencil")))
+        (list 'fundamental-mode 'all-the-icons-faicon "pencil"))
+
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'compilation-mode 'all-the-icons-faicon "cog")))
 
      (use-package moder
        :load-path fn/custom-script-dir
@@ -4291,6 +4295,37 @@
            (delete-file summary-file))))
 
    #+END_SRC
+** FPS
+   Check if Emacs is running fast.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-feature frame-delay
+       nil
+       (defvar fn/-previous-time (current-time)
+         "Previous time recording.  Not to be used directly.")
+
+       (defvar fn/current-frame-delay 0.0
+         "Fps recording.")
+
+       (defun fn/record-frame-delay ()
+         (prog1
+             (let* ((now (current-time))
+                 (time-diff
+                  (float-time (time-subtract now fn/-previous-time))))
+               (setq fn/current-frame-delay time-diff)
+               (force-mode-line-update))
+           (fn/-mark-time)))
+
+       (defun fn/-mark-time ()
+         "Mark the previous time for use"
+         (setq fn/-previous-time (current-time)))
+
+       (run-with-idle-timer 0 t #'fn/record-frame-delay)
+
+       (add-hook 'pre-command-hook #'fn/-mark-time))
+
+   #+END_SRC
+
 ** starup and shutdown hook
    Small script to update my org files
 

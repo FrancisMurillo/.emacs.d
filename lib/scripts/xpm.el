@@ -167,43 +167,53 @@ static char * arrow_left[] = {
              arrow-text)
      'xpm t :ascent 'center)))
 
-(defun xpm-arrow-right (color1 color2)
+(defun xpm-arrow-right (color1 color2 &optional width height)
   "Return an XPM right arrow string representing."
-  (create-image
-   (format "/* XPM */
-static char * arrow_right[] = {
-\"14 26 2 1\",
+  (lexical-let* ((reverse-dots
+       (lambda (dots width)
+         (reverse
+          (apply
+           #'concat
+           (mapcar
+            (lambda (n)
+              (if (<= n dots) "." " "))
+            (number-sequence 1 width))))))
+      (triangle-dots
+       (lambda (width height)
+         (lexical-let* ((factor (* 2.0 (float width) (/ (float height))))
+             (half-height (/ height 2.0)))
+           (string-join
+            (mapcar
+             (lambda (h)
+               (lexical-let* ((normal-width
+                    (if (<= h half-height)
+                        h
+                      (1+ (- height h))))
+                   (dots (round (* normal-width factor)))
+                   (inner-dots (funcall reverse-dots dots width)))
+                 (format "\"%s\"" inner-dots)))
+             (number-sequence 1 height))
+            ","))))
+      (final-width (if width width 14))
+      (final-height (if height height 26))
+      (arrow-text
+       (funcall triangle-dots final-width final-height)))
+    (create-image
+     (format "/* XPM */
+static char * arrow_left[] = {
+\"%d %d 2 1\",
 \". c %s\",
-\"   c %s\",
-\"             .\",
-\"            ..\",
-\"           ...\",
-\"          ....\",
-\"         .....\",
-\"        ......\",
-\"       .......\",
-\"      ........\",
-\"     .........\",
-\"    ..........\",
-\"   ...........\",
-\"  ............\",
-\" .............\",
-\" .............\",
-\"  ............\",
-\"   ...........\",
-\"    ..........\",
-\"     .........\",
-\"      ........\",
-\"       .......\",
-\"        ......\",
-\"         .....\",
-\"          ....\",
-\"           ...\",
-\"            ..\",
-\"             .\"};"
-           (if color2 color2 "None")
-           (if color1 color1 "None"))
-   'xpm t :ascent 'center))
+\"  c %s\",
+%s};"
+             final-width
+             final-height
+             (if color2 color2 "None")
+             (if color1 color1 "None")
+             arrow-text)
+     'xpm t :ascent 'center)))
+
+
+
 
 (defun xpm-curve-right (color1 color2)
   "Return an XPM right curve string representing."
