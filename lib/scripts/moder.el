@@ -372,12 +372,13 @@
                 #'moder-piece-right-separator
                 (moder-separated
                  #'moder-piece-right-separator
-                 (->> (moder-piece-window-number)
-                      (moder-default-text-style)
-                      (moder-background "#34495e")
-                      (moder-foreground "#ffff00")
-                      (moder-weight 'ultra-bold)
-                      (moder-height 1.2))
+                 (unless (moder--current-window-p)
+                     (->> (moder-piece-window-number)
+                          (moder-default-text-style)
+                          (moder-background "#34495e")
+                          (moder-foreground "#ffff00")
+                          (moder-weight 'ultra-bold)
+                          (moder-height 1.2)))
                  (->> (moder-piece-modified)
                       (moder-default-text-style)
                       (moder-background "#bdc3c7"))

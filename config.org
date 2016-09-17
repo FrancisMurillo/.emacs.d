@@ -1562,7 +1562,7 @@
           (all-the-icons)
           (add-to-list
            'all-the-icons-mode-icon-alist
-           (list 'paradox-menu-mode 'all-the-icons-octicon "package"))))
+           (list 'paradox-menu-mode 'all-the-icons-octicon "package" :v-adjust 0.0))))
     #+END_SRC
 
 **** helm-flx
