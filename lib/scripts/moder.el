@@ -48,9 +48,8 @@
 (require 'all-the-icons)
 
 (require 'dash)
-(require 'transducer)
 
-(require 'mode-line)
+(require 'xpm)
 
 (defun moder-merge-style (style text &optional override)
   "Merge text with the new STYLE at TEXT with OVERRIDE."
@@ -79,18 +78,23 @@
   "A weight VALUE with TEXT."
   (moder-merge-single-prop :weight value text))
 
+(defun moder-foreground (value text)
+  "A foregorund VALUE with TEXT."
+  (moder-merge-single-prop :foreground value text))
+
+
 ;;* Style
 
 (defun moder-default-text-style (text)
   "A style for default TEXT."
   (->> text
-       (moder-weight 'ultra-bold)
-       (moder-height 1.0)))
+       (moder-weight 'ultra-light)
+       (moder-height 0.8)))
 
 ;;* Private
 (defvar moder--current-window nil)
 
-(defun moder--update-current-window (windows)
+(defun moder--update-current-window (_)
   "Update moder--current-window with WINDOWS."
   (when (not (minibuffer-window-active-p (frame-selected-window)))
     (setq moder--current-window (selected-window))))
@@ -100,23 +104,39 @@
   "Check if current window."
   (eq (frame-selected-window) moder--current-window))
 
+(defun moder--active-state-p ()
+  "Check if the window is sleeping."
+  (not
+   (and (boundp fn/zoning-out-p)
+      (not (null fn/zoning-out-p)))))
+
 
 ;;* Piece
+(defun moder-piece-window-number ()
+  "A piece for window numbering."
+  (if (and (fboundp 'window-numbering-get-number)
+         (boundp 'window-numbering-mode)
+         (not (null window-numbering-mode)))
+      (format " %s " (window-numbering-get-number))))
+
 (defun moder-piece-modified ()
   "Indicates if the buffer is modified."
   (let* ((config-alist
        '(("*"
           all-the-icons-faicon-family
           all-the-icons-faicon
-          "chain-broken")
+          "chain-broken"
+          :v-adjust 0.0)
          ("-"
           all-the-icons-faicon-family
           all-the-icons-faicon
-          "link")
+          "link"
+          :v-adjust 0.0)
          ("%"
           all-the-icons-octicon-family
           all-the-icons-octicon
-          "lock")))
+          "lock"
+          :v-adjust 0.0)))
       (result (cdr (assoc (format-mode-line "%*") config-alist)))
       (icon-font-function (car result))
       (icon-function (cadr result))
@@ -166,28 +186,104 @@
   "A piece for process name."
   (format-mode-line mode-line-process))
 
+(defun moder-piece-misc ()
+  "A piece for misc info."
+  (format-mode-line mode-line-misc-info))
+
 (defun moder-piece-frame-delay ()
   "A piece for frame delay."
   (when (boundp 'fn/current-frame-delay)
-    (when (moder--current-window-p)
-      (if (<= fn/current-frame-delay 10.0)
-          (format " %.3fms "  fn/current-frame-delay)
-        (format " !ms ")))))
+    (if (<= fn/current-frame-delay 10.0)
+        (format " %.3fms "  fn/current-frame-delay)
+      (format " !ms "))))
+
+(defun moder-between-time (lower-time upper-time time)
+  "Check if between LOWER-TIME, UPPER-TIME and TIME."
+  (and (or (string-greaterp time lower-time) (string-equal time lower-time))
+     (or (string-lessp time upper-time) (string-equal time upper-time))))
+
+(defun moder-piece-cpu ()
+  "A piece for the cpu."
+  (when (boundp 'fn/current-cpu-usage)
+    (format " %.2f %s "
+            fn/current-cpu-usage
+            (all-the-icons-octicon "dashboard" :v-adjust 0.0))))
+
+(defun moder-piece-memory ()
+  "A piece for the memory."
+  (when (boundp 'fn/current-memory-usage)
+    (format " %.2f %s "
+            fn/current-memory-usage
+            (all-the-icons-octicon "database" :v-adjust 0.0))))
+
+(defun moder-piece-time ()
+  "A piece ofr the current time."
+  (let* ((current-time    (format-time-string "%R" ))
+      (time-event
+       (cond
+        ((moder-between-time "13:15" "14:00" current-time) "Nap")
+        ((moder-between-time "15:30" "16:00" current-time) "Break")
+        ((moder-between-time "18:00" "19:00" current-time) "AFK")
+        (t nil))))
+    (format
+     " %s%s "
+     current-time
+     (if time-event (format "[%s]" (moder-weight 'ultra-bold time-event)) ""))))
 
 
-(defun moder-piece-right-separator (inner-color outer-color)
-  "A piece for an separator left with INNER-COLOR and OUTER-COLOR."
+;;* Separator
+(defun moder-separator-arrow-left (inner-color outer-color)
+  "A separator for an arrow left with INNER-COLOR and OUTER-COLOR."
   (propertize
    " "
    'display
    (xpm-arrow-left inner-color outer-color 8 16)))
 
-(defun moder-piece-left-separator (inner-color outer-color)
-  "A piece for an seperator left with INNER-COLOR and OUTER-COLOR."
+(defun moder-separator-arrow-right (inner-color outer-color)
+  "A separator for an arrow right with INNER-COLOR and OUTER-COLOR."
   (propertize
    " "
    'display
    (xpm-arrow-right inner-color outer-color 8 16)))
+
+(defun moder-separator-slash-right (inner-color outer-color)
+  "A separator for an arrow right with INNER-COLOR and OUTER-COLOR."
+  (propertize
+   " "
+   'display
+   (xpm-slash-right inner-color outer-color 2 16)))
+
+
+(defun moder-piece-right-separator (inner-color outer-color)
+  "A piece for an separator left with INNER-COLOR and OUTER-COLOR."
+  (moder-separator-arrow-left inner-color outer-color))
+
+(defun moder-piece-left-separator (inner-color outer-color)
+  "A piece for an seperator left with INNER-COLOR and OUTER-COLOR."
+  (moder-separator-arrow-right inner-color outer-color))
+
+(defun moder-piece-inner-right-separator (inner-color outer-color)
+  "A piece for an seperator left with INNER-COLOR and OUTER-COLOR."
+  (moder-separator-slash-right inner-color outer-color))
+
+
+(defun moder-generic-separator (separator-fn)
+  "Attaches the separator with SEPARATOR-FN."
+  (lambda (inner-color outer-color text)
+    (if text
+        (concat
+         text
+         (funcall separator-fn inner-color outer-color))
+      nil)))
+
+(defun moder-piece-sandbox-separator (inner-color outer-color text)
+  "Attaches the separator at the end of with INNER-COLOR, OUTER-COLOR and TEXT."
+  (if text
+      (concat
+       text
+       (moder-separator-slash-right inner-color outer-color))
+    nil))
+
 
 (defun moder-right-separator (inner-color outer-color text)
   "Attaches the separator at the end of with INNER-COLOR, OUTER-COLOR and TEXT."
@@ -205,6 +301,7 @@
        (moder-piece-left-separator inner-color outer-color))
     nil))
 
+;;* Computer
 (defun moder-last-text-properties (text)
   "Get TEXT properties."
   (if (null text)
@@ -245,8 +342,15 @@
     (apply #'concat
        (reverse new-texts))))
 
+(defun moder-starting-separator (separator-fn text)
+  "Add a final SEPARATOR-FN for TEXT."
+  (let ((background (plist-get (moder-first-text-properties text) :background)))
+    (concat
+     (funcall separator-fn nil background)
+     text)))
+
 (defun moder-closing-separator (separator-fn text)
-  "Add a final separator for text"
+  "Add a final SEPARATOR-FN for TEXT."
   (let ((background (plist-get (moder-last-text-properties text) :background)))
     (concat
      text
@@ -259,32 +363,59 @@
       (list :eval
          (quote
           (condition-case ex
-              (moder-closing-separator
-               #'moder-piece-left-separator
+              (->>
                (moder-separated
                 #'moder-piece-right-separator
                 (moder-separated
                  #'moder-piece-right-separator
+                 (->> (moder-piece-window-number)
+                      (moder-default-text-style)
+                      (moder-background "#34495e")
+                      (moder-foreground "#ffff00")
+                      (moder-weight 'ultra-bold)
+                      (moder-height 1.2))
                  (->> (moder-piece-modified)
                       (moder-default-text-style)
                       (moder-background "#bdc3c7"))
-                 (->> (moder-piece-mode)
-                      (moder-background "#27ae60"))
-                 (->> (moder-piece-workgroup-name)
-                      (moder-default-text-style)
-                      (moder-background "#f1c40f"))
-                 (->> (moder-piece-project-name)
-                      (moder-default-text-style)
-                      (moder-background "#e67e22"))
-                 (->> (moder-piece-buffer-name)
-                      (moder-default-text-style)
-                      (moder-background "#e74c3c"))
-                 (->> (moder-piece-process)
-                      (moder-default-text-style)
-                      (moder-background "#7f8c8d")))
-                (->> (moder-piece-frame-delay)
+                 (if (and (moder--current-window-p) (moder--active-state-p))
+                     (moder-separated
+                      #'moder-piece-inner-right-separator
+                      (->> (moder-piece-buffer-name)
+                           (moder-default-text-style)
+                           (moder-weight 'ultra-bold)
+                           (moder-background "#e74c3c"))
+                      (->> (moder-piece-project-name)
+                           (moder-default-text-style)
+                           (moder-background "#e67e22"))
+                      (->> (moder-piece-workgroup-name)
+                           (moder-default-text-style)
+                           (moder-background "#f1c40f"))
+                      (->> (moder-piece-mode)
+                           (moder-background "#27ae60")))
+                   (->> (moder-piece-buffer-name)
+                        (moder-default-text-style)
+                        (moder-background "#ecf0f1"))))
+                (->> (moder-piece-process)
                      (moder-default-text-style)
-                     (moder-background "#95a5a6"))))
+                     (moder-background "#7f8c8d"))
+                (when (and (moder--current-window-p) (moder--active-state-p))
+                  (moder-separated
+                   #'moder-piece-inner-right-separator
+                   (->> (moder-piece-frame-delay)
+                        (moder-default-text-style)
+                        (moder-background "#9b59b6"))
+                   (->> (moder-piece-cpu)
+                        (moder-default-text-style)
+                        (moder-background "#f1c40f"))
+                   (->> (moder-piece-memory)
+                        (moder-default-text-style)
+                        (moder-background "#d35400"))
+                   (->> (moder-piece-time)
+                        (moder-default-text-style)
+                        (moder-foreground "#ffff00")
+                        (moder-background "#2c3e50")))))
+               (moder-closing-separator #'moder-piece-left-separator)
+               (moder-starting-separator #'moder-piece-right-separator))
             ('error (error-message-string ex)))))))
 
 

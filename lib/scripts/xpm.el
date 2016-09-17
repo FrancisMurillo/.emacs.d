@@ -212,7 +212,46 @@ static char * arrow_left[] = {
              arrow-text)
      'xpm t :ascent 'center)))
 
-
+(defun xpm-slash-right (color1 color2 &optional width height)
+  "Return an XPM right slash string representing."
+  (lexical-let* ((forward-dots
+       (lambda (dots width)
+         (apply
+          #'concat
+          (mapcar
+           (lambda (n)
+             (if (<= n dots) "." " "))
+           (number-sequence 1 width)))))
+      (slash-dots
+       (lambda (width height)
+         (lexical-let* ((factor (/ (float width) (float height))))
+           (string-join
+            (mapcar
+             (lambda (h)
+               (lexical-let* ((reverse-width h)
+                   (dots (round (* reverse-width factor)))
+                   (inner-dots (reverse
+                                (funcall forward-dots dots width))))
+                 (format "\"%s\"" inner-dots)))
+             (number-sequence 1 height))
+            ","))))
+      (final-width (if width width 14))
+      (final-height (if height height 26))
+      (slash-text
+       (funcall slash-dots final-width final-height)))
+    (create-image
+     (format "/* XPM */
+static char * slash_right[] = {
+\"%d %d 2 1\",
+\". c %s\",
+\"  c %s\",
+%s};"
+             final-width
+             final-height
+             (if color2 color2 "None")
+             (if color1 color1 "None")
+             slash-text)
+     'xpm t :ascent 'center)))
 
 
 (defun xpm-curve-right (color1 color2)
@@ -411,44 +450,6 @@ static char * curve_left[] = {
 \"..            \",
 \".             \",
 \".             \"};"
-           (if color1 color1 "None")
-           (if color2 color2 "None"))
-   'xpm t :ascent 'center))
-
-(defun xpm-slash-right (color1 color2)
-  "Return an XPM left curve string representing."
-  (create-image
-   (format "/* XPM */
-static char * curve_left[] = {
-\"14 26 2 1\",
-\". c %s\",
-\"  c %s\",
-\".             \",
-\".             \",
-\"..            \",
-\"..            \",
-\"...           \",
-\"...           \",
-\"....          \",
-\"....          \",
-\".....         \",
-\".....         \",
-\"......        \",
-\"......        \",
-\".......       \",
-\".......       \",
-\"........      \",
-\"........      \",
-\".........     \",
-\".........     \",
-\"..........    \",
-\"..........    \",
-\"...........   \",
-\"...........   \",
-\"............  \",
-\"............  \",
-\"............. \",
-\"............. \"};"
            (if color1 color1 "None")
            (if color2 color2 "None"))
    'xpm t :ascent 'center))

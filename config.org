@@ -213,9 +213,34 @@
    Everything related to the startup state
 
    #+BEGIN_SRC emacs-lisp
-     (setq gc-cons-threshold (* 256 1024 1024)) ;; High memory for Emacs
+     (defconst fn/gc-cons-threshold (* 256 1024 1024)
+       "A high limit for garbage colection.")
+
+     (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
      (setq garbage-collection-messages t) ;; Tell me if gc it occurs
+
+
+     (defconst fn/gc-log (expand-file-name ".gc-log" fn/cache-dir)
+       "A log of gcing")
+
+     (defun fn/log-gc (orig-gc &rest args)
+       "Log gc event duration with ORIG-GC and its ARGS."
+       (let ((start-time (current-time))
+           (end-time nil)
+           (duration nil))
+         (prog1
+             (apply orig-gc args)
+           (setq end-time (current-time)
+              duration (float-time (time-subtract end-time start-time)))
+           (append-to-file
+            (format "%s :: %s\n"
+                    (format-time-string "%F-%R-%N" start-time)
+                    duration)
+            nil
+            fn/gc-log))))
+
+     (advice-add 'garbage-collect :around #'fn/log-gc)
 
      ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
      (run-with-idle-timer 30 t #'garbage-collect)
@@ -978,13 +1003,13 @@
         (use-feature spaceline-workgroup
           (spaceline)
           (spaceline-define-segment workgroups
-            "Name of the current workgroup."
-            (when
-                (and
-                 (fboundp 'wg-current-workgroup)
-                 (fboundp 'wg-workgroup-name)
-                 (stringp (wg-workgroup-name (wg-current-workgroup))))
-              (wg-workgroup-name (wg-current-workgroup))))
+                                    "Name of the current workgroup."
+                                    (when
+                                        (and
+                                         (fboundp 'wg-current-workgroup)
+                                         (fboundp 'wg-workgroup-name)
+                                         (stringp (wg-workgroup-name (wg-current-workgroup))))
+                                      (wg-workgroup-name (wg-current-workgroup))))
 
           (spaceline-toggle-workgroups-on))
 
@@ -1207,30 +1232,30 @@
         ;; core & utils
         (setq helm-yank-symbol-first t
 
-           helm-mode-fuzzy-match nil
+              helm-mode-fuzzy-match nil
 
-           helm-su-or-sudo "sudo"
+              helm-su-or-sudo "sudo"
 
-           helm-input-idle-delay (/ 1 60.0) ;; 60fps
-           helm-exit-idle-delay (/ 1 60.0)  ;; ditto
+              helm-input-idle-delay (/ 1 60.0) ;; 60fps
+              helm-exit-idle-delay (/ 1 60.0)  ;; ditto
 
-           helm-echo-input-in-header-line nil ;; If the theme does not block it
+              helm-echo-input-in-header-line nil ;; If the theme does not block it
 
-           helm-split-window-default-side 'same
+              helm-split-window-default-side 'same
 
-           helm-debug-root-directory fn/cache-dir)
+              helm-debug-root-directory fn/cache-dir)
 
 
         ;; files & command
         (setq helm-ff-file-name-history-use-recentf t
-           helm-ff-auto-update-initial-value t
+              helm-ff-auto-update-initial-value t
 
-           helm-M-x-always-save-history t)
+              helm-M-x-always-save-history t)
 
 
         ;; adaptive
         (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
-           helm-adaptive-history-length 100)
+              helm-adaptive-history-length 100)
 
         (helm-adaptive-mode t))
     #+END_SRC
@@ -1398,7 +1423,7 @@
          :demand t
          :config
          (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
-            smex-history-length (or helm-adaptive-history-length 100)))
+               smex-history-length (or helm-adaptive-history-length 100)))
 
        (use-package helm-smex
          :ensure t
@@ -1428,6 +1453,7 @@
       (use-package command-log-mode
         :ensure t
         :diminish command-log-mode
+        :demand t
         :config
         (global-command-log-mode t))
     #+END_SRC
@@ -1536,7 +1562,7 @@
           (all-the-icons)
           (add-to-list
            'all-the-icons-mode-icon-alist
-           (list 'paradox-menu-mode 'all-the-icons-faicon "briefcase"))))
+           (list 'paradox-menu-mode 'all-the-icons-octicon "package"))))
     #+END_SRC
 
 **** helm-flx
@@ -1605,6 +1631,9 @@
 
    #+BEGIN_SRC emacs-lisp
      (load-theme 'tronesque t)
+
+     ;; Default mode line
+     (tronesque-mode-line)
    #+END_SRC
 
 ** Aesthetic
@@ -1745,13 +1774,22 @@
 
         (zone-when-idle fn/zone-idle-time)
 
+        (defvar fn/zoning-out-p nil
+          "Are we zoning yet?")
+
         (defun fn/focused-zone (orig-zone &rest args)
           "Only show one window while zoning."
           (save-window-excursion
             (delete-other-windows)
-            (apply orig-zone args)))
+            (setq fn/zoning-out-p t)
+            (prog1
+                (apply orig-zone args)
+              (setq fn/zoning-out-p nil))))
 
         (advice-add #'zone :around #'fn/focused-zone)
+
+        ;; Update mode line if there is.
+        (advice-add #'zone :before #'force-mode-line-update)
 
         (setq zone-programs (list)))
 
@@ -1850,6 +1888,17 @@
 
       (setq show-paren-style 'expression)
     #+END_SRC
+** Display Buffer
+   My modification on =display-buffer=.
+
+   #+BEGIN_SRC emacs-lisp
+     (add-to-list
+      'display-buffer-alist
+      (cons
+       (rx bos "*Process List*" eos)
+       (cons 'display-buffer-same-window (list))))
+   #+END_SRC
+
 ** Mode Line
    The mode line customization.
 
@@ -1864,11 +1913,11 @@
 
        (add-to-list
         'all-the-icons-mode-icon-alist
-        (list 'compilation-mode 'all-the-icons-faicon "cog")))
+        (list 'compilation-mode 'all-the-icons-faicon "cog"))
 
-     (use-package moder
-       :load-path fn/custom-script-dir
-       :defer 0)
+       (use-package moder
+         :load-path fn/custom-script-dir
+         :defer 0))
    #+END_SRC
 
 * Organizer
@@ -2579,8 +2628,8 @@
         (add-hook 'prog-mode-hook 'flycheck-mode)
         :config
         (setq flycheck-highlighting-mode 'lines
-           flycheck-check-syntax-automatically '(save mode-enabled)
-           flycheck-checker-error-threshold nil))
+              flycheck-check-syntax-automatically '(save mode-enabled)
+              flycheck-checker-error-threshold nil))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -4295,10 +4344,12 @@
            (delete-file summary-file))))
 
    #+END_SRC
-** FPS
+** Performance Indicator
    Check if Emacs is running fast.
 
    #+BEGIN_SRC emacs-lisp
+     (require 'deferred)
+
      (use-feature frame-delay
        nil
        (defvar fn/-previous-time (current-time)
@@ -4308,10 +4359,11 @@
          "Fps recording.")
 
        (defun fn/record-frame-delay ()
+         "Record frame delay."
          (prog1
              (let* ((now (current-time))
-                 (time-diff
-                  (float-time (time-subtract now fn/-previous-time))))
+                    (time-diff
+                     (float-time (time-subtract now fn/-previous-time))))
                (setq fn/current-frame-delay time-diff)
                (force-mode-line-update))
            (fn/-mark-time)))
@@ -4324,6 +4376,40 @@
 
        (add-hook 'pre-command-hook #'fn/-mark-time))
 
+     (use-feature cpu-usage
+       (deferred)
+       (defvar fn/current-cpu-usage 0.0
+         "Cpu recording.")
+
+       (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
+
+       (defun fn/record-cpu-usage ()
+         "Record cpu usage."
+         (deferred:nextc
+           (deferred:process-shell
+             fn/cpu-usage-command)
+           (lambda (value)
+             (setq fn/current-cpu-usage (string-to-number value)))))
+
+       (run-with-idle-timer 1 t #'fn/record-cpu-usage))
+
+     (use-feature memory-usage
+       (deferred)
+       (defvar fn/current-memory-usage 0.0
+         "Memory recording.")
+
+       (defconst fn/memory-usage-command
+         "free | grep Mem | awk '{print $3/$2 * 100.0}'")
+
+       (defun fn/record-memory-usage ()
+         "Record memory usage."
+         (deferred:nextc
+           (deferred:process-shell
+             fn/memory-usage-command)
+           (lambda (value)
+             (setq fn/current-memory-usage (string-to-number value)))))
+
+       (run-with-idle-timer 1 t #'fn/record-memory-usage))
    #+END_SRC
 
 ** starup and shutdown hook
@@ -4714,6 +4800,9 @@
 
     ;; Shell
     (define-key fn-standard-prefix-map (kbd "x s") 'shell)
+
+    ;; Process
+    (define-key fn-standard-prefix-map (kbd "M-p") 'list-processes)
 
 
 
