@@ -207,14 +207,18 @@
   (when (boundp 'fn/current-cpu-usage)
     (format " %.2f %s "
             fn/current-cpu-usage
-            (all-the-icons-octicon "dashboard" :v-adjust 0.0))))
+            (propertize
+             (all-the-icons-octicon "dashboard" :v-adjust 0.0)
+             'face (list :family (all-the-icons-octicon-family))))))
 
 (defun moder-piece-memory ()
   "A piece for the memory."
   (when (boundp 'fn/current-memory-usage)
     (format " %.2f %s "
             fn/current-memory-usage
-            (all-the-icons-octicon "database" :v-adjust 0.0))))
+            (propertize
+             (all-the-icons-octicon "database" :v-adjust 0.0)
+             'face (list :family (all-the-icons-octicon-family))))))
 
 (defun moder-piece-time ()
   "A piece ofr the current time."
