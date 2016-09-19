@@ -223,7 +223,7 @@ static char * arrow_left[] = {
              (if (<= n dots) "." " "))
            (number-sequence 1 width)))))
       (mapper
-       (lambda (n) (* n n n)))
+       (lambda (n) (expt n 2.0)))
       (curly-dots
        (lambda (width height)
          (lexical-let* ((half-height (/ height 2.0)))
@@ -268,7 +268,7 @@ static char * curly_left[] = {
              (if (<= n dots) "." " "))
            (number-sequence 1 width)))))
       (mapper
-       (lambda (n) (* n n n)))
+       (lambda (n) (expt n 2.0)))
       (curly-dots
        (lambda (width height)
          (lexical-let* ((half-height (/ height 2.0)))
@@ -279,7 +279,7 @@ static char * curly_left[] = {
                     (if (<= h half-height)
                         h
                       (- height h)))
-                   (dots (round (* width (- 1 (* (funcall mapper normal-width) (/ (funcall mapper half-height)))))))
+                   (dots (round (* width   (- 1 (* (funcall mapper normal-width) (/ (funcall mapper half-height)))))))
                    (inner-dots (funcall forward-dots dots width)))
                  (format "\"%s\"" inner-dots)))
              (number-sequence 1 height))

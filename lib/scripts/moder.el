@@ -51,6 +51,17 @@
 
 (require 'xpm)
 
+
+(defvar moder-separator-height 16
+  "Moder height.")
+
+(defvar moder-separator-width 6
+  "Moder width.")
+
+(defvar moder-separator-inner-width 2
+  "Moder inner width.")
+
+
 (defun moder-merge-style (style text &optional override)
   "Merge text with the new STYLE at TEXT with OVERRIDE."
   (add-face-text-property
@@ -241,21 +252,21 @@
   (propertize
    " "
    'display
-   (xpm-curly-left inner-color outer-color 8 16)))
+   (xpm-curly-left inner-color outer-color moder-separator-width moder-separator-height)))
 
 (defun moder-separator-arrow-right (inner-color outer-color)
   "A separator for an arrow right with INNER-COLOR and OUTER-COLOR."
   (propertize
    " "
    'display
-   (xpm-curly-right inner-color outer-color 8 16)))
+   (xpm-curly-right inner-color outer-color moder-separator-width moder-separator-height)))
 
 (defun moder-separator-slash-right (inner-color outer-color)
   "A separator for an arrow right with INNER-COLOR and OUTER-COLOR."
   (propertize
    " "
    'display
-   (xpm-slash-right inner-color outer-color 2 16)))
+   (xpm-slash-right inner-color outer-color moder-separator-inner-width moder-separator-height)))
 
 
 (defun moder-piece-right-separator (inner-color outer-color)
