@@ -1,4 +1,4 @@
-;;; xpm.el ---
+;;; xpm.el --- XPM creation
 ;;
 ;; Filename: xpm.el
 ;; Description:
@@ -210,6 +210,96 @@ static char * arrow_left[] = {
              (if color2 color2 "None")
              (if color1 color1 "None")
              arrow-text)
+     'xpm t :ascent 'center)))
+
+(defun xpm-curly-left (color1 color2 &optional width height)
+  "Return an XPM left curly brace string representing."
+  (lexical-let* ((forward-dots
+       (lambda (dots width)
+         (apply
+          #'concat
+          (mapcar
+           (lambda (n)
+             (if (<= n dots) "." " "))
+           (number-sequence 1 width)))))
+      (mapper
+       (lambda (n) (* n n n)))
+      (curly-dots
+       (lambda (width height)
+         (lexical-let* ((half-height (/ height 2.0)))
+           (string-join
+            (mapcar
+             (lambda (h)
+               (lexical-let* ((normal-width
+                    (if (<= h half-height)
+                        h
+                      (- height h)))
+                   (dots (round (* width (funcall mapper normal-width) (/ (funcall mapper half-height)))))
+                   (inner-dots (funcall forward-dots dots width)))
+                 (format "\"%s\"" inner-dots)))
+             (number-sequence 1 height))
+            ","))))
+      (final-width (if width width 14))
+      (final-height (if height height 26))
+      (curly-text
+       (funcall curly-dots final-width final-height)))
+    (create-image
+     (format "/* XPM */
+static char * curly_left[] = {
+\"%d %d 2 1\",
+\". c %s\",
+\"  c %s\",
+%s};"
+             final-width
+             final-height
+             (if color1 color1 "None")
+             (if color2 color2 "None")
+             curly-text)
+     'xpm t :ascent 'center)))
+
+(defun xpm-curly-right (color1 color2 &optional width height)
+  "Return an XPM right curly brace string representing."
+  (lexical-let* ((forward-dots
+       (lambda (dots width)
+         (apply
+          #'concat
+          (mapcar
+           (lambda (n)
+             (if (<= n dots) "." " "))
+           (number-sequence 1 width)))))
+      (mapper
+       (lambda (n) (* n n n)))
+      (curly-dots
+       (lambda (width height)
+         (lexical-let* ((half-height (/ height 2.0)))
+           (string-join
+            (mapcar
+             (lambda (h)
+               (lexical-let* ((normal-width
+                    (if (<= h half-height)
+                        h
+                      (- height h)))
+                   (dots (round (* width (- 1 (* (funcall mapper normal-width) (/ (funcall mapper half-height)))))))
+                   (inner-dots (funcall forward-dots dots width)))
+                 (format "\"%s\"" inner-dots)))
+             (number-sequence 1 height))
+            ","))))
+      (final-width (if width width 14))
+      (final-height (if height height 26))
+      (curly-text
+       (funcall curly-dots final-width final-height)))
+    (create-image
+     (format "/* XPM */
+static char * curly_right[] = {
+\"%d %d 2 1\",
+\". c %s\",
+\"  c %s\",
+%s};"
+             final-width
+             final-height
+             (if color1 color1 "None")
+             (if color2 color2 "None")
+             curly-text)
      'xpm t :ascent 'center)))
 
 (defun xpm-slash-right (color1 color2 &optional width height)
@@ -539,6 +629,8 @@ install the memoized function over the original function."
 (xpm-memoize 'xpm-arrow-right)
 (xpm-memoize 'xpm-curve-left)
 (xpm-memoize 'xpm-curve-right)
+(xpm-memoize 'xpm-curly-left)
+(xpm-memoize 'xpm-curly-right)
 (xpm-memoize 'xpm-slash-left)
 (xpm-memoize 'xpm-slash-right)
 (xpm-memoize 'xpm-gradient)

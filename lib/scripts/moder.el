@@ -241,14 +241,14 @@
   (propertize
    " "
    'display
-   (xpm-arrow-left inner-color outer-color 8 16)))
+   (xpm-curly-left inner-color outer-color 8 16)))
 
 (defun moder-separator-arrow-right (inner-color outer-color)
   "A separator for an arrow right with INNER-COLOR and OUTER-COLOR."
   (propertize
    " "
    'display
-   (xpm-arrow-right inner-color outer-color 8 16)))
+   (xpm-curly-right inner-color outer-color 8 16)))
 
 (defun moder-separator-slash-right (inner-color outer-color)
   "A separator for an arrow right with INNER-COLOR and OUTER-COLOR."

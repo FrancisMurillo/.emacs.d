@@ -3510,6 +3510,46 @@
 
 *** Build Tools
     Maybe stack or hack?
+** Clojure
+   Scheme would be nice but there is a modern alternative.
+
+*** Mode
+    The major mode
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package clojure-mode
+        :ensure t
+        :mode (("\\.clj\\'" . clojure-mode))
+        :config
+        (use-feature clojure-icon
+          (all-the-icons)
+          (add-to-list
+           'all-the-icons-mode-icon-alist
+           (list 'clojure-mode 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
+
+      (use-package clojure-mode-extra-font-locking
+        :ensure t
+        :after clojure-mode)
+    #+END_SRC
+
+*** REPL
+    What is Clojure without a REPL?
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package cider
+        :ensure t
+        :after clojure-mode)
+    #+END_SRC
+
+*** Integration
+    Lisp meets Lisp.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package clomacs
+        :ensure t
+        :after clojure-mode)
+    #+END_SRC
+
 ** Elm
    Functional JavaScript frontend
 
@@ -4892,6 +4932,12 @@
          (add-to-list 'company-backendsm '(company-meghanada :with company-dabbrev-code))
          (setq company-transformers '(company-sort-by-backend-importance))
          (add-hook 'before-save-hook 'delete-trailing-whitespace))))
+
+    (defconst fn/meme-package-dir (expand-file-name "meme.el" fn/custom-module-dir)
+      "My meme.el package")
+
+    (use-package meme
+      :load-path fn/meme-package-dir)
   #+END_SRC
 
 * Reference
