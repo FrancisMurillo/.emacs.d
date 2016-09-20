@@ -68,6 +68,47 @@
 (defvar moder-memory t
   "If non-nil, put RAM indicator.")
 
+(defvar moder-frame-delay-format " %.2fms "
+  "Frame delay format.")
+
+
+(defvar moder-note-notes
+  (list
+   "A failure is you."
+   "And though I left."
+   "I took with me... their lightning and their prayers"
+   "It came in a dream and said."
+   "I have nothing but my lightning."
+   "May the storm pass."
+   "Oh indifferent nothingness."
+
+   "Oh little town of prayers."
+   "Shelter me from the gathering storm."
+   "Console: Run garbage collect."
+   "Oh infinite void."
+   "Give me just one more day! One more day!"
+   "Oh endless black hole."
+   "Let me see just one more sunset before you make everything dark."
+   "And the storm passed."
+
+   "But on we go."
+
+   "What is life but want?"
+   "What are prayers but needs?"
+   "Whether for air or food, love, or wealth, it is all I want."
+   "I wanted to complete my quest."
+   "Your new quest is to be free. Want nothing."
+   "And go at peace into your death."
+   "Go and wander to lovely, awesome, and mysterious places."
+   "Sit quietly and contemplate the precious silence."
+   "Take in the wonder of existence. And then want nothing else from it."
+   "Goodbye.")
+  "Notes with note piece.")
+
+(defvar moder-note-default-note
+  "Continue? 9.. 8.. 7.. 6.. 5.. 4.. 3.. 2.. 1.."
+  "The default note for note piece.")
+
 
 (defun moder-merge-style (style text &optional override)
   "Merge text with the new STYLE at TEXT with OVERRIDE."
@@ -215,7 +256,7 @@
   "A piece for frame delay."
   (when (boundp 'fn/current-frame-delay)
     (if (<= fn/current-frame-delay 10.0)
-        (format " %.3fms "  fn/current-frame-delay)
+        (format moder-frame-delay-format fn/current-frame-delay)
       (format " !ms "))))
 
 (defun moder-between-time (lower-time upper-time time)
@@ -242,7 +283,7 @@
              'face (list :family (all-the-icons-octicon-family))))))
 
 (defun moder-piece-time ()
-  "A piece ofr the current time."
+  "A piece for the current time."
   (let* ((current-time    (format-time-string "%R" ))
       (time-event
        (cond
@@ -254,6 +295,12 @@
      " %s%s "
      current-time
      (if time-event (format "[%s]" (moder-weight 'ultra-bold time-event)) ""))))
+
+(defun moder-piece-note ()
+  "A piece for a random note."
+  (lexical-let* ((note-index (random (length moder-note-notes)))
+      (note (nth note-index moder-note-notes)))
+    (format " %s " note)))
 
 
 ;;* Separator
@@ -418,9 +465,18 @@
                            (moder-background "#f1c40f"))
                       (->> (moder-piece-mode)
                            (moder-background "#27ae60")))
-                   (->> (moder-piece-buffer-name)
-                        (moder-default-text-style)
-                        (moder-background "#ecf0f1"))))
+                   (moder-separated
+                    #'moder-piece-inner-right-separator
+                    (->> (moder-piece-buffer-name)
+                         (moder-default-text-style)
+                         (moder-background "#ecf0f1"))
+                    (->> (moder-piece-note)
+                         (moder-default-text-style)
+                         (moder-background "#e74c3c")
+                         (moder-foreground "#ffffff")
+                         ;; (moder-foreground "#ecf0f1")
+                         (moder-weight 'ultra-thin)
+                         (moder-height 1.0)))))
                 (->> (moder-piece-process)
                      (moder-default-text-style)
                      (moder-background "#7f8c8d"))

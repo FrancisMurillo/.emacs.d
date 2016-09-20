@@ -218,7 +218,28 @@
 
      (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
-     (setq garbage-collection-messages t) ;; Tell me if gc it occurs
+
+     (defvar fn/my-lightning "My lightning... "
+       "A reference to continue?987654321.
+     May I accept the lightning.")
+
+     (defvar fn/my-prayer "My Lightning... My Prayer..."
+       "The closing message for garbage collection.
+     May I be lift up.")
+
+     (setq garbage-collection-messages nil) ;; My lightning... my prayer
+
+     (defun fn/continue-gc (orig-gc &rest args)
+       "And the storm passed..."
+       (let ((start-time (current-time)))
+         (prog2
+             (message fn/my-lightning)
+             (apply orig-gc args)
+           (message "%s (%.4fs)"
+                    fn/my-prayer
+                    (float-time (time-subtract (current-time) start-time))))))
+
+     (advice-add 'garbage-collect :around #'fn/continue-gc)
 
 
      ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
@@ -226,7 +247,7 @@
 
 
      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-           initial-scratch-message nil)
+        initial-scratch-message nil)
    #+END_SRC
 
 ** Environment
@@ -2549,6 +2570,15 @@
         (global-git-gutter-mode t))
     #+END_SRC
 
+**** magit-hub
+     Easier to work with github
+
+     #+BEGIN_SRC emacs-lisp
+       (use-package magithub
+         :ensure t
+         :after magit)
+     #+END_SRC
+
 **** magit-svn
      Support for SVN with the awesome =magit= interface
 
@@ -4350,7 +4380,8 @@
            (lambda (value)
              (setq fn/current-cpu-usage (string-to-number value)))))
 
-       (run-with-idle-timer 1 t #'fn/record-cpu-usage))
+       (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
+         "A cpu timer if you ever want to quit it."))
 
      (use-feature memory-usage
        (deferred)
@@ -4368,7 +4399,8 @@
            (lambda (value)
              (setq fn/current-memory-usage (string-to-number value)))))
 
-       (run-with-idle-timer 1 t #'fn/record-memory-usage))
+       (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
+         "A memory timer."))
    #+END_SRC
 
 ** starup and shutdown hook
