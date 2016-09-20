@@ -2570,15 +2570,6 @@
         (global-git-gutter-mode t))
     #+END_SRC
 
-**** magit-hub
-     Easier to work with github
-
-     #+BEGIN_SRC emacs-lisp
-       (use-package magithub
-         :ensure t
-         :after magit)
-     #+END_SRC
-
 **** magit-svn
      Support for SVN with the awesome =magit= interface
 

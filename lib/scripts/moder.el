@@ -75,6 +75,7 @@
 (defvar moder-note-notes
   (list
    "A failure is you."
+   "Your quest is lost."
    "And though I left."
    "I took with me... their lightning and their prayers"
    "It came in a dream and said."
@@ -89,6 +90,8 @@
    "Give me just one more day! One more day!"
    "Oh endless black hole."
    "Let me see just one more sunset before you make everything dark."
+   "Oh pitiless system of garbage collection."
+   "I will comply."
    "And the storm passed."
 
    "But on we go."
@@ -102,7 +105,9 @@
    "Go and wander to lovely, awesome, and mysterious places."
    "Sit quietly and contemplate the precious silence."
    "Take in the wonder of existence. And then want nothing else from it."
-   "Goodbye.")
+   "Goodbye."
+
+   "Let me be the one I loved.")
   "Notes with note piece.")
 
 (defvar moder-note-default-note
