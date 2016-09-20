@@ -221,27 +221,6 @@
      (setq garbage-collection-messages t) ;; Tell me if gc it occurs
 
 
-     (defconst fn/gc-log (expand-file-name ".gc-log" fn/cache-dir)
-       "A log of gcing")
-
-     (defun fn/log-gc (orig-gc &rest args)
-       "Log gc event duration with ORIG-GC and its ARGS."
-       (let ((start-time (current-time))
-           (end-time nil)
-           (duration nil))
-         (prog1
-             (apply orig-gc args)
-           (setq end-time (current-time)
-              duration (float-time (time-subtract end-time start-time)))
-           (append-to-file
-            (format "%s :: %s\n"
-                    (format-time-string "%F-%R-%N" start-time)
-                    duration)
-            nil
-            fn/gc-log))))
-
-     (advice-add 'garbage-collect :around #'fn/log-gc)
-
      ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
      (run-with-idle-timer 30 t #'garbage-collect)
 
@@ -1634,6 +1613,8 @@
 
      ;; Default mode line
      (tronesque-mode-line)
+
+
    #+END_SRC
 
 ** Aesthetic
@@ -1658,95 +1639,8 @@
         (global-hl-line-mode t))
     #+END_SRC
 
-*** smart-mode-line
-    It is a nice feature
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (use-package smart-mode-line-powerline-theme
-        :ensure t
-        :demand T)
-
-      (use-package smart-mode-line
-        :ensure t
-        :demand T
-        :config
-        (setq sml/no-confirm-load-theme t
-              sml/shorten-directory t
-              sml/shorten-modes t
-              sml/theme 'powerline)
-
-        (sml/setup))
-    #+END_SRC
-
-*** space-line
-    A nice way of making a mode line
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (use-package spaceline
-        :ensure t
-        :demand t
-        :config
-        (require 'spaceline-config)
-        (spaceline-emacs-theme)
-
-        (defun fn/spaceline-toggle-segment (toggle)
-          (lexical-let ((toggle toggle))
-            (lambda (segment-name)
-              (funcall  (intern-soft (format "spaceline-toggle-%s-%s" segment-name toggle))))))
-
-        (mapc
-         (fn/spaceline-toggle-segment "on")
-         (list
-          "window-number"
-          "buffer-modified"
-          "buffer-id"
-          "major-mode"
-          "process"
-          "global"
-          "projectile-root"))
-
-        (mapc
-         (fn/spaceline-toggle-segment "off")
-         (list
-          "persp-name"
-          "workspace-number"
-          "evil-state"
-          "anzu"
-          "auto-compile"
-          "buffer-size"
-          "remote-host"
-          "flycheck-error"
-          "flycheck-warning"
-          "flycheck-info"
-          "minor-modes"
-          "erc-track"
-          "version-control"
-          "org-pomodoro"
-          "org-clock"
-          "nyan-cat"
-          "battery"
-          "which-function"
-          "python-pyvenv"
-          "selection-info"
-          "input-method"
-          "buffer-encoding-abbrev"
-          "point-position"
-          "line-column"
-          "buffer-position"
-          "hud")))
-    #+END_SRC
 ** Screensaver
    When idle time hits
-
-*** nyan
-    Love them kitty down there. Also this keeps things in perspective to have fun.
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (use-package nyan-mode
-        :ensure t
-        :config
-        (nyan-mode t))
-    #+END_SRC
 
 *** fireplace
     Warm and cozy feeling
@@ -1915,9 +1809,13 @@
         'all-the-icons-mode-icon-alist
         (list 'compilation-mode 'all-the-icons-faicon "cog"))
 
+       (use-package xpm
+         :load-path fn/custom-script-dir
+         :demand t)
+
        (use-package moder
          :load-path fn/custom-script-dir
-         :defer 0))
+         :demand t))
    #+END_SRC
 
 * Organizer
@@ -2213,7 +2111,13 @@
 
         (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fm/insert-org-gpg-headers))
         (add-to-list 'auto-insert-alist '(".*\.private.org" . fm/insert-private-file-headers))
-        (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers)))
+        (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers))
+
+        (use-feature journal-icon
+          (all-the-icons)
+          (add-to-list
+           'all-the-icons-mode-icon-alist
+           (list 'org-journal-mode 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0))))
     #+END_SRC
 
 *** org-reveal
@@ -2561,35 +2465,6 @@
 ** Support
    Generic support for coding
 
-*** type-break-mode
-    I definitely need to chill out from time to time
-
-    #+BEGIN_SRC emacs-lisp :tangle no
-      (use-package type-break
-        :config
-        (setq type-break-interval (* fn/minute-per-second 25)
-              type-break-good-rest-interva (* fn/minute-per-second 5)
-
-              type-break-file-name (expand-file-name "type-break" fn/cache-dir)
-              type-break-auto-save-file-name (expand-file-name "type-break-autosave" fn/cache-dir))
-
-        (global-set-key (kbd "C-c n C-t") 'type-break)
-
-        (type-break-mode t)
-        (type-break-query-mode t))
-
-      ;; Prevent zoning on type break
-      (use-feature type-break-no-zone
-        (zone type-break)
-        (defun fn/disable-zone-on-type-break (type-breaker)
-          "The name pretty much gives it away"
-          (let ((current-zone-idle-time (elt zone-timer 2)))
-            (zone-when-idle 0)
-            (apply type-breaker (list))
-            (zone-when-idle current-zone-idle-time)))
-
-        (advice-add #'type-break :around  #'fn/disable-zone-on-type-break))
-    #+END_SRC
 *** smartparens
     This is as handy as =paredit=
 
@@ -3078,9 +2953,8 @@
           :after company
           :config
           (add-to-list 'company-backends 'company-tern)))
-
-
     #+END_SRC
+
 *** Formatter
     Formatter for js, choose your poison. I tried the three and still am.
 
@@ -3548,6 +3422,51 @@
       (use-package clomacs
         :ensure t
         :after clojure-mode)
+    #+END_SRC
+
+** Guile
+   If Elisp is Guile, then I am prepared.
+
+*** Mode
+    A mode for Guile
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature scheme-mode
+        (scheme)
+
+        (use-feature par-scheme
+          (scheme paredit)
+          (add-hook 'scheme-mode #'paredit-mode))
+
+        (use-feature scheme-icon
+          (all-the-icons)
+          (add-to-list
+           'all-the-icons-mode-icon-alist
+           (list 'scheme-mode 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
+    #+END_SRC
+
+*** REPL
+    A must have
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package geiser
+        :ensure t
+        :after scheme
+        :config
+        (setq geiser-active-implementations (list 'guile)
+           geiser-default-implementation 'guile)
+
+        (use-feature par-geiser
+          (paredit)
+          (add-hook 'geiser-repl-mode-hook #'paredit-mode)))
+    #+END_SRC
+*** Autocomplete
+    Company to the job.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-feature guile-company
+        (scheme company)
+        "(It')s all goodman")
     #+END_SRC
 
 ** Elm

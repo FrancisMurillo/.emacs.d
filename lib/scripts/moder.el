@@ -62,6 +62,13 @@
   "Moder inner width.")
 
 
+(defvar moder-cpu t
+  "If non-nil, put CPU indicator.")
+
+(defvar moder-memory t
+  "If non-nil, put RAM indicator.")
+
+
 (defun moder-merge-style (style text &optional override)
   "Merge text with the new STYLE at TEXT with OVERRIDE."
   (add-face-text-property
@@ -186,7 +193,9 @@
 
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
-  (when (fboundp 'projectile-project-name)
+  (when (and (fboundp 'projectile-project-name)
+           (fboundp 'projectile-project-p)
+           (projectile-project-p))
     (format " %s " (projectile-project-name))))
 
 (defun moder-piece-buffer-name ()
@@ -195,7 +204,8 @@
 
 (defun moder-piece-process ()
   "A piece for process name."
-  (format-mode-line mode-line-process))
+  (unless (string-empty-p (format-mode-line mode-line-process))
+    (format-mode-line (list " " mode-line-process " "))))
 
 (defun moder-piece-misc ()
   "A piece for misc info."
@@ -420,12 +430,14 @@
                    (->> (moder-piece-frame-delay)
                         (moder-default-text-style)
                         (moder-background "#9b59b6"))
-                   (->> (moder-piece-cpu)
-                        (moder-default-text-style)
-                        (moder-background "#f1c40f"))
-                   (->> (moder-piece-memory)
-                        (moder-default-text-style)
-                        (moder-background "#d35400"))
+                   (when moder-cpu
+                     (->> (moder-piece-cpu)
+                          (moder-default-text-style)
+                          (moder-background "#f1c40f")))
+                   (when moder-memory
+                     (->> (moder-piece-memory)
+                          (moder-default-text-style)
+                          (moder-background "#d35400")))
                    (->> (moder-piece-time)
                         (moder-default-text-style)
                         (moder-foreground "#ffff00")
