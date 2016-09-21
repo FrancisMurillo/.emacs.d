@@ -3882,7 +3882,7 @@
        (setq figlet-default-font "slant"))
    #+END_SRC
 
-* Scripts
+* Scriptss
 ** Initial View
    My intial view when Emacs boots up
 

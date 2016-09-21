@@ -480,7 +480,7 @@
                          (moder-background "#e74c3c")
                          (moder-foreground "#ffffff")
                          ;; (moder-foreground "#ecf0f1")
-                         (moder-weight 'ultra-thin)
+                         (moder-weight 'ultra-light)
                          (moder-height 1.0)))))
                 (->> (moder-piece-process)
                      (moder-default-text-style)
