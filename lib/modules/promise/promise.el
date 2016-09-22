@@ -66,7 +66,7 @@
        (in-context t)
        (fulfiller
         (lambda (value)
-          (pcase-let ((`(,state ,promised-value ,_ ,_) promised))
+          (pcase-let ((`(,state ,_ ,_ ,_) promised))
             (when (eq state 'pending)
               (setf (nth 0 promised) 'fulfilled)
               (setf (nth 1 promised) value)
@@ -74,7 +74,7 @@
                 (funcall run-hooks))))))
        (rejector
         (lambda (reason)
-          (pcase-let ((`(,state ,promised-value ,_ ,_) promised))
+          (pcase-let ((`(,state ,_ ,_ ,_) promised))
             (when (eq state 'pending)
               (setf (nth 0 promised) 'rejected)
               (setf (nth 1 promised) reason)
@@ -139,7 +139,7 @@
                       (funcall rej newer-value)))
                  (funcall rej new-value))))))
        (pcase-let
-           ((`(,state ,promise-value ,fulfilled-hooks ,rejected-hooks) promise))
+           ((`(,state ,promise-value ,_ ,_) promise))
          (pcase state
            (`fulfilled
             (when (functionp fulfilled)
@@ -204,8 +204,7 @@
       (promise
        (lambda (fulfiller _)
          (eval-after-load feature
-           (when (featurep feature)
-             (funcall fulfiller feature))))))
+           (funcall fulfiller feature)))))
     features)))
 
 
