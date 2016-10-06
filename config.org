@@ -219,7 +219,7 @@
      (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
 
-     (defvar fn/my-lightning "My lightning... "
+     (defvar fn/my-lightning "My Lightning... "
        "A reference to continue?987654321.
      May I accept the lightning.")
 
@@ -548,13 +548,24 @@
        :ensure t)
    #+END_SRC
 
-** ctable
-   Might be needed for some awesome display
+** all-the-icons
+   Making Emacs more modern.
+
+   Sadly, this has to be placed here because =use-feature= cannot load
+   it properly.
 
    #+BEGIN_SRC emacs-lisp
-     (use-package ctable
+     (use-package all-the-icons
        :ensure t
-       :defer t)
+       :demand t
+       :config
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'fundamental-mode 'all-the-icons-faicon "pencil"))
+
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'compilation-mode 'all-the-icons-faicon "cog")))
    #+END_SRC
 
 ** auto-compile
@@ -629,6 +640,19 @@
        :config
        (setq nsm-settings-file (expand-file-name "network-security.data" fn/cache-dir)
              network-security-level 'high))
+   #+END_SRC
+
+** shell
+   Some configurations on the terminal
+
+   #+BEGIN_SRC emacs-lisp
+     (setq async-shell-command-buffer 'new-buffer)
+
+     (use-feature shell-icon
+       (all-the-icons)
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'shell-mode 'all-the-icons-faicon "terminal" :v-adjust 0.0)))
    #+END_SRC
 
 ** term
@@ -981,8 +1005,7 @@
     #+BEGIN_SRC emacs-lisp
       (use-package workgroups2
         :ensure t
-        :bind (:map fn-standard-prefix-map
-                    ("w" . workgroups-mode))
+        :bind (("C-c w w" . workgroups-mode))
         :init
         (setq wg-prefix-key (kbd "C-c w")
               wg-session-file (expand-file-name "workgroups" fn/cache-dir))
@@ -999,20 +1022,6 @@
               wg-mode-line-decor-left-brace "["
               wg-mode-line-decor-right-brace "]"
               wg-mode-line-decor-divider ":")
-
-        (use-feature spaceline-workgroup
-          (spaceline)
-          (spaceline-define-segment workgroups
-                                    "Name of the current workgroup."
-                                    (when
-                                        (and
-                                         (fboundp 'wg-current-workgroup)
-                                         (fboundp 'wg-workgroup-name)
-                                         (stringp (wg-workgroup-name (wg-current-workgroup))))
-                                      (wg-workgroup-name (wg-current-workgroup))))
-
-          (spaceline-toggle-workgroups-on))
-
 
         (defun fn/workgroup-init ()
           "Some initialization when using workgroups"
@@ -1200,6 +1209,17 @@
 
           (add-hook 'find-file-hook load-project-hook)
           (add-hook 'find-dired-hook load-project-hook))
+
+
+        (defun fn/find-project-root ()
+          "Visit project root."
+          (interactive)
+          (dired-x-find-file (projectile-project-root)))
+
+        (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
+
+        (setq projectile-switch-project-action #'fn/find-project-root)
+
 
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native
@@ -1558,7 +1578,7 @@
         :config
         (setq paradox-github-token t)
 
-        (use-feature icon-paradox
+        (use-feature paradox-icon
           (all-the-icons)
           (add-to-list
            'all-the-icons-mode-icon-alist
@@ -1703,6 +1723,10 @@
 
         (advice-add #'zone :around #'fn/focused-zone)
 
+
+        ;; Garbage collect after zoning
+        (advice-add #'zone :after #'garbage-collect)
+
         ;; Update mode line if there is.
         (advice-add #'zone :before #'force-mode-line-update)
 
@@ -1742,6 +1766,9 @@
         :config
         (add-to-list 'zone-programs 'zone-sl))
     #+END_SRC
+
+    #+RESULTS:
+    : t
 
 ** Coding
    Whatever pertains to coding
@@ -1812,31 +1839,25 @@
       (cons
        (rx bos "*Process List*" eos)
        (cons 'display-buffer-same-window (list))))
+
+     (add-to-list
+      'display-buffer-alist
+      (cons
+       (rx bos "*Async Shell Command*")
+       (cons 'display-buffer-same-window (list))))
    #+END_SRC
 
 ** Mode Line
    The mode line customization.
 
    #+BEGIN_SRC emacs-lisp
-     (use-package all-the-icons
-       :ensure t
-       :demand t
-       :config
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'fundamental-mode 'all-the-icons-faicon "pencil"))
+     (use-package xpm
+       :load-path fn/custom-script-dir
+       :demand t)
 
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'compilation-mode 'all-the-icons-faicon "cog"))
-
-       (use-package xpm
-         :load-path fn/custom-script-dir
-         :demand t)
-
-       (use-package moder
-         :load-path fn/custom-script-dir
-         :demand t))
+     (use-package moder
+       :load-path fn/custom-script-dir
+       :demand t)
    #+END_SRC
 
 * Organizer
@@ -1962,24 +1983,31 @@
       (use-feature org-capture
         (org)
         (setq org-capture-templates
-              (list
-               (list "t" "Todo" 'entry
-                     (list 'file+headline fn/org-todo-file "Todo")
-                     "* TODO %?\n   %i")
-               (list "e" "Event" 'entry
-                     (list 'file+headline  fn/org-event-file "Events")
-                     "* %? :event:")))
+           (list
+            (list "t" "Todo" 'entry
+               (list 'file+headline fn/org-todo-file "Todo")
+               "* TODO %?\n   %i")
+            (list "e" "Event" 'entry
+               (list 'file+headline  fn/org-event-file "Events")
+               "* %? :event:")))
 
         ;; Open org-capture template in one window, not nice but good enough
         ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
+        (defun fq/org-switch-to-buffer (&rest args)
+          "Customized switch to buffer for capture template."
+          (org-no-popups
+           (apply #'switch-to-buffer args)))
+
         (defun fq/org-capture-place-template (&optional inhibit-wconf-store)
           "Insert the template at the target location, and display the buffer.
-      When `inhibit-wconf-store', don't store the window configuration, as it
-      may have been stored before."
+            When `inhibit-wconf-store', don't store the window configuration, as it
+            may have been stored before."
           (unless inhibit-wconf-store
             (org-capture-put :return-to-wconf (current-window-configuration)))
                                               ;(delete-other-windows)
-          (org-switch-to-buffer-other-window
+          ;; (org-switch-to-buffer-other-window
+          ;;  (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
+          (fq/org-switch-to-buffer
            (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
           (widen)
           (show-all)
@@ -1988,7 +2016,7 @@
                          (point-marker))
           (org-set-local 'outline-level 'org-outline-level)
           (let* ((template (org-capture-get :template))
-                 (type (org-capture-get :type)))
+              (type (org-capture-get :type)))
             (case type
               ((nil entry) (org-capture-place-entry))
               (table-line (org-capture-place-table-line))
@@ -1998,7 +2026,12 @@
           (org-capture-mode 1)
           (org-set-local 'org-capture-current-plist org-capture-plist))
 
-        (fset 'org-capture-place-template #'fq/org-capture-place-template))
+        ;; Weird fix here
+        (advice-add
+         #'org-capture
+         :before
+         (lambda (&rest args)
+           (fset 'org-capture-place-template #'fq/org-capture-place-template))))
     #+END_SRC
 
 *** org-agenda
@@ -2486,6 +2519,23 @@
 ** Support
    Generic support for coding
 
+*** Indent Everywhere
+    Just indent before I save when working with code.
+
+    #+BEGIN_SRC emacs-lisp
+      (defun fn/indent-buffer ()
+        "The editor itself is the best formatter"
+        (interactive)
+        (indent-region (point-min) (point-max)))
+
+      (defun fn/indent-before-save ()
+        "Indent buffer after saving to make handling the editor sane.
+      This somehow disregards SVN formatting in favor of the editor"
+        (add-hook 'before-save-hook #'fn/indent-buffer nil t))
+
+      (add-hook 'prog-mode-hook #'fn/indent-before-save t)
+    #+END_SRC
+
 *** smartparens
     This is as handy as =paredit=
 
@@ -2569,6 +2619,16 @@
         :config
         (global-git-gutter-mode t))
     #+END_SRC
+
+**** magithub
+     A tool to help with github.
+
+     #+BEGIN_SRC emacs-lisp
+       ;; Dubious extension for the meantime
+       (use-package magithub
+         :ensure t
+         :defer t)
+     #+END_SRC
 
 **** magit-svn
      Support for SVN with the awesome =magit= interface
@@ -2825,6 +2885,12 @@
         :ensure t
         :defer t)
 
+      (use-feature cask-icon
+        (all-the-icons)
+        (add-to-list
+         'all-the-icons-mode-icon-alist
+         (list 'cask-mode 'all-the-icons-faicon "glass" :v-adjust 0.1)))
+
       (use-package header2
         :ensure t
         :demand t
@@ -2902,24 +2968,18 @@
         :config
         (add-hook 'js-mode-hook 'js2-minor-mode)
 
-        (defun fn/indent-buffer ()
-          "The editor itself is the best formatter"
-          (interactive)
-          (indent-region (point-min) (point-max)))
-
-        (defun fn/indent-after-save ()
-          "Indent buffer after saving to make handling the editor sane.
-      This somehow disregards SVN formatting in favor of the editor"
-          (add-hook 'after-save-hook #'fn/indent-buffer))
-
-        (add-hook 'js2-jsx-mode-hook #'fn/indent-after-save t t)
-
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
               js2-mode-show-strict-warnings nil
 
               js2-include-node-externs t
-              js2-include-browser-externs t))
+              js2-include-browser-externs t)
+
+        (use-feature js-icon
+          (all-the-icons)
+          (add-to-list
+           'all-the-icons-mode-icon-alist
+           (list 'js2-jsx-mode 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
 
       (use-package js-doc
         :ensure t
@@ -2989,7 +3049,7 @@
         :after js2-mode
         :config
         (let ((custom-keymap (fn/make-work-keymap js2-mode-map)))
-          (define-key js2-mode-map (kbd "b") #'jsfmt)))
+          (define-key custom-keymap (kbd "b") #'jsfmt)))
 
       (use-package eslint-fix
         :ensure t
@@ -3044,9 +3104,16 @@
           (js2-mode)
           (add-hook 'js2-mode-hook
                     (lambda ()
+                      (push '("import" . ?∈) prettify-symbols-alist)
+                      (push '("export" . ?∋) prettify-symbols-alist)
+                      (push '("default" . ?τ) prettify-symbols-alist)
+                      (push '("from" . ?∋) prettify-symbols-alist)
+
                       (push '("function" . ?λ) prettify-symbols-alist)
                       (push '("arguments" . ?ω) prettify-symbols-alist)
                       (push '("var" . ?ν) prettify-symbols-alist)
+                      (push '("const" . ?χ) prettify-symbols-alist)
+
                       (push '("return" . ?ρ) prettify-symbols-alist)
                       (push '("this" . ?ι) prettify-symbols-alist)
 
@@ -3882,7 +3949,7 @@
        (setq figlet-default-font "slant"))
    #+END_SRC
 
-* Scriptss
+* Scripts
 ** Initial View
    My intial view when Emacs boots up
 
@@ -4731,6 +4798,20 @@
        (find-file (expand-file-name "config.org" user-emacs-directory)))
    #+END_SRC
 
+** Insert relative path
+   Makes it easier to insert relative paths
+
+   #+BEGIN_SRC emacs-lisp
+     (require 'f)
+
+     (defun fn/find-relative-file-path ()
+       "Insert the relative file path."
+       (interactive)
+       (let* ((relative-path (buffer-file-name))
+           (target-path (car (find-file-read-args "Find file" t))))
+         (f-relative relative-path target-path)))
+   #+END_SRC
+
 * Key Bindings
   Here is where all the key binding I mapped to
 
@@ -4805,6 +4886,7 @@
     (define-key fn-custom-prefix-map (kbd "^") #'fn/dired-parent)
 
 
+
     ;; Namer
     (define-key fn-custom-prefix-map (kbd "v c") #'fmv/insert-camel-case)
     (define-key fn-custom-prefix-map (kbd "v h") #'fmv/insert-hyphenated)
@@ -4840,8 +4922,7 @@
 
     (use-package elk-magic
       :load-path fn/elk-magic-package-dir
-      :after elk
-      :demand t)
+      :after elk)
 
     (defconst fn/stream-package-dir (expand-file-name  "~/Fakespace/stream.el")
       "My stream package dir.")
