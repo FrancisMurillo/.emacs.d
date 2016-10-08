@@ -247,7 +247,7 @@
 
 
      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-        initial-scratch-message nil)
+           initial-scratch-message nil)
    #+END_SRC
 
 ** Environment
@@ -745,7 +745,52 @@
        :ensure t
        :bind (:map fn-standard-prefix-map
                    ("P" . prodigy))
-       :demand t)
+       :demand t
+       :config
+       (defmacro fn/prodigy-with-buffer (&rest body)
+         "Execute BODY within an exisiting prodigy buffer."
+         `(progn
+            (when (prodigy-buffer)
+              (with-current-buffer (prodigy-buffer)
+                ,@body))))
+
+       (defun fn/prodigy-refresh ()
+         "Refresh prodigy buffer."
+         (ignore-errors
+           (fn/prodigy-with-buffer
+            (prodigy-refresh)
+            (prodigy-goto-first-line))))
+
+       (defmacro fn/prodigy-with-default-filters (&rest body)
+         `(fn/prodigy-with-buffer
+           (let ((lexical-binding nil)
+               (fn/prodigy-default-filters nil))
+             ,@body
+             (fn/prodigy-set-default-filter-hook))))
+
+
+       (defvar fn/prodigy-default-filters nil
+         "Default filters for prodigy.")
+
+       (defun fn/prodigy-clear-default-filter ()
+         "Clear default prodigy filters."
+         (setq fn/prodigy-default-filters nil))
+
+       (defun fn/prodigy-add-default-filter (type value)
+         "Add default filter for prodigy with TYPW and VALUE."
+         (push (list type value) fn/prodigy-default-filters))
+
+       (defun fn/prodigy-add-default-tag-filter (tag)
+         "Add a default TAG filter."
+         (fn/prodigy-add-default-filter :tag tag))
+
+       (defun fn/prodigy-set-default-filter-hook ()
+         "Add default filters when opening prodigy"
+         (fn/prodigy-with-buffer
+          (setq prodigy-filters fn/prodigy-default-filters))
+         (fn/prodigy-refresh))
+
+       (add-hook 'prodigy-mode-hook #'fn/prodigy-set-default-filter-hook))
    #+END_SRC
 ** emamux
    Work better with tmux
@@ -1010,32 +1055,81 @@
         (setq wg-prefix-key (kbd "C-c w")
               wg-session-file (expand-file-name "workgroups" fn/cache-dir))
         :config
-        (setq wg-morph-on nil)
+        (setq wg-morph-on nil
 
-        (setq wg-emacs-exit-save-behavior           'save
+              wg-mode-line-display-on nil
+
+              wg-mess-with-buffer-list nil
+
+              wg-buffer-auto-association-on nil
+              wg-undoify-window-configuration-change nil
+
+              wg-open-this-wg "Mine"
+
+              wg-buffer-local-variables-alist (list)
+
+              wg-restore-frame-position nil
+              wg-restore-scroll-bars nil
+              wg-restore-margins nil
+
+              wg-restore-point t
+              wg-restore-point-max t
+
+              wg-restore-mark nil
+              wg-restore-window-dedicated-p nil
+              wg-remember-frame-for-each-wg nil
+
+              wg-emacs-exit-save-behavior           'save
               wg-workgroups-mode-exit-save-behavior 'save)
 
-        (setq wg-flag-modified nil)
+        (defun fn/wg-session-list-buffers (&optional frame)
+          "Get the current session buffers."
+          (-reject
+           (-compose
+            (-partial #'s-starts-with-p " ")
+            #'buffer-name)
+           (funcall wg-buffer-list-function frame)))
 
-        ;; Modeline
-        (setq wg-mode-line-display-on nil ;; HIRO: When you're done exploring the mode line
-              wg-mode-line-decor-left-brace "["
-              wg-mode-line-decor-right-brace "]"
-              wg-mode-line-decor-divider ":")
+        (defun fn/list-to-hash-table (xs)
+          "Convert XS to a hash table with equality comparison."
+          (let ((table (make-hash-table)))
+            (mapc (lambda (x) (puthash x t table)) xs)
+            table))
 
-        (defun fn/workgroup-init ()
-          "Some initialization when using workgroups"
-          (lexical-let ((current-workgroup-name (wg-workgroup-name (wg-current-workgroup))))
-            (pcase current-workgroup-name
-              ("Personal"  (fn/personal-workgroup-init))
-              (_ nil))))
+        (defun fn/wg-switch-to-buffer ()
+          "Switch buffer with my custom workgroup."
+          (interactive)
+          (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
+                         (buffer-table (fn/list-to-hash-table session-buffers))
+                         (predicate
+                          (lambda (buffer-pair)
+                            (when (consp buffer-pair)
+                              (lexical-let* ((buffer (cdr buffer-pair)))
+                                (gethash buffer buffer-table nil)))))
+                         (buffer (read-buffer
+                                  "Switch to session buffer: "
+                                  nil
+                                  t
+                                  predicate)))
+            (switch-to-buffer buffer)))
 
-        (defun fn/personal-workgroup-init ()
-          "My personal setup when working with my personal files"
-          ;; Only one window please
-          (delete-other-windows))
+        (defun fn/wg-create-workgroup ()
+          "Create a blank workgroup"
+          (interactive)
+          (let ((current-prefix-arg t))
+            (call-interactively #'wg-create-workgroup)))
 
-        (add-hook 'wg-after-switch-to-workgroup-hook #'fn/workgroup-init))
+
+        (define-key wg-prefixed-map (kbd "b") #'fn/wg-switch-to-buffer)
+        (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
+
+
+        (run-with-idle-timer 0 nil (lambda  ()
+                                     (define-key workgroups-mode-map
+                                       (vector 'remap 'wg-create-workgroup)
+                                       #'fn/wg-create-workgroup)))
+
+        (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect))
     #+END_SRC
 
 *** winner
@@ -1056,7 +1150,36 @@
         :ensure t
         :demand t
         :config
-        (window-numbering-mode t))
+        (window-numbering-mode t)
+
+
+        (require 'dash)
+
+        (defun fn/get-window-by-number (window-number)
+          "Get window by WINDOW-NUMBER."
+          (-find
+           (lambda (window)
+             (= (window-numbering-get-number window) window-number))
+           (window-list)))
+
+        (defun fn/swap-windows (this-window that-window)
+          "Swap THIS-WINDOW and THAT-WINDOW"
+          (let ((this-buffer (window-buffer this-window))
+                (that-buffer (window-buffer that-window)))
+            (unless (eq this-buffer that-buffer)
+              (set-window-buffer this-window that-buffer)
+              (set-window-buffer that-window this-buffer))))
+
+        (defun fn/swap-with-numbered-window (window-number)
+          "Swap with current window with numbered window."
+          (interactive "NWhat window number? ")
+          (let ((this-window (selected-window))
+                (that-window (fn/get-window-by-number window-number)))
+            (if (null that-window)
+                (message "Window %s does not exist"
+                         window-number)
+              (fn/swap-windows this-window that-window)
+              (select-window-by-number window-number)))))
     #+END_SRC
 
 *** golden-ratio
@@ -1224,6 +1347,8 @@
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native
               projectile-enable-caching t)
+
+        (setq projectile-sort-order 'modification-time)
 
         (add-to-list 'projectile-project-root-files "config.xml"))
     #+END_SRC
@@ -1428,7 +1553,7 @@
              (prog1
                  (helm-comp-read prompt (fmc/uniquify-project-paths choices)
                                  :buffer fmc/completion-buffer-name
-                                 :must-match 'confirm)
+                                 :must-match t)
                (kill-buffer fmc/completion-buffer-name)))
 
            (setq projectile-completion-system #'fmc/custom-helm-completion)))
@@ -1983,13 +2108,13 @@
       (use-feature org-capture
         (org)
         (setq org-capture-templates
-           (list
-            (list "t" "Todo" 'entry
-               (list 'file+headline fn/org-todo-file "Todo")
-               "* TODO %?\n   %i")
-            (list "e" "Event" 'entry
-               (list 'file+headline  fn/org-event-file "Events")
-               "* %? :event:")))
+              (list
+               (list "t" "Todo" 'entry
+                     (list 'file+headline fn/org-todo-file "Todo")
+                     "* TODO %?\n   %i")
+               (list "e" "Event" 'entry
+                     (list 'file+headline  fn/org-event-file "Events")
+                     "* %? :event:")))
 
         ;; Open org-capture template in one window, not nice but good enough
         ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
@@ -2016,7 +2141,7 @@
                          (point-marker))
           (org-set-local 'outline-level 'org-outline-level)
           (let* ((template (org-capture-get :template))
-              (type (org-capture-get :type)))
+                 (type (org-capture-get :type)))
             (case type
               ((nil entry) (org-capture-place-entry))
               (table-line (org-capture-place-table-line))
@@ -2190,7 +2315,6 @@
           :init-value nil
           :global nil
           :keymap (let* ((map (fn/make-prefixed-keymap (kbd "C-c b")))
-                         (prefix-keymap (make-sparse-keymap))
                          (tangle-current-file
                           (lambda ()
                             (interactive)
@@ -2256,8 +2380,13 @@
 
           (add-to-list 'org-capture-templates
                        (list "r" "Review/Remember" 'entry
-                             (list 'file+headline fn/org-review-file "Learning Notes" "Review")
+                             (list 'file+headline fn/org-review-file "Learning Notes")
                              "* %? :drill:\n  CREATED_ON: %T"))
+
+          (add-to-list 'org-capture-templates
+                       (list "m" "Music Piece" 'entry
+                             (list 'file+headline fn/org-review-file "Music Pieces")
+                             "* %? :drill:music-piece:\n  CREATED_ON: %T"))
 
           (add-to-list 'org-agenda-files fn/org-review-file)
 
@@ -3033,7 +3162,12 @@
           :ensure t
           :after company
           :config
-          (add-to-list 'company-backends 'company-tern)))
+          (add-to-list 'company-backends 'company-tern))
+
+        (use-feature tern-prodigy
+          (tern)
+          (prodigy-define-tag
+            :name 'tern)))
     #+END_SRC
 
 *** Formatter
@@ -3542,7 +3676,7 @@
         :after scheme
         :config
         (setq geiser-active-implementations (list 'guile)
-           geiser-default-implementation 'guile)
+              geiser-default-implementation 'guile)
 
         (use-feature par-geiser
           (paredit)
@@ -4067,6 +4201,179 @@
         (interactive)
         (fn/bootstrap-new-emacs fn/john-wiegley-home))
     #+END_SRC
+** Session Configurations
+   When working with sessions, it would be nice to have some default
+   configuration when opened.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-feature workgroup-configuration
+       (workgroups2)
+
+       (require 'dash)
+
+       ;; Variables
+       (defvar fmwc/workgroup-configs (list)
+         "An data type of workgroup initialization configuration.")
+
+       ;; Main macro config
+       (defmacro fmwc/define-workgroup-configs (config-name setup-body cleanup-body)
+         (let* ((base-format "fmwc/%s-config-%s-hook")
+                (setup-function-name (downcase (format base-format config-name "setup")))
+                (cleanup-function-name (downcase (format base-format config-name "cleanup")))
+                (setup-function (intern setup-function-name))
+                (cleanup-function (intern cleanup-function-name)))
+           (fset setup-function
+                 `(lambda ()
+                    ,(format "Workspace setup config for %s" config-name)
+                    (list ,setup-body)))
+           (fset cleanup-function
+                 `(lambda ()
+                    ,(format "Workspace cleanup config for %s" config-name)
+                    (list ,cleanup-body)))
+           (if (>= (length fmwc/workgroup-configs) 10)
+               (error "You already have 10 workgroup configurations already")
+             `(add-to-list
+               'fmwc/workgroup-configs
+               (list
+                ,config-name
+                (quote ,setup-function)
+                (quote ,cleanup-function))
+               t))))
+
+
+       ;; Configurations
+       (fmwc/define-workgroup-configs
+        "Mine"
+        nil
+        nil)
+
+       (fmwc/define-workgroup-configs
+        "Personal"
+        (progn
+          (delete-other-windows))
+        nil)
+
+       (fmwc/define-workgroup-configs
+        "Working"
+        nil
+        nil)
+
+       (fmwc/define-workgroup-configs
+        "Desktop"
+        nil
+        nil)
+
+       (fmwc/define-workgroup-configs
+        "Writer"
+        (progn
+          (fn/prodigy-with-default-filters
+           (fn/prodigy-add-default-tag-filter 'frontend-functions)))
+        nil)
+
+
+       ;; Api
+       (defun fmwc/workgroup-config-name (workgroup)
+         "Get the name of a WORKGROUP."
+         (nth 0 workgroup))
+
+       (defun fmwc/workgroup-config-setup-function (workgroup)
+         "Get the setup function of a WORKGROUP."
+         (nth 1 workgroup))
+
+       (defun fmwc/workgroup-config-cleanup-function (workgroup)
+         "Get the cleanup function of a WORKGROUP."
+         (nth 2 workgroup))
+
+
+       ;; Workgroup specific
+       (defun fmwc/workgroup-name (workgroup)
+         "Get the name of a WORKGROUP."
+         (wg-workgroup-name workgroup))
+
+       (defun fmwc/create-default-workgroup (name)
+         (wg-make-and-add-workgroup name t))
+
+       (defun fmwc/current-workgroup-name ()
+         "Get the current workgroup name."
+         (when workgroups-mode
+           (fmwc/workgroup-name (wg-current-workgroup))))
+
+       (defun fmwc/workgroups ()
+         "Get the workgroups."
+         (when workgroups-mode
+           (wg-workgroup-list-or-error)))
+
+
+       ;; Custom
+       (defun fmwc/get-workgroup-config-by-name (workgroup-name)
+         "Get the corresponding workgroup from the config by the WORKGROUP-NAME."
+         (-first
+          (lambda (workgroup-config)
+            (let ((config-name (fmwc/workgroup-config-name workgroup-config)))
+              (string-equal config-name workgroup-name)))
+          fmwc/workgroup-configs))
+
+       (defun fmwc/get-current-workgroup-config ()
+         "Get the current workgroup config."
+         (fmwc/get-workgroup-config-by-name (fmwc/current-workgroup-name)))
+
+       (defun fmwc/workgroup-config-setup ()
+         "Initialize the workgroup per configuration."
+         (condition-case ex
+             (-if-let* ((config (fmwc/get-current-workgroup-config))
+                        (setup-function (fmwc/workgroup-config-setup-function config)))
+                 (prog2
+                     (message "Running setup for %s" (fmwc/workgroup-config-name config))
+                     (funcall setup-function))
+               nil)
+           ('error (message "Workgroup config setup error: " (error-message-string ex)))))
+
+       (defun fmwc/workgroup-config-cleanup ()
+         "Cleanup for workgroup configuration."
+         (condition-case ex
+             (-if-let* ((config (fmwc/get-current-workgroup-config))
+                        (cleanup-function (fmwc/workgroup-config-cleanup-function config)))
+                 (prog2
+                     (message "Running cleanup for %s" (fmwc/workgroup-config-name config))
+                     (funcall cleanup-function))
+               nil)
+           ('error (message "Workgroup config cleanup error: " (error-message-string ex)))))
+
+
+       (defun fmwc/workgroup-config-configure ()
+         "Tries to mirror the workspace configuration."
+         (interactive)
+         (if workgroups-mode
+             (-map-indexed
+              (lambda (index config)
+                (lexical-let* ((config-name (fmwc/workgroup-config-name config))
+                               (workgroups (fmwc/workgroups))
+                               (workgroup-index
+                                (-find-index
+                                 (lambda (workgroup)
+                                   (string-equal (fmwc/workgroup-name workgroup) config-name))
+                                 workgroups)))
+                  (cond
+                   ((null workgroup-index)
+                    (fmwc/create-default-workgroup config-name))
+                   ((= workgroup-index index)
+                    "NOOP: All is good here.")
+                   (t
+                    (wg-swap-workgroups-in-workgroup-list
+                     (nth index workgroups)
+                     (nth workgroup-index workgroups))))))
+              fmwc/workgroup-configs)
+           (message "Workgroup mode is not active.")))
+
+       (use-feature workspace-prodigy
+         (prodigy)
+         (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-clear-default-filterq)
+         (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-set-default-filter-hook))
+
+       (add-hook 'wg-after-switch-to-workgroup-hook #'fmwc/workgroup-config-setup)
+       (add-hook 'wg-before-switch-to-workgroup-hook #'fmwc/workgroup-config-cleanup))
+   #+END_SRC
+
 ** Window Layouts
    Split the windows into a nice four panel division. This works even
    well with [[golden-ratio]].
@@ -4173,7 +4480,6 @@
 
                               (split-window-horizontally)
                               (other-window 2))))
-
    #+END_SRC
 
 ** Utility Commands
@@ -4808,7 +5114,7 @@
        "Insert the relative file path."
        (interactive)
        (let* ((relative-path (buffer-file-name))
-           (target-path (car (find-file-read-args "Find file" t))))
+              (target-path (car (find-file-read-args "Find file" t))))
          (f-relative relative-path target-path)))
    #+END_SRC
 
@@ -4857,6 +5163,10 @@
     (define-key fn-custom-prefix-map (kbd "w 3") 'fmw/three-part-vertical-window-layout)
     (define-key fn-custom-prefix-map (kbd "w 4") 'fmw/four-part-equal-vertical-window-layout)
     (define-key fn-custom-prefix-map (kbd "w r") 'fmw/rotate-window-buffers)
+
+    ;; MEOW
+    (define-key fn-custom-prefix-map (kbd "w s")
+      'fn/swap-with-numbered-window)
 
     ;; System Buffers
     (define-key fn-custom-prefix-map (kbd "b m") 'fn/open-message-buffer)
