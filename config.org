@@ -4344,30 +4344,35 @@
          "Tries to mirror the workspace configuration."
          (interactive)
          (if workgroups-mode
-             (-map-indexed
-              (lambda (index config)
-                (lexical-let* ((config-name (fmwc/workgroup-config-name config))
-                               (workgroups (fmwc/workgroups))
-                               (workgroup-index
-                                (-find-index
-                                 (lambda (workgroup)
-                                   (string-equal (fmwc/workgroup-name workgroup) config-name))
-                                 workgroups)))
-                  (cond
-                   ((null workgroup-index)
-                    (fmwc/create-default-workgroup config-name))
-                   ((= workgroup-index index)
-                    "NOOP: All is good here.")
-                   (t
-                    (wg-swap-workgroups-in-workgroup-list
-                     (nth index workgroups)
-                     (nth workgroup-index workgroups))))))
-              fmwc/workgroup-configs)
+             (prog1
+                 (-map-indexed
+                  (lambda (index config)
+                    (lexical-let* ((config-name (fmwc/workgroup-config-name config))
+                        (workgroups (fmwc/workgroups))
+                        (workgroup-index
+                         (-find-index
+                          (lambda (workgroup)
+                            (string-equal (fmwc/workgroup-name workgroup) config-name))
+                          workgroups)))
+                      (cond
+                       ((null workgroup-index)
+                        (message "Creating workspace %s" config-name)
+                        (wg-swap-workgroups-in-workgroup-list
+                         (fmwc/create-default-workgroup config-name)
+                         (nth index workgroups)))
+                       ((= workgroup-index index)
+                        "NOOP: All is good here.")
+                       (t
+                        (wg-swap-workgroups-in-workgroup-list
+                         (nth index workgroups)
+                         (nth workgroup-index workgroups))))))
+                  fmwc/workgroup-configs)
+               (message "Done auto configuring workgroups."))
            (message "Workgroup mode is not active.")))
 
        (use-feature workspace-prodigy
          (prodigy)
-         (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-clear-default-filterq)
+         (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-clear-default-filter)
          (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-set-default-filter-hook))
 
        (add-hook 'wg-after-switch-to-workgroup-hook #'fmwc/workgroup-config-setup)

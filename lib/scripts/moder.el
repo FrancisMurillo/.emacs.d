@@ -235,16 +235,17 @@
 (defun moder-piece-workgroup-name ()
   "A piece for the workgroup name."
   (when (and (fboundp 'wg-current-workgroup)
-             (fboundp 'wg-workgroup-name)
-             (fboundp 'workgroups-mode)
-             (not (null workgroups-mode)))
+           (fboundp 'wg-workgroup-name)
+           (fboundp 'workgroups-mode)
+           (not (null workgroups-mode))
+           (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
     (format " %s " (wg-workgroup-name (wg-current-workgroup)))))
 
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
   (when (and (fboundp 'projectile-project-name)
-             (fboundp 'projectile-project-p)
-             (projectile-project-p))
+           (fboundp 'projectile-project-p)
+           (projectile-project-p))
     (format " %s " (projectile-project-name))))
 
 (defun moder-piece-buffer-name ()
@@ -275,10 +276,10 @@
   "A piece for flycheck errors."
   (when (boundp 'flycheck-current-errors)
     (let ((error-count (length
-                        (->> flycheck-current-errors
-                             (-map #'flycheck-error-level)
-                             (-filter #'flycheck-error-level-p)
-                             (-filter (lambda (level) (eq level 'error)))))))
+                      (->> flycheck-current-errors
+                           (-map #'flycheck-error-level)
+                           (-filter #'flycheck-error-level-p)
+                           (-filter (lambda (level) (eq level 'error)))))))
       (if (zerop error-count)
           nil
         (format " %s " error-count)))))
@@ -287,7 +288,7 @@
 (defun moder-between-time (lower-time upper-time time)
   "Check if between LOWER-TIME, UPPER-TIME and TIME."
   (and (or (string-greaterp time lower-time) (string-equal time lower-time))
-       (or (string-lessp time upper-time) (string-equal time upper-time))))
+     (or (string-lessp time upper-time) (string-equal time upper-time))))
 
 (defun moder-piece-cpu ()
   "A piece for the cpu."
@@ -310,12 +311,12 @@
 (defun moder-piece-time ()
   "A piece for the current time."
   (let* ((current-time    (format-time-string "%R" ))
-         (time-event
-          (cond
-           ((moder-between-time "13:15" "14:00" current-time) "Nap")
-           ((moder-between-time "15:30" "16:00" current-time) "Break")
-           ((moder-between-time "18:00" "19:00" current-time) "AFK")
-           (t nil))))
+      (time-event
+       (cond
+        ((moder-between-time "13:15" "14:00" current-time) "Nap")
+        ((moder-between-time "15:30" "16:00" current-time) "Break")
+        ((moder-between-time "18:00" "19:00" current-time) "AFK")
+        (t nil))))
     (format
      " %s%s "
      current-time
