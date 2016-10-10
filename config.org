@@ -482,6 +482,46 @@
        (unicode-fonts-setup))
    #+END_SRC
 
+** persistent-soft
+   Nice to have some persistence.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package persistent-soft
+       :ensure t
+       :demand t
+       :config
+       (defconst fn/persistence-location "custom-persistence"
+         "My persistence location.")
+
+       (defvar fn/persistence-managed-symbols (list)
+         "Managed persistent symbols.")
+
+
+       (defun fn/persistence-store (key value)
+         "Just a wrapper for `persistent-soft-store' with KEY and VALUE,
+     location is defined by `fn/-persistence-location'."
+         (persistent-soft-store key value fn/persistence-location))
+
+       (defun fn/persistence-fetch (key)
+         "Another wrapper for `persistent-soft-fetch' with KEY,
+     and location is defined by `fn/custom-persistence-file'."
+         (persistent-soft-fetch key fn/persistence-location))
+
+       (defun fn/persistence-flush ()
+         "Store all symbols in `fn/persistence-managed-symbols' before Emacs closes."
+         (mapc
+          (lambda (symbol)
+            (ignore-errors
+              (fn/persistence-store symbol (symbol-value symbol))))
+          fn/persistence-managed-symbols))
+
+       (add-hook 'kill-emacs-hook #'fn/persistence-flush)
+
+       (defun fn/persistence-manage-symbol (symbol)
+         (set symbol (fn/persistence-fetch symbol))
+         (push symbol fn/persistence-managed-symbols)))
+   #+END_SRC
+
 ** exec-path-from-shell
    The path variable from the shell is need to run commands
 
@@ -561,11 +601,15 @@
        :config
        (add-to-list
         'all-the-icons-mode-icon-alist
-        (list 'fundamental-mode 'all-the-icons-faicon "pencil"))
+        (list 'fundamental-mode 'all-the-icons-faicon "pencil" :v-adjust -0.1))
 
        (add-to-list
         'all-the-icons-mode-icon-alist
-        (list 'compilation-mode 'all-the-icons-faicon "cog")))
+        (list 'compilation-mode 'all-the-icons-faicon "cog" :v-adjust -0.1))
+
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'process-menu-mode 'all-the-icons-faicon "list" :v-adjust -0.1)))
    #+END_SRC
 
 ** auto-compile
@@ -741,9 +785,12 @@
      (defconst fn/prodigy-dir (expand-file-name "prodigy/" fn/custom-module-dir)
        "Prodigy dir")
 
+     (defconst fn/prodigy-map (fn/make-prefixed-keymap (kbd "P") fn-standard-prefix-map)
+       "My custom prodigy map.")
+
      (use-package prodigy
        :ensure t
-       :bind (:map fn-standard-prefix-map
+       :bind (:map fn/prodigy-map
                    ("P" . prodigy))
        :demand t
        :config
@@ -763,10 +810,9 @@
 
        (defmacro fn/prodigy-with-default-filters (&rest body)
          `(fn/prodigy-with-buffer
-           (let ((lexical-binding nil)
-               (fn/prodigy-default-filters nil))
-             ,@body
-             (fn/prodigy-set-default-filter-hook))))
+           (fn/prodigy-clear-default-filter)
+           ,@body
+           (fn/prodigy-set-default-filter-hook)))
 
 
        (defvar fn/prodigy-default-filters nil
@@ -790,7 +836,40 @@
           (setq prodigy-filters fn/prodigy-default-filters))
          (fn/prodigy-refresh))
 
-       (add-hook 'prodigy-mode-hook #'fn/prodigy-set-default-filter-hook))
+       (add-hook 'prodigy-mode-hook #'fn/prodigy-set-default-filter-hook)
+
+
+       (defun fn/prodigy-switch-to-process-buffer (service)
+         "Just an wrapper for said function with SERVICE."
+         (prodigy-switch-to-process-buffer service))
+
+       (defun fn/prodigy-prepared-switch-to-process-buffer (service)
+         "Another wrapper to make specific functions for viewing SERVICE."
+         (lexical-let* ((service-name (plist-get service :name))
+             (command-name (or (plist-get service :bind-command-name)
+                              (symbol-name (gensym "prodigy-view-"))))
+             (prefix "fmpv/")
+             (function-symbol (intern (format "%s%s" prefix command-name)))
+             (service service))
+           (fset function-symbol
+                 `(lambda ()
+                    ,(format "A prodigy view function for %s" service-name)
+                    (interactive)
+                    (fn/prodigy-switch-to-process-buffer (quote ,service))))
+           function-symbol))
+
+       (defun fn/prodigy-define-service (&rest args)
+         "When creating a service, check for a :bind keyword to create an automatic keybinding for it."
+         (let ((result (apply #'prodigy-define-service args)))
+           (prog1
+               result
+             (let* ((service (car result))
+                 (name (plist-get service :name))
+                 (bind (plist-get service :bind))
+                 (bind-map (or (plist-get service :bind-map) global-map)))
+               (when bind
+                 (message "Creating binding for %s" name)
+                 (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service))))))))
    #+END_SRC
 ** emamux
    Work better with tmux
@@ -1061,7 +1140,7 @@
 
               wg-mess-with-buffer-list nil
 
-              wg-buffer-auto-association-on nil
+              wg-buffer-auto-association-on t
               wg-undoify-window-configuration-change nil
 
               wg-open-this-wg "Mine"
@@ -1263,7 +1342,7 @@
         :demand t
         :config
         (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
-              projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
+           projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
 
         (defconst fn/project-file ".project.el"
           "Project configuration file")
@@ -1277,8 +1356,8 @@
         (defun fn/create-projectile-file ()
           (interactive)
           (lexical-let* ((target-dir  (read-directory-name "Where do you want to the .projectile placed?"))
-                         (projectile-file-name ".projectile")
-                         (projectile-file (expand-file-name projectile-file-name target-dir)))
+              (projectile-file-name ".projectile")
+              (projectile-file (expand-file-name projectile-file-name target-dir)))
             (cond
              ((file-exists-p projectile-file)
               (message "Projectile file alread exists"))
@@ -1292,24 +1371,28 @@
           (interactive)
           (when (projectile-project-p)
             (let* ((current-project-root (projectile-project-root))
-                   (project-init-file (expand-file-name fn/project-file current-project-root)))
+                (project-init-file (expand-file-name fn/project-file current-project-root)))
               (when (file-exists-p project-init-file)
                 (message "Loading project init file for %s" (projectile-project-name))
                 (condition-case ex
                     (load project-init-file t)
-                  ('error (message "There was an error loading %s" project-init-file)))))))
+                  ('error (message "There was an error loading %s: %s"
+                                   project-init-file
+                                   (error-message-string ex))))))))
 
         (defun fn/load-project-local-file ()
           (interactive)
           (when (projectile-project-p)
             (let* ((current-project-root (projectile-project-root))
-                   (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+                (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
               (when (and  (file-exists-p project-local-init-file)
-                          (not (member (buffer-file-name) fn/project-init-files)))
+                        (not (member (buffer-file-name) fn/project-init-files)))
                 (message "Loading project local file for %s on %s" (projectile-project-name) (buffer-name))
                 (condition-case ex
                     (load project-local-init-file t)
-                  ('error (message "There was an error loading %s" project-local-init-file)))))))
+                  ('error (message "There was an error loading %s: %s"
+                                   project-local-init-file
+                                   (error-message-string ex))))))))
 
 
         ;; This must go before load-project-hook
@@ -1317,18 +1400,19 @@
         (add-hook 'find-dired-hook #'fn/load-project-local-file t)
 
 
-        (lexical-let* ((project-memoized (lambda ()
-                                           (lexical-let ((initialized-projects (list ".")))
-                                             #'(lambda ()
-                                                 (when (projectile-project-p)
-                                                   (lexical-let ((current-project (projectile-project-root)))
-                                                     (if (not (member current-project initialized-projects))
-                                                         (progn
-                                                           (add-to-list 'initialized-projects current-project)
-                                                           (fn/load-project-file))
-                                                       current-project
-                                                       )))))))
-                       (load-project-hook (funcall project-memoized)))
+        (lexical-let* ((project-memoized
+             (lambda ()
+               (lexical-let ((initialized-projects (list ".")))
+                 #'(lambda ()
+                     (when (projectile-project-p)
+                       (lexical-let ((current-project (projectile-project-root)))
+                         (if (not (member current-project initialized-projects))
+                             (progn
+                               (add-to-list 'initialized-projects current-project)
+                               (fn/load-project-file))
+                           current-project
+                           )))))))
+            (load-project-hook (funcall project-memoized)))
 
           (add-hook 'find-file-hook load-project-hook)
           (add-hook 'find-dired-hook load-project-hook))
@@ -1346,7 +1430,7 @@
 
         (projectile-global-mode t)
         (setq projectile-indexing-method 'native
-              projectile-enable-caching t)
+           projectile-enable-caching t)
 
         (setq projectile-sort-order 'modification-time)
 
@@ -2065,7 +2149,9 @@
          "My event planning file")
 
        (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
-             org-directory (concat fn/org-dir "/")))
+          org-directory (concat fn/org-dir "/"))
+
+       (fn/persistence-manage-symbol 'org-insert-link-history))
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -4211,24 +4297,43 @@
 
        (require 'dash)
 
+
        ;; Variables
        (defvar fmwc/workgroup-configs (list)
          "An data type of workgroup initialization configuration.")
 
+       (defvar fmwc/workgroup-config-icons (list)
+         "An list of workgroup config icons, taken from `all-the-icons' mode line.")
+
+       (defvar fmwc/current-workgroup-config nil
+         "Current workgroup config used.")
+
+       (defvar fmwc/workgroup-configs-loaded (list)
+         "Workgroups configs loaded.")
+
        ;; Main macro config
-       (defmacro fmwc/define-workgroup-configs (config-name setup-body cleanup-body)
+       (defmacro fmwc/define-workgroup-configs (config-name init-body setup-body cleanup-body)
          (let* ((base-format "fmwc/%s-config-%s-hook")
-                (setup-function-name (downcase (format base-format config-name "setup")))
-                (cleanup-function-name (downcase (format base-format config-name "cleanup")))
-                (setup-function (intern setup-function-name))
-                (cleanup-function (intern cleanup-function-name)))
+             (init-function-name (downcase (format base-format config-name "init")))
+             (setup-function-name (downcase (format base-format config-name "setup")))
+             (cleanup-function-name (downcase (format base-format config-name "cleanup")))
+             (init-function (intern init-function-name))
+             (setup-function (intern setup-function-name))
+             (cleanup-function (intern cleanup-function-name)))
+           (fset init-function
+                 `(lambda ()
+                    ,(format "Workspace init config for %s" config-name)
+                    (interactive)
+                    (list ,init-body)))
            (fset setup-function
                  `(lambda ()
                     ,(format "Workspace setup config for %s" config-name)
+                    (interactive)
                     (list ,setup-body)))
            (fset cleanup-function
                  `(lambda ()
                     ,(format "Workspace cleanup config for %s" config-name)
+                    (interactive)
                     (list ,cleanup-body)))
            (if (>= (length fmwc/workgroup-configs) 10)
                (error "You already have 10 workgroup configurations already")
@@ -4236,35 +4341,113 @@
                'fmwc/workgroup-configs
                (list
                 ,config-name
+                (quote ,init-function)
                 (quote ,setup-function)
                 (quote ,cleanup-function))
                t))))
+
+       (defun fmwc/add-workgroup-config-icon (icon-family icon-function icon-name &rest args)
+         "Just like with `all-the-icons' mode line, this is for workgroup config with
+     ICON-FAMILY, ICON-FUNCTION, ICON-NAME and ARGS."
+         (let* ((config-name (fmwc/current-workgroup-name)))
+           (add-to-list
+            'fmwc/workgroup-config-icons
+            (append
+             (list
+              config-name
+              icon-family
+              icon-function
+              icon-name)
+             args))))
+
+       (defun fmwc/workgroup-config-icon-for-workgroup ()
+         "Return icon for workgroup as defined for `fmwc/workgroup-config-icons' list"
+         (-if-let* ((current-workgroup-name (fmwc/current-workgroup-name))
+                    (result (assoc current-workgroup-name fmwc/workgroup-config-icons)))
+             (let* ((icon-result (cdr result))
+                 (icon-font-function (car icon-result))
+                 (icon-function (cadr icon-result))
+                 (icon-args (cddr icon-result)))
+               (propertize
+                (format " %s " (apply icon-function icon-args))
+                'help-echo (format "Workgroup: `%s`" current-workgroup-name)
+                'face
+                (list
+                 :family (funcall icon-font-function))))
+           nil))
 
 
        ;; Configurations
        (fmwc/define-workgroup-configs
         "Mine"
+        (progn
+          (fmwc/add-workgroup-config-icon
+           'all-the-icons-faicon-family
+           'all-the-icons-faicon
+           "random"
+           :v-adjust -0.1))
         nil
         nil)
 
        (fmwc/define-workgroup-configs
         "Personal"
         (progn
-          (delete-other-windows))
+          (fmwc/add-workgroup-config-icon
+           'all-the-icons-faicon-family
+           'all-the-icons-faicon
+           "book"
+           :v-adjust -0.1))
+        (progn
+          (delete-other-windows)
+          (fn/prodigy-with-default-filters
+           (fn/prodigy-add-default-tag-filter 'gnus)))
         nil)
 
        (fmwc/define-workgroup-configs
         "Working"
-        nil
+        (progn
+          (fmwc/add-workgroup-config-icon
+           'all-the-icons-faicon-family
+           'all-the-icons-faicon
+           "code"
+           :v-adjust -0.1))
+        (progn
+          (fn/prodigy-with-default-filters
+           (fn/prodigy-add-default-tag-filter 'komunidad)))
         nil)
 
        (fmwc/define-workgroup-configs
         "Desktop"
+        (progn
+          (fmwc/add-workgroup-config-icon
+           'all-the-icons-faicon-family
+           'all-the-icons-faicon
+           "desktop"
+           :v-adjust -0.1))
         nil
         nil)
 
        (fmwc/define-workgroup-configs
+        "Blogger"
+        (progn
+          (fmwc/add-workgroup-config-icon
+           'all-the-icons-faicon-family
+           'all-the-icons-faicon
+           "comment"
+           :v-adjust -0.1))
+        (progn
+          (fn/prodigy-with-default-filters
+           (fn/prodigy-add-default-tag-filter 'fn-log)))
+        nil)
+
+       (fmwc/define-workgroup-configs
         "Writer"
+        (progn
+          (fmwc/add-workgroup-config-icon
+           'all-the-icons-faicon-family
+           'all-the-icons-faicon
+           "pencil"
+           :v-adjust -0.1))
         (progn
           (fn/prodigy-with-default-filters
            (fn/prodigy-add-default-tag-filter 'frontend-functions)))
@@ -4276,13 +4459,18 @@
          "Get the name of a WORKGROUP."
          (nth 0 workgroup))
 
+       (defun fmwc/workgroup-config-init-function (workgroup)
+         "Get the init function of a WORKGROUP."
+         (nth 1 workgroup))
+
+
        (defun fmwc/workgroup-config-setup-function (workgroup)
          "Get the setup function of a WORKGROUP."
-         (nth 1 workgroup))
+         (nth 2 workgroup))
 
        (defun fmwc/workgroup-config-cleanup-function (workgroup)
          "Get the cleanup function of a WORKGROUP."
-         (nth 2 workgroup))
+         (nth 3 workgroup))
 
 
        ;; Workgroup specific
@@ -4321,10 +4509,26 @@
          "Initialize the workgroup per configuration."
          (condition-case ex
              (-if-let* ((config (fmwc/get-current-workgroup-config))
+                        (config-name (fmwc/workgroup-config-name config))
+                        (init-function (fmwc/workgroup-config-init-function config)))
+                 (unless (-contains-p fmwc/workgroup-configs-loaded config-name)
+                   (message "Running init for %s" config-name)
+                   (prog2
+                       (setq fmwc/current-workgroup-config config)
+                       (funcall init-function)
+                     (setq fmwc/current-workgroup-config nil))
+                   (add-to-list 'fmwc/workgroup-configs-loaded config-name))
+                 nil)
+             ('error (message "Workgroup config init error: " (error-message-string ex))))
+         (condition-case ex
+             (-if-let* ((config (fmwc/get-current-workgroup-config))
                         (setup-function (fmwc/workgroup-config-setup-function config)))
-                 (prog2
-                     (message "Running setup for %s" (fmwc/workgroup-config-name config))
-                     (funcall setup-function))
+                 (progn
+                   (message "Running setup for %s" (fmwc/workgroup-config-name config))
+                   (prog2
+                       (setq fmwc/current-workgroup-config config)
+                       (funcall setup-function)
+                     (setq fmwc/current-workgroup-config nil)))
                nil)
            ('error (message "Workgroup config setup error: " (error-message-string ex)))))
 
@@ -4333,9 +4537,12 @@
          (condition-case ex
              (-if-let* ((config (fmwc/get-current-workgroup-config))
                         (cleanup-function (fmwc/workgroup-config-cleanup-function config)))
-                 (prog2
-                     (message "Running cleanup for %s" (fmwc/workgroup-config-name config))
-                     (funcall cleanup-function))
+                 (progn
+                   (message "Running cleanup for %s" (fmwc/workgroup-config-name config))
+                   (prog2
+                       (setq fmwc/current-workgroup-config config)
+                       (funcall cleanup-function)
+                     (setq fmwc/current-workgroup-config nil)))
                nil)
            ('error (message "Workgroup config cleanup error: " (error-message-string ex)))))
 
