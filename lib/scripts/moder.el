@@ -175,7 +175,7 @@
   "Check if the window is sleeping."
   (not
    (and (boundp fn/zoning-out-p)
-        (not (null fn/zoning-out-p)))))
+      (not (null fn/zoning-out-p)))))
 
 
 ;;* Piece
@@ -241,8 +241,8 @@
            (not (null workgroups-mode))
            (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
     (-if-let (workgroup-icon (fmwc/workgroup-config-icon-for-workgroup))
-        workgroup-icon
-      (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
+        (format " %s " workgroup-icon)u
+        (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
 
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
@@ -269,9 +269,9 @@
   (when (boundp 'fn/current-frame-delay)
     (cond
      ((<= fn/current-frame-delay 10.0)
-      (format moder-frame-delay-format fn/current-frame-delay "ms"))
+      (format moder-frame-delay-format fn/current-frame-delay " ms"))
      ((<= fn/current-frame-delay 100.0)
-      (format moder-frame-delay-format (/ fn/current-frame-delay 1000.0) "s"))
+      (format moder-frame-delay-format (/ fn/current-frame-delay 1000.0) " s"))
      (t
       (format " ! ")))))
 
@@ -279,10 +279,10 @@
   "A piece for flycheck errors."
   (when (boundp 'flycheck-current-errors)
     (let ((error-count (length
-                        (->> flycheck-current-errors
-                             (-map #'flycheck-error-level)
-                             (-filter #'flycheck-error-level-p)
-                             (-filter (lambda (level) (eq level 'error)))))))
+                      (->> flycheck-current-errors
+                           (-map #'flycheck-error-level)
+                           (-filter #'flycheck-error-level-p)
+                           (-filter (lambda (level) (eq level 'error)))))))
       (if (zerop error-count)
           nil
         (format " %s " error-count)))))
@@ -291,7 +291,7 @@
 (defun moder-between-time (lower-time upper-time time)
   "Check if between LOWER-TIME, UPPER-TIME and TIME."
   (and (or (string-greaterp time lower-time) (string-equal time lower-time))
-       (or (string-lessp time upper-time) (string-equal time upper-time))))
+     (or (string-lessp time upper-time) (string-equal time upper-time))))
 
 (defun moder-piece-cpu ()
   "A piece for the cpu."
@@ -418,14 +418,14 @@
 (defun moder-separated (separator-fn &rest texts)
   "Attaches SEPARATOR-FN at TEXTS."
   (lexical-let* ((new-texts (list))
-      (current-texts  (-reject #'string-empty-p (-reject #'null texts)))
-      (this-text nil)
-      (next-text nil)
-      (this-properties nil)
-      (next-properties nil)
-      (this-background nil)
-      (next-background nil)
-      (interleave-text nil))
+                 (current-texts  (-reject #'string-empty-p (-reject #'null texts)))
+                 (this-text nil)
+                 (next-text nil)
+                 (this-properties nil)
+                 (next-properties nil)
+                 (this-background nil)
+                 (next-background nil)
+                 (interleave-text nil))
     (while (not (null current-texts))
       (setq this-text (car current-texts)
          this-properties (moder-last-text-properties this-text)
@@ -485,7 +485,8 @@
                       (->> (moder-piece-buffer-name)
                            (moder-default-text-style)
                            (moder-weight 'ultra-bold)
-                           (moder-background "#e74c3c"))
+                           (moder-background "#e74c3c")
+                           (moder-foreground "#ffffff"))
                       (->> (moder-piece-project-name)
                            (moder-default-text-style)
                            (moder-background "#e67e22"))
@@ -516,7 +517,9 @@
                    #'moder-piece-inner-right-separator
                    (->> (moder-piece-frame-delay)
                         (moder-default-text-style)
-                        (moder-background "#9b59b6" ))
+                        (moder-background "#9b59b6")
+                        (moder-foreground "#ffffff")
+                        (moder-weight 'ultra-bold))
                    (->> (moder-piece-flycheck-errors)
                         (moder-default-text-style)
                         (moder-weight 'ultra-bold)
@@ -531,8 +534,8 @@
                           (moder-background "#d35400")))
                    (->> (moder-piece-time)
                         (moder-default-text-style)
-                        (moder-foreground "#ffff00")
-                        (moder-background "#2c3e50")))))
+                        (moder-background "#2c3e50")
+                        (moder-foreground "#ffff00")))))
                (moder-closing-separator #'moder-piece-left-separator)
                (moder-starting-separator #'moder-piece-right-separator))
             ('error (error-message-string ex)))))))

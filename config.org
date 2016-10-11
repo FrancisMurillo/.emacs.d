@@ -833,6 +833,7 @@
        (defun fn/prodigy-set-default-filter-hook ()
          "Add default filters when opening prodigy"
          (fn/prodigy-with-buffer
+          (message "Applying default prodigy filters")
           (setq prodigy-filters fn/prodigy-default-filters))
          (fn/prodigy-refresh))
 
@@ -869,7 +870,16 @@
                  (bind-map (or (plist-get service :bind-map) global-map)))
                (when bind
                  (message "Creating binding for %s" name)
-                 (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service))))))))
+                 (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service)))))))
+
+       (use-feature prodigy-icons
+         (all-the-icons)
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'prodigy-mode 'all-the-icons-faicon "cogs" :v-adjust -0.1))
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'prodigy-view-mode 'all-the-icons-faicon "cog" :v-adjust -0.1))))
    #+END_SRC
 ** emamux
    Work better with tmux
@@ -1132,34 +1142,76 @@
         :bind (("C-c w w" . workgroups-mode))
         :init
         (setq wg-prefix-key (kbd "C-c w")
-              wg-session-file (expand-file-name "workgroups" fn/cache-dir))
+           wg-session-file (expand-file-name "workgroups" fn/cache-dir))
         :config
         (setq wg-morph-on nil
 
-              wg-mode-line-display-on nil
+           wg-mode-line-display-on nil
 
-              wg-mess-with-buffer-list nil
+           wg-mess-with-buffer-list nil
 
-              wg-buffer-auto-association-on t
-              wg-undoify-window-configuration-change nil
+           wg-buffer-auto-association-on nil
+           wg-undoify-window-configuration-change nil
 
-              wg-open-this-wg "Mine"
+           wg-open-this-wg "Mine"
 
-              wg-buffer-local-variables-alist (list)
+           wg-buffer-local-variables-alist (list)
 
-              wg-restore-frame-position nil
-              wg-restore-scroll-bars nil
-              wg-restore-margins nil
+           wg-restore-frame-position nil
+           wg-restore-scroll-bars nil
+           wg-restore-margins nil
 
-              wg-restore-point t
-              wg-restore-point-max t
+           wg-restore-point t
+           wg-restore-point-max t
 
-              wg-restore-mark nil
-              wg-restore-window-dedicated-p nil
-              wg-remember-frame-for-each-wg nil
+           wg-restore-mark nil
+           wg-restore-window-dedicated-p nil
+           wg-remember-frame-for-each-wg nil
 
-              wg-emacs-exit-save-behavior           'save
-              wg-workgroups-mode-exit-save-behavior 'save)
+           wg-emacs-exit-save-behavior           'save
+           wg-workgroups-mode-exit-save-behavior 'save)
+
+        (use-feature workgroup-recentf-association
+          (recentf)
+          (require 'f)
+
+          (defun fn/get-buffer-major-mode (buffer)
+            "Get the major mode of the BUFFER."
+            (with-current-buffer buffer
+              major-mode))
+
+          (defun fn/buffer-derived-mode-p (buffer &rest modes)
+            "Check if BUFFER mode is derived from MODE."
+            (with-current-buffer buffer
+              (apply #'derived-mode-p modes)))
+
+          (defun fn/get-dired-buffer-name (buffer)
+            "Get the BUFFER name in the style of DIRED."
+            (with-current-buffer buffer
+              (expand-file-name default-directory)))
+
+
+          (defun fn/recentf-contains-workgroup-buffer-p (workgroup buffer)
+            "Checks if BUFFER exists in `recentf-list'."
+            (when (boundp 'recentf-list)
+              (lexical-let* ((main-mode (fn/get-buffer-major-mode buffer))
+                  (result
+                   (cond
+                    ((eq main-mode 'dired-mode)
+                     (lexical-let ((file-name (fn/get-dired-buffer-name buffer)))
+                       (-find (lambda (recent-file-name) (f-parent-of-p file-name recent-file-name))
+                              recentf-list)))
+                    ((fn/buffer-derived-mode-p
+                      buffer
+                      'prog-mode 'text-mode 'fundamental-mode)
+                     (lexical-let ((file-name (buffer-file-name buffer)))
+                       (-find (lambda (recent-file-name) (string-equal file-name recent-file-name))
+                              recentf-list)))
+                    (t nil))))
+                (if result 'weak nil))))
+
+          (setq wg-buffer-auto-association-on t
+             wg-buffer-auto-association #'fn/recentf-contains-workgroup-buffer-p))
 
         (defun fn/wg-session-list-buffers (&optional frame)
           "Get the current session buffers."
@@ -1179,17 +1231,17 @@
           "Switch buffer with my custom workgroup."
           (interactive)
           (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
-                         (buffer-table (fn/list-to-hash-table session-buffers))
-                         (predicate
-                          (lambda (buffer-pair)
-                            (when (consp buffer-pair)
-                              (lexical-let* ((buffer (cdr buffer-pair)))
-                                (gethash buffer buffer-table nil)))))
-                         (buffer (read-buffer
-                                  "Switch to session buffer: "
-                                  nil
-                                  t
-                                  predicate)))
+              (buffer-table (fn/list-to-hash-table session-buffers))
+              (predicate
+               (lambda (buffer-pair)
+                 (when (consp buffer-pair)
+                   (lexical-let* ((buffer (cdr buffer-pair)))
+                     (gethash buffer buffer-table nil)))))
+              (buffer (read-buffer
+                       "Switch to session buffer: "
+                       nil
+                       t
+                       predicate)))
             (switch-to-buffer buffer)))
 
         (defun fn/wg-create-workgroup ()
@@ -1519,14 +1571,12 @@
            (defface fmc/completion-delimiter-face '((t (:weight light :height 0.9)))
              "Delimiter face")
 
-
            (defface fmc/completion-description-face '((t (:weight extra-light :height 0.9)))
              "Description face")
 
 
            (defvar fmc/completion-label-face 'fmc/completion-label-face
              "Label face var")
-
 
            (defvar fmc/completion-delimiter-face 'fmc/completion-delimiter-face
              "Delimiter face var")
@@ -1572,7 +1622,7 @@
                            (lambda (name description)
                              (format "%-s %s %-s"
                                      (propertize name 'font-lock-face 'fmc/completion-label-face)
-                                     (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-separator)
+                                     (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter-face)
                                      (propertize description 'font-lock-face 'fmc/completion-description-face)))))
                        (lambda (pair)
                          (lexical-let*
@@ -2622,8 +2672,18 @@
              '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
                ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
                ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
-               ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)"))))
+               ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
+
+       (use-feature ledger-icon
+         (all-the-icons)
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'ledger-mode 'all-the-icons-faicon "money" :v-adjust -0.1))
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'ledger-report-mode 'all-the-icons-faicon "line-chart" :v-adjust -0.1))))
    #+END_SRC
+
 ** engine
    Instant search with Emacs, sign me up.
 
@@ -2726,6 +2786,15 @@
        (setq emacsshot-with-timestamp t
              emacsshot-snap-frame-filename (expand-file-name "my-frame.png" fn/emacsshot-dir)
              emacsshot-snap-window-filename (expand-file-name "my-window.png" fn/emacsshot-dir)))
+   #+END_SRC
+
+** camcorder
+   Making demonstrations in Emacs is a must. My thanks to [[http://blog.yitang.uk/2015/09/24/how-to-create-a-screencast-gif-in-emacs/][this blog post.]]
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package camcorder
+       :ensure t
+       :defer t)
    #+END_SRC
 
 * Code Monkey
@@ -4015,6 +4084,36 @@
        (twittering-icon-mode t)
        (setq twittering-convert-fix-size 24))
    #+END_SRC
+** erc
+   Connecting with the brothers
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package erc
+       :bind (:map fn-standard-prefix-map
+                   ("e q" . erc-quit-server))
+       :init
+       (defun fn/erc ()
+         "My default erc connection."
+         (interactive)
+         (erc :server "irc.freenode.net" :port 6667 :nick "fnmurillo" :password nil))
+       (define-key fn-standard-prefix-map (kbd "e e") #'fn/erc)
+       :config
+       (setq erc-try-new-nick-p t
+          erc-password nil
+
+          erc-autojoin-channels-alist (list (list "freenode.net" "#emacs"))
+          erc-rename-buffers t
+          erc-interpret-mirc-color t
+
+          erc-quit-reason (lambda (&rest args) "I took with me... their lightning and their prayers"))
+
+       (use-feature erc-icon
+         (all-the-icons)
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'erc-mode 'all-the-icons-faicon "exchange" :v-adjust 0.0))))
+   #+END_SRC
+
 ** jabber
 
    Listen to chat notifications
@@ -4068,11 +4167,18 @@
          (defun fn/jabber-message-notify (from buffer text title)
            "Just a small unobtrusive notifcation"
            (alert (format "%s pinged you" from)
+
                   :category 'cbox
                   :style 'fringe
-                  :severity trivial))
+                  :severity 'trivial))
 
-         (add-to-list 'jabber-alert-message-hooks #'fn/jabber-message-notify))
+         (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
+
+       (use-feature jabber-chat-icons
+         (all-the-icons)
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'jabber-chat-mode 'all-the-icons-faicon "comments" :v-adjust -0.1)))
 
        ;; roster
        (setq jabber-roster-show-title nil
