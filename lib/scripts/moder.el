@@ -175,39 +175,39 @@
   "Check if the window is sleeping."
   (not
    (and (boundp fn/zoning-out-p)
-      (not (null fn/zoning-out-p)))))
+        (not (null fn/zoning-out-p)))))
 
 
 ;;* Piece
 (defun moder-piece-window-number ()
   "A piece for window numbering."
   (if (and (fboundp 'window-numbering-get-number)
-         (boundp 'window-numbering-mode)
-         (not (null window-numbering-mode)))
+           (boundp 'window-numbering-mode)
+           (not (null window-numbering-mode)))
       (format " %s " (window-numbering-get-number))))
 
 (defun moder-piece-modified ()
   "Indicates if the buffer is modified."
   (let* ((config-alist
-       '(("*"
-          all-the-icons-faicon-family
-          all-the-icons-faicon
-          "chain-broken"
-          :v-adjust 0.0)
-         ("-"
-          all-the-icons-faicon-family
-          all-the-icons-faicon
-          "link"
-          :v-adjust 0.0)
-         ("%"
-          all-the-icons-octicon-family
-          all-the-icons-octicon
-          "lock"
-          :v-adjust 0.0)))
-      (result (cdr (assoc (format-mode-line "%*") config-alist)))
-      (icon-font-function (car result))
-      (icon-function (cadr result))
-      (icon-args (cddr result)))
+          '(("*"
+             all-the-icons-faicon-family
+             all-the-icons-faicon
+             "chain-broken"
+             :v-adjust 0.0)
+            ("-"
+             all-the-icons-faicon-family
+             all-the-icons-faicon
+             "link"
+             :v-adjust 0.0)
+            ("%"
+             all-the-icons-octicon-family
+             all-the-icons-octicon
+             "lock"
+             :v-adjust 0.0)))
+         (result (cdr (assoc (format-mode-line "%*") config-alist)))
+         (icon-font-function (car result))
+         (icon-function (cadr result))
+         (icon-args (cddr result)))
     (->>
      (propertize
       (format " %s " (apply icon-function icon-args))
@@ -235,11 +235,11 @@
 (defun moder-piece-workgroup-icon ()
   "A piece for the workgroup name."
   (when (and (fboundp 'wg-current-workgroup)
-           (fboundp 'wg-workgroup-name)
-           (fboundp 'workgroups-mode)
-           (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
-           (not (null workgroups-mode))
-           (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
+             (fboundp 'wg-workgroup-name)
+             (fboundp 'workgroups-mode)
+             (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
+             (not (null workgroups-mode))
+             (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
     (-if-let (workgroup-icon (fmwc/workgroup-config-icon-for-workgroup))
         (format " %s " workgroup-icon)u
         (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
@@ -247,8 +247,8 @@
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
   (when (and (fboundp 'projectile-project-name)
-           (fboundp 'projectile-project-p)
-           (projectile-project-p))
+             (fboundp 'projectile-project-p)
+             (projectile-project-p))
     (format " %s " (projectile-project-name))))
 
 (defun moder-piece-buffer-name ()
@@ -285,7 +285,11 @@
                            (-filter (lambda (level) (eq level 'error)))))))
       (if (zerop error-count)
           nil
-        (format " %s " error-count)))))
+        (format " %s %s "
+                error-count
+                (propertize
+                 (all-the-icons-faicon "bug" :v-adjust 0.0)
+                 'face (list :family (all-the-icons-faicon-family))))))))w
 
 
 (defun moder-between-time (lower-time upper-time time)
@@ -314,12 +318,12 @@
 (defun moder-piece-time ()
   "A piece for the current time."
   (let* ((current-time    (format-time-string "%R" ))
-         (time-event
-          (cond
-           ((moder-between-time "13:15" "14:00" current-time) "Nap")
-           ((moder-between-time "15:30" "16:00" current-time) "Break")
-           ((moder-between-time "18:00" "19:00" current-time) "AFK")
-           (t nil))))
+      (time-event
+       (cond
+        ((moder-between-time "13:15" "14:00" current-time) "Nap")
+        ((moder-between-time "15:30" "16:00" current-time) "Break")
+        ((moder-between-time "18:00" "19:00" current-time) "AFK")
+        (t nil))))
     (format
      " %s%s "
      current-time
@@ -328,7 +332,7 @@
 (defun moder-piece-note ()
   "A piece for a random note."
   (lexical-let* ((note-index (random (length moder-note-notes)))
-                 (note (nth note-index moder-note-notes)))
+      (note (nth note-index moder-note-notes)))
     (format " %s " note)))
 
 
@@ -428,20 +432,20 @@
                  (interleave-text nil))
     (while (not (null current-texts))
       (setq this-text (car current-texts)
-         this-properties (moder-last-text-properties this-text)
-         this-background (plist-get this-properties :background))
+            this-properties (moder-last-text-properties this-text)
+            this-background (plist-get this-properties :background))
       (setq next-text (cadr current-texts)
-         next-background nil)
+            next-background nil)
       (when next-text
         (setq next-properties (moder-first-text-properties next-text)
-           next-background (plist-get next-properties :background)))
+              next-background (plist-get next-properties :background)))
       (setq interleave-text (funcall separator-fn this-background next-background))
       (push this-text new-texts)
       (when next-text
         (push interleave-text new-texts))
       (setq current-texts (cdr current-texts)))
     (apply #'concat
-       (reverse new-texts))))
+           (reverse new-texts))))
 
 (defun moder-starting-separator (separator-fn text)
   "Add a final SEPARATOR-FN for TEXT."
@@ -460,85 +464,85 @@
 
 ;;* Main configuration
 (setq-default mode-line-format
-   (list "%e"
-      (list :eval
-         (quote
-          (condition-case ex
-              (->>
-               (moder-separated
-                #'moder-piece-right-separator
-                (moder-separated
-                 #'moder-piece-right-separator
-                 (unless (moder--current-window-p)
-                   (->> (moder-piece-window-number)
-                        (moder-default-text-style)
-                        (moder-background "#34495e")
-                        (moder-foreground "#ffff00")
-                        (moder-weight 'ultra-bold)
-                        (moder-height 1.2)))
-                 (->> (moder-piece-modified)
-                      (moder-default-text-style)
-                      (moder-background "#bdc3c7"))
-                 (if (and (moder--current-window-p) (moder--active-state-p))
-                     (moder-separated
-                      #'moder-piece-inner-right-separator
-                      (->> (moder-piece-buffer-name)
-                           (moder-default-text-style)
-                           (moder-weight 'ultra-bold)
-                           (moder-background "#e74c3c")
-                           (moder-foreground "#ffffff"))
-                      (->> (moder-piece-project-name)
-                           (moder-default-text-style)
-                           (moder-background "#e67e22"))
-                      (->> (moder-piece-workgroup-icon)
-                           (moder-default-text-style)
-                           (moder-background "#f1c40f"))
-                      (->> (moder-piece-mode)
-                           (moder-background "#27ae60"))
-                      (->> (moder-piece-process)
-                           (moder-default-text-style)
-                           (moder-background "#7f8c8d")))
-                   (moder-separated
-                    #'moder-piece-inner-right-separator
-                    (->> (moder-piece-buffer-name)
-                         (moder-default-text-style)
-                         (moder-background "#ecf0f1"))
-                    (->> (moder-piece-process)
-                         (moder-default-text-style)
-                         (moder-background "#7f8c8d"))
-                    (->> (moder-piece-note)
-                         (moder-default-text-style)
-                         (moder-background "#e74c3c")
-                         (moder-foreground "#ffffff")
-                         (moder-weight 'ultra-light)
-                         (moder-height 1.0)))))
-                (when (and (moder--current-window-p) (moder--active-state-p))
-                  (moder-separated
-                   #'moder-piece-inner-right-separator
-                   (->> (moder-piece-frame-delay)
-                        (moder-default-text-style)
-                        (moder-background "#9b59b6")
-                        (moder-foreground "#ffffff")
-                        (moder-weight 'ultra-bold))
-                   (->> (moder-piece-flycheck-errors)
-                        (moder-default-text-style)
-                        (moder-weight 'ultra-bold)
-                        (moder-background "#ecf0f1"))
-                   (when moder-cpu
-                     (->> (moder-piece-cpu)
-                          (moder-default-text-style)
-                          (moder-background "#f1c40f")))
-                   (when moder-memory
-                     (->> (moder-piece-memory)
-                          (moder-default-text-style)
-                          (moder-background "#d35400")))
-                   (->> (moder-piece-time)
-                        (moder-default-text-style)
-                        (moder-background "#2c3e50")
-                        (moder-foreground "#ffff00")))))
-               (moder-closing-separator #'moder-piece-left-separator)
-               (moder-starting-separator #'moder-piece-right-separator))
-            ('error (error-message-string ex)))))))
+              (list "%e"
+                    (list :eval
+                          (quote
+                           (condition-case ex
+                               (->>
+                                (moder-separated
+                                 #'moder-piece-right-separator
+                                 (moder-separated
+                                  #'moder-piece-right-separator
+                                  (unless (moder--current-window-p)
+                                    (->> (moder-piece-window-number)
+                                         (moder-default-text-style)
+                                         (moder-background "#34495e")
+                                         (moder-foreground "#ffff00")
+                                         (moder-weight 'ultra-bold)
+                                         (moder-height 1.2)))
+                                  (->> (moder-piece-modified)
+                                       (moder-default-text-style)
+                                       (moder-background "#bdc3c7"))
+                                  (if (and (moder--current-window-p) (moder--active-state-p))
+                                      (moder-separated
+                                       #'moder-piece-inner-right-separator
+                                       (->> (moder-piece-buffer-name)
+                                            (moder-default-text-style)
+                                            (moder-weight 'ultra-bold)
+                                            (moder-background "#e74c3c")
+                                            (moder-foreground "#ffffff"))
+                                       (->> (moder-piece-project-name)
+                                            (moder-default-text-style)
+                                            (moder-background "#e67e22"))
+                                       (->> (moder-piece-workgroup-icon)
+                                            (moder-default-text-style)
+                                            (moder-background "#f1c40f"))
+                                       (->> (moder-piece-mode)
+                                            (moder-background "#27ae60"))
+                                       (->> (moder-piece-process)
+                                            (moder-default-text-style)
+                                            (moder-background "#7f8c8d")))
+                                    (moder-separated
+                                     #'moder-piece-inner-right-separator
+                                     (->> (moder-piece-buffer-name)
+                                          (moder-default-text-style)
+                                          (moder-background "#ecf0f1"))
+                                     (->> (moder-piece-process)
+                                          (moder-default-text-style)
+                                          (moder-background "#7f8c8d"))
+                                     (->> (moder-piece-note)
+                                          (moder-default-text-style)
+                                          (moder-background "#e74c3c")
+                                          (moder-foreground "#ffffff")
+                                          (moder-weight 'ultra-light)
+                                          (moder-height 1.0)))))
+                                 (when (and (moder--current-window-p) (moder--active-state-p))
+                                   (moder-separated
+                                    #'moder-piece-inner-right-separator
+                                    (->> (moder-piece-frame-delay)
+                                         (moder-default-text-style)
+                                         (moder-background "#9b59b6")
+                                         (moder-foreground "#ffffff")
+                                         (moder-weight 'ultra-bold))
+                                    (->> (moder-piece-flycheck-errors)
+                                         (moder-default-text-style)
+                                         (moder-weight 'ultra-bold)
+                                         (moder-background "#ecf0f1"))
+                                    (when moder-cpu
+                                      (->> (moder-piece-cpu)
+                                           (moder-default-text-style)
+                                           (moder-background "#f1c40f")))
+                                    (when moder-memory
+                                      (->> (moder-piece-memory)
+                                           (moder-default-text-style)
+                                           (moder-background "#d35400")))
+                                    (->> (moder-piece-time)
+                                         (moder-default-text-style)
+                                         (moder-background "#2c3e50")
+                                         (moder-foreground "#ffff00")))))
+                                (moder-closing-separator #'moder-piece-left-separator)
+                                (moder-starting-separator #'moder-piece-right-separator))
+                             ('error (error-message-string ex)))))))
 
 
 (provide 'moder)

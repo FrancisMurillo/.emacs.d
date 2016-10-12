@@ -38,7 +38,7 @@
 
    Or with an function instead
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 45501e2d-cc25-e41b-bceb-8c40d2bf7450
      (defun fn/reload-config ()
        "Reload my configuration again"
        (interactive)
@@ -56,14 +56,14 @@
    This makes it so that the file that is produced from tangling this
    file uses lexical scoping and all succeeding files
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 857ce296-7ba0-9163-25e5-ce16c40bae9c
      (setq lexical-binding t)
    #+END_SRC
 
 ** Package Sources
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 8ec65bd3-dc31-0455-99d0-301267fdd059
      (defconst fn/package-archives (list
                                     (cons "gnu" "http://elpa.gnu.org/packages/")
                                     (cons "org" "http://orgmode.org/elpa/")
@@ -82,7 +82,7 @@
 ** Package Manager
    The package manager of this whole configuration
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 363333a0-026e-ebda-9692-2dfed8316172
      (require 'use-package)
 
      (setq use-package-verbose t
@@ -93,7 +93,7 @@
 ** Org Src
    Configuration for using the tangling nature of this configuration
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 0e5504a8-93dd-d412-b479-a18198b0a9f2
      (setq org-confirm-babel-evaluate nil
            org-src-fontify-natively t
            org-src-tab-acts-natively t)
@@ -102,7 +102,7 @@
 ** Constants
    Some constants to work with
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 0830626b-8d70-6934-e7ed-d5b0a42c34e2
      (defconst fn/minute-per-second 60
        "Obviously converting minutes to seconds")
 
@@ -148,7 +148,7 @@
 ** Personal Information
    Just some things that relate to me
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id fb2d2f9a-2897-33af-e228-d088d9e8c242
      (defconst fn/personal-file-name "personal.el"
        "Personal configuration file name")
 
@@ -161,7 +161,7 @@
 ** Customization
    Basis for configuration
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 8e36f9f4-4f43-646d-eb41-4ff7d425d03e
      (defgroup fn nil
        "My namespace for customizing my configuration")
 
@@ -212,7 +212,7 @@
 ** Startup
    Everything related to the startup state
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id e3857d2d-0e50-e886-7186-cd58a7fd80ee
      (defconst fn/gc-cons-threshold (* 256 1024 1024)
        "A high limit for garbage colection.")
 
@@ -253,7 +253,7 @@
 ** Environment
    Some environment configuration.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id e0adbf59-f7d8-f4c2-281d-4cabc523a47e
      (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
 
      (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
@@ -264,7 +264,7 @@
 ** Backups
    Backups are good, just annoying when things are good
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 99737619-18ed-431b-bca5-4d2cce5f20fe
      (defconst fn/backup-dir-name "backups/"
        "Backup directory name")
 
@@ -304,7 +304,7 @@
 ** History
    Save minibuffer history
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id e5b95f5c-2062-2e1d-981b-a709f39da9d7
      (defconst fn/savehist-file-name "savehist"
        "Save history file name")
 
@@ -334,7 +334,7 @@
 ** Editing
    Some editing configurations
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id b761153a-62c3-05c4-7231-89856bbae249
      (setq whitespace-line-column 10000 ;; No line too long font locking please
 
            ;; C-M-a should go to the beginning of a sentence
@@ -349,7 +349,7 @@
 ** Search
    You must have this setup, it's like butter and you're the bread.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 7d1d92eb-2c93-53fe-e24f-dfcb94509754
      (defconst fn/default-search-whitespace-regexp search-whitespace-regexp
        "Store the default whitespace option")
 
@@ -377,7 +377,7 @@
 ** Coding
    Some programming configuration that make sense
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 0654a092-0c78-f18e-e9bb-515041e26a3a
      ;; Please indent after newline to maintain sanity
      (global-set-key (kbd "RET") 'newline-and-indent)
 
@@ -407,13 +407,13 @@
 ** Mouse
    I better be a cat
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 218a476d-ce2f-a92a-cf26-54576622e00a
      (mouse-avoidance-mode 'cat-and-mouse)
    #+END_SRC
 ** Others
    Some other configurations that I can't classify yet
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 0bf9bac3-a449-98ef-8936-fa7e6d1f4205
      (setq auth-sources (list (list  :source "~/.authinfo.gpg")))
 
      (setq browse-url-browser-function 'browse-url-generic
@@ -422,7 +422,7 @@
 ** Commands
    Unlock some commands I need
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 2ff0370d-50fa-3ca8-7b00-e9e8b9a3e850
      (put 'narrow-to-region 'disabled nil)
      (put 'downcase-region 'disabled nil)
      (put 'upcase-region 'disabled nil)
@@ -433,7 +433,7 @@
 ** dash
    Functionally elisp
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id fd8d45fa-ef70-5322-8ec6-04d8fc1e13d5
      (use-package dash
        :ensure t)
 
@@ -445,7 +445,7 @@
 ** async
    Not really builtin but should be
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id bfae8c52-4b79-e605-1b26-7da4ae8eeade
      (use-package async
        :ensure t)
    #+END_SRC
@@ -453,14 +453,14 @@
 ** s
    A string library, everyone needs that
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 80387d51-f9a0-25ab-75ea-a36947dbeb03
      (use-package s
        :ensure t)
    #+END_SRC
 ** f
    File manipulation library for Emacs
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id bad34a22-8eab-ea19-6a8b-da30a258fff8
      (use-package f
        :ensure t)
    #+END_SRC
@@ -468,7 +468,7 @@
 ** unicode-fonts
    Unicode is an required aesthetic
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 0e75a034-c275-fe20-35db-c9d18176e817
      (use-package pcache ;; Required by unicode-fonts
        :ensure t
        :init
@@ -485,7 +485,7 @@
 ** persistent-soft
    Nice to have some persistence.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 5ae1d8f2-f9b7-4eff-d903-020af5b5a9b3
      (use-package persistent-soft
        :ensure t
        :demand t
@@ -525,7 +525,7 @@
 ** exec-path-from-shell
    The path variable from the shell is need to run commands
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id ad0dfafc-912b-1abc-12bb-fa6c5bbea607
      (defconst fn/exec-path-from-shell-package-dir
        (expand-file-name "exec-path-from-shell/" fn/custom-module-dir)
        "Htmlize package dir")
@@ -541,7 +541,7 @@
    Some external commands might be required, so gotta check them if they
    exist or install them if you have the time
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id eb59aa17-8976-e43a-85b1-19916b2f9105
      (defun fn/run-command (command &rest args)
        ;; Calls the process *command* and gets it's output, nil if there is an error"
        (condition-case ex
@@ -561,7 +561,7 @@
 ** htmlize
    For exporting purposes
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id bbe7dfa0-4a96-977f-20e6-ef6ab6642fc5
      (defconst fn/htmlize-package-dir (expand-file-name "htmlize-custom/" fn/custom-module-dir)
        "Htmlize package dir")
 
@@ -572,7 +572,7 @@
 ** request
    I love them request library like in Python
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 19aa11f8-524f-986e-84d8-45eb781bbee5
      (use-package request
        :ensure t
        :defer t
@@ -583,7 +583,7 @@
 ** log4e
    Nice logging library
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id e8344e55-09ff-27a8-a6c0-8d76e44cd3f0
      (use-package log4e
        :ensure t)
    #+END_SRC
@@ -594,7 +594,7 @@
    Sadly, this has to be placed here because =use-feature= cannot load
    it properly.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
      (use-package all-the-icons
        :ensure t
        :demand t
@@ -615,7 +615,7 @@
 ** auto-compile
    Automatic compilation of package files
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id cf5a9ca5-1bd8-421b-d6f6-76a4cf5194fc
      (use-package auto-compile
        :ensure t
        :demand t
@@ -626,7 +626,7 @@
 ** promise
    Something to help with package configuration
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id e0719481-70d9-9187-00c6-a424983cef0e
      (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-module-dir)
        "Promise package location")
 
@@ -679,7 +679,7 @@
 ** nsm
    The network security manager for Emacs
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 17fd5dfb-4c56-cb92-865d-448fd1e56804
      (use-package nsm
        :config
        (setq nsm-settings-file (expand-file-name "network-security.data" fn/cache-dir)
@@ -689,7 +689,7 @@
 ** shell
    Some configurations on the terminal
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id da6d7eb9-45f4-ee00-154d-11e39b59d7bf
      (setq async-shell-command-buffer 'new-buffer)
 
      (use-feature shell-icon
@@ -702,7 +702,7 @@
 ** term
    An enhancement for =term=
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 539bc87d-8763-f0fb-47de-4620fa090f43
      (use-package term
        :bind (:map fn-standard-prefix-map
                    ("x t" . ansi-term))
@@ -732,7 +732,7 @@
 ** eshell
    Another enhancement for the shell
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 8365fbc6-47af-b2ac-e913-af5aa85cb479
      (use-package eshell
        :bind (:map fn-standard-prefix-map
                    ("x e" . eshell))
@@ -744,7 +744,7 @@
 *** Autocompletion
     We got completion here
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 114da1f2-d600-af5b-af05-f5097502456d
       (use-package pcomplete
         :ensure t)
 
@@ -764,14 +764,14 @@
 *** Scripts
     My scripts for eshell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 96e77612-2bfc-55d9-fe66-8e5d4e612c20
 
     #+END_SRC
 
 *** Commands
     My eshell commands for eshell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 630dc69a-0e85-f569-c06c-57e761d746d3
       (defun eshell/x ()
         (insert "exit")
         (eshell-send-input)
@@ -781,7 +781,7 @@
 ** prodigy
    Living in the shell requires some genius
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id dc93746e-c346-c682-730d-a3d26b5e258a
      (defconst fn/prodigy-dir (expand-file-name "prodigy/" fn/custom-module-dir)
        "Prodigy dir")
 
@@ -884,7 +884,7 @@
 ** emamux
    Work better with tmux
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 13d23dc8-e0a7-3d2c-71b6-13cefdd9fb96
      (use-package emamux
        :ensure t
        :defer t)
@@ -893,7 +893,7 @@
 ** docker
    Containers eh?
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id e9ab7472-6b2b-33b2-93e4-19113b3dff15
      (use-package docker
        :ensure t
        :defer t)
@@ -901,7 +901,7 @@
 
    Something to edit =Dockerfile=
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id f2ccee62-1618-98e4-ca5c-1fe84800ccd4
      (use-package dockerfile-mode
        :ensure t
        :mode (("Dockerfile\\'" . dockerfile-mode)))
@@ -910,7 +910,7 @@
 ** memory-usage
    Nice to know if my baby is getting to fat to quick
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 2f9e8622-448e-2a55-c269-285f71ec82bb
      (use-package memory-usage
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -925,7 +925,7 @@
     Remember the Emacs's way to do things, but I think I'm good now. I
     only use it when I am one handed.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 58184164-573b-ce16-5e68-95cac5029252
       (use-package guru-mode
         :ensure t
         :disabled t ;; Finally graduated from using the arrow keys
@@ -938,7 +938,7 @@
     Visual lines make more sense than the hard lines, what you see is
     what you get. Besides, I use syntax motions
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c1dad918-e45c-608c-f71c-66922e5aa4ec
       (use-feature visual-line-mode
         nil
         (global-visual-line-mode t)
@@ -948,7 +948,7 @@
 *** auto-fill
     Useful mode when writing, keeps things under 80 characters.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 6be4492f-5e2a-4cbb-fcc4-31baf82851e1
       (use-feature auto-fill-mode
         nil
         (add-hook 'text-mode-hook 'turn-on-auto-fill)
@@ -959,7 +959,7 @@
 *** auto-revert
     The more generic revert
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id f2576d89-b810-5cf0-f398-7b530420997d
       (use-feature auto-revert
         nil
         (global-auto-revert-mode t)
@@ -973,7 +973,7 @@
 *** autorevert
     Enhancement for log reading
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 30faefd0-5219-3cd8-1ae0-8ea74ab7cf7b
       (use-package autorevert
         :diminish auto-revert-mode
         :mode (("\\.log\\'" . auto-revert-tail-mode)));
@@ -983,7 +983,7 @@
 *** hungry-delete
     Very useful default delete functionality
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3fd0ecbe-3c3a-10f8-c4d5-8bb9fdbea9a5
       (use-package hungry-delete
         :ensure t
         :diminish hungry-delete-mode
@@ -995,7 +995,7 @@
 *** expand-region
     Another great feature for marking
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d4f2e1bb-e7a6-1ef8-5fc0-99eb5712ce71
       (use-package expand-region
         :ensure t
         :bind (("C-=" . er/expand-region)))
@@ -1004,7 +1004,7 @@
 *** multiple-cursors
     This functions does not get too much attention
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 46dc1c91-1847-19d5-981e-6b68a22b3b16
       (use-package multiple-cursors
         :ensure t
         :bind (("C-S-c C-S-c" . mc/edit-lines)
@@ -1015,7 +1015,7 @@
 *** undo-tree
     Visualizing undo like vi
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 30703a30-7eb6-884f-b69c-ec5e4ab5b73a
       (use-package undo-tree
         :ensure t
         :defer t
@@ -1028,7 +1028,7 @@
 *** hippie-exp
     Hippie expand rocks
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 04958daf-7aa0-94ab-8038-98ea3e2e7e05
       (use-package hippie-exp
         :bind (("M-/" . hippie-expand))
         :config
@@ -1048,7 +1048,7 @@
 *** company
     A replacement for =autocomplete=.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 14b030d6-a17c-98ae-444f-7529560d8b4d
       (use-package company
         :ensure t
         :diminish company-mode
@@ -1103,7 +1103,7 @@
 *** yasnippet
     Snippet system along with autocomplete is awesome
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 26aea11a-6b42-e3c0-dc5f-a8ba5ceb6f42
       (use-package yasnippet
         :ensure t
         :after company
@@ -1136,137 +1136,135 @@
 *** workgroup
     Saving window state is very helpful specially when you move a lots
 
-    #+BEGIN_SRC emacs-lisp
-      (use-package workgroups2
-        :ensure t
-        :bind (("C-c w w" . workgroups-mode))
-        :init
-        (setq wg-prefix-key (kbd "C-c w")
-           wg-session-file (expand-file-name "workgroups" fn/cache-dir))
-        :config
-        (setq wg-morph-on nil
+    #+BEGIN_SRC emacs-lisp :block-id 6c071d29-d448-f4fa-f1d4-63c347a9cb28
+            (use-package workgroups2
+              :ensure t
+              :bind (("C-c w w" . workgroups-mode))
+              :init
+              (setq wg-prefix-key (kbd "C-c w")
+                 wg-session-file (expand-file-name "workgroups" fn/cache-dir))
+              :config
+              (setq wg-morph-on nil
 
-           wg-mode-line-display-on nil
+                 wg-mode-line-display-on nil
 
-           wg-mess-with-buffer-list nil
+                 wg-mess-with-buffer-list nil
 
-           wg-buffer-auto-association-on nil
-           wg-undoify-window-configuration-change nil
+                 wg-buffer-auto-association-on nil
+                 wg-undoify-window-configuration-change nil
 
-           wg-open-this-wg "Mine"
+                 wg-buffer-local-variables-alist (list)
 
-           wg-buffer-local-variables-alist (list)
+                 wg-restore-frame-position nil
+                 wg-restore-scroll-bars nil
+                 wg-restore-margins nil
 
-           wg-restore-frame-position nil
-           wg-restore-scroll-bars nil
-           wg-restore-margins nil
+                 wg-restore-point t
+                 wg-restore-point-max t
 
-           wg-restore-point t
-           wg-restore-point-max t
+                 wg-restore-mark nil
+                 wg-restore-window-dedicated-p nil
+                 wg-remember-frame-for-each-wg nil
 
-           wg-restore-mark nil
-           wg-restore-window-dedicated-p nil
-           wg-remember-frame-for-each-wg nil
+                 wg-emacs-exit-save-behavior           'save
+                 wg-workgroups-mode-exit-save-behavior 'save)
 
-           wg-emacs-exit-save-behavior           'save
-           wg-workgroups-mode-exit-save-behavior 'save)
+              (use-feature workgroup-recentf-association
+                (recentf)
+                (require 'f)
 
-        (use-feature workgroup-recentf-association
-          (recentf)
-          (require 'f)
+                (defun fn/get-buffer-major-mode (buffer)
+                  "Get the major mode of the BUFFER."
+                  (with-current-buffer buffer
+                    major-mode))
 
-          (defun fn/get-buffer-major-mode (buffer)
-            "Get the major mode of the BUFFER."
-            (with-current-buffer buffer
-              major-mode))
+                (defun fn/buffer-derived-mode-p (buffer &rest modes)
+                  "Check if BUFFER mode is derived from MODE."
+                  (with-current-buffer buffer
+                    (apply #'derived-mode-p modes)))
 
-          (defun fn/buffer-derived-mode-p (buffer &rest modes)
-            "Check if BUFFER mode is derived from MODE."
-            (with-current-buffer buffer
-              (apply #'derived-mode-p modes)))
-
-          (defun fn/get-dired-buffer-name (buffer)
-            "Get the BUFFER name in the style of DIRED."
-            (with-current-buffer buffer
-              (expand-file-name default-directory)))
+                (defun fn/get-dired-buffer-name (buffer)
+                  "Get the BUFFER name in the style of DIRED."
+                  (with-current-buffer buffer
+                    (expand-file-name default-directory)))
 
 
-          (defun fn/recentf-contains-workgroup-buffer-p (workgroup buffer)
-            "Checks if BUFFER exists in `recentf-list'."
-            (when (boundp 'recentf-list)
-              (lexical-let* ((main-mode (fn/get-buffer-major-mode buffer))
-                  (result
-                   (cond
-                    ((eq main-mode 'dired-mode)
-                     (lexical-let ((file-name (fn/get-dired-buffer-name buffer)))
-                       (-find (lambda (recent-file-name) (f-parent-of-p file-name recent-file-name))
-                              recentf-list)))
-                    ((fn/buffer-derived-mode-p
-                      buffer
-                      'prog-mode 'text-mode 'fundamental-mode)
-                     (lexical-let ((file-name (buffer-file-name buffer)))
-                       (-find (lambda (recent-file-name) (string-equal file-name recent-file-name))
-                              recentf-list)))
-                    (t nil))))
-                (if result 'weak nil))))
+                (defun fn/recentf-contains-workgroup-buffer-p (workgroup buffer)
+                  "Checks if BUFFER exists in `recentf-list'."
+                  (when (boundp 'recentf-list)
+                    (lexical-let* ((main-mode (fn/get-buffer-major-mode buffer))
+                        (result
+                         (cond
+                          ((eq main-mode 'dired-mode)
+                           (lexical-let ((file-name (fn/get-dired-buffer-name buffer)))
+                             (-find (lambda (recent-file-name) (f-parent-of-p file-name recent-file-name))
+                                    recentf-list)))
+                          ((fn/buffer-derived-mode-p
+                            buffer
+                            'prog-mode 'text-mode 'fundamental-mode)
+                           (lexical-let ((file-name (buffer-file-name buffer)))
+                             (-find (lambda (recent-file-name) (string-equal file-name recent-file-name))
+                                    recentf-list)))
+                          (t nil))))
+                      (if result 'weak nil))))
 
-          (setq wg-buffer-auto-association-on t
-             wg-buffer-auto-association #'fn/recentf-contains-workgroup-buffer-p))
+                (setq wg-buffer-auto-association-on t
+                   wg-buffer-auto-association #'fn/recentf-contains-workgroup-buffer-p))
 
-        (defun fn/wg-session-list-buffers (&optional frame)
-          "Get the current session buffers."
-          (-reject
-           (-compose
-            (-partial #'s-starts-with-p " ")
-            #'buffer-name)
-           (funcall wg-buffer-list-function frame)))
+              (defun fn/wg-session-list-buffers (&optional frame)
+                "Get the current session buffers."
+                (-reject
+                 (-compose
+                  (-partial #'s-starts-with-p " ")
+                  #'buffer-name)
+                 (funcall wg-buffer-list-function frame)))
 
-        (defun fn/list-to-hash-table (xs)
-          "Convert XS to a hash table with equality comparison."
-          (let ((table (make-hash-table)))
-            (mapc (lambda (x) (puthash x t table)) xs)
-            table))
+              (defun fn/list-to-hash-table (xs)
+                "Convert XS to a hash table with equality comparison."
+                (let ((table (make-hash-table)))
+                  (mapc (lambda (x) (puthash x t table)) xs)
+                  table))
 
-        (defun fn/wg-switch-to-buffer ()
-          "Switch buffer with my custom workgroup."
-          (interactive)
-          (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
-              (buffer-table (fn/list-to-hash-table session-buffers))
-              (predicate
-               (lambda (buffer-pair)
-                 (when (consp buffer-pair)
-                   (lexical-let* ((buffer (cdr buffer-pair)))
-                     (gethash buffer buffer-table nil)))))
-              (buffer (read-buffer
-                       "Switch to session buffer: "
-                       nil
-                       t
-                       predicate)))
-            (switch-to-buffer buffer)))
+              (defun fn/wg-switch-to-buffer ()
+                "Switch buffer with my custom workgroup."
+                (interactive)
+                (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
+                    (buffer-table (fn/list-to-hash-table session-buffers))
+                    (predicate
+                     (lambda (buffer-pair)
+                       (when (consp buffer-pair)
+                         (lexical-let* ((buffer (cdr buffer-pair)))
+                           (gethash buffer buffer-table nil)))))
+                    (buffer (read-buffer
+                             "Switch to session buffer: "
+                             nil
+                             t
+                             predicate)))
+                  (switch-to-buffer buffer)))
 
-        (defun fn/wg-create-workgroup ()
-          "Create a blank workgroup"
-          (interactive)
-          (let ((current-prefix-arg t))
-            (call-interactively #'wg-create-workgroup)))
-
-
-        (define-key wg-prefixed-map (kbd "b") #'fn/wg-switch-to-buffer)
-        (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
+              (defun fn/wg-create-workgroup ()
+                "Create a blank workgroup"
+                (interactive)
+                (let ((current-prefix-arg t))
+                  (call-interactively #'wg-create-workgroup)))
 
 
-        (run-with-idle-timer 0 nil (lambda  ()
-                                     (define-key workgroups-mode-map
-                                       (vector 'remap 'wg-create-workgroup)
-                                       #'fn/wg-create-workgroup)))
+              (define-key wg-prefixed-map (kbd "b") #'fn/wg-switch-to-buffer)
+              (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
 
-        (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect))
+
+              (run-with-idle-timer 0 nil (lambda  ()
+                                           (define-key workgroups-mode-map
+                                             (vector 'remap 'wg-create-workgroup)
+                                             #'fn/wg-create-workgroup)))
+
+              (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect))
     #+END_SRC
 
 *** winner
     You got to have those window configuration
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 1bccc5be-c2b8-eca5-8158-9b40eccdbc8e
       (use-package winner
         :ensure t
         :config
@@ -1276,7 +1274,7 @@
 *** window-numbering
     A must to navigate through windows with numbers.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 8f1e9fc0-580e-1fdb-c8a1-f4c042ce0d68
       (use-package window-numbering
         :ensure t
         :demand t
@@ -1316,7 +1314,7 @@
 *** golden-ratio
     Makes windows large enough to see.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id dc0fe50a-04d2-ef04-47f4-fcbf8059e81a
       (use-package golden-ratio
         :ensure t
         :after window-numbering
@@ -1357,7 +1355,7 @@
 *** uniquify
     Nicer naming convention
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 0daef306-f44a-5bc5-dead-1578ba3b8e9d
       (use-package uniquify
         :if (version<= emacs-version "24.3.1")
         :config
@@ -1370,7 +1368,7 @@
 *** recentf
     Accessing the files recently
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3f6c8b53-5f56-d1bb-8852-71807ad0c314
       (use-package recentf
         :bind (("C-x C-r" . recentf-open-files))
         :config
@@ -1387,7 +1385,7 @@
 *** projectile
     Must have a project finder when using a project.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 8ee23fbf-548c-e172-18e6-0df51729e123
       (use-package projectile
         :ensure t
         :diminish projectile-mode
@@ -1492,7 +1490,7 @@
 *** helm
     The revolutionary package to find
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c632c3e5-f6f1-819f-7739-ae22cdda46a2
       (use-package helm
         :ensure t
         :diminish helm-mode
@@ -1544,7 +1542,7 @@
 **** helm-projectile
      A nice assist for projectile
 
-     #+BEGIN_SRC emacs-lisp
+     #+BEGIN_SRC emacs-lisp :block-id 4ef689e2-64b3-3e3e-90da-3227eeb127bf
        (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-module-dir)
          "My custom helm projectile package")
 
@@ -1696,7 +1694,7 @@
 **** helm-smex
      =smex= is faster than =helm-M-x=
 
-     #+BEGIN_SRC emacs-lisp
+     #+BEGIN_SRC emacs-lisp :block-id 7f1cc404-a888-5187-4df6-dcba60ae2373
        (use-package smex
          :ensure t
          :demand t
@@ -1714,7 +1712,7 @@
     A lighter and faster library than [[helm]] that uses the minibuffer
     instead of a separate window.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id a6d7d940-ad4f-97d2-3a24-48ae273f7add
       (use-package ivy
         :ensure t
         :bind (("M-x" . counsel-M-x))
@@ -1728,7 +1726,7 @@
 *** command-log
     A command log when needed
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id f36a2bde-d269-2571-e02f-c3998aaf439b
       (use-package command-log-mode
         :ensure t
         :diminish command-log-mode
@@ -1740,7 +1738,7 @@
 *** keyfreq
     Nice to know what key's I press the most
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 5cc8b787-43f6-7250-72a5-c269c6dd8dc0
       (use-package keyfreq
         :ensure t
         :bind (:map fn-standard-prefix-map
@@ -1756,7 +1754,7 @@
 *** which-key
     A mnemionic for key bindings
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id f7b62f99-7365-6e12-adc8-0a1a6e8eadda
       (use-package which-key
         :ensure t
         :diminish which-key-mode
@@ -1768,7 +1766,7 @@
 *** which-function
     Likewise with key and functions
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id a98dab72-3b51-2570-059c-7b17519d0d00
       (use-feature which-function
         nil
         (which-function-mode t))
@@ -1777,7 +1775,7 @@
 *** eldoc
     Nice to have the documentation at any time in the buffer.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id b1abbbf8-3b46-2d75-0cd8-9bce7ef92427
       (use-package eldoc
         :diminish eldoc-mode
         :init
@@ -1791,7 +1789,7 @@
 *** helm-descbinds
     Another way to check bindings
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 9f63032d-0622-95b7-8b0c-bbd391e3626a
       (use-package helm-descbinds
         :ensure t
         :after helm
@@ -1803,7 +1801,7 @@
 *** helm-describe-modes
     A nice way to describe the current modes
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id f260bfd0-c52b-798c-c838-26051a51a8b4
       (use-package helm-describe-modes
         :ensure t
         :after helm
@@ -1813,7 +1811,7 @@
 ** Optimizer
    Some things to help debug Emacs performance
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id dbe3b540-57be-0cbc-4269-c04eaaa41eba
      (use-package profiler-log-size
        :bind (:map fn-standard-prefix-map
                    ("C-p b" . profiler-start)
@@ -1829,7 +1827,7 @@
 *** paradox
     The package management improvement
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7cf4efda-7aa4-b9df-cbe0-826a5844e7c9
       (use-package paradox
         :ensure t
         :bind (:map fn-standard-prefix-map
@@ -1847,7 +1845,7 @@
 **** helm-flx
      Flex matching is strong
 
-     #+BEGIN_SRC emacs-lisp
+     #+BEGIN_SRC emacs-lisp :block-id 4d383ad6-7fce-9ac5-d57e-54c4310d0ffa
        (use-package helm-flx
          :ensure t
          :after helm
@@ -1861,14 +1859,14 @@
 ** Font
    I like fixed font specially DejaVu Mono
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id bbcd3af3-f5e6-c215-4497-52fa53348966
      (set-frame-font "DejaVu Sans Mono-8" t t )
    #+END_SRC
 
 ** Screen
    I prefer no clutter in my screen so I disable majority of the niceties.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id bae2df75-ec24-6d95-b368-4496329ec3db
      (defun fn/optimize-visual-space ()
        (let ((try-set-mode (lambda (mode value)
                              (when (fboundp 'mode)
@@ -1888,7 +1886,7 @@
 
    My chosen themes
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 3223619e-5554-3bc0-f00c-3cbc1d8b0507
      (use-package apropospriate-theme
        :ensure t
        :defer t)
@@ -1908,7 +1906,7 @@
 
    Load the theme if it is a terminal or desktop.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id ce022e28-6f80-1566-89e8-ea2d1ac41d47
      (load-theme 'tronesque t)
 
      ;; Default mode line
@@ -1923,7 +1921,7 @@
 *** whitespace
     Got to love that whitespace display
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 8b11bd1d-9022-358b-e3d3-aaba6be1cc1e
       (use-feature whitespace-mode
         nil
         (global-whitespace-mode t)
@@ -1932,7 +1930,7 @@
 *** hl-line
     Highlight the current line
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c4334465-c317-da19-f340-c4f45d90325f
       (use-package hl-line
         :diminish hl-line-mode
         :init
@@ -1945,7 +1943,7 @@
 *** fireplace
     Warm and cozy feeling
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 92ab3c0e-66f5-d2ec-37ed-53d2076254a0
       (use-package fireplace
         :bind (:map fn-standard-prefix-map
                     ("f" . fireplace))
@@ -1955,7 +1953,7 @@
 *** zone
     I love to zone out from time to time.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id cf05aaab-bb91-8f2a-0589-b4545ffcee56
       (defconst fn/zone-animation-dir (expand-file-name "elisp/custom-zone/" user-emacs-directory)
         "Custom zone animation directory")
 
@@ -2035,7 +2033,7 @@
 *** font-lock
     Syntax highlighting is a requirement
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 2627498a-5181-8620-ba8a-70744aaa36d1
       (global-font-lock-mode t)
 
       (setq font-lock-support-mode 'jit-lock-mode)
@@ -2044,7 +2042,7 @@
 *** prettify-symbols
     Make things more algebraic
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d6820a0e-ce89-788c-05e2-ceccda66bcb9
       (use-feature prettify-symbols-mode
         nil)
     #+END_SRC
@@ -2052,7 +2050,7 @@
 *** rainbow-delimeter
     Visual aid helps with very nested code
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 33344847-5b8c-bb8f-614a-816e2b6bc0f8
       (use-package rainbow-delimiters
         :ensure t
         :init
@@ -2074,7 +2072,7 @@
 *** color-identifiers-mode
     Make things easier to see
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 5d8818b5-f936-2499-d201-41dc8f6b3c69
       (use-package color-identifiers-mode
         :ensure t
         :defer t
@@ -2084,7 +2082,7 @@
 *** show-paren
     Also a vital thing to keeping things highlighted
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 6c4e0031-3547-ac8a-ce02-b64f5d0e5de0
       (show-paren-mode t)
 
       (setq show-paren-style 'expression)
@@ -2092,7 +2090,7 @@
 ** Display Buffer
    My modification on =display-buffer=.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 8372b341-c122-bf85-8837-f3eab3c1c801
      (add-to-list
       'display-buffer-alist
       (cons
@@ -2109,7 +2107,7 @@
 ** Mode Line
    The mode line customization.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 671f4309-6508-0ce6-97b4-3bb6060ab82d
      (use-package xpm
        :load-path fn/custom-script-dir
        :demand t)
@@ -2125,7 +2123,7 @@
 ** alert
    A nice alert box would be nice
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 87b106b9-401f-cf0e-35ef-366900cc6198
      (defconst fn/alert-package-dir (expand-file-name "alert/" fn/custom-module-dir)
        "My customized alert package")
 
@@ -2145,7 +2143,7 @@
 
    Credits to [[http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/][Conor Nash]] for this
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 6d18d023-ad50-2b2d-ee64-7e227cc1ad57
      (require 'epa-file)
      (epa-file-enable)
 
@@ -2175,7 +2173,7 @@
 
    Here is a reference to the  [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Time-Parsing.html][date time format]].
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 4f5f3d2b-61ae-d33b-8316-4c20b3e9c8c0
      (use-package org
        :bind (("C-c l" . org-store-link)
               ("C-c a" . org-agenda)
@@ -2206,7 +2204,7 @@
 
    I prefer to see my main org file on boot
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 257c9465-3051-7e92-e91d-762f3ec6b8be
      (defun fn/find-main-org-file ()
        (interactive)
        (find-file fn/org-main-file))
@@ -2215,7 +2213,7 @@
 *** org-src
     Configuration for =org-src=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 1763cf1c-2a1f-1dc3-f38a-d027209d7bab
       (use-feature org-src
         (org)
         (setq org-src-window-setup 'current-window)
@@ -2240,7 +2238,7 @@
 *** org-capture
     More configurations for the capture
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 42c9d746-9fe2-506f-2f27-a44df1f38666
       (use-feature org-capture
         (org)
         (setq org-capture-templates
@@ -2298,7 +2296,7 @@
 *** org-agenda
     More configuration for org-agenda
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 9ef84ce7-49a3-4194-b3f1-4f7c0ac99aff
       (use-feature org-agenda
         (org)
         (setq org-agenda-span 14 ;; Fortnight
@@ -2314,7 +2312,7 @@
 *** org-refile
     Some refiling actions perhaps?
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id feb2e234-a068-32db-88fc-46455f786fa4
       (use-feature org-archive
         (org)
         (setq org-log-refile 'time
@@ -2324,7 +2322,7 @@
 *** org-archiving
     Archiving is needed to avoid bloating.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id e28c5744-034d-3b02-dba6-908cb8af9bb9
       (use-feature org-refile
         (org)
         (defconst fn/org-archive-file (expand-file-name "archive.org" fn/org-dir)
@@ -2357,7 +2355,7 @@
 *** org-journal
     Having a journal is good
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 8001477c-95ea-ea34-54a7-094ad6f5ff4c
       (use-package org-journal
         :ensure t
         :after org
@@ -2438,7 +2436,7 @@
 *** org-reveal
     A nice presentation framework
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3f6d71ed-f861-c6a4-d043-820b5f369b1d
       (use-package ox-reveal
         :ensure t
         :after org
@@ -2482,7 +2480,7 @@
 *** org-clock
     Configuration for org-clock
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 1baf9871-3051-5af4-88be-83bbb6acd865
       (use-feature org-clock
         (org)
         (setq org-log-done 'time)
@@ -2500,7 +2498,7 @@
 *** org-drill
     Flash cards are a must
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id ff080889-3108-6353-b008-70a78290ef1c
       (use-feature org-drill
         (org)
         (use-package org
@@ -2532,7 +2530,7 @@
 *** org-mobile
     Mobile org document
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 0a711e82-e427-fbe9-3af4-e0b075b6236d
       (use-feature org-mobile
         (org)
         (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
@@ -2557,7 +2555,7 @@
 ** flyspell
    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id d49639d7-14d6-68a0-5afa-25bae73f3762
      (use-package flyspell
        :ensure t
        :defer t
@@ -2569,7 +2567,7 @@
 ** dired
    Directory management for Emacs
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 8a7ec4af-3627-97ac-62d0-bb3e2f54f512
      (require 'dired-x) ;; Allows multi open marked files
 
      (setq dired-dwim-target t
@@ -2591,7 +2589,7 @@
 *** image-dired
     Text is not enough, images are important too
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id cf2771df-8638-4516-f99e-ece5acfa3100
       (use-package image-dired
         :ensure t
         :after dired
@@ -2614,7 +2612,7 @@
 *** tmtxt
     Experimental =dired= with =rsync= all thanks to [[https://github.com/tmtxt][tmtxt]]
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 6a5ed4fb-b253-34b0-5ade-9c7635be9ba6
       (defconst fn/tmtxt-package-dir (expand-file-name "tmtxt/" fn/custom-module-dir)
         "tmtxt package directory")
 
@@ -2650,7 +2648,7 @@
 ** tramp
    Tramp is too good to pass up
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 842e3219-547e-cef9-5564-15541c881dc4
      (use-package tramp
        :config
        (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)))
@@ -2659,7 +2657,7 @@
 ** ledger
    Something to keep track of my finances
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 4e3b93da-bda6-0881-7e81-3e23e833f1cc
      (use-package ledger-mode
        :ensure t
        :defer t
@@ -2687,7 +2685,7 @@
 ** engine
    Instant search with Emacs, sign me up.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 5a8c28d6-3439-9256-53e0-b11277d340af
      (use-package engine-mode
        :ensure t
        :defer t
@@ -2742,7 +2740,7 @@
 ** woman
    Man pages are nice
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 515a39e1-ca17-43ac-aea5-2de31b5005de
      (use-package woman
        :ensure t
        :defer t
@@ -2752,7 +2750,7 @@
 ** gnus
    The ultimate mail browser, majority of the configuration is in =~/.gnus=
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id ee1ad1cc-2dcc-df04-b3d3-20a710a335ea
      (use-package gnus
        :bind (:map fn-standard-prefix-map
                    ("g" . gnus)))
@@ -2761,7 +2759,7 @@
 ** conkeror
    Conkeror magic
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id de8e33f4-c290-b278-13e1-0f4178ff2746
      (use-package conkeror-minor-mode
        :ensure t
        :defer t)
@@ -2770,7 +2768,7 @@
 ** emacsshot
    Sometimes when you just need proof
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 00293c55-daab-3649-b480-7b000eb0a216
      (use-package emacsshot
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -2791,7 +2789,7 @@
 ** camcorder
    Making demonstrations in Emacs is a must. My thanks to [[http://blog.yitang.uk/2015/09/24/how-to-create-a-screencast-gif-in-emacs/][this blog post.]]
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 1ecfd02f-87eb-6c8a-0e20-68780b2e1e7b
      (use-package camcorder
        :ensure t
        :defer t)
@@ -2806,7 +2804,7 @@
 *** Indent Everywhere
     Just indent before I save when working with code.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id fa5c65de-552d-f599-b71c-d25689845d72
       (defun fn/indent-buffer ()
         "The editor itself is the best formatter"
         (interactive)
@@ -2817,13 +2815,13 @@
       This somehow disregards SVN formatting in favor of the editor"
         (add-hook 'before-save-hook #'fn/indent-buffer nil t))
 
-      (add-hook 'prog-mode-hook #'fn/indent-before-save t)
+      (add-hook 'prog-mode-hook #'fn/indent-before-save)
     #+END_SRC
 
 *** smartparens
     This is as handy as =paredit=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 6dd6ef74-ec81-2ed7-f9d2-a02fc27bb4f0
       (use-package smartparens
         :diminish smartparens-mode
         :ensure t
@@ -2837,7 +2835,7 @@
     [[paredit]] also works well with other modes as well but not really
     primarily
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id bfff7479-af59-caee-1140-9fe693e6f838
       (use-package paredit-everywhere
         :ensure t
         :defer t
@@ -2849,7 +2847,7 @@
 *** flycheck
     Syntax checking is very important
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 0bd8c66a-906d-497b-c519-52c3cd914bfc
       (use-package flycheck
         :ensure t
         :defer  t
@@ -2875,7 +2873,7 @@
 *** magit
     Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 25b4c3c1-0062-54ae-4d23-b3070fdcb4a2
       (use-package magit
         :ensure t
         :if (version<= "24.4.4" emacs-version)
@@ -2907,7 +2905,7 @@
 **** magithub
      A tool to help with github.
 
-     #+BEGIN_SRC emacs-lisp
+     #+BEGIN_SRC emacs-lisp :block-id 87ac7ebd-43ae-febe-d9e7-634d5b811f5d
        ;; Dubious extension for the meantime
        (use-package magithub
          :ensure t
@@ -2917,7 +2915,7 @@
 **** magit-svn
      Support for SVN with the awesome =magit= interface
 
-     #+BEGIN_SRC emacs-lisp
+     #+BEGIN_SRC emacs-lisp :block-id 4d87550e-fd6c-1c90-f8a4-115430c57e63
        (use-package magit-svn
          :ensure t
          :after magit)
@@ -2925,7 +2923,7 @@
 *** gist
     GitHub integration with gists
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c32da544-1578-c114-de7c-f36600444768
       (use-package gist
         :ensure t
         :defer t)
@@ -2933,7 +2931,7 @@
 *** ag
     The silver searcher is a fine tool
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 8038dda0-39ce-19f3-21bd-7ab7acccfb25
       (use-package ag
         :ensure t
         :demand t
@@ -2946,7 +2944,7 @@
 
     With [[helm]]
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7905e7f3-3641-4831-c407-209cf00ee1c4
       (use-feature helm-ag
         (helm ag)
         (use-package helm-ag
@@ -2956,7 +2954,7 @@
 *** dumb-jump
     Dump jumping with =ag=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7903e306-7bfa-6492-4d48-0ff52268ebe4
       (use-package dumb-jump
         :ensure t
         :bind (:map fn-standard-prefix-map
@@ -2967,7 +2965,7 @@
 *** ggtags                                                      :exprimental:
     Jump and go is really a must needed feature
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 6fd3ec7a-1687-195e-c6d4-93cb1f00cb8c
       (use-package ggtags
         :ensure t
         :defer t)
@@ -2976,7 +2974,7 @@
 *** helm-swoop
     Something to speed up searching
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 881b51d2-4f5b-5e1c-5149-4d44603a0acc
       (require 'dash)
 
       (use-package helm-swoop
@@ -3005,7 +3003,7 @@
 
 *** npm
     Call npm with Emacs
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d913e8d0-203e-b6cc-8415-5249a36691ba
       (use-package npm-mode
         :ensure t
         :defer t
@@ -3017,7 +3015,7 @@
 *** Mode
     This editor is the mode
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d58ae96e-8259-6f89-a9cc-781cd5dc5411
       (require 'dash)
 
       (defun fn/find-definition-at-point ()
@@ -3043,7 +3041,7 @@
 *** Motion
     Makes you a good lisp developer and quite addictive to have
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 078952f1-01a4-261b-8409-f97b32f4c594
       (use-package paredit
         :ensure t
         :defer t
@@ -3064,7 +3062,7 @@
 *** Refactor
     Emacs Lisp refactor mode
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 4a347303-6e5c-e930-9be0-04e140652c6f
       (use-package emr
         :ensure t
         :defer t
@@ -3075,7 +3073,7 @@
 *** Formatter
     Not really but nice to have for a lisp language
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 99328d86-830f-d570-c069-4cec1be23aab
       (use-package elisp-format
         :ensure t
         :defer t
@@ -3099,7 +3097,7 @@
 *** Prettify
     Prettify some symbols to make it visible.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id cd91807f-6008-2cb5-5716-f6ee48077fc7
       (use-function prettify-elisp
         prettify-symbols-mode
         (add-hook
@@ -3155,7 +3153,7 @@
 *** Testing
     Some testing libraries
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id ae82d02d-86fd-b37b-1489-6b873c8ec326
       (use-package buttercup
         :ensure t
         :defer t)
@@ -3164,7 +3162,7 @@
 *** Project
     Some packages to help making packages
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 08cd7439-df60-4b11-e8a1-17917ed8dd26
       (use-package cask-mode
         :ensure t
         :defer t)
@@ -3194,7 +3192,7 @@
 *** Mode
     The defacto mode for web development
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id bd6a4ce6-0ec8-7977-cec4-2a9e0c66e2e9
       (use-package web-mode
         :ensure t
         :mode (("\\.tt\\'" . web-mode)
@@ -3219,7 +3217,7 @@
 *** Editing
     I do a lot of HTML editing, YASnippet can do but emmet is better
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 25e01dcb-860b-9e0b-4fb9-b4d84c5a149d
       (use-package emmet-mode
         :ensure t
         :defer t
@@ -3231,7 +3229,7 @@
 *** CSS
     I use [[http://sass-lang.com/][sass]] for my jekyll blog
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3de49f28-8f02-15e9-53f6-b8253b66114b
       (use-package sass-mode
         :ensure t
         :defer t
@@ -3242,7 +3240,7 @@
 *** Mode
     The ultimate JS mode
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id f4f7c05b-8948-6331-8550-71e06225c233
       (use-package js2-mode
         :ensure t
         :interpreter (("node" . js2-mode))
@@ -3283,7 +3281,7 @@
 
 *** Refactor
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 66c12076-e02d-31ae-df2b-71906bbcff01
       (use-package js2-refactor
         :diminish js2-refactor-mode
         :ensure t
@@ -3301,7 +3299,7 @@
     Sadly, =tern= slows me down somehow so I will be temporarily
     disabling it.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 160244e2-307f-c1cd-e968-71453bad9095
       (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-module-dir)
         "My performance customization on tern")
 
@@ -3328,7 +3326,7 @@
 *** Formatter
     Formatter for js, choose your poison. I tried the three and still am.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 11615658-000c-3d87-133c-a9c522788fef
       (use-package web-beautify
         :ensure t
         :after js2-mode)
@@ -3354,7 +3352,7 @@
 *** Snippets
     Snippet support
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7142c005-0729-b76e-8998-a7291dc11104
       (use-feature react-snippets
         (js2-mode yasnippet)
         (use-package react-snippets
@@ -3364,7 +3362,7 @@
 *** REPL
     Got to have those REPLs
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id db197f38-5070-3f18-4777-273017d4f5bd
       (use-package nodejs-repl
         :ensure t
         :bind (("C-c C-n C-c" . nodejs-repl-send-buffer)
@@ -3386,7 +3384,7 @@
 *** Prettify
     My symbols for JS
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id acb3e63d-ea49-d850-22c1-9e094a73b74a
       (use-function prettify-js2
         prettify-symbols-mode
         (use-feature prettify-js2
@@ -3462,7 +3460,7 @@
 *** JSON
     JSON support
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 9838a8ac-2f50-077f-0f9e-bfc5262e318d
       (use-package json-snatcher
         :ensure t
         :after js2-mode
@@ -3472,7 +3470,7 @@
 *** Literate Programming
     Let's support literate programming for JS
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 90e86021-a01f-7f97-2ca9-a076a0facb83
       (use-feature org-js2-src
         (org js2-mode)
         (add-to-list 'org-babel-load-languages '(js . t)))
@@ -3485,7 +3483,7 @@
 *** IDE
     How I hate that word specially when talking about Java
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id eae7c8e8-8138-a1f4-5ebf-15bd6953e699
       (use-package jdee
         :ensure t
         :after java
@@ -3497,7 +3495,7 @@
 *** Mode
     My favorite programming language, unassuming like Marcy from Peanuts
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 80645685-5d34-4543-7d76-4012fe9fd8bd
       (use-package python
         :ensure t
         :defer t)
@@ -3506,7 +3504,7 @@
 *** Formatter
     Pep me bro
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id ec04abb4-3b9f-ff58-ced2-580f751074ca
       (use-package py-autopep8
         :ensure t
         :defer t
@@ -3516,7 +3514,7 @@
 *** REPL
     Using =Ipython= for this
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7bb24e8e-08b5-3d37-9b73-8bb1c742b638
       (use-package ein
         :ensure t
         :defer t
@@ -3530,7 +3528,7 @@
 
     This requires [[https://pypi.python.org/pypi/pip/][pip]] and the packages  [[https://pypi.python.org/pypi/virtualenv][virtualenv]].
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id db37815b-78ce-9edb-06f4-c64867ed184b
       (use-package jedi
         :ensure t
         :after elpy
@@ -3545,7 +3543,7 @@
 *** IDE
     Making Python an IDE
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id dbef41da-2171-e211-8dc6-3107bbfcb0dd
       (use-package elpy
         :ensure t
         :defer t
@@ -3571,14 +3569,14 @@
 *** Project
     =virtualenv= is a must
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 5097aecd-7c47-1ef8-fe02-e42d51efdbce
       (use-package python-environment
         :ensure t
         :init
         (setq python-environment-directory (expand-file-name "python-environments" fn/cache-dir)))
     #+END_SRC
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 30bb91ea-4a08-ff9e-4cd9-d685297ea5e7
       (use-package virtualenv
         :ensure t
         :after python)
@@ -3586,7 +3584,7 @@
 
     Or the most updated
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id a972e38b-bf74-c106-baeb-4fb534a6fa1d
       (use-package virtualenvwrapper
         :ensure t
         :after python)
@@ -3595,7 +3593,7 @@
 *** Literate Programming
     Let's add a link to =org-babel=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 1dd091f3-1060-774c-3435-7187c7bf15f9
       (use-feature org-python-src
         (org python)
         (add-to-list 'org-babel-load-languages '(python .t)))
@@ -3604,7 +3602,7 @@
 *** Mode
     The defacto for Haskell development
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7b20b3c8-e4d0-7bcc-2013-9f12a6bb4aba
       (use-package haskell-mode
         :ensure t
         :defer t
@@ -3658,7 +3656,7 @@
 *** Motion
     The paredit for haskell, this weirdly needs [[exec-path-from-shell]] to work
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3ebe801f-52f6-35a4-35bd-b41deec624ba
       (use-package shm
         :ensure t
         :after haskell-mode
@@ -3680,7 +3678,7 @@
 *** Autocomplete
     Company for Haskell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id dba28809-a145-d57f-9414-702cd3759be1
       (use-feature company-haskell
         (haskell-mode company)
         (use-package company-ghc
@@ -3699,7 +3697,7 @@
 *** Formatter
     Formatter for Haskell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c3d7d5c4-f3cb-17b5-c372-3003b2947cff
       (use-package hindent
         :ensure t
         :after haskell-mode
@@ -3712,7 +3710,7 @@
 *** Linter
     Syntax checker for Haskell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 883aefd1-ca75-0635-3c06-d0a08e537f1f
       (use-feature flycheck-haskell
         (flycheck haskell-mode)
         (use-package flycheck-haskell
@@ -3726,7 +3724,7 @@
 *** Prettify
     My symbols for Haskell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 645c5f8f-82a1-dd6d-6318-f3528bbb7cb7
       (use-function prettify-haskell
         prettify-symbols-mode
         (use-feature prettify-haskell
@@ -3751,7 +3749,7 @@
 *** Snippets
     Easy snippets for Haskell
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 5f1b278b-5b7e-5d87-7f25-f5af49d9230d
       (use-feature haskell-snippets
         (yasnippet haskell-mode)
         (use-package haskell-snippets
@@ -3767,7 +3765,7 @@
 *** Mode
     The major mode
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 8bfb19ba-f64b-82e3-f65f-a4a152320f8a
       (use-package clojure-mode
         :ensure t
         :mode (("\\.clj\\'" . clojure-mode))
@@ -3786,7 +3784,7 @@
 *** REPL
     What is Clojure without a REPL?
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d3120ff7-28c7-215f-f0bc-d6ac6fa94a1a
       (use-package cider
         :ensure t
         :after clojure-mode)
@@ -3795,7 +3793,7 @@
 *** Integration
     Lisp meets Lisp.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 0afcc21c-7f56-fca5-0eba-fc5d4272e54f
       (use-package clomacs
         :ensure t
         :after clojure-mode)
@@ -3807,7 +3805,7 @@
 *** Mode
     A mode for Guile
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 88d8f879-32ea-41bf-75fc-e2771b3976d7
       (use-feature scheme-mode
         (scheme)
 
@@ -3825,7 +3823,7 @@
 *** REPL
     A must have
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 2706d094-0482-a050-5de7-a5cc66d6b6bb
       (use-package geiser
         :ensure t
         :after scheme
@@ -3840,7 +3838,7 @@
 *** Autocomplete
     Company to the job.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 83cc4af3-3d96-4034-29f7-020a80cfa603
       (use-feature guile-company
         (scheme company)
         "(It')s all goodman")
@@ -3852,7 +3850,7 @@
 *** Mode
     Elm major mode
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 32b54390-5bb4-16e4-208d-f91567657a3b
       (use-package elm-mode
         :ensure t
         :defer t
@@ -3866,7 +3864,7 @@
 *** Linter
     Linter for Elm
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id a08741e2-92ba-25ef-5474-4e8a78116de8
       (use-feature flycheck-elm
         (flycheck elm-mode)
         (use-package flycheck-elm
@@ -3878,7 +3876,7 @@
 *** Formatter
     Formatter for Elm, requires =elm-format=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id cb77963e-7a17-06c2-c461-1ab9fa6ec359
       (use-package *elm-mode-formatter
         :after elm-mode
         :config
@@ -3889,7 +3887,7 @@
 *** Autocomplete
     A needed feature, requires =elm-oracle=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d86ddd6e-2eae-1b6f-9157-13eb41f40258
       (use-package *elm-mode-autocomplete
         :after company
         :config
@@ -3900,7 +3898,7 @@
 *** Snippets
     Snippets too
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 32323472-2919-f3d1-0ba9-627cbcb58a30
       (use-feature elm-yasnippets
         (elm yasnippets)
         (use-package elm-yasnippets
@@ -3913,7 +3911,7 @@
 *** Mode
     Main mode for Elixir
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id a0fed229-124a-f2fd-78fb-bcc8e91f05ce
       (use-package elixir-mode
         :ensure t
         :defer t)
@@ -3922,7 +3920,7 @@
 *** Linter
     A linter is always needed
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 06d9fdcc-6c8d-a6b2-83ea-45179f85ca51
       (use-feature flycheck-elixir
         (elixir-mode flycheck)
         (use-package flycheck-elixir
@@ -3931,7 +3929,7 @@
 
     Integration with =mix=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d41f5eeb-1f8a-46e1-8581-bb66d2722118
       (use-feature flycheck-mix
         (elixir-mode flycheck)
         (use-package flycheck-mix
@@ -3941,7 +3939,7 @@
 *** Snippets
     Snippets support via yasnippet
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c6da5fe6-e35e-6d0a-4cc0-efb35d46925f
       (use-feature elixir-yasnippets
         (elixir-mode yasnippet)
         (use-package elixir-yasnippets
@@ -3951,7 +3949,7 @@
 *** Build Tools
     Build tool for Elixir
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id ce3e7a1d-a1c7-f983-a3a8-db499704136f
       (use-package alchemist
         :ensure t
         :after elixir-mode
@@ -3962,7 +3960,7 @@
 *** Mode
     I'll be using =enh-ruby-mode=
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c45379d4-5485-4f3f-bbec-0fe4f417b36b
       (use-package enh-ruby-mode
         :ensure t
         :mode (("\\.\\(rb\\|json\\)$" . enh-ruby-mode)))
@@ -3971,7 +3969,7 @@
 *** Completion
     Still using [[company]] with [[robe]]
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id bd7bd68d-d482-cc97-7f3c-291b81169358
       (use-feature company-robe
         (robe company)
         (add-to-list 'company-backends 'company-robe))
@@ -3980,7 +3978,7 @@
 *** IDE
     Almost
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3b8cee73-9554-9e25-183e-db0517d7f342
       (use-package robe
         :ensure t
         :after enh-ruby-mode
@@ -3991,7 +3989,7 @@
 *** Project
     Ruby has it's own environment
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 779d9b22-60a5-9956-ea14-8bba646238f0
       (use-package rvm
         :ensure t
         :after robe)
@@ -4001,7 +3999,7 @@
 *** omnisharp
     For C# development
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 3bc5942f-19ba-a159-7e5c-ab1eb1a24858
       (use-package omnisharp
         :ensure t
         :defer t
@@ -4020,7 +4018,7 @@
 *** Mode
     Actual mode to do the job
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 7dcc691e-16df-540c-0843-822d99c01e35
       (use-package auctex
         :ensure t
         :defer t
@@ -4039,7 +4037,7 @@
 *** Autocomplete
     Autocomplete obviously
 
-    #+BEGIN_SRC  emacs-lisp
+    #+BEGIN_SRC  emacs-lisp :block-id a501dfe3-49d4-6074-bccf-2b2eac38944c
       (use-package company-auctex
         :ensure t
         :after auctex
@@ -4050,7 +4048,7 @@
 *** Linter
     Something similar but for spelling
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id d38ac398-91d1-affa-263e-e204695a8689
       (use-feature flyspell-auctex
         (flyspell auctex)
         (add-hook 'latex-mode-hook #'flyspell-mode))
@@ -4059,7 +4057,7 @@
 *** REPL
     Something like that but rather a preview for every edit
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 079d8d3b-fb51-b7ea-9c03-690217637c5b
       (use-package latex-preview-pane
         :ensure t
         :after auctex
@@ -4073,7 +4071,7 @@
 ** twittering
    Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 9da6d0ba-1c96-a8e5-b8c9-1b5fabac58ee
      (use-package twittering-mode
        :ensure t
        :defer t
@@ -4087,7 +4085,7 @@
 ** erc
    Connecting with the brothers
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 7cf5dadb-eb6b-a004-1566-eb12464e2e44
      (use-package erc
        :bind (:map fn-standard-prefix-map
                    ("e q" . erc-quit-server))
@@ -4118,7 +4116,7 @@
 
    Listen to chat notifications
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 9893f144-27ee-c367-13cb-188e6cef258e
      (use-package jabber
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -4194,7 +4192,7 @@
 ** slack
    =Slack= is awesome.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 2f91f506-c8a6-85b4-769d-3fb460019887
      (use-package slack
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -4209,7 +4207,7 @@
 ** bbdb
    People organization
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 88354fe4-6152-2230-89e0-ab6199decc18
      (use-package bbdb
        :ensure t
        :defer t
@@ -4221,7 +4219,7 @@
 ** emms
    This controls the music player.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 0ebc0aed-f749-2d71-297a-692d5ab3b0a6
      (use-package emms
        :ensure t
        :defer t
@@ -4267,7 +4265,7 @@
 ** figlet
    Annoying people with text
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 56abcdf0-af38-e683-134a-50861bf4674f
      (use-package figlet
        :ensure t
        :defer t
@@ -4279,7 +4277,7 @@
 ** Initial View
    My intial view when Emacs boots up
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 3a40c500-5ad9-4d98-85de-75bc79d992f9
      (defconst fn/preferred-text-width 60
        "Just enough characters to read my windwos")
 
@@ -4312,7 +4310,7 @@
 *** Configurable
     Let's bootstrap from different configurations dynamically
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp  :block-id c0819554-346d-461b-dbc6-7c0ec4f398d0
       (defun fn/bootstrap-from-dir ()
         (interactive)
         (setq new-home (read-directory-name "What Emacs config would you like to boot?" "~"))
@@ -4322,7 +4320,7 @@
 *** Itself
     Load another copy of this configuration for vanity sake I suppose?
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 41b5319b-c982-bcd7-516b-39d81c4bc266
       (defun fn/bootstrap-itself ()
         (interactive)
         (fn/bootstrap-new-emacs nil))
@@ -4331,7 +4329,7 @@
 *** Experimental
     Just a random build for myself
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id cf5c64b3-cfeb-67d2-1877-e4392dd0f8b1
       (setq fn/experimental-home "~/.fmacs.d/")
 
       (defun fn/bootstrap-experimental ()
@@ -4342,7 +4340,7 @@
 *** Spacemacs
     The love child of Emacs and Vim, what does it hold?
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 063f9764-edfd-d3ff-af43-1dabb6e0aacc
       (setq fn/spacemacs-home "~/Fakespace/.spacemacs.d/")
 
       (defun fn/bootstrap-spacemacs ()
@@ -4353,7 +4351,7 @@
 *** Zak Elep
     First known master and friend
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id f769f09e-47b5-a1c3-9aec-8cbb093abe0d
       (setq fn/zak-elep-home "~/Fakespace/zakame.d/")
 
       (defun fn/bootstrap-zak-elep ()
@@ -4364,7 +4362,7 @@
 *** Sacha Chua
     Inspiration for the configuration
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id c9c383b9-bba6-9eee-465e-60a9b74db9e4
       (setq fn/sacha-chua-home "~/Fakespace/sacha.d/")
 
       (defun fn/bootstrap-sacha-chua  ()
@@ -4375,7 +4373,7 @@
 *** Steve Purcell
     One of the known masters
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 4c667434-9d18-aae2-2b54-87bd7c9d4617
       (setq fn/steve-purcell-home "~/Fakespace/purcell.d/")
 
       (defun fn/bootstrap-steve-purcell ()
@@ -4386,18 +4384,224 @@
 *** John Wiegley
     A master and maintainer of Emacs
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id a5c96672-efea-14ab-a842-5f85587caa89
       (setq fn/john-wiegley-home "~/Fakespace/wiegley.d/")
 
       (defun fn/bootstrap-john-wiegley ()
         (interactive)
         (fn/bootstrap-new-emacs fn/john-wiegley-home))
     #+END_SRC
+** Quick Config Tangler
+   I don't need to tangle the whole file. Maybe just one block if I can.
+
+   #+BEGIN_SRC emacs-lisp :block-id 72a91420-792d-82c0-b2a7-4f95c7442384
+     (require 'f)
+
+     (random t)
+
+     (defun fn/random-uuid ()
+       ;; Thanks to http://ergoemacs.org/emacs/elisp_generate_uuid.html
+       "Generate a random UUID.
+     Example of a UUID: 1df63142-a513-c850-31a3-535fc3520c3d
+
+     WARNING: this is a simple implementation. The chance of generating the same UUID is much higher than a robust algorithm."
+       (interactive)
+       (format "%04x%04x-%04x-%04x-%04x-%06x%06x"
+               (random (expt 16 4))
+               (random (expt 16 4))
+               (random (expt 16 4))
+               (random (expt 16 4))
+               (random (expt 16 4))
+               (random (expt 16 6))
+               (random (expt 16 6))))
+
+
+     (defconst fn/tangled-config-file (f-swap-ext fn/config-file "el")
+       "The tangled config file.")
+
+
+     (defun fn/get-code-block-id ()
+       "Get code block id at point."
+       (interactive)
+       (cdr (assoc fn/code-block-id-symbol (nth 2 (org-babel-get-src-block-info)))))
+
+     (defun fn/get-code-block-previous-id ()
+       "Get previous code block id at point."
+       (interactive)
+       (condition-case ex
+           (save-excursion
+             (org-babel-goto-src-block-head)
+             (org-babel-previous-src-block)
+             (fn/get-code-block-id))
+         ('error nil)))
+
+     (defun fn/get-code-block-next-id ()
+       "Get next code block id at point."
+       (interactive)
+       (condition-case ex
+           (save-excursion
+             (org-babel-goto-src-block-head)
+             (org-babel-next-src-block)
+             (fn/get-code-block-id))
+         ('error nil)))
+
+     (defun fn/get-code-block-code ()
+       "Get src code at point."
+       (interactive)
+       (nth 1 (org-babel-get-src-block-info)))
+
+     (defun fn/generate-code-block-id ()
+       "Generate code block id for block."
+       (interactive)
+       (if (fn/get-code-block-id)
+           nil
+         (save-excursion
+           (org-babel-goto-src-block-head)
+           (end-of-line)
+           (insert " ")
+           (let ((id (symbol-name fn/code-block-id-symbol)))
+             (insert
+              (format "%s %s"
+                      id
+                      (fn/random-uuid)))
+             id))))
+
+     (defun fn/generate-code-block-ids (&optional buffer)
+       "Generate block ids for current BUFFER."
+       (interactive)
+       (save-excursion
+         (beginning-of-line)
+         (condition-case ex
+             (while t
+               (org-babel-next-src-block)
+               (fn/generate-code-block-id))
+           ('error nil))))
+
+     (defun fn/find-code-block (&optional block-id)
+       "Find code block with equivalent BLOCK-ID."
+       (interactive)
+       (let ((id (or block-id
+                  (fn/get-code-block-id))))
+         (unless id
+           (error "No code block id."))
+
+         (let ((block-start (format fn/code-block-start-format id)))
+           (condition-case ex
+               (with-current-buffer (find-file fn/tangled-config-file)
+                 (goto-char (point-min))
+                 (search-forward block-start)
+                 (beginning-of-line)
+                 (switch-to-buffer (current-buffer)))
+             ('error (message "Cannot find block id: %s" (error-message-string ex)))))))
+
+     (defun fn/update-code-block (&optional block-id)
+       "Update or add code block with equivalent BLOCK-ID."
+       (interactive)
+       (let ((id (or block-id
+                  (fn/get-code-block-id)))
+           (code (fn/get-code-block-code)))
+         (let ((block-start (format fn/code-block-start-format id))
+             (block-end (format fn/code-block-end-format id))
+             (tangle-buffer (find-file-noselect fn/tangled-config-file)))
+           (cond
+            ((condition-case ex
+                 (with-current-buffer tangle-buffer
+                   (beginning-of-buffer)
+                   (search-forward block-start)
+                   (beginning-of-line)
+                   (forward-line)
+
+                   (command-execute #'set-mark-command)
+                   (search-forward block-end)
+                   (beginning-of-line)
+                   (kill-region (region-beginning) (region-end))
+                   (open-line 1)
+                   (command-execute #'set-mark-command)
+
+                   (insert code)
+                   (insert "\n")
+                   (save-buffer)
+                   t)
+               ('error nil))
+             'update)
+            ((condition-case ex
+                 (let* ((previous-id (fn/get-code-block-previous-id))
+                     (previous-block-end (format fn/code-block-end-format previous-id)))
+                   (with-current-buffer tangle-buffer
+                     (beginning-of-buffer)
+                     (search-forward previous-block-end)
+                     (beginning-of-line)
+                     (next-line)
+                     (insert "\n")
+                     (insert block-start)
+                     (insert "\n")
+                     (insert code)
+                     (insert "\n")
+                     (insert block-end)
+                     (insert "\n")
+                     (insert "\n")
+                     (save-buffer)
+                     t))
+               ('error nil))
+             'add)
+            ((condition-case ex
+                 (let* ((next-id (fn/get-code-block-next-id))
+                        (next-block-start (format fn/code-block-start-format next-id)))
+                   (with-current-buffer tangle-buffer
+                     (beginning-of-buffer)
+                     (search-forward next-block-start)
+                     (beginning-of-line)
+                     (previous-line)
+                     (insert "\n")
+                     (insert block-start)
+                     (insert "\n")
+                     (insert code)
+                     (insert "\n")
+                     (insert block-end)
+                     (insert "\n")
+                     (insert "\n")
+                     (save-buffer)
+                     t))
+               ('error nil))
+             'add)
+            (t
+             (error "Trouble of updating code block"))))))
+
+     (defun fn/check-duplicate-code-block-id ()
+       "Check current buffer for duplicate ids."
+       (interactive)
+       (let ((id-table (make-hash-table))
+           (same-ids (list))
+           (current-id))
+         (save-excursion
+           (beginning-of-buffer)
+           (condition-case ex
+               (while t
+                 (org-babel-next-src-block)
+                 (setq current-id (fn/get-code-block-id))
+                 (if (gethash current-id id-table nil)
+                     (push current-id same-ids)
+                   (puthash current-id t id-table)))
+             ('error nil)))
+         same-ids))
+
+     (defcustom fn/org-edit-src-exit-hook nil
+       "Hook when running edit exit."
+       :type 'hook
+       :group 'fn)
+
+     (defun fn/org-edit-src-exit-hook-run (&rest args)
+       "Run `fn/org-edit-src-exit-hook'."
+       (run-hooks 'fn/org-edit-src-exit-hook))
+
+     (advice-add 'org-edit-src-exit :after #'fn/org-edit-src-exit-hook-run)
+   #+END_SRC
+
 ** Session Configurations
    When working with sessions, it would be nice to have some default
    configuration when opened.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id b8e02d73-638d-d7b5-2520-32fe159fdffb
      (use-feature workgroup-configuration
        (workgroups2)
 
@@ -4502,7 +4706,13 @@
            'all-the-icons-faicon-family
            'all-the-icons-faicon
            "book"
-           :v-adjust -0.1))
+           :v-adjust -0.1)
+
+          (when (fboundp 'fn/erc)
+            (fn/erc))
+
+          (when (fboundp 'jabber-connect-all)
+            (jabber-connect-all)))
         (progn
           (delete-other-windows)
           (fn/prodigy-with-default-filters
@@ -4688,6 +4898,9 @@
          (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-clear-default-filter)
          (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-set-default-filter-hook))
 
+
+       (setq wg-open-this-wg (fmwc/workgroup-config-name (car fmwc/workgroup-configs)))
+
        (add-hook 'wg-after-switch-to-workgroup-hook #'fmwc/workgroup-config-setup)
        (add-hook 'wg-before-switch-to-workgroup-hook #'fmwc/workgroup-config-cleanup))
    #+END_SRC
@@ -4696,7 +4909,7 @@
    Split the windows into a nice four panel division. This works even
    well with [[golden-ratio]].
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 269509fe-2f84-78ef-d8e0-b34bf7d9e605
      (require 'dash)
 
      (defconst fmw/empty-buffer "*unchained buffer*"
@@ -4803,7 +5016,7 @@
 ** Utility Commands
    Some commands to get me here and there
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 699368f6-d870-cfdc-c7a7-56142502caa6
      (defun fn/insert-date ()
        "Insert time at point, useful when you want to put a date.
         TODO: Would be useful if you can change formats too"
@@ -4828,7 +5041,7 @@
    Some things to help me trade bitcoins, so this section might not be
    useful to anyone else.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id a9f60f7c-71c6-c1ce-34ec-0dbc33178462
      (require 's)
 
      (defconst fmc/coin-cli-file (expand-file-name "coiner-cli.py" "~/Fakespace/coins-watcher")
@@ -4897,7 +5110,7 @@
    When editiing gpg or sensitve files, I would like to avoid backing it
    up so here is a [[http://anirudhsasikumar.net/blog/2005.01.21.html][minor mode]] to do so.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 2d63832e-d21c-e020-d3a4-f00e6d3be7bf
      (define-minor-mode fq/sensitive-mode
        "For sensitive files like password lists.
      It disables backup creation and auto saving.
@@ -4929,7 +5142,7 @@
 ** Variable Namer
    Some quick means to insert variables
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id b94325a4-18e7-f361-2ea0-154f2cbc5d0c
      (defun fmv/map-head-tail (header tailer xs)
        "Map the head and tail separately"
        (pcase xs
@@ -4960,7 +5173,7 @@
 ** Dired Shortcuts
    Some shortcuts with the common folder
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 41197e3d-c256-224b-3d97-7eb3f1b039d5
      (defun fn/dired-download-dir ()
        "Just a quick shortcut to my directory folder"
        (interactive)
@@ -4981,7 +5194,7 @@
    Inspired from text summarizing my email, here is my generic version
    of it.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id cdabbfd8-dba9-0286-24da-f54860aef912
      (defun fn/text-summarizing (&optional text)
        "Summarize text for easier comprehension"
        (lexical-let ((raw-text (or text
@@ -5018,7 +5231,7 @@
 ** Performance Indicator
    Check if Emacs is running fast.
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 1c95aa79-5f9f-abcf-7d28-a9110a32d753
      (require 'deferred)
 
      (use-feature frame-delay
@@ -5088,7 +5301,7 @@
 ** starup and shutdown hook
    Small script to update my org files
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id b1fd9c85-3b45-96b6-3659-ce907e106fba
      (defun fn/startup ()
        (interactive)
        (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
@@ -5106,7 +5319,7 @@
 ** Create media diary
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 74c6588f-2f87-0d6a-b2b0-a1d2edf3eb15
      (require 's)
 
 
@@ -5407,7 +5620,7 @@
 ** Open standard buffers
    Nice to see the standard buffers
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id eb9c2508-1f1d-46af-a5cf-783926916691
      (defun fn/open-message-buffer ()
        (interactive)
        (switch-to-buffer "*Messages*"))
@@ -5416,7 +5629,7 @@
 ** Open config file
    This is just a convenience to open this config file
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id 6d82f337-90f7-8583-6845-c305c7285f95
      (defun fn/find-config-file ()
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
@@ -5425,7 +5638,7 @@
 ** Insert relative path
    Makes it easier to insert relative paths
 
-   #+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp :block-id a3d6cc8d-a9ee-e266-bd29-54a77a6cc68f
      (require 'f)
 
      (defun fn/find-relative-file-path ()
@@ -5439,7 +5652,7 @@
 * Key Bindings
   Here is where all the key binding I mapped to
 
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :block-id af4279a7-a5d4-a700-1248-a5e0ae50e962
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
       (lexical-let* ((key-trigger key)
@@ -5537,7 +5750,7 @@
 
 * Sandbox
 
-  #+BEGIN_SRC emacs-lisp
+  #+BEGIN_SRC emacs-lisp :block-id 11924ff1-bd52-69da-c463-3ab89942f1f9
     (defconst fn/elk-package-dir (expand-file-name "~/Fakespace/elk.el")
       "My elk package dir")
 

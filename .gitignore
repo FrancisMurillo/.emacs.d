@@ -15,3 +15,5 @@ lib/sandbox
 lib/packages
 !lib/modules
 !lib/scripts
+/.config.org
+/.safe-config.org
