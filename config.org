@@ -585,7 +585,87 @@
 
    #+BEGIN_SRC emacs-lisp :block-id e8344e55-09ff-27a8-a6c0-8d76e44cd3f0
      (use-package log4e
-       :ensure t)
+       :ensure t
+       :config
+       (log4e:deflogger
+         "chat"
+         ">>> %t \n%m\n<<<"
+         "%F %H:%M:%S"
+         (list (cons 'info "info")))
+
+       (chat--log-enable-logging)
+
+
+       (defface fn/chat-server-name-face  '((t (:weight bold :height 0.9)))
+         "Chat server name face")
+
+       (defface fn/chat-channel-name-face  '((t (:weight ultra-bold :height 1.1)))
+         "Chat server  name face")
+
+       (defface fn/chat-chatter-name-face  '((t (:weight semi-bold :height 1.0)))
+         "Chat sender name face")
+
+       (defface fn/chat-message-face  '((t (:weight thin :height 1.0)))
+         "Chat message face")
+
+       (defvar fn/chat-server-name-face 'fn/chat-server-name-face
+         "Slack team name face var")
+
+       (defvar fn/chat-channel-name-face 'fn/chat-channel-name-face
+         "Slack room name face var")
+
+       (defvar fn/chat-chatter-name-face 'fn/chat-chatter-name-face
+         "Slack sender name face var")
+
+       (defvar fn/chat-message-face 'fn/chat-message-face
+         "Slack message face var")
+
+       (defun fn/chat-log (server channel chatter message)
+         "Log SERVER, CHANNEL, CHATTER and MESSAGE."
+         (let* ((out (format "[%s/%s] %s: %s"
+                          (propertize server 'face 'fn/chat-server-name-face)
+                          (propertize channel 'face 'fn/chat-channel-name-face)
+                          (propertize chatter 'face 'fn/chat-chatter-name-face)
+                          (propertize message 'face 'fn/chat-message-face))))
+           (chat--log-info out)
+           out))
+
+       (defun fn/chat-log-open ()
+         "Open chat log."
+         (interactive)
+         (chat--log-open-log))
+
+
+       (defconst fn/chat-log-file (expand-file-name ".chat-log.txt.gpg" fn/cache-dir)
+         "My chat log file.")
+
+       (defun fn/chat-log-clear ()
+         "Clear chat log."
+         (interactive)
+         (chat--log-clear-log))
+
+       (defun fn/chat-log-flush ()
+         "Save log for posterity."
+         (save-window-excursion
+           (fn/chat-log-open)
+           (let ((new-log (buffer-substring-no-properties (point-min) (point-max)))
+               (file (find-file-noselect fn/chat-log-file)))
+             (with-current-buffer file
+               (end-of-buffer)
+               (newline)
+               (insert new-log)
+               (save-buffer))
+             (fn/chat-log-clear)
+             nil)))
+
+       (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
+
+
+       (use-feature log4e-icon
+         (all-the-icons)
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'log4e-mode 'all-the-icons-octicon "clippy" :v-adjust 0.0))))
    #+END_SRC
 
 ** all-the-icons
@@ -599,6 +679,10 @@
        :ensure t
        :demand t
        :config
+       (add-to-list
+        'all-the-icons-mode-icon-alist
+        (list 'special-mode 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
+
        (add-to-list
         'all-the-icons-mode-icon-alist
         (list 'fundamental-mode 'all-the-icons-faicon "pencil" :v-adjust -0.1))
@@ -2132,7 +2216,15 @@
        :demand t
        :config
        (setq alert-default-style 'libnotify
-             alert-log-messages t)
+          alert-log-messages t)
+
+
+       (defun fn/alert-log-open ()
+         "Open alert log."
+         (interactive)
+         (if (fboundp 'alert--log-open-log)
+             (alert--log-open-log-if-debug)
+           (error "No alert log yet")))
 
        ;; HACK: Bug #30 in alert to allow default style override
        (alert-add-rule))
@@ -4105,6 +4197,54 @@
 
           erc-quit-reason (lambda (&rest args) "I took with me... their lightning and their prayers"))
 
+       (use-feature erc-message-alert
+         (alert)
+         (require 's)
+
+         (defconst fn/erc-notify-severity 'erc
+           "My erc notify severity.")
+
+         (add-to-list 'alert-log-severity-functions
+                      (cons fn/erc-notify-severity #'alert--log-trace))
+         (add-to-list 'alert-severity-colors
+                      (cons fn/erc-notify-severity "#3d57b1"))
+
+         (defun fn/erc-notice-p (message)
+           "Check if MESSAGE is a notice."
+           (s-starts-with-p erc-notice-prefix message))
+
+         (defun fn/erc-get-sender-name (message)
+           "Get the sender from the MESSAGE."
+           (let ((result (car (s-split-up-to " " message 1))))
+             (if (string= result message)
+                 nil
+               (substring-no-properties result 1 -1))))
+
+         (defun fn/erc-get-message (message)
+           "Get the message from the MESSAGE."
+           (let ((result (cadr (s-split-up-to " " message 1))))
+             (if (null result)
+                 nil
+               result)))
+
+         (defun fn/erc-message-alert (message)
+           "Just a small unobtrusive notifcation"
+           (let ((raw-message (substring-no-properties message)))
+             (when (and (erc-network-name)
+                      (erc-default-target)
+                      (not (erc-is-message-ctcp-p raw-message))
+                      (not (fn/erc-notice-p raw-message)))
+               (let ((server (erc-network-name))
+                   (channel (substring-no-properties (erc-default-target) 1))
+                   (chatter (fn/erc-get-sender-name raw-message))
+                   (base-message (fn/erc-get-message raw-message)))
+                 (alert (fn/chat-log server channel chatter base-message)
+                        :category 'erc
+                        :style 'fringe
+                        :severity fn/erc-notify-severity)))))
+
+         (add-hook 'erc-insert-pre-hook #'fn/erc-message-alert))
+
        (use-feature erc-icon
          (all-the-icons)
          (add-to-list
@@ -4142,7 +4282,8 @@
        (setq jabber-mode-line-mode t)
 
        ;; chat states
-       (setq jabber-chatstates-confirm nil)
+       (setq jabber-chatstates-confirm nil
+          jabber-presence-hooks nil)
 
        ;; avatar
        (setq jabber-avatar-cache-directory (expand-file-name "jabber-avatar-cache" fn/cache-dir)
@@ -4161,14 +4302,21 @@
        (add-hook 'jabber-alert-message-hooks #'jabber-message-echo)
 
        (use-feature jabber-alert-custom
-         (jabber alert)
+         (alert)
+         (defconst fn/jabber-notify-severity 'jabber
+           "My jabber notify severity.")
+
+         (add-to-list 'alert-log-severity-functions
+                      (cons fn/jabber-notify-severity #'alert--log-trace))
+         (add-to-list 'alert-severity-colors
+                      (cons fn/jabber-notify-severity "#abb2e1"))
+
          (defun fn/jabber-message-notify (from buffer text title)
            "Just a small unobtrusive notifcation"
-           (alert (format "%s pinged you" from)
-
-                  :category 'cbox
+           (alert (fn/chat-log "google" user-mail-address from text)
+                  :category 'jabber
                   :style 'fringe
-                  :severity 'trivial))
+                  :severity fn/jabber-notify-severity))
 
          (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
@@ -4176,7 +4324,11 @@
          (all-the-icons)
          (add-to-list
           'all-the-icons-mode-icon-alist
-          (list 'jabber-chat-mode 'all-the-icons-faicon "comments" :v-adjust -0.1)))
+          (list 'jabber-chat-mode 'all-the-icons-faicon "comments" :v-adjust -0.1))
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'jabber-roster-mode 'all-the-icons-faicon "building-o" :v-adjust -0.1)))
+
 
        ;; roster
        (setq jabber-roster-show-title nil
@@ -4201,7 +4353,38 @@
        (setq slack-enable-emoji nil
              slack-buffer-emojify nil
              slack-typing-visibility 'buffer
-             slack-prefer-current-team t))
+             slack-prefer-current-team t)
+
+       (use-feature slack-custom-alert
+         (alert)
+         (defconst fn/slack-notify-severity 'slack
+           "My slack notify severity.")
+
+         (add-to-list 'alert-log-severity-functions
+                      (cons fn/slack-notify-severity #'alert--log-trace))
+         (add-to-list 'alert-severity-colors
+                      (cons fn/slack-notify-severity "#3a417a"))
+
+         (defun fn/slack-message-custom-notifier (message room team)
+           "My custom notication for slack given MESSAGE, ROOM and TEAM.
+     What I do is use the fringe to notify me instead of `libnotify'."
+           (let* ((team-name (oref team name))
+               (room-name (slack-room-name room))
+               (text (slack-message-to-alert message team))
+               (user-name (slack-message-sender-name message team))
+               (out (fn/chat-log team-name room-name user-name text)))
+             (alert out
+                    :category 'phackers
+                    :style 'fringe
+                    :severity fn/slack-notify-severity)))
+
+         (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
+
+       (use-feature slack-icon
+         (all-the-icons)
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (list 'slack-mode 'all-the-icons-faicon "commenting-o" :v-adjust 0.0))))
    #+END_SRC
 
 ** bbdb
@@ -4712,11 +4895,15 @@
             (fn/erc))
 
           (when (fboundp 'jabber-connect-all)
-            (jabber-connect-all)))
+            (jabber-connect-all))
+
+          (when (fboundp 'slack-start)
+            (slack-start)))
         (progn
           (delete-other-windows)
-          (fn/prodigy-with-default-filters
-           (fn/prodigy-add-default-tag-filter 'gnus)))
+          (when (fboundp 'fn/prodigy-with-default-filters)
+            (fn/prodigy-with-default-filters
+             (fn/prodigy-add-default-tag-filter 'gnus))))
         nil)
 
        (fmwc/define-workgroup-configs
@@ -4728,8 +4915,9 @@
            "code"
            :v-adjust -0.1))
         (progn
-          (fn/prodigy-with-default-filters
-           (fn/prodigy-add-default-tag-filter 'komunidad)))
+          (when (fboundp 'fn/prodigy-with-default-filters)
+            (fn/prodigy-with-default-filters
+             (fn/prodigy-add-default-tag-filter 'komunidad))))
         nil)
 
        (fmwc/define-workgroup-configs
@@ -4752,8 +4940,9 @@
            "comment"
            :v-adjust -0.1))
         (progn
-          (fn/prodigy-with-default-filters
-           (fn/prodigy-add-default-tag-filter 'fn-log)))
+          (when (fboundp 'fn/prodigy-with-default-filters)
+           (fn/prodigy-with-default-filters
+            (fn/prodigy-add-default-tag-filter 'fn-log))))
         nil)
 
        (fmwc/define-workgroup-configs
@@ -4765,8 +4954,9 @@
            "pencil"
            :v-adjust -0.1))
         (progn
-          (fn/prodigy-with-default-filters
-           (fn/prodigy-add-default-tag-filter 'frontend-functions)))
+          (when (fboundp 'fn/prodigy-with-default-filters)
+           (fn/prodigy-with-default-filters
+            (fn/prodigy-add-default-tag-filter 'frontend-functions))))
         nil)
 
 
@@ -5640,13 +5830,44 @@
 
    #+BEGIN_SRC emacs-lisp :block-id a3d6cc8d-a9ee-e266-bd29-54a77a6cc68f
      (require 'f)
+     (require 'dash)
 
-     (defun fn/find-relative-file-path ()
+     (defun fn/relative-path (source-path target-path)
+       "An attempt to compute the relative path from SOURCE-PATH to TARGET-PATH."
+       (letrec ((recurser
+            (lambda (upward-nodes downward-nodes parent-node)
+              (cond
+               ((null (car upward-nodes))
+                (string-join
+                 (append (list ".")
+                         downward-nodes)
+                 (f-path-separator)))
+               ((null (car downward-nodes))
+                (string-join
+                 (append (-map (-const "..") upward-nodes)
+                         (list parent-node))
+                 (f-path-separator)))
+               ((string-equal (car upward-nodes)
+                              (car downward-nodes))
+                (funcall recurser
+                   (cdr upward-nodes)
+                   (cdr downward-nodes)
+                   (car upward-nodes)))
+               (t
+                (lexical-let* ((up-nodes (or (-map (-const "..") (cdr upward-nodes))
+                                 (list ".")))
+                    (down-nodes downward-nodes))
+                  (string-join
+                   (append up-nodes down-nodes)
+                   (f-path-separator))))))))
+         (funcall recurser (f-split source-path) (f-split target-path) ".")))
+
+     (defun fn/insert-relative-file-path ()
        "Insert the relative file path."
        (interactive)
        (let* ((relative-path (buffer-file-name))
               (target-path (car (find-file-read-args "Find file" t))))
-         (f-relative relative-path target-path)))
+         (insert (fn/relative-path relative-path target-path))))
    #+END_SRC
 
 * Key Bindings
@@ -5695,9 +5916,7 @@
     (define-key fn-custom-prefix-map (kbd "w 4") 'fmw/four-part-equal-vertical-window-layout)
     (define-key fn-custom-prefix-map (kbd "w r") 'fmw/rotate-window-buffers)
 
-    ;; MEOW
-    (define-key fn-custom-prefix-map (kbd "w s")
-      'fn/swap-with-numbered-window)
+    (define-key fn-custom-prefix-map (kbd "w s") 'fn/swap-with-numbered-window)
 
     ;; System Buffers
     (define-key fn-custom-prefix-map (kbd "b m") 'fn/open-message-buffer)
@@ -5726,6 +5945,10 @@
 
     (define-key fn-custom-prefix-map (kbd "^") #'fn/dired-parent)
 
+
+    ;; Special
+    (define-key fn-standard-prefix-map (kbd "l l") #'fn/chat-log-open) ;; From binding above
+    (define-key fn-standard-prefix-map (kbd "l a") #'fn/alert-log-open)
 
 
     ;; Namer
