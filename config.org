@@ -622,11 +622,13 @@
 
        (defun fn/chat-log (server channel chatter message)
          "Log SERVER, CHANNEL, CHATTER and MESSAGE."
-         (let* ((out (format "[%s/%s] %s: %s"
+         (let* ((out
+                 (string-trim-right
+                  (format "[%s/%s] %s: %s"
                           (propertize server 'face 'fn/chat-server-name-face)
                           (propertize channel 'face 'fn/chat-channel-name-face)
                           (propertize chatter 'face 'fn/chat-chatter-name-face)
-                          (propertize message 'face 'fn/chat-message-face))))
+                          (propertize message 'face 'fn/chat-message-face)))))
            (chat--log-info out)
            out))
 
@@ -2223,7 +2225,7 @@
          "Open alert log."
          (interactive)
          (if (fboundp 'alert--log-open-log)
-             (alert--log-open-log-if-debug)
+             (alert--log-open-log)
            (error "No alert log yet")))
 
        ;; HACK: Bug #30 in alert to allow default style override
@@ -4229,7 +4231,7 @@
 
          (defun fn/erc-message-alert (message)
            "Just a small unobtrusive notifcation"
-           (let ((raw-message (substring-no-properties message)))
+           (let ((raw-message (string-trim-right (substring-no-properties message))))
              (when (and (erc-network-name)
                       (erc-default-target)
                       (not (erc-is-message-ctcp-p raw-message))
