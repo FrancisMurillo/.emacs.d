@@ -2137,7 +2137,7 @@
       (use-package zone-matrix
         :load-path fn/zone-matrix-dir
         :after zone
-        :configq
+        :config
         (add-to-list 'zone-programs 'zone-matrix))
 
       (use-package zone-nyan
