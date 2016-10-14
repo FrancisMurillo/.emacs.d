@@ -123,10 +123,10 @@ If you want to use directly, set `info' to `(org-babel-tangle-get-src-block-info
 (defun fn/org-babel-tangle-wrap-block-safety ()
   "Wraps a code block with `fn/code-block-'"
   (let* ((block-params (nth 2 info))  ;; org-babel-tangle binding
-         (block-id (cdr (assoc fn/code-block-id-symbol params))))
+      (block-id (cdr (assoc fn/code-block-id-symbol params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-            (block-end (format fn/code-block-end-format block-id)))
+          (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert (format "(fn/code-block-safety \"%s\" " block-id))

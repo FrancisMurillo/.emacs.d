@@ -1607,7 +1607,7 @@
         (setq projectile-switch-project-action #'fn/find-project-root)
 
 
-        (projectile-global-mode t)
+        (projectile-mode)
         (setq projectile-indexing-method 'native
            projectile-enable-caching t)
 
@@ -1965,7 +1965,7 @@
         (setq paradox-github-token t)
 
         (fn/add-major-mode-icon
-         paradox-menu-mode
+         'paradox-menu-mode
          ('all-the-icons-octicon "package" :v-adjust 0.0)
          "packages"))
     #+END_SRC
@@ -2131,6 +2131,15 @@
         (add-to-list 'zone-programs 'zone-waves))
 
       ;; Packaged zones
+      (defconst fn/zone-matrix-dir (expand-file-name "zone-matrix" fn/custom-module-dir)
+        "My zone matrix dir.")
+
+      (use-package zone-matrix
+        :load-path fn/zone-matrix-dir
+        :after zone
+        :configq
+        (add-to-list 'zone-programs 'zone-matrix))
+
       (use-package zone-nyan
         :ensure t
         :after zone
@@ -4368,6 +4377,11 @@
                     :severity fn/jabber-notify-severity)))
 
          (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
+
+       (fn/add-major-mode-icon
+        'jabber-roster-mode
+        ('all-the-icons-octicon "radio-tower" :v-adjust -0.1)
+        "cbox")
 
        (fn/add-major-mode-icon
         'jabber-chat-mode
