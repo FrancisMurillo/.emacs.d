@@ -340,14 +340,7 @@
 ;;* Separator
 (defun moder-xpm-feature-p ()
   "Check if xpm feature is available."
-  (cond
-   ((and (boundp 'image-types)
-       (member 'xpm image-types))
-    t)
-   ((and (boundp 'imagemagick-enabled-types)
-       (member 'XPM imagemagick-enabled-types))
-    t)
-   (t nil)))
+  (image-type-available-p 'xpm))
 
 
 (defun moder-separator-arrow-left (inner-color outer-color)
