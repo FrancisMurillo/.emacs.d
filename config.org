@@ -219,11 +219,15 @@
      (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
 
-     (defvar fn/my-lightning "My Lightning... "
+     (defvar fn/my-lightning (propertize "My Lightning... "
+                                    'face '(:foreground "#e74c3c"))
        "A reference to continue?987654321.
      May I accept the lightning.")
 
-     (defvar fn/my-prayer "My Lightning... My Prayer..."
+     (defvar fn/my-prayer (format "%s %s"
+                             fn/my-lightning
+                             (propertize "My Prayer..."
+                                         'face '(:foreground "#bdc3c7")))
        "The closing message for garbage collection.
      May I be lift up.")
 
@@ -235,9 +239,12 @@
          (prog2
              (message fn/my-lightning)
              (apply orig-gc args)
-           (message "%s (%.4fs)"
+           (message "%s %s"
                     fn/my-prayer
-                    (float-time (time-subtract (current-time) start-time))))))
+                    (propertize
+                     (format "(%.4fs)"
+                             (float-time (time-subtract (current-time) start-time)))
+                     'face '(:foreground "#7f8c8d"))))))
 
      (advice-add 'garbage-collect :around #'fn/continue-gc)
 
@@ -609,28 +616,29 @@
          "Chat message face")
 
        (defvar fn/chat-server-name-face 'fn/chat-server-name-face
-         "Slack team name face var")
+         "Chat team name face var")
 
        (defvar fn/chat-channel-name-face 'fn/chat-channel-name-face
-         "Slack room name face var")
+         "Chat room name face var")
 
        (defvar fn/chat-chatter-name-face 'fn/chat-chatter-name-face
-         "Slack sender name face var")
+         "Chat sender name face var")
 
        (defvar fn/chat-message-face 'fn/chat-message-face
-         "Slack message face var")
+         "Chat message face var")
 
        (defun fn/chat-log (server channel chatter message)
          "Log SERVER, CHANNEL, CHATTER and MESSAGE."
-         (let* ((out
-                 (string-trim-right
-                  (format "[%s/%s] %s: %s"
-                          (propertize server 'face 'fn/chat-server-name-face)
-                          (propertize channel 'face 'fn/chat-channel-name-face)
-                          (propertize chatter 'face 'fn/chat-chatter-name-face)
-                          (propertize message 'face 'fn/chat-message-face)))))
-           (chat--log-info out)
-           out))
+         (unless (string-empty-p message)
+           (let* ((out
+                (string-trim-right
+                 (format "[%s/%s] %s: %s"
+                         (propertize server 'face 'fn/chat-server-name-face)
+                         (propertize channel 'face 'fn/chat-channel-name-face)
+                         (propertize chatter 'face 'fn/chat-chatter-name-face)
+                         (propertize message 'face 'fn/chat-message-face)))))
+             (chat--log-info out)
+             out)))
 
        (defun fn/chat-log-open ()
          "Open chat log."
@@ -646,56 +654,36 @@
          (interactive)
          (chat--log-clear-log))
 
-       (defun fn/chat-log-flush ()
-         "Save log for posterity."
-         (save-window-excursion
-           (fn/chat-log-open)
-           (let ((new-log (buffer-substring-no-properties (point-min) (point-max)))
-               (file (find-file-noselect fn/chat-log-file)))
-             (with-current-buffer file
-               (end-of-buffer)
-               (newline)
-               (insert new-log)
-               (save-buffer))
-             (fn/chat-log-clear)
-             nil)))
+       (defun fn/chat-log-flush (&optional retain)
+         "Save log for posterity.  If RETAIN is non-nil, do not clear the log."
+         (ignore-errors
+           (save-window-excursion
+             (fn/chat-log-open) ;; NOTE: Error might result if the log isn't populated yet.
+             (let ((new-log
+                  (with-current-buffer log4e--log-buffer-chat
+                    (buffer-substring-no-properties (point-min) (point-max))))
+                 (file (find-file-noselect fn/chat-log-file)))
+               (with-current-buffer file
+                 (end-of-buffer)
+                 (newline)
+                 (insert new-log)
+                 (save-buffer))
+               (unless retain
+                 (fn/chat-log-clear))
+               nil))))
 
+       (defun fn/chat-log-flush-before-clear (&rest args)
+         "Save the log before clearing."
+         (fn/chat-log-flush t))
+
+       (advice-add 'chat--log-clear-log :before #'fn/chat-log-flush-before-clear)
        (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
 
 
-       (use-feature log4e-icon
-         (all-the-icons)
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'log4e-mode 'all-the-icons-octicon "clippy" :v-adjust 0.0))))
-   #+END_SRC
-
-** all-the-icons
-   Making Emacs more modern.
-
-   Sadly, this has to be placed here because =use-feature= cannot load
-   it properly.
-
-   #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
-     (use-package all-the-icons
-       :ensure t
-       :demand t
-       :config
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'special-mode 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
-
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'fundamental-mode 'all-the-icons-faicon "pencil" :v-adjust -0.1))
-
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'compilation-mode 'all-the-icons-faicon "cog" :v-adjust -0.1))
-
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'process-menu-mode 'all-the-icons-faicon "list" :v-adjust -0.1)))
+       (fn/add-major-mode-icon
+        'log4e-mode
+        ('all-the-icons-octicon "clippy" :v-adjust 0.0)
+        "log4e"))
    #+END_SRC
 
 ** auto-compile
@@ -759,6 +747,55 @@
        (put 'use-function 'lisp-indent-function 'defun))
    #+END_SRC
 
+** all-the-icons
+   Making Emacs more modern.
+
+   Sadly, this has to be placed here because =use-feature= cannot load
+   it properly.
+
+   #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
+     (use-package all-the-icons
+       :ensure t
+       :demand t
+       :config
+       (defvar fn/major-mode-alias-list nil
+         "A list of fallback pairs if the icon cannot be found.")
+
+       (defmacro fn/add-major-mode-icon (main-mode icon-config &optional alias)
+         "Add icon mapping to major mode given MAIN-MODE, ICON-CONFIG and optionally ALIAS."
+         (let* ((mode-name (format "%s" (eval main-mode)))
+             (feature-symbol (make-symbol (format "%s%s" mode-name "--mode-icon"))))
+           `(use-feature ,feature-symbol
+             (all-the-icons)
+             (add-to-list
+               'all-the-icons-mode-icon-alist
+               (list ,main-mode ,@icon-config))
+
+             (add-to-list
+               'fn/major-mode-alias-list
+               (cons ,main-mode ,(or alias mode-name))))))
+
+       (fn/add-major-mode-icon
+        'special-mode
+        ('all-the-icons-faicon "birthday-cake" :v-adjust -0.1)
+        "Sp")
+
+       (fn/add-major-mode-icon
+        'fundamental-mode
+        ('all-the-icons-faicon "pencil" :v-adjust -0.1)
+        "base")
+
+       (fn/add-major-mode-icon
+        'compilation-mode
+        ('all-the-icons-faicon "cog" :v-adjust -0.1)
+        "compile")
+
+       (fn/add-major-mode-icon
+        'process-menu-mode
+        ('all-the-icons-faicon "list" :v-adjust -0.1))
+       "process")
+   #+END_SRC
+
 * Terminator
   Shell related aspect
 
@@ -778,11 +815,10 @@
    #+BEGIN_SRC emacs-lisp :block-id da6d7eb9-45f4-ee00-154d-11e39b59d7bf
      (setq async-shell-command-buffer 'new-buffer)
 
-     (use-feature shell-icon
-       (all-the-icons)
-       (add-to-list
-        'all-the-icons-mode-icon-alist
-        (list 'shell-mode 'all-the-icons-faicon "terminal" :v-adjust 0.0)))
+     (fn/add-major-mode-icon
+      'shell-mode
+      ('all-the-icons-faicon "terminal" :v-adjust 0.0)
+      "shell")
    #+END_SRC
 
 ** term
@@ -958,14 +994,10 @@
                  (message "Creating binding for %s" name)
                  (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service)))))))
 
-       (use-feature prodigy-icons
-         (all-the-icons)
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'prodigy-mode 'all-the-icons-faicon "cogs" :v-adjust -0.1))
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'prodigy-view-mode 'all-the-icons-faicon "cog" :v-adjust -0.1))))
+       (fn/add-major-mode-icon
+        'prodigy-mode
+        ('all-the-icons-faicon "cogs" :v-adjust -0.1)
+        "prodigy"))
    #+END_SRC
 ** emamux
    Work better with tmux
@@ -1921,11 +1953,10 @@
         :config
         (setq paradox-github-token t)
 
-        (use-feature paradox-icon
-          (all-the-icons)
-          (add-to-list
-           'all-the-icons-mode-icon-alist
-           (list 'paradox-menu-mode 'all-the-icons-octicon "package" :v-adjust 0.0))))
+        (fn/add-major-mode-icon
+         paradox-menu-mode
+         ('all-the-icons-octicon "package" :v-adjust 0.0)
+         "packages"))
     #+END_SRC
 
 **** helm-flx
@@ -2220,13 +2251,12 @@
        (setq alert-default-style 'libnotify
           alert-log-messages t)
 
-
        (defun fn/alert-log-open ()
          "Open alert log."
          (interactive)
          (if (fboundp 'alert--log-open-log)
              (alert--log-open-log)
-           (error "No alert log yet")))
+           (error "No alert logs yet")))
 
        ;; HACK: Bug #30 in alert to allow default style override
        (alert-add-rule))
@@ -2520,11 +2550,10 @@
         (add-to-list 'auto-insert-alist '(".*\.private.org" . fm/insert-private-file-headers))
         (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers))
 
-        (use-feature journal-icon
-          (all-the-icons)
-          (add-to-list
-           'all-the-icons-mode-icon-alist
-           (list 'org-journal-mode 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0))))
+        (fn/add-major-mode-icon
+         'org-journal-mode
+         ('all-the-icons-faicon "pencil-square-o" :v-adjust 0.0)
+         "journal"))
     #+END_SRC
 
 *** org-reveal
@@ -2766,14 +2795,15 @@
                ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
                ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
 
-       (use-feature ledger-icon
-         (all-the-icons)
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'ledger-mode 'all-the-icons-faicon "money" :v-adjust -0.1))
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'ledger-report-mode 'all-the-icons-faicon "line-chart" :v-adjust -0.1))))
+       (fn/add-major-mode-icon
+        'ledger-mode
+        ('all-the-icons-faicon "money" :v-adjust -0.1)
+        "ledger")
+
+       (fn/add-major-mode-icon
+        'ledger-report-mode
+        ('all-the-icons-faicon "line-chart" :v-adjust -0.1)
+        "balance"))
    #+END_SRC
 
 ** engine
@@ -3261,11 +3291,10 @@
         :ensure t
         :defer t)
 
-      (use-feature cask-icon
-        (all-the-icons)
-        (add-to-list
-         'all-the-icons-mode-icon-alist
-         (list 'cask-mode 'all-the-icons-faicon "glass" :v-adjust 0.1)))
+      (fn/add-major-mode-icon
+       'cask-mode
+       ('all-the-icons-faicon "glass" :v-adjust 0.1)
+       "cask")
 
       (use-package header2
         :ensure t
@@ -3351,11 +3380,10 @@
               js2-include-node-externs t
               js2-include-browser-externs t)
 
-        (use-feature js-icon
-          (all-the-icons)
-          (add-to-list
-           'all-the-icons-mode-icon-alist
-           (list 'js2-jsx-mode 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
+        (fn/add-major-mode-icon
+         'js2-jsx-mode
+         ('all-the-icons-alltheicon "javascript" :v-adjust 0.1)
+         "jsx"))
 
       (use-package js-doc
         :ensure t
@@ -3864,11 +3892,10 @@
         :ensure t
         :mode (("\\.clj\\'" . clojure-mode))
         :config
-        (use-feature clojure-icon
-          (all-the-icons)
-          (add-to-list
-           'all-the-icons-mode-icon-alist
-           (list 'clojure-mode 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
+        (fn/add-major-mode-icon
+         'clojure-mode
+         ('all-the-icons-fileicon "scheme" :v-adjust 0.0)
+         "cloj"))
 
       (use-package clojure-mode-extra-font-locking
         :ensure t
@@ -3907,11 +3934,10 @@
           (scheme paredit)
           (add-hook 'scheme-mode #'paredit-mode))
 
-        (use-feature scheme-icon
-          (all-the-icons)
-          (add-to-list
-           'all-the-icons-mode-icon-alist
-           (list 'scheme-mode 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
+        (fn/add-major-mode-icon
+         'scheme-mode
+         ('all-the-icons-fileicon "scheme" :v-adjust 0.0)
+         "schemer"))
     #+END_SRC
 
 *** REPL
@@ -4247,11 +4273,10 @@
 
          (add-hook 'erc-insert-pre-hook #'fn/erc-message-alert))
 
-       (use-feature erc-icon
-         (all-the-icons)
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'erc-mode 'all-the-icons-faicon "exchange" :v-adjust 0.0))))
+       (fn/add-major-mode-icon
+        'erc-mode
+        ('all-the-icons-faicon "exchange" :v-adjust 0.0)
+        "erc"))
    #+END_SRC
 
 ** jabber
@@ -4313,23 +4338,30 @@
          (add-to-list 'alert-severity-colors
                       (cons fn/jabber-notify-severity "#abb2e1"))
 
+         (defconst fn/jabber-google
+           (format "%s%s%s%s%s%s"
+                   (propertize "g" 'face '(:foreground "#4285f4"))
+                   (propertize "o" 'face '(:foreground "#ea4335"))
+                   (propertize "o" 'face '(:foreground "#fbbc05"))
+                   (propertize "g" 'face '(:foreground "#4285f4"))
+                   (propertize "l" 'face '(:foreground "#34a853"))
+                   (propertize "e" 'face '(:foreground "#ea4335")))
+           "A nice candy colored google text")
+
          (defun fn/jabber-message-notify (from buffer text title)
            "Just a small unobtrusive notifcation"
-           (alert (fn/chat-log "google" user-mail-address from text)
-                  :category 'jabber
-                  :style 'fringe
-                  :severity fn/jabber-notify-severity))
+           (let ((chatter (cdr (assoc from jabber-activity-name-alist))))
+             (alert (fn/chat-log fn/jabber-google user-mail-address chatter text)
+                    :category 'jabber
+                    :style 'fringe
+                    :severity fn/jabber-notify-severity)))
 
          (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
-       (use-feature jabber-chat-icons
-         (all-the-icons)
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'jabber-chat-mode 'all-the-icons-faicon "comments" :v-adjust -0.1))
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'jabber-roster-mode 'all-the-icons-faicon "building-o" :v-adjust -0.1)))
+       (fn/add-major-mode-icon
+        'jabber-chat-mode
+        ('all-the-icons-faicon "comments" :v-adjust -0.1)
+        "cbox")
 
 
        ;; roster
@@ -4350,7 +4382,8 @@
      (use-package slack
        :ensure t
        :bind (:map fn-standard-prefix-map
-                   ("S" . slack-start))
+                   ("s s" . slack-start)
+                   ("s q" . slack-ws-close))
        :config
        (setq slack-enable-emoji nil
              slack-buffer-emojify nil
@@ -4382,11 +4415,10 @@
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
 
-       (use-feature slack-icon
-         (all-the-icons)
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (list 'slack-mode 'all-the-icons-faicon "commenting-o" :v-adjust 0.0))))
+       (fn/add-major-mode-icon
+        'slack-mode
+        ('all-the-icons-faicon "commenting-o" :v-adjust 0.0)
+        "slacker"))
    #+END_SRC
 
 ** bbdb
