@@ -4280,19 +4280,20 @@
 
          (defun fn/erc-message-alert (message)
            "Just a small unobtrusive notifcation"
-           (let ((raw-message (string-trim-right (substring-no-properties message))))
-             (when (and (erc-network-name)
-                      (erc-default-target)
-                      (not (erc-is-message-ctcp-p raw-message))
-                      (not (fn/erc-notice-p raw-message)))
-               (let ((server (erc-network-name))
-                   (channel (substring-no-properties (erc-default-target) 1))
-                   (chatter (fn/erc-get-sender-name raw-message))
-                   (base-message (fn/erc-get-message raw-message)))
-                 (alert (fn/chat-log server channel chatter base-message)
-                        :category 'erc
-                        :style 'fringe
-                        :severity fn/erc-notify-severity)))))
+           (ignore-errors ;; NOTE: I shall return
+             (let ((raw-message (string-trim-right (substring-no-properties message))))
+               (when (and (erc-network-name)
+                        (erc-default-target)
+                        (not (erc-is-message-ctcp-p raw-message))
+                        (not (fn/erc-notice-p raw-message)))
+                 (let ((server (erc-network-name))
+                     (channel (substring-no-properties (erc-default-target) 1))
+                     (chatter (fn/erc-get-sender-name raw-message))
+                     (base-message (fn/erc-get-message raw-message)))
+                   (alert (fn/chat-log server channel chatter base-message)
+                          :category 'erc
+                          :style 'fringe
+                          :severity fn/erc-notify-severity))))))
 
          (add-hook 'erc-insert-pre-hook #'fn/erc-message-alert))
 

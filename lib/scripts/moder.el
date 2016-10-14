@@ -568,28 +568,28 @@
   "My moder header format.")
 
 (setq moder-header-line-format
-   (list "%e"
-      (list :eval
-         (quote
-          (condition-case ex
-              (->>
-               (moder-separated
-                #'moder-piece-right-separator
-                (moder-separated
-                 #'moder-piece-inner-right-separator
-                 (->> (moder-piece-buffer-filename)
-                      (moder-default-text-style)
-                      (moder-background "#19868f")
-                      (moder-weight 'ultra-bold))
-                 (->> (moder-piece-note)
-                      (moder-default-text-style)
-                      (moder-background "#d3bb9c")
-                      (moder-foreground "#000000")
-                      (moder-weight 'ultra-bold)
-                      (moder-height 1.0))))
-               (moder-closing-separator #'moder-piece-right-separator)
-               (moder-starting-separator #'moder-piece-right-separator))
-            ('error (error-message-string ex)))))))
+      (list "%e"
+            (list :eval
+                  (quote
+                   (condition-case ex
+                       (->>
+                        (moder-separated
+                         #'moder-piece-right-separator
+                         (moder-separated
+                          #'moder-piece-inner-right-separator
+                          (->> (moder-piece-buffer-filename)
+                               (moder-default-text-style)
+                               (moder-background "#19868f")
+                               (moder-weight 'ultra-bold))
+                          (->> (moder-piece-note)
+                               (moder-default-text-style)
+                               (moder-background "#d3bb9c")
+                               (moder-foreground "#000000")
+                               (moder-weight 'ultra-bold)
+                               (moder-height 1.0))))
+                        (moder-closing-separator #'moder-piece-right-separator)
+                        (moder-starting-separator #'moder-piece-right-separator))
+                     ('error (error-message-string ex)))))))
 
 
 (make-variable-buffer-local
@@ -601,15 +601,18 @@
 
 (defun moder-force-header-update ()
   "Update `moder-header-line-format'."
-  (with-current-buffer (current-buffer)
-    (when (null moder--custom-header-line)
-      (if header-line-format
-          (setq moder--custom-header-line 'predefined)
-        (setq moder--custom-header-line 'custom)
-        (set (make-local-variable 'face-remapping-alist)
-             '((header-line moder-header-line)))))
-    (when (eq moder--custom-header-line 'custom)
-      (setq header-line-format (format-mode-line moder-header-line-format)))))
+  (run-with-idle-timer
+   0 nil
+   (lambda ()
+     (with-current-buffer (current-buffer)
+       (when (null moder--custom-header-line)
+         (if header-line-format
+             (setq moder--custom-header-line 'predefined)
+           (setq moder--custom-header-line 'custom)
+           (set (make-local-variable 'face-remapping-alist)
+                '((header-line moder-header-line)))))
+       (when (eq moder--custom-header-line 'custom)
+         (setq header-line-format (format-mode-line moder-header-line-format)))))))
 
 (add-hook 'buffer-list-update-hook #'moder-force-header-update)
 
