@@ -627,16 +627,27 @@
        (defvar fn/chat-message-face 'fn/chat-message-face
          "Chat message face var")
 
+
+       (defun fn/chat-propertize (text style)
+         "Add extra coloring with TEXT and STYLE."
+         (add-face-text-property
+          0
+          (length text)
+          style
+          nil
+          text)
+         text)
+
        (defun fn/chat-log (server channel chatter message)
          "Log SERVER, CHANNEL, CHATTER and MESSAGE."
          (unless (string-empty-p message)
            (let* ((out
                 (string-trim-right
                  (format "[%s/%s] %s: %s"
-                         (propertize server 'face 'fn/chat-server-name-face)
-                         (propertize channel 'face 'fn/chat-channel-name-face)
-                         (propertize chatter 'face 'fn/chat-chatter-name-face)
-                         (propertize message 'face 'fn/chat-message-face)))))
+                         (fn/chat-propertize server fn/chat-server-name-face)
+                         (fn/chat-propertize channel fn/chat-channel-name-face)
+                         (fn/chat-propertize chatter fn/chat-chatter-name-face)
+                         (fn/chat-propertize message fn/chat-message-face)))))
              (chat--log-info out)
              out)))
 
