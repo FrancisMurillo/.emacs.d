@@ -289,7 +289,7 @@
                 error-count
                 (propertize
                  (all-the-icons-faicon "bug" :v-adjust 0.0)
-                 'face (list :family (all-the-icons-faicon-family))))))))w
+                 'face (list :family (all-the-icons-faicon-family))))))))
 
 
 (defun moder-between-time (lower-time upper-time time)
@@ -332,7 +332,7 @@
 (defun moder-piece-note ()
   "A piece for a random note."
   (lexical-let* ((note-index (random (length moder-note-notes)))
-      (note (nth note-index moder-note-notes)))
+                 (note (nth note-index moder-note-notes)))
     (format " %s " note)))
 
 
