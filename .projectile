@@ -11,3 +11,5 @@
 -/.python-environments
 
 -/haskell-fun
+
+-/.safe-config*

@@ -630,13 +630,21 @@
 
        (defun fn/chat-propertize (text style)
          "Add extra coloring with TEXT and STYLE."
-         (add-face-text-property
-          0
-          (length text)
-          style
-          nil
-          text)
-         text)
+         (let ((new-text (substring text)))
+           (add-face-text-property
+            0
+            (length new-text)
+            style
+            nil
+            new-text)
+           new-text))
+
+
+       (defun fn/prettify-word (word)
+         "Prettify word if possible."
+         (if (fboundp 'text-candy-candied-word)
+             (text-candy-candied-word word)
+           word))
 
        (defun fn/chat-log (server channel chatter message)
          "Log SERVER, CHANNEL, CHATTER and MESSAGE."
@@ -644,8 +652,8 @@
            (let* ((out
                 (string-trim-right
                  (format "[%s/%s] %s: %s"
-                         (fn/chat-propertize server fn/chat-server-name-face)
-                         (fn/chat-propertize channel fn/chat-channel-name-face)
+                         (fn/chat-propertize (fn/prettify-word server) fn/chat-server-name-face)
+                         (fn/chat-propertize (fn/prettify-word channel) fn/chat-channel-name-face)
                          (fn/chat-propertize chatter fn/chat-chatter-name-face)
                          (fn/chat-propertize message fn/chat-message-face)))))
              (chat--log-info out)
@@ -2254,6 +2262,38 @@
        :demand t)
    #+END_SRC
 
+** Candy Words
+   I like when some words are candied with color.
+
+   #+BEGIN_SRC emacs-lisp :block-id 7ac71aa0-fc7c-0271-3dbc-6de8ed7caa01
+     (use-package text-candy
+       :load-path fn/custom-script-dir
+       :demand t
+       :config
+       (text-candy-add-candy-word
+        (concat  ;; freenode
+         (propertize
+          "free" 'face '(:foreground "#e6e6e6"))
+         (propertize
+          "node" 'face '(:foreground "#4beb4a"))))
+
+       (text-candy-add-candy-word
+        (propertize ;; emacs
+         "emacs"
+         'face
+         '(:foreground "#ffffff" :background "#7e5ab6"
+                       :box (:line-width 2 :color "#592982") :weight bold :height 0.9)))
+
+       (text-candy-add-candy-word
+        (concat ;; google
+         (propertize "g" 'face '(:foreground "#4285f4"))
+         (propertize "o" 'face '(:foreground "#ea4335"))
+         (propertize "o" 'face '(:foreground "#fbbc05"))
+         (propertize "g" 'face '(:foreground "#4285f4"))
+         (propertize "l" 'face '(:foreground "#34a853"))
+         (propertize "e" 'face '(:foreground "#ea4335")))))
+   #+END_SRC
+
 * Organizer
   Things to organize life in general
 
@@ -3263,6 +3303,7 @@
            (push '("define" . ?δ) prettify-symbols-alist)
            (push '("defconst" . ?φ) prettify-symbols-alist)
 
+           (push '("defconst" . ?τ) prettify-symbols-alist)
            (push '("defface" . ?κ) prettify-symbols-alist)
 
            (push '("let" . ?▷) prettify-symbols-alist)
@@ -6082,12 +6123,6 @@
          (add-to-list 'company-backendsm '(company-meghanada :with company-dabbrev-code))
          (setq company-transformers '(company-sort-by-backend-importance))
          (add-hook 'before-save-hook 'delete-trailing-whitespace))))
-
-    (defconst fn/meme-package-dir (expand-file-name "meme.el" fn/custom-module-dir)
-      "My meme.el package")
-
-    (use-package meme
-      :load-path fn/meme-package-dir)
   #+END_SRC
 
 * Reference
