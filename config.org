@@ -603,29 +603,17 @@
        (chat--log-enable-logging)
 
 
-       (defface fn/chat-server-name-face  '((t (:weight bold :height 0.9)))
+       (defface fn/chat-server-name  '((t (:weight bold :height 0.9)))
          "Chat server name face")
 
-       (defface fn/chat-channel-name-face  '((t (:weight ultra-bold :height 1.1)))
+       (defface fn/chat-channel-name  '((t (:weight ultra-bold :height 1.1)))
          "Chat server  name face")
 
-       (defface fn/chat-chatter-name-face  '((t (:weight semi-bold :height 1.0)))
+       (defface fn/chat-chatter-name  '((t (:underline t :weight semi-bold :height 1.0)))
          "Chat sender name face")
 
-       (defface fn/chat-message-face  '((t (:weight thin :height 1.0)))
+       (defface fn/chat-message  '((t (:weight thin :height 1.0)))
          "Chat message face")
-
-       (defconst fn/chat-server-name-face 'fn/chat-server-name-face
-         "Chat team name face var")
-
-       (defconst fn/chat-channel-name-face 'fn/chat-channel-name-face
-         "Chat room name face var")
-
-       (defconst fn/chat-chatter-name-face 'fn/chat-chatter-name-face
-         "Chat sender name face var")
-
-       (defconst fn/chat-message-face 'fn/chat-message-face
-         "Chat message face var")
 
 
        (defun fn/chat-propertize (text style)
@@ -652,10 +640,10 @@
            (let* ((out
                 (string-trim-right
                  (format "[%s/%s] %s: %s"
-                         (fn/chat-propertize (fn/prettify-word server) fn/chat-server-name-face)
-                         (fn/chat-propertize (fn/prettify-word channel) fn/chat-channel-name-face)
-                         (fn/chat-propertize chatter fn/chat-chatter-name-face)
-                         (fn/chat-propertize message fn/chat-message-face)))))
+                         (fn/chat-propertize (fn/prettify-word server) 'fn/chat-server-name)
+                         (fn/chat-propertize (fn/prettify-word channel) 'fn/chat-channel-nanme)
+                         (fn/chat-propertize chatter 'fn/chat-chatter-name)
+                         (fn/chat-propertize message 'fn/chat-message)))))
              (chat--log-info out)
              out)))
 
@@ -1264,128 +1252,128 @@
     Saving window state is very helpful specially when you move a lots
 
     #+BEGIN_SRC emacs-lisp :block-id 6c071d29-d448-f4fa-f1d4-63c347a9cb28
-            (use-package workgroups2
-              :ensure t
-              :bind (("C-c w w" . workgroups-mode))
-              :init
-              (setq wg-prefix-key (kbd "C-c w")
-                 wg-session-file (expand-file-name "workgroups" fn/cache-dir))
-              :config
-              (setq wg-morph-on nil
+      (use-package workgroups2
+        :ensure t
+        :bind (("C-c w w" . workgroups-mode))
+        :init
+        (setq wg-prefix-key (kbd "C-c w")
+           wg-session-file (expand-file-name "workgroups" fn/cache-dir))
+        :config
+        (setq wg-morph-on nil
 
-                 wg-mode-line-display-on nil
+           wg-mode-line-display-on nil
 
-                 wg-mess-with-buffer-list nil
+           wg-mess-with-buffer-list nil
 
-                 wg-buffer-auto-association-on nil
-                 wg-undoify-window-configuration-change nil
+           wg-buffer-auto-association-on nil
+           wg-undoify-window-configuration-change nil
 
-                 wg-buffer-local-variables-alist (list)
+           wg-buffer-local-variables-alist (list)
 
-                 wg-restore-frame-position nil
-                 wg-restore-scroll-bars nil
-                 wg-restore-margins nil
+           wg-restore-frame-position nil
+           wg-restore-scroll-bars nil
+           wg-restore-margins nil
 
-                 wg-restore-point t
-                 wg-restore-point-max t
+           wg-restore-point t
+           wg-restore-point-max t
 
-                 wg-restore-mark nil
-                 wg-restore-window-dedicated-p nil
-                 wg-remember-frame-for-each-wg nil
+           wg-restore-mark nil
+           wg-restore-window-dedicated-p nil
+           wg-remember-frame-for-each-wg nil
 
-                 wg-emacs-exit-save-behavior           'save
-                 wg-workgroups-mode-exit-save-behavior 'save)
+           wg-emacs-exit-save-behavior           'save
+           wg-workgroups-mode-exit-save-behavior 'save)
 
-              (use-feature workgroup-recentf-association
-                (recentf)
-                (require 'f)
+        (use-feature workgroup-recentf-association
+          (recentf)
+          (require 'f)
 
-                (defun fn/get-buffer-major-mode (buffer)
-                  "Get the major mode of the BUFFER."
-                  (with-current-buffer buffer
-                    major-mode))
+          (defun fn/get-buffer-major-mode (buffer)
+            "Get the major mode of the BUFFER."
+            (with-current-buffer buffer
+              major-mode))
 
-                (defun fn/buffer-derived-mode-p (buffer &rest modes)
-                  "Check if BUFFER mode is derived from MODE."
-                  (with-current-buffer buffer
-                    (apply #'derived-mode-p modes)))
+          (defun fn/buffer-derived-mode-p (buffer &rest modes)
+            "Check if BUFFER mode is derived from MODE."
+            (with-current-buffer buffer
+              (apply #'derived-mode-p modes)))
 
-                (defun fn/get-dired-buffer-name (buffer)
-                  "Get the BUFFER name in the style of DIRED."
-                  (with-current-buffer buffer
-                    (expand-file-name default-directory)))
-
-
-                (defun fn/recentf-contains-workgroup-buffer-p (workgroup buffer)
-                  "Checks if BUFFER exists in `recentf-list'."
-                  (when (boundp 'recentf-list)
-                    (lexical-let* ((main-mode (fn/get-buffer-major-mode buffer))
-                        (result
-                         (cond
-                          ((eq main-mode 'dired-mode)
-                           (lexical-let ((file-name (fn/get-dired-buffer-name buffer)))
-                             (-find (lambda (recent-file-name) (f-parent-of-p file-name recent-file-name))
-                                    recentf-list)))
-                          ((fn/buffer-derived-mode-p
-                            buffer
-                            'prog-mode 'text-mode 'fundamental-mode)
-                           (lexical-let ((file-name (buffer-file-name buffer)))
-                             (-find (lambda (recent-file-name) (string-equal file-name recent-file-name))
-                                    recentf-list)))
-                          (t nil))))
-                      (if result 'weak nil))))
-
-                (setq wg-buffer-auto-association-on t
-                   wg-buffer-auto-association #'fn/recentf-contains-workgroup-buffer-p))
-
-              (defun fn/wg-session-list-buffers (&optional frame)
-                "Get the current session buffers."
-                (-reject
-                 (-compose
-                  (-partial #'s-starts-with-p " ")
-                  #'buffer-name)
-                 (funcall wg-buffer-list-function frame)))
-
-              (defun fn/list-to-hash-table (xs)
-                "Convert XS to a hash table with equality comparison."
-                (let ((table (make-hash-table)))
-                  (mapc (lambda (x) (puthash x t table)) xs)
-                  table))
-
-              (defun fn/wg-switch-to-buffer ()
-                "Switch buffer with my custom workgroup."
-                (interactive)
-                (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
-                    (buffer-table (fn/list-to-hash-table session-buffers))
-                    (predicate
-                     (lambda (buffer-pair)
-                       (when (consp buffer-pair)
-                         (lexical-let* ((buffer (cdr buffer-pair)))
-                           (gethash buffer buffer-table nil)))))
-                    (buffer (read-buffer
-                             "Switch to session buffer: "
-                             nil
-                             t
-                             predicate)))
-                  (switch-to-buffer buffer)))
-
-              (defun fn/wg-create-workgroup ()
-                "Create a blank workgroup"
-                (interactive)
-                (let ((current-prefix-arg t))
-                  (call-interactively #'wg-create-workgroup)))
+          (defun fn/get-dired-buffer-name (buffer)
+            "Get the BUFFER name in the style of DIRED."
+            (with-current-buffer buffer
+              (expand-file-name default-directory)))
 
 
-              (define-key wg-prefixed-map (kbd "b") #'fn/wg-switch-to-buffer)
-              (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
+          (defun fn/recentf-contains-workgroup-buffer-p (workgroup buffer)
+            "Checks if BUFFER exists in `recentf-list'."
+            (when (boundp 'recentf-list)
+              (lexical-let* ((main-mode (fn/get-buffer-major-mode buffer))
+                  (result
+                   (cond
+                    ((eq main-mode 'dired-mode)
+                     (lexical-let ((file-name (fn/get-dired-buffer-name buffer)))
+                       (-find (lambda (recent-file-name) (f-parent-of-p file-name recent-file-name))
+                              recentf-list)))
+                    ((fn/buffer-derived-mode-p
+                      buffer
+                      'prog-mode 'text-mode 'fundamental-mode)
+                     (lexical-let ((file-name (buffer-file-name buffer)))
+                       (-find (lambda (recent-file-name) (string-equal file-name recent-file-name))
+                              recentf-list)))
+                    (t nil))))
+                (if result 'weak nil))))
+
+          (setq wg-buffer-auto-association-on t
+             wg-buffer-auto-association #'fn/recentf-contains-workgroup-buffer-p))
+
+        (defun fn/wg-session-list-buffers (&optional frame)
+          "Get the current session buffers."
+          (-reject
+           (-compose
+            (-partial #'s-starts-with-p " ")
+            #'buffer-name)
+           (funcall wg-buffer-list-function frame)))
+
+        (defun fn/list-to-hash-table (xs)
+          "Convert XS to a hash table with equality comparison."
+          (let ((table (make-hash-table)))
+            (mapc (lambda (x) (puthash x t table)) xs)
+            table))
+
+        (defun fn/wg-switch-to-buffer ()
+          "Switch buffer with my custom workgroup."
+          (interactive)
+          (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
+              (buffer-table (fn/list-to-hash-table session-buffers))
+              (predicate
+               (lambda (buffer-pair)
+                 (when (consp buffer-pair)
+                   (lexical-let* ((buffer (cdr buffer-pair)))
+                     (gethash buffer buffer-table nil)))))
+              (buffer (read-buffer
+                       "Switch to session buffer: "
+                       nil
+                       t
+                       predicate)))
+            (switch-to-buffer buffer)))
+
+        (defun fn/wg-create-workgroup ()
+          "Create a blank workgroup"
+          (interactive)
+          (let ((current-prefix-arg t))
+            (call-interactively #'wg-create-workgroup)))
 
 
-              (run-with-idle-timer 0 nil (lambda  ()
-                                           (define-key workgroups-mode-map
-                                             (vector 'remap 'wg-create-workgroup)
-                                             #'fn/wg-create-workgroup)))
+        (define-key wg-prefixed-map (kbd "b") #'fn/wg-switch-to-buffer)
+        (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
 
-              (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect))
+
+        (run-with-idle-timer 0 nil (lambda  ()
+                                     (define-key workgroups-mode-map
+                                       (vector 'remap 'wg-create-workgroup)
+                                       #'fn/wg-create-workgroup)))
+
+        (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect))
     #+END_SRC
 
 *** winner
@@ -1587,8 +1575,7 @@
                              (progn
                                (add-to-list 'initialized-projects current-project)
                                (fn/load-project-file))
-                           current-project
-                           )))))))
+                           current-project)))))))
             (load-project-hook (funcall project-memoized)))
 
           (add-hook 'find-file-hook load-project-hook)
@@ -1690,24 +1677,14 @@
              "Just a constant name for the completion buffer")
 
 
-           (defface fmc/completion-label-face  '((t (:weight bold :height 1.1)))
+           (defface fmc/completion-label  '((t (:weight bold :height 1.1)))
              "Label face")
 
-           (defface fmc/completion-delimiter-face '((t (:weight light :height 0.9)))
+           (defface fmc/completion-delimiter '((t (:weight light :height 0.9)))
              "Delimiter face")
 
-           (defface fmc/completion-description-face '((t (:weight extra-light :height 0.9)))
+           (defface fmc/completion-description '((t (:weight extra-light :height 0.9)))
              "Description face")
-
-
-           (defvar fmc/completion-label-face 'fmc/completion-label-face
-             "Label face var")
-
-           (defvar fmc/completion-delimiter-face 'fmc/completion-delimiter-face
-             "Delimiter face var")
-
-           (defvar fmc/completion-description-face 'fmc/completion-description-face
-             "Description face var")
 
 
            (defconst fmc/reverse-notation-separator ".."
@@ -1746,9 +1723,9 @@
                          ((display-formatter
                            (lambda (name description)
                              (format "%-s %s %-s"
-                                     (propertize name 'font-lock-face 'fmc/completion-label-face)
-                                     (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter-face)
-                                     (propertize description 'font-lock-face 'fmc/completion-description-face)))))
+                                     (propertize name 'font-lock-face 'fmc/completion-label)
+                                     (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter)
+                                     (propertize description 'font-lock-face 'fmc/completion-description)))))
                        (lambda (pair)
                          (lexical-let*
                              ((unique-path (car pair))
@@ -2724,18 +2701,24 @@
 
      (setq dired-dwim-target t
 
-           dired-listing-switches "-alh"
+        dired-listing-switches "-alh"
 
-           dired-recursive-copies 'always ;; Don't ask because I did it
-           dired-recursive-deletes 'always
+        dired-recursive-copies 'always ;; Don't ask because I did it
+        dired-recursive-deletes 'always
 
-           dired-isearch-filenames t
+        dired-isearch-filenames t
 
-           dired-copy-preserve-time t)
+        dired-copy-preserve-time t)
 
      (dired-async-mode t)
 
      (add-hook 'dired-mode-hook 'dired-hide-details-mode)
+
+     (use-feature wdired-mode--mode-icon
+       (all-the-icons)
+       (fn/add-major-mode-icon
+        'wdired-mode
+        (list 'all-the-icons-octicon "diff" :v-adjust 0.0)))
    #+END_SRC
 
 *** image-dired
@@ -2947,7 +2930,39 @@
    #+BEGIN_SRC emacs-lisp :block-id 1ecfd02f-87eb-6c8a-0e20-68780b2e1e7b
      (use-package camcorder
        :ensure t
-       :defer t)
+       :defer t
+       :config
+       (defconst fn/camcorder-dir (expand-file-name "camcorder" fn/extra-dir)
+         "My camcorder directory.")
+
+       (setq camcorder-output-directory fn/camcorder-dir
+          camcorder-gif-output-directory fn/camcorder-dir)
+
+
+       (defvar fn/camcorder-state nil
+         "The state of the recording. Possible values are `nil', `recording' and `paused'.")
+
+       (defun fn/camcorder-state-start ()
+         "Set the start state of the recording."
+         (setq fn/camcorder-state 'recording))
+
+       (defun fn/camcorder-state-pause ()
+         "Set the pause state of the recording."
+         (cond
+          ((null fn/camcorder-state)
+           nil)
+          ((eq fn/camcorder-state 'recording)
+           (setq fn/camcorder-state 'paused))
+          ((eq fn/camcorder-state 'paused)
+           (setq fn/camcorder-state 'recording))))
+
+       (defun fn/camcorder-state-stop ()
+         "Set the stop state of the recording."
+         (setq fn/camcorder-state nil))
+
+       (advice-add 'camcorder-start :after  #'fn/camcorder-state-start)
+       (advice-add 'camcorder-pause :before  #'fn/camcorder-state-pause)
+       (advice-add 'camcorder-stop :after #'fn/camcorder-state-stop))
    #+END_SRC
 
 * Code Monkey
@@ -5922,21 +5937,35 @@
 
    #+BEGIN_SRC emacs-lisp :block-id a3d6cc8d-a9ee-e266-bd29-54a77a6cc68f
      (require 'f)
-     (require 'dash)
+
+
+     (defconst fn/relative-same-node "."
+       "Represents the same node on a path.")
+
+     (defconst fn/relative-parent-node ".."
+       "Represents the parent node on a path.")
+
+     (defun fn/relative-parent-node-thunk (&rest args)
+       "Always returns `fn/relative-parent-node'."
+       fn/relative-parent-node)
 
      (defun fn/relative-path (source-path target-path)
        "An attempt to compute the relative path from SOURCE-PATH to TARGET-PATH."
        (letrec ((recurser
             (lambda (upward-nodes downward-nodes parent-node)
               (cond
+               ((and (null upward-nodes) (null downward-nodes))
+                (string-join
+                 (list fn/relative-same-node parent-node)
+                 (f-path-separator)))
                ((null (car upward-nodes))
                 (string-join
-                 (append (list ".")
+                 (append (list fn/relative-same-node)
                          downward-nodes)
                  (f-path-separator)))
                ((null (car downward-nodes))
                 (string-join
-                 (append (-map (-const "..") upward-nodes)
+                 (append (mapcar #'fn/relative-parent-node-thunk upward-nodes)
                          (list parent-node))
                  (f-path-separator)))
                ((string-equal (car upward-nodes)
@@ -5946,20 +5975,27 @@
                    (cdr downward-nodes)
                    (car upward-nodes)))
                (t
-                (lexical-let* ((up-nodes (or (-map (-const "..") (cdr upward-nodes))
-                                 (list ".")))
+                (lexical-let* ((up-nodes (or (mapcar #'fn/relative-parent-node-thunk (cdr upward-nodes))
+                                 (list fn/relative-same-node)))
                     (down-nodes downward-nodes))
                   (string-join
                    (append up-nodes down-nodes)
                    (f-path-separator))))))))
-         (funcall recurser (f-split source-path) (f-split target-path) ".")))
+         (funcall recurser (f-split source-path) (f-split target-path) fn/relative-same-node)))
 
-     (defun fn/insert-relative-file-path ()
-       "Insert the relative file path."
-       (interactive)
-       (let* ((relative-path (buffer-file-name))
-              (target-path (car (find-file-read-args "Find file" t))))
-         (insert (fn/relative-path relative-path target-path))))
+     (defun fn/insert-relative-file-path (arg)
+       "Insert the relative file path of a source file to a target file.
+     If prefix ARG is present, select the source file."
+       (interactive "P")
+       (let* ((source-path
+            (cond
+             (arg
+              (car (find-file-read-args "Find source file: " t) ))
+             ((buffer-file-name)
+              (buffer-file-name))
+             (t (error "Source file does not have a file name."))))
+           (target-path (car (find-file-read-args "Find target file: " t))))
+         (insert (fn/relative-path source-path target-path))))
    #+END_SRC
 
 * Key Bindings
@@ -6042,10 +6078,12 @@
     (define-key fn-standard-prefix-map (kbd "l l") #'fn/chat-log-open) ;; From binding above
     (define-key fn-standard-prefix-map (kbd "l a") #'fn/alert-log-open)
 
+    (define-key fn-custom-prefix-map (kbd "i p") #'fn/insert-relative-file-path)
 
     ;; Namer
     (define-key fn-custom-prefix-map (kbd "v c") #'fmv/insert-camel-case)
     (define-key fn-custom-prefix-map (kbd "v h") #'fmv/insert-hyphenated)
+
 
     ;; Functions
     (define-key fn-custom-prefix-map (kbd  "r s") 'fn/startup)
