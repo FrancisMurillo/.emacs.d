@@ -701,8 +701,7 @@
 
        (fn/add-major-mode-icon
         'log4e-mode
-        ('all-the-icons-octicon "clippy" :v-adjust 0.0)
-        "log4e"))
+        (list 'all-the-icons-octicon "clippy" :v-adjust 0.0)))
    #+END_SRC
 
 ** auto-compile
@@ -777,42 +776,31 @@
        :ensure t
        :demand t
        :config
-       (defvar fn/major-mode-alias-list nil
-         "A list of fallback pairs if the icon cannot be found.")
-
-       (defmacro fn/add-major-mode-icon (main-mode icon-config &optional alias)
-         "Add icon mapping to major mode given MAIN-MODE, ICON-CONFIG and optionally ALIAS."
-         (let* ((mode-name (format "%s" (eval main-mode)))
-             (feature-symbol (make-symbol (format "%s%s" mode-name "--mode-icon"))))
-           `(use-feature ,feature-symbol
-             (all-the-icons)
-             (add-to-list
-               'all-the-icons-mode-icon-alist
-               (list ,main-mode ,@icon-config))
-
-             (add-to-list
-               'fn/major-mode-alias-list
-               (cons ,main-mode ,(or alias mode-name))))))
+       (defun fn/add-major-mode-icon (main-mode icon-config)
+         "Add icon mapping to major mode given MAIN-MODE, ICON-CONFIG."
+         (add-to-list
+          'all-the-icons-mode-icon-alist
+          (append (list main-mode) icon-config)))
 
        (fn/add-major-mode-icon
         'special-mode
-        ('all-the-icons-faicon "birthday-cake" :v-adjust -0.1)
-        "Sp")
+        (list 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
+
+       (fn/add-major-mode-icon
+        'special-mode
+        (list 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
 
        (fn/add-major-mode-icon
         'fundamental-mode
-        ('all-the-icons-faicon "pencil" :v-adjust -0.1)
-        "base")
+        (list 'all-the-icons-faicon "pencil" :v-adjust -0.1))
 
        (fn/add-major-mode-icon
         'compilation-mode
-        ('all-the-icons-faicon "cog" :v-adjust -0.1)
-        "compile")
+        (list 'all-the-icons-faicon "cog" :v-adjust -0.1))
 
        (fn/add-major-mode-icon
         'process-menu-mode
-        ('all-the-icons-faicon "list" :v-adjust -0.1))
-       "process")
+        (list 'all-the-icons-faicon "list" :v-adjust -0.1)))
    #+END_SRC
 
 * Terminator
@@ -834,10 +822,11 @@
    #+BEGIN_SRC emacs-lisp :block-id da6d7eb9-45f4-ee00-154d-11e39b59d7bf
      (setq async-shell-command-buffer 'new-buffer)
 
-     (fn/add-major-mode-icon
-      'shell-mode
-      ('all-the-icons-faicon "terminal" :v-adjust 0.0)
-      "shell")
+     (use-feature shell-mode--mode-icon
+       (all-the-icons)
+       (fn/add-major-mode-icon
+        'shell-mode
+        (list 'all-the-icons-faicon "terminal" :v-adjust 0.0)))
    #+END_SRC
 
 ** term
@@ -1013,10 +1002,11 @@
                  (message "Creating binding for %s" name)
                  (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service)))))))
 
-       (fn/add-major-mode-icon
-        'prodigy-mode
-        ('all-the-icons-faicon "cogs" :v-adjust -0.1)
-        "prodigy"))
+       (use-feature prodigy-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'prodigy-mode
+          (list 'all-the-icons-faicon "cogs" :v-adjust -0.1))))
    #+END_SRC
 ** emamux
    Work better with tmux
@@ -1972,10 +1962,11 @@
         :config
         (setq paradox-github-token t)
 
-        (fn/add-major-mode-icon
-         'paradox-menu-mode
-         ('all-the-icons-octicon "package" :v-adjust 0.0)
-         "packages"))
+        (use-feature paradox-menu-mode--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'paradox-menu-mode
+           (list 'all-the-icons-octicon "package" :v-adjust 0.0))))
     #+END_SRC
 
 **** helm-flx
@@ -2268,30 +2259,7 @@
    #+BEGIN_SRC emacs-lisp :block-id 7ac71aa0-fc7c-0271-3dbc-6de8ed7caa01
      (use-package text-candy
        :load-path fn/custom-script-dir
-       :demand t
-       :config
-       (text-candy-add-candy-word
-        (concat  ;; freenode
-         (propertize
-          "free" 'face '(:foreground "#e6e6e6"))
-         (propertize
-          "node" 'face '(:foreground "#4beb4a"))))
-
-       (text-candy-add-candy-word
-        (propertize ;; emacs
-         "emacs"
-         'face
-         '(:foreground "#ffffff" :background "#7e5ab6"
-                       :box (:line-width 2 :color "#592982") :weight bold :height 0.9)))
-
-       (text-candy-add-candy-word
-        (concat ;; google
-         (propertize "g" 'face '(:foreground "#4285f4"))
-         (propertize "o" 'face '(:foreground "#ea4335"))
-         (propertize "o" 'face '(:foreground "#fbbc05"))
-         (propertize "g" 'face '(:foreground "#4285f4"))
-         (propertize "l" 'face '(:foreground "#34a853"))
-         (propertize "e" 'face '(:foreground "#ea4335")))))
+       :demand t)
    #+END_SRC
 
 * Organizer
@@ -2610,10 +2578,11 @@
         (add-to-list 'auto-insert-alist '(".*\.private.org" . fm/insert-private-file-headers))
         (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers))
 
-        (fn/add-major-mode-icon
-         'org-journal-mode
-         ('all-the-icons-faicon "pencil-square-o" :v-adjust 0.0)
-         "journal"))
+        (use-feature org-journal-mode--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'org-journal-mode
+           (list 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0))))
     #+END_SRC
 
 *** org-reveal
@@ -2855,15 +2824,17 @@
                ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
                ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
 
-       (fn/add-major-mode-icon
-        'ledger-mode
-        ('all-the-icons-faicon "money" :v-adjust -0.1)
-        "ledger")
+       (use-feature ledger-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'ledger-mode
+          (list 'all-the-icons-faicon "money" :v-adjust -0.1)))
 
-       (fn/add-major-mode-icon
-        'ledger-report-mode
-        ('all-the-icons-faicon "line-chart" :v-adjust -0.1)
-        "balance"))
+       (use-feature ledger-report-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'ledger-report-mode
+          (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1))))
    #+END_SRC
 
 ** engine
@@ -3355,10 +3326,11 @@
         :ensure t
         :defer t)
 
-      (fn/add-major-mode-icon
-       'cask-mode
-       ('all-the-icons-faicon "glass" :v-adjust 0.1)
-       "cask")
+      (use-feature cask-mode--mode-icon
+        (all-the-icons)
+        (fn/add-major-mode-icon
+         'cask-mode
+         (list 'all-the-icons-faicon "glass" :v-adjust 0.1)))
 
       (use-package header2
         :ensure t
@@ -3444,10 +3416,11 @@
               js2-include-node-externs t
               js2-include-browser-externs t)
 
-        (fn/add-major-mode-icon
-         'js2-jsx-mode
-         ('all-the-icons-alltheicon "javascript" :v-adjust 0.1)
-         "jsx"))
+        (use-feature js2-jsx-mode--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'js2-jsx-mode
+           (list 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
 
       (use-package js-doc
         :ensure t
@@ -3956,10 +3929,11 @@
         :ensure t
         :mode (("\\.clj\\'" . clojure-mode))
         :config
-        (fn/add-major-mode-icon
-         'clojure-mode
-         ('all-the-icons-fileicon "scheme" :v-adjust 0.0)
-         "cloj"))
+        (use-feature clojure-mode--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'clojure-mode
+           (list 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
 
       (use-package clojure-mode-extra-font-locking
         :ensure t
@@ -3998,10 +3972,11 @@
           (scheme paredit)
           (add-hook 'scheme-mode #'paredit-mode))
 
-        (fn/add-major-mode-icon
-         'scheme-mode
-         ('all-the-icons-fileicon "scheme" :v-adjust 0.0)
-         "schemer"))
+        (use-feature scheme-mode--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'scheme-mode
+           (list 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
     #+END_SRC
 
 *** REPL
@@ -4338,10 +4313,11 @@
 
          (add-hook 'erc-insert-pre-hook #'fn/erc-message-alert))
 
-       (fn/add-major-mode-icon
-        'erc-mode
-        ('all-the-icons-faicon "exchange" :v-adjust 0.0)
-        "erc"))
+       (use-feature erc-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'erc-mode
+          (list 'all-the-icons-faicon "exchange" :v-adjust 0.0))))
    #+END_SRC
 
 ** jabber
@@ -4423,15 +4399,17 @@
 
          (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
-       (fn/add-major-mode-icon
-        'jabber-roster-mode
-        ('all-the-icons-octicon "radio-tower" :v-adjust -0.1)
-        "cbox")
+       (use-feature jabber-roster-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'jabber-roster-mode
+          (list 'all-the-icons-octicon "radio-tower" :v-adjust -0.1)))
 
-       (fn/add-major-mode-icon
-        'jabber-chat-mode
-        ('all-the-icons-faicon "comments" :v-adjust -0.1)
-        "cbox")
+       (use-feature jabber-chat-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'jabber-chat-mode
+          (list 'all-the-icons-faicon "comments" :v-adjust -0.1)))
 
 
        ;; roster
@@ -4485,10 +4463,20 @@
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
 
-       (fn/add-major-mode-icon
-        'slack-mode
-        ('all-the-icons-faicon "commenting-o" :v-adjust 0.0)
-        "slacker"))
+       (use-feature slack-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'slack-mode
+          (list 'all-the-icons-faicon "commenting-o" :v-adjust 0.0)))
+
+       (use-feature phackers-candy
+         (text-candy)
+         (text-candy-add-candy-word
+          (propertize ;; phackers
+           "phackers"
+           'face
+           '(:foreground "#ffffff" :background "#28bfd0"
+                         :box (:line-width 2 :color "#e3ffff") :weight bold :height 0.9)))))
    #+END_SRC
 
 ** bbdb

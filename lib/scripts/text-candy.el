@@ -45,7 +45,28 @@
 ;;
 ;;; Code:
 
-(defcustom text-candy-words nil
+(defcustom text-candy-words
+  (list
+   (cons "freenode"
+      (concat  ;; freenode
+       (propertize
+        "free" 'face '(:foreground "#e6e6e6"))
+       (propertize
+        "node" 'face '(:foreground "#4beb4a"))))
+   (cons "emacs"
+      (propertize
+       "emacs"
+       'face
+       '(:foreground "#ffffff" :background "#7e5ab6"
+                     :box (:line-width 2 :color "#592982") :weight bold :height 0.9)))
+   (cons "google"
+      (concat ;; google
+       (propertize "g" 'face '(:foreground "#4285f4"))
+       (propertize "o" 'face '(:foreground "#ea4335"))
+       (propertize "o" 'face '(:foreground "#fbbc05"))
+       (propertize "g" 'face '(:foreground "#4285f4"))
+       (propertize "l" 'face '(:foreground "#34a853"))
+       (propertize "e" 'face '(:foreground "#ea4335")))))
   "An alist of words with their `cdr' as its colored form."
   :type '(alist :key-type string :value-type string))
 
