@@ -53,6 +53,7 @@
         "free" 'face '(:foreground "#e6e6e6"))
        (propertize
         "node" 'face '(:foreground "#4beb4a"))))
+
    (cons "emacs"
       (propertize
        "emacs"
@@ -68,7 +69,8 @@
        (propertize "l" 'face '(:foreground "#34a853"))
        (propertize "e" 'face '(:foreground "#ea4335")))))
   "An alist of words with their `cdr' as its colored form."
-  :type '(alist :key-type string :value-type string))
+  :type '(alist :key-type string :value-type string)
+  :group 'fn)
 
 (defun text-candy-add-candy-word (candied-word)
   "Add CANDIED-WORD to the list."

@@ -219,15 +219,21 @@
      (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
 
-     (defvar fn/my-lightning (propertize "My Lightning... "
-                                    'face '(:foreground "#e74c3c"))
+     (defvar fn/my-lightning (concat
+                         (propertize "MY LIGHTNING"
+                                     'face '(:background "#ff0000" :foreground "#000000"
+                                                         :box (:line-width 0 :color "#ff0000")))
+                         "...")
        "A reference to continue?987654321.
      May I accept the lightning.")
 
      (defvar fn/my-prayer (format "%s %s"
                              fn/my-lightning
-                             (propertize "My Prayer..."
-                                         'face '(:foreground "#bdc3c7")))
+                             (concat
+                              (propertize "MY PRAYER"
+                                          'face '(:background "#ffffff" :foreground "#000000"
+                                                              :box (:line-width 0 :color "#ffffff")))
+                              "..."))
        "The closing message for garbage collection.
      May I be lift up.")
 
@@ -241,10 +247,8 @@
              (apply orig-gc args)
            (message "%s %s"
                     fn/my-prayer
-                    (propertize
-                     (format "(%.4fs)"
-                             (float-time (time-subtract (current-time) start-time)))
-                     'face '(:foreground "#7f8c8d"))))))
+                    (format "(%.4fs)"
+                            (float-time (time-subtract (current-time) start-time)))))))
 
      (advice-add 'garbage-collect :around #'fn/continue-gc)
 
