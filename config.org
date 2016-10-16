@@ -220,9 +220,9 @@
 
 
      (defvar fn/my-lightning (concat
-                         (propertize "MY LIGHTNING"
-                                     'face '(:background "#ff0000" :foreground "#000000"
-                                                         :box (:line-width 0 :color "#ff0000")))
+                         (propertize " MY LIGHTNING "
+                                     'face '(:background "#ff1e02" :foreground "#110200"
+                                                         :box (:line-width 0 :color "#ff1e02")))
                          "...")
        "A reference to continue?987654321.
      May I accept the lightning.")
@@ -230,8 +230,8 @@
      (defvar fn/my-prayer (format "%s %s"
                              fn/my-lightning
                              (concat
-                              (propertize "MY PRAYER"
-                                          'face '(:background "#ffffff" :foreground "#000000"
+                              (propertize " MY PRAYER "
+                                          'face '(:background "#ffffff" :foreground "#121212"
                                                               :box (:line-width 0 :color "#ffffff")))
                               "..."))
        "The closing message for garbage collection.
@@ -2935,20 +2935,30 @@
      (use-package camcorder
        :ensure t
        :defer t
+       :bind (("<f10>" . camcorder-record))
        :config
        (defconst fn/camcorder-dir (expand-file-name "camcorder" fn/extra-dir)
          "My camcorder directory.")
 
        (setq camcorder-output-directory fn/camcorder-dir
-          camcorder-gif-output-directory fn/camcorder-dir)
+          camcorder-gif-output-directory fn/camcorder-dir
+          camcorder-frame-parameters
+          (list (cons 'name "Screencast")
+             (cons 'height (max (/ (frame-height) 2) 40 ))
+             (cons 'width (max (/ (frame-width) 2) 80 ))
+             (cons 'top 20)
+             (cons 'left 20)))
 
 
        (defvar fn/camcorder-state nil
          "The state of the recording. Possible values are `nil', `recording' and `paused'.")
 
+
        (defun fn/camcorder-state-start ()
          "Set the start state of the recording."
-         (setq fn/camcorder-state 'recording))
+         (setq fn/camcorder-state 'recording)
+
+         (select-frame-set-input-focus camcorder-recording-frame))
 
        (defun fn/camcorder-state-pause ()
          "Set the pause state of the recording."
@@ -2964,9 +2974,9 @@
          "Set the stop state of the recording."
          (setq fn/camcorder-state nil))
 
-       (advice-add 'camcorder-start :after  #'fn/camcorder-state-start)
+       (advice-add 'camcorder-record :after  #'fn/camcorder-state-start)
        (advice-add 'camcorder-pause :before  #'fn/camcorder-state-pause)
-       (advice-add 'camcorder-stop :after #'fn/camcorder-state-stop))
+       (advice-add 'camcorder-stop :before #'fn/camcorder-state-stop))
    #+END_SRC
 
 * Code Monkey
@@ -6080,6 +6090,7 @@
 
     ;; Special
     (define-key fn-standard-prefix-map (kbd "l l") #'fn/chat-log-open) ;; From binding above
+    (define-key fn-standard-prefix-map (kbd "l L") #'fn/chat-log-clear)
     (define-key fn-standard-prefix-map (kbd "l a") #'fn/alert-log-open)
 
     (define-key fn-custom-prefix-map (kbd "i p") #'fn/insert-relative-file-path)

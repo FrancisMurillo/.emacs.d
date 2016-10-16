@@ -235,11 +235,11 @@
 (defun moder-piece-workgroup-icon ()
   "A piece for the workgroup name."
   (when (and (fboundp 'wg-current-workgroup)
-           (fboundp 'wg-workgroup-name)
-           (fboundp 'workgroups-mode)
-           (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
-           (not (null workgroups-mode))
-           (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
+             (fboundp 'wg-workgroup-name)
+             (fboundp 'workgroups-mode)
+             (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
+             (not (null workgroups-mode))
+             (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
     (-if-let (workgroup-icon (fmwc/workgroup-config-icon-for-workgroup))
         (format " %s " workgroup-icon)u
         (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
@@ -247,8 +247,8 @@
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
   (when (and (fboundp 'projectile-project-name)
-           (fboundp 'projectile-project-p)
-           (projectile-project-p))
+             (fboundp 'projectile-project-p)
+             (projectile-project-p))
     (format " %s " (projectile-project-name))))
 
 (defun moder-piece-buffer-name ()
@@ -281,14 +281,34 @@
      (t
       (format " ! ")))))
 
+
+(defun custom-modeline-flycheck-status ()
+  (let* ((text (pcase flycheck-last-status-change
+              (`finished (if flycheck-current-errors
+                             (let ((count (let-alist (flycheck-count-errors flycheck-current-errors)
+                                          (+ (or .warning 0) (or .error 0)))))
+                               (format "✖ %s Issue%s" count (unless (eq 1 count) "s")))
+                           "✔ No Issues"))
+              (`running     "⟲ Running")
+              (`no-checker  "⚠ No Checker")
+              (`not-checked "✖ Disabled")
+              (`errored     "⚠ Error")
+              (`interrupted "⛔ Interrupted")
+              (`suspicious  ""))))
+    (propertize text
+                'help-echo "Show Flycheck Errors"
+                'mouse-face '(:box 1)
+                'local-map (make-mode-line-mouse-map
+                            'mouse-1 (lambda () (interactive) (flycheck-list-errors))))))
+
 (defun moder-piece-flycheck-errors ()
   "A piece for flycheck errors."
   (when (boundp 'flycheck-current-errors)
     (let ((error-count (length
-                        (->> flycheck-current-errors
-                             (-map #'flycheck-error-level)
-                             (-filter #'flycheck-error-level-p)
-                             (-filter (lambda (level) (eq level 'error)))))))
+                      (->> flycheck-current-errors
+                           (-map #'flycheck-error-level)
+                           (-filter #'flycheck-error-level-p)
+                           (-filter (lambda (level) (eq level 'error)))))))
       (if (zerop error-count)
           nil
         (format " %s %s "
@@ -296,7 +316,6 @@
                 (propertize
                  (all-the-icons-faicon "bug" :v-adjust 0.0)
                  'face (list :family (all-the-icons-faicon-family))))))))
-
 
 (defun moder-between-time (lower-time upper-time time)
   "Check if between LOWER-TIME, UPPER-TIME and TIME."
@@ -344,6 +363,8 @@
 (defun moder-piece-camcorder-state ()
   "A piece for camcording state."
   (when (and (boundp 'fn/camcorder-state)
+           (boundp 'camcorder-recording-frame)
+           (eq (selected-frame) camcorder-recording-frame)
            (not (null fn/camcorder-state)))
     (let* ((state (symbol-name fn/camcorder-state))
         (icon (if (eq fn/camcorder-state 'recording)
@@ -455,31 +476,31 @@
 (defun moder-separated (separator-fn &rest texts)
   "Attaches SEPARATOR-FN at TEXTS."
   (lexical-let* ((new-texts (list))
-      (current-texts  (-reject #'string-empty-p (-reject #'null texts)))
-      (this-text nil)
-      (next-text nil)
-      (this-properties nil)
-      (next-properties nil)
-      (this-background nil)
-      (next-background nil)
-      (interleave-text nil))
+                 (current-texts  (-reject #'string-empty-p (-reject #'null texts)))
+                 (this-text nil)
+                 (next-text nil)
+                 (this-properties nil)
+                 (next-properties nil)
+                 (this-background nil)
+                 (next-background nil)
+                 (interleave-text nil))
     (while (not (null current-texts))
       (setq this-text (car current-texts)
-         this-properties (moder-last-text-properties this-text)
-         this-background (plist-get this-properties :background))
+            this-properties (moder-last-text-properties this-text)
+            this-background (plist-get this-properties :background))
       (setq next-text (cadr current-texts)
-         next-background nil)
+            next-background nil)
       (when next-text
         (setq next-properties (moder-first-text-properties next-text)
-           next-background (plist-get next-properties :background)))
+              next-background (plist-get next-properties :background)))
       (setq interleave-text (funcall separator-fn this-background next-background))
       (push this-text new-texts)
       (when (and next-text
-               (not (string-empty-p interleave-text)))
+                 (not (string-empty-p interleave-text)))
         (push interleave-text new-texts))
       (setq current-texts (cdr current-texts)))
     (apply #'concat
-       (reverse new-texts))))
+           (reverse new-texts))))
 
 (defun moder-starting-separator (separator-fn text)
   "Add a final SEPARATOR-FN for TEXT."
@@ -498,89 +519,89 @@
 
 ;;* Main configuration
 (setq-default mode-line-format
-   (list "%e"
-      (list :eval
-         (quote
-          (condition-case ex
-              (->>
-               (moder-separated
-                #'moder-piece-right-separator
-                (moder-separated
-                 #'moder-piece-right-separator
-                 (unless (moder--current-window-p)
-                   (->> (moder-piece-window-number)
-                        (moder-default-text-style)
-                        (moder-background "#34495e")
-                        (moder-foreground "#ffff00")
-                        (moder-weight 'ultra-bold)
-                        (moder-height 1.2)))
-                 (->> (moder-piece-modified)
-                      (moder-default-text-style)
-                      (moder-background "#bdc3c7"))
-                 (if (and (moder--current-window-p) (moder--active-state-p))
-                     (moder-separated
-                      #'moder-piece-inner-right-separator
-                      (->> (moder-piece-buffer-name)
-                           (moder-default-text-style)
-                           (moder-weight 'ultra-bold)
-                           (moder-background "#e74c3c")
-                           (moder-foreground "#ffffff"))
-                      (->> (moder-piece-project-name)
-                           (moder-default-text-style)
-                           (moder-background "#e67e22"))
-                      (->> (moder-piece-workgroup-icon)
-                           (moder-default-text-style)
-                           (moder-background "#f1c40f"))
-                      (->> (moder-piece-mode)
-                           (moder-background "#27ae60"))
-                      (->> (moder-piece-process)
-                           (moder-default-text-style)
-                           (moder-background "#7f8c8d")))
-                   (moder-separated
-                    #'moder-piece-inner-right-separator
-                    (->> (moder-piece-buffer-name)
-                         (moder-default-text-style)
-                         (moder-background "#ecf0f1"))
-                    (->> (moder-piece-process)
-                         (moder-default-text-style)
-                         (moder-background "#7f8c8d"))
-                    (->> (moder-piece-note)
-                         (moder-default-text-style)
-                         (moder-background "#e74c3c")
-                         (moder-foreground "#ffffff")
-                         (moder-weight 'ultra-light)
-                         (moder-height 1.0)))))
-                (when (and (moder--current-window-p) (moder--active-state-p))
-                  (moder-separated
-                   #'moder-piece-inner-right-separator
-                   (->> (moder-piece-frame-delay)
-                        (moder-default-text-style)
-                        (moder-background "#9b59b6")
-                        (moder-foreground "#ffffff")
-                        (moder-weight 'ultra-bold))
-                   (->> (moder-piece-flycheck-errors)
-                        (moder-default-text-style)
-                        (moder-weight 'ultra-bold)
-                        (moder-background "#ecf0f1"))
-                   (->> (moder-piece-camcorder-state)
-                        (moder-default-text-style)
-                        (moder-weight 'ultra-bold)
-                        (moder-background "#bdc3c7"))
-                   (when moder-cpu
-                     (->> (moder-piece-cpu)
-                          (moder-default-text-style)
-                          (moder-background "#f1c40f")))
-                   (when moder-memory
-                     (->> (moder-piece-memory)
-                          (moder-default-text-style)
-                          (moder-background "#d35400")))
-                   (->> (moder-piece-time)
-                        (moder-default-text-style)
-                        (moder-background "#2c3e50")
-                        (moder-foreground "#ffff00")))))
-               (moder-closing-separator #'moder-piece-left-separator)
-               (moder-starting-separator #'moder-piece-right-separator))
-            ('error (error-message-string ex)))))))
+              (list "%e"
+                    (list :eval
+                          (quote
+                           (condition-case ex
+                               (->>
+                                (moder-separated
+                                 #'moder-piece-right-separator
+                                 (moder-separated
+                                  #'moder-piece-right-separator
+                                  (unless (moder--current-window-p)
+                                    (->> (moder-piece-window-number)
+                                         (moder-default-text-style)
+                                         (moder-background "#34495e")
+                                         (moder-foreground "#ffff00")
+                                         (moder-weight 'ultra-bold)
+                                         (moder-height 1.2)))
+                                  (->> (moder-piece-modified)
+                                       (moder-default-text-style)
+                                       (moder-background "#bdc3c7"))
+                                  (if (and (moder--current-window-p) (moder--active-state-p))
+                                      (moder-separated
+                                       #'moder-piece-inner-right-separator
+                                       (->> (moder-piece-buffer-name)
+                                            (moder-default-text-style)
+                                            (moder-weight 'ultra-bold)
+                                            (moder-background "#e74c3c")
+                                            (moder-foreground "#ffffff"))
+                                       (->> (moder-piece-project-name)
+                                            (moder-default-text-style)
+                                            (moder-background "#e67e22"))
+                                       (->> (moder-piece-workgroup-icon)
+                                            (moder-default-text-style)
+                                            (moder-background "#f1c40f"))
+                                       (->> (moder-piece-mode)
+                                            (moder-background "#27ae60"))
+                                       (->> (moder-piece-process)
+                                            (moder-default-text-style)
+                                            (moder-background "#7f8c8d")))
+                                    (moder-separated
+                                     #'moder-piece-inner-right-separator
+                                     (->> (moder-piece-buffer-name)
+                                          (moder-default-text-style)
+                                          (moder-background "#ecf0f1"))
+                                     (->> (moder-piece-process)
+                                          (moder-default-text-style)
+                                          (moder-background "#7f8c8d"))
+                                     (->> (moder-piece-note)
+                                          (moder-default-text-style)
+                                          (moder-background "#e74c3c")
+                                          (moder-foreground "#ffffff")
+                                          (moder-weight 'ultra-light)
+                                          (moder-height 1.0)))))
+                                 (when (and (moder--current-window-p) (moder--active-state-p))
+                                   (moder-separated
+                                    #'moder-piece-inner-right-separator
+                                    (->> (moder-piece-frame-delay)
+                                         (moder-default-text-style)
+                                         (moder-background "#9b59b6")
+                                         (moder-foreground "#ffffff")
+                                         (moder-weight 'ultra-bold))
+                                    (->> (moder-piece-flycheck-errors)
+                                         (moder-default-text-style)
+                                         (moder-weight 'ultra-bold)
+                                         (moder-background "#ecf0f1"))
+                                    (->> (moder-piece-camcorder-state)
+                                         (moder-default-text-style)
+                                         (moder-weight 'ultra-bold)
+                                         (moder-background "#bdc3c7"))
+                                    (when moder-cpu
+                                      (->> (moder-piece-cpu)
+                                           (moder-default-text-style)
+                                           (moder-background "#f1c40f")))
+                                    (when moder-memory
+                                      (->> (moder-piece-memory)
+                                           (moder-default-text-style)
+                                           (moder-background "#d35400")))
+                                    (->> (moder-piece-time)
+                                         (moder-default-text-style)
+                                         (moder-background "#2c3e50")
+                                         (moder-foreground "#ffff00")))))
+                                (moder-closing-separator #'moder-piece-left-separator)
+                                (moder-starting-separator #'moder-piece-right-separator))
+                             ('error (error-message-string ex)))))))
 
 
 (defvar moder-header-line-format nil
@@ -616,7 +637,8 @@
    "A flag to check if the buffer should have custom updates."))
 
 (defface moder-header-line '((t (:inherit mode-line-face :background "#3a417a")))
-  "Moder header line format.")
+  "Moder header line format."
+  :group 'fn)
 
 (defun moder-force-header-update ()
   "Update `moder-header-line-format'."
