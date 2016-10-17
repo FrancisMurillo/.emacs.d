@@ -998,7 +998,11 @@
          (all-the-icons)
          (fn/add-major-mode-icon
           'prodigy-mode
-          (list 'all-the-icons-faicon "cogs" :v-adjust -0.1))))
+          (list 'all-the-icons-faicon "cogs" :v-adjust -0.1))
+
+         (fn/add-major-mode-icon
+          'prodigy-view-mode
+          (list 'all-the-icons-faicon "cog" :v-adjust -0.1))))
    #+END_SRC
 ** emamux
    Work better with tmux
