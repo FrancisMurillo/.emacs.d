@@ -2062,7 +2062,7 @@
     I love to zone out from time to time.
 
     #+BEGIN_SRC emacs-lisp :block-id cf05aaab-bb91-8f2a-0589-b4545ffcee56
-      (defconst fn/zone-animation-dir (expand-file-name "elisp/custom-zone/" user-emacs-directory)
+      (defconst fn/zone-animation-dir (expand-file-name "custom-zone/" fn/custom-module-dir)
         "Custom zone animation directory")
 
       (use-package zone
@@ -2118,7 +2118,10 @@
         :load-path fn/zone-matrix-dir
         :after zone
         :config
-        (add-to-list 'zone-programs 'zone-matrix))
+        (add-to-list 'zone-programs 'zone-matrix)
+
+        (setq zmx-update-time (/ 30.0)
+           zmx-update-speed-factor (/ 60.0)))
 
       (use-package zone-nyan
         :ensure t
@@ -2127,22 +2130,12 @@
         (add-to-list 'zone-programs 'zone-nyan))
 
 
-      (use-package zone-rainbow
-        :ensure t
-        :after zone
-        :config
-        (add-to-list 'zone-programs 'zone-rainbow))
-
-
       (use-package zone-sl
         :ensure t
         :after zone
         :config
         (add-to-list 'zone-programs 'zone-sl))
     #+END_SRC
-
-    #+RESULTS:
-    : t
 
 ** Coding
    Whatever pertains to coding
