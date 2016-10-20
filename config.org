@@ -240,15 +240,17 @@
      (setq garbage-collection-messages nil) ;; My lightning... my prayer
 
      (defun fn/continue-gc (orig-gc &rest args)
-       "And the storm passed..."
+       "Wrap some message with ORIG-GC."
        (let ((start-time (current-time)))
-         (prog2
-             (message fn/my-lightning)
+         (if (minibuffer-prompt)
              (apply orig-gc args)
-           (message "%s %s"
-                    fn/my-prayer
-                    (format "(%.4fs)"
-                            (float-time (time-subtract (current-time) start-time)))))))
+           (prog2
+               (message fn/my-lightning)
+               (apply orig-gc args)
+             (message "%s %s"
+                      fn/my-prayer
+                      (format "(%.4fs)"
+                              (float-time (time-subtract (current-time) start-time))))))))
 
      (advice-add 'garbage-collect :around #'fn/continue-gc)
 
@@ -542,7 +544,7 @@
        "Htmlize package dir")
 
      (use-package exec-path-from-shell
-       :load-path fn/exec-path-from-shell-package-dir
+       :ensure t
        :demand t
        :config
        (exec-path-from-shell-initialize))
@@ -645,7 +647,7 @@
                 (string-trim-right
                  (format "[%s/%s] %s: %s"
                          (fn/chat-propertize (fn/prettify-word server) 'fn/chat-server-name)
-                         (fn/chat-propertize (fn/prettify-word channel) 'fn/chat-channel-nanme)
+                         (fn/chat-propertize (fn/prettify-word channel) 'fn/chat-channel-name)
                          (fn/chat-propertize chatter 'fn/chat-chatter-name)
                          (fn/chat-propertize message 'fn/chat-message)))))
              (chat--log-info out)
@@ -981,7 +983,7 @@
                     (fn/prodigy-switch-to-process-buffer (quote ,service))))
            function-symbol))
 
-       (defun fn/prodigy-define-service (&rest args)
+        (defun fn/prodigy-define-service (&rest args)
          "When creating a service, check for a :bind keyword to create an automatic keybinding for it."
          (let ((result (apply #'prodigy-define-service args)))
            (prog1
@@ -2787,7 +2789,9 @@
    #+BEGIN_SRC emacs-lisp :block-id 842e3219-547e-cef9-5564-15541c881dc4
      (use-package tramp
        :config
-       (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)))
+       (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)
+
+          tramp-default-user (getenv "USER")))
    #+END_SRC
 
 ** ledger
@@ -3007,22 +3011,12 @@
         :diminish smartparens-mode
         :ensure t
         :init
-        (add-hook 'prog-mode-hook 'smartparens-mode))
+        (add-hook 'prog-mode-hook 'smartparens-mode)
+        :config
+        (require 'smartparens-config)
 
-      (use-package smartparens-config
-        :after smartparens)
-    #+END_SRC
-*** paredit-everywhere
-    [[paredit]] also works well with other modes as well but not really
-    primarily
-
-    #+BEGIN_SRC emacs-lisp :block-id bfff7479-af59-caee-1140-9fe693e6f838
-      (use-package paredit-everywhere
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'prog-mode-hook #'paredit-mode))
-
+        (define-key smartparens-mode-map (kbd "C-<left>") 'sp-forward-slurp-sexp)
+        (define-key smartparens-mode-map (kbd "C-<up>") 'sp-splice-sexp))
     #+END_SRC
 
 *** flycheck
@@ -3037,8 +3031,8 @@
         (add-hook 'prog-mode-hook 'flycheck-mode)
         :config
         (setq flycheck-highlighting-mode 'lines
-              flycheck-check-syntax-automatically '(save mode-enabled)
-              flycheck-checker-error-threshold nil))
+           flycheck-check-syntax-automatically '(save mode-enabled)
+           flycheck-checker-error-threshold nil))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -3049,6 +3043,12 @@
       (use-package flycheck-status-emoji
         :ensure t
         :after flycheck)
+
+      (use-package flycheck-package
+        :ensure t
+        :after flycheck
+        :config
+        (flycheck-package-setup))
     #+END_SRC
 
 *** magit
@@ -4284,7 +4284,7 @@
        (setq erc-try-new-nick-p t
           erc-password nil
 
-          erc-autojoin-channels-alist (list (list "freenode.net" "#emacs"))
+          erc-autojoin-channels-alist (list (list "freenode.net" "#emacs" "#conkeror" "#rethinkdb"))
           erc-rename-buffers t
           erc-interpret-mirc-color t
 
@@ -4354,13 +4354,22 @@
      (use-package jabber
        :ensure t
        :bind (:map fn-standard-prefix-map
-                   ("C-j" . jabber-connect-all))
+                   ("J J" . jabber-connect-all)
+                   ("J c" . jabber-chat-with)
+                   ("J q" . jabber-disconnect))
        :config
        ;; account set at personal.el
 
        ;; core
        (setq jabber-auto-reconnect t
-             jabber-version-show nil)
+          jabber-version-show nil
+
+          jabber-history-enabled t
+          jabber-use-global-history nil
+          jabber-history-dir (expand-file-name "jabber-history/" fn/cache-dir)
+
+          jabber-backlog-number 40
+          jabber-backlog-days 30)
 
        (defconst fn/jabber-roster-buffer-name "*-jabber-*"
          "My custom name for the jabber buffer")
@@ -4386,7 +4395,17 @@
 
        ;; libnotify
        (setq jabber-libnotify-method 'shell
-             jabber-libnotify-urgency "high")
+          jabber-libnotify-urgency "high")
+
+       ;; presence
+       (setq jabber-alert-presence-message-function nil)
+
+
+       ;; chat
+       (setq jabber-chat-foreign-prompt-format "[%t] %n>\n"
+          jabber-chat-local-prompt-format  "[%t] %n>\n"
+          jabber-groupchat-prompt-format  "[%t] %n>\n"
+          jabber-muc-private-foreign-prompt-format "[%t] %g/%n>\n")
 
 
        ;; alerts
