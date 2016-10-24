@@ -1158,7 +1158,7 @@
         :bind (("M-/" . hippie-expand))
         :config
         (setq hippie-expand-try-functions-list
-              '(
+           '(
                 try-expand-dabbrev
                 try-expand-dabbrev-all-buffers
                 try-complete-file-name-partially
@@ -1167,7 +1167,11 @@
                 try-expand-list
                 try-expand-line
                 try-complete-lisp-symbol-partially
-                try-complete-lisp-symbol)))
+                try-complete-lisp-symbol))
+
+        (use-feature hippie-ggtags
+          (ggtags)
+          (add-to-list 'hippie-expand-try-functions-list 'ggtags-try-complete-tag)))
     #+END_SRC
 
 *** company
@@ -1196,6 +1200,7 @@
 
 
         (setq company-backends (list))
+        (add-to-list 'company-backends 'company-capf)
         (add-to-list 'company-backends 'company-dabbrev)
         (add-to-list 'company-backends 'company-elisp)
 
@@ -1604,7 +1609,8 @@
 
         (projectile-mode)
         (setq projectile-indexing-method 'native
-           projectile-enable-caching t)
+           projectile-enable-caching t
+           projectile-enable-idle-timer t)
 
         (setq projectile-sort-order 'modification-time)
 
@@ -3019,6 +3025,18 @@
         (define-key smartparens-mode-map (kbd "C-<up>") 'sp-splice-sexp))
     #+END_SRC
 
+*** paredit-everywhere
+    [[paredit]] also works well with other modes as well but not really
+    primarily
+
+    #+BEGIN_SRC emacs-lisp :block-id bfff7479-af59-caee-1140-9fe693e6f838
+      (use-package paredit-everywhere
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'prog-mode-hook 'paredit-mode))
+    #+END_SRC
+
 *** flycheck
     Syntax checking is very important
 
@@ -3143,13 +3161,25 @@
                     ("C-d b" . dumb-jump-back)))
     #+END_SRC
 
-*** ggtags                                                      :exprimental:
+*** ggtags
     Jump and go is really a must needed feature
 
     #+BEGIN_SRC emacs-lisp :block-id 6fd3ec7a-1687-195e-c6d4-93cb1f00cb8c
       (use-package ggtags
         :ensure t
-        :defer t)
+        :defer t
+        :functions 'ggtags-eldoc-function
+        :init
+        (defun fn/ggtags-c-like-mode ()
+          "Turn on GGTAGS if it is a c like mode"
+          (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'javascript-mode)
+            (ggtags-mode t)))
+
+        (add-hook 'prog-mode-hook #'fn/ggtags-c-like-mode)
+        :config
+        (use-feature eldoc-ggtags
+          (eldoc)
+          (setq-local eldoc-documentation-function #'ggtags-eldoc-function)))
     #+END_SRC
 
 *** helm-swoop
@@ -3672,8 +3702,25 @@
       (use-package jdee
         :ensure t
         :after java
+        :disabled t
         :config
-        (setq jdee-server-dir (expand-file-name "jdee-server/" fn/lib-dir)))
+        (defconst fn/jdee-server-dir (expand-file-name "jdee-server/" fn/custom-module-dir)
+          "My jdee server dir.")
+
+        (setq jdee-server-dir (expand-file-name "target/" fn/jdee-server-dir)))
+
+      (use-package malabar-mode
+        :ensure t
+        :after java)
+    #+END_SRC
+
+*** Android
+    Android specific configuration.
+
+    #+BEGIN_SRC emacs-lisp :block-id 5c33e2b3-d9e7-1a3a-51b5-adf9735e4507
+      (use-package android-mode
+        :ensure t
+        :after java)
     #+END_SRC
 
 ** Python
@@ -4402,10 +4449,10 @@
 
 
        ;; chat
-       (setq jabber-chat-foreign-prompt-format "[%t] %n>\n"
-          jabber-chat-local-prompt-format  "[%t] %n>\n"
-          jabber-groupchat-prompt-format  "[%t] %n>\n"
-          jabber-muc-private-foreign-prompt-format "[%t] %g/%n>\n")
+       (setq jabber-chat-foreign-prompt-format "[%t] %n>"
+          jabber-chat-local-prompt-format  "[%t] %n>"
+          jabber-groupchat-prompt-format  "[%t] %n>"
+          jabber-muc-private-foreign-prompt-format "[%t] %g/%n>")
 
 
        ;; alerts
@@ -6149,6 +6196,7 @@
       :load-path fn/elk-magic-package-dir
       :after elk)
 
+
     (defconst fn/stream-package-dir (expand-file-name  "~/Fakespace/stream.el")
       "My stream package dir.")
 
@@ -6156,30 +6204,13 @@
       :load-path fn/stream-package-dir
       :demand t)
 
+
     (defconst fn/transducer-package-dir (expand-file-name  "~/Fakespace/transducer.el")
       "My transducer package dir.")
 
     (use-package transducer
       :load-path fn/transducer-package-dir
       :demand t)
-
-    (use-package polymode
-      :ensure t
-      :defer t)
-
-    (defconst fn/meghnada-emacs-package-dir (expand-file-name "meghanada-emacs" fn/custom-module-dir)
-      "Meghanda emacs package")
-
-    (use-package meghanada-mode
-      :load-path fn/meghnada-emacs-package-dir
-      :config
-      (add-hook
-       'meghanada-mode-hook
-       (lambda ()
-         (require 'company-meghanda)
-         (add-to-list 'company-backendsm '(company-meghanada :with company-dabbrev-code))
-         (setq company-transformers '(company-sort-by-backend-importance))
-         (add-hook 'before-save-hook 'delete-trailing-whitespace))))
   #+END_SRC
 
 * Reference
