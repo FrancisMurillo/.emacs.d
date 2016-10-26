@@ -140,6 +140,10 @@
        "Custom elisp script directory")
 
      (add-to-list 'load-path fn/custom-script-dir)
+
+
+     (defconst fn/external-module-dir (expand-file-name "Modules" "~")
+       "My external module directory name.")
    #+END_SRC
 
 * Basic Setup
@@ -1006,6 +1010,17 @@
           'prodigy-view-mode
           (list 'all-the-icons-faicon "cog" :v-adjust -0.1))))
    #+END_SRC
+** procred
+   Similarly, manage processes.
+
+   #+BEGIN_SRC emacs-lisp :block-id 0ae1df3b-b802-c3f2-4e17-450d5e8245f8
+     (use-package proced
+       :ensure t
+       :defer t
+       :bind (:map fn-standard-prefix-map
+                   ("C-M-p p" . proced)))
+   #+END_SRC
+
 ** emamux
    Work better with tmux
 
@@ -1631,6 +1646,7 @@
                ("C-x b" . helm-mini)
                ("C-x C-f" . helm-find-files)
                ("M-s o" . helm-occur)
+               ("M-s i" . helm-imenu)
                ("C-c C-/" . helm-dabbrev))
         :demand t
         :config
@@ -1972,6 +1988,63 @@
          :config
          (helm-flx-mode t))
      #+END_SRC
+
+*** elpa-mirror
+    Just in case things are down.
+
+    #+BEGIN_SRC emacs-lisp :block-id d9ff5d65-9c4a-24ee-d9e8-81459f7851d3
+      (defconst fn/mirror-elpa-repo "mirror-elpa"
+        "The name of the elpa mirror repo.")
+
+      (defconst fn/local-elpa-mirror-dir (expand-file-name fn/mirror-elpa-repo fn/external-module-dir)
+        "My local elpa mirror.")
+
+      (use-package elpa-mirror
+        :ensure t
+        :demand t
+        :config
+        (make-directory fn/local-elpa-mirror-dir t)
+        (setq elpamr-default-output-directory fn/local-elpa-mirror-dir)
+
+        (defun fn/only-github-elpa-mirror-package-archive ()
+          "Make `package-archives' be the github elpa mirror repo."
+          (setq package-archives
+             (list
+              (cons fn/mirror-elpa-repo
+                 (format "https://raw.githubusercontent.com/%s/%s/master/"
+                         fn/user-github-name
+                         fn/mirror-elpa-repo)))))
+
+        (defun fn/only-local-mirror-elpa-package-archive ()
+          "Make `package-archives' be the `fn/local-elpa-mirror-dir'."
+          (interactive)
+          (setq package-archives
+             (list
+              (cons fn/mirror-elpa-repo fn/local-elpa-mirror-dir))))
+
+        (defun fn/push-local-elpa-mirror-to-github ()
+          "Push local elpa mirror to github repo."
+          (interactive)
+          (async-shell-command
+           (string-join
+            (list
+             (format "cd %s" fn/local-elpa-mirror-dir)
+             (format "git add --all")
+             (format "git commit -a -m \"%s\""
+                     (format "%s Update" (format-time-string "%F %R")))
+             (format "git push origin master"))
+            " && ")))
+
+
+        (defun fn/update-local-elpa-mirror ()
+          "Update local elpa mirror when it is older than `package-user-dir'."
+          (interactive)
+          (when (file-newer-than-file-p package-user-dir fn/local-elpa-mirror-dir)
+            (message "Updating local elpa mirror... in case of emergency.")
+            (elpamr-create-mirror-for-installed)))
+
+        (add-hook 'kill-emacs-hook #'fn/update-local-elpa-mirror))
+    #+END_SRC
 
 * Artist
   Visual aesthetics is also a functional thing as well
@@ -3536,6 +3609,23 @@
           (tern)
           (prodigy-define-tag
             :name 'tern)))
+
+
+      (use-package company-flow
+        :ensure t
+        :demand t
+        :config
+        (add-to-list 'company-backends 'company-flow))
+    #+END_SRC
+
+*** Linter
+    My linter if you will for JS.
+
+    #+BEGIN_SRC emacs-lisp :block-id da802e8e-8302-f301-51f5-6042384a98a7
+      (use-package flycheck-flow
+        :demand t
+        :config
+        (flycheck-add-next-checker 'javascript-eslint (cons t 'javascript-flow) t))
     #+END_SRC
 
 *** Formatter
@@ -4331,7 +4421,11 @@
        (setq erc-try-new-nick-p t
           erc-password nil
 
-          erc-autojoin-channels-alist (list (list "freenode.net" "#emacs" "#conkeror" "#rethinkdb"))
+          erc-autojoin-channels-alist (list (list "freenode.net"
+                                            "#emacs"
+                                            "#conkeror"
+                                            "#flowtype"
+                                            "#rethinkdb"))
           erc-rename-buffers t
           erc-interpret-mirc-color t
 
@@ -4569,6 +4663,22 @@
            'face
            '(:foreground "#ffffff" :background "#28bfd0"
                          :box (:line-width 2 :color "#e3ffff") :weight bold :height 0.9)))))
+   #+END_SRC
+
+** sx
+   Stack Exchange api
+
+   #+BEGIN_SRC emacs-lisp :block-id aaf558e6-6cab-fbee-9135-c26b1f2cb157
+     (use-package sx
+       :bind (:map fn-standard-prefix-map
+                   ("S q" . sx-tab-all-questions)
+                   ("S i" . sx-inbox)
+                   ("S o" . sx-open-link)
+                   ("S u" . sx-tab-unanswered-my-tags)
+                   ("S a" . sx-ask)
+                   ("S s" . sx-search))
+       :config
+       (setq sx-cache-directory (expand-file-name ".sx" fn/cache-dir)))
    #+END_SRC
 
 ** bbdb
@@ -6131,6 +6241,9 @@
 
     ;; Process
     (define-key fn-standard-prefix-map (kbd "M-p") 'list-processes)
+
+    ;; Customize
+    (define-key fn-standard-prefix-map (kbd "C g") 'customize-group)
 
 
 
