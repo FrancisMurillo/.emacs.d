@@ -361,6 +361,8 @@
 
      ;; I like tabs but they should just be converted to spaces for equality
      (setq-default indent-tabs-mode nil)
+
+     (add-hook 'makefile-mode 'indent-tabs-mode)
    #+END_SRC
 
 ** Search
@@ -406,12 +408,19 @@
      (add-to-list 'safe-local-variable-values '(fn/whitespace-cleanup-on-save))
 
      (defun fn/delete-trailing-whitespace-on-save ()
+       "Delete trailing whitespace on save."
        (when fn/whitespace-cleanup-on-save
          (with-current-buffer (current-buffer)
            (message "Deleting trailing whitespace in %s" (current-buffer))
            (delete-trailing-whitespace (point-min) (point-max)))))
 
      (add-hook 'before-save-hook 'fn/delete-trailing-whitespace-on-save)
+
+     (defun fn/disable-delete-trailing-whitespace-on-save ()
+       "Disable `fn/delete-trailing-whitespace-on-save' for a specific mode."
+       (setq-local fn/whitespace-cleanup-on-save nil))
+
+     (add-hook 'makefile-mode-hook 'fn/disable-delete-trailing-whitespace-on-save t)
 
 
      (temp-buffer-resize-mode t)
@@ -551,6 +560,16 @@
        :ensure t
        :demand t
        :config
+       (setq exec-path-from-shell-variables
+          (list
+           "PATH" "MANPATH"
+           "PROMPT" "PS1"
+
+           "JAVA_HOME")
+          exec-path-from-shell-arguments
+          (list
+           "-l" "-i"))
+
        (exec-path-from-shell-initialize))
    #+END_SRC
 
@@ -781,8 +800,8 @@
           (append (list main-mode) icon-config)))
 
        (fn/add-major-mode-icon
-        'special-mode
-        (list 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
+        'makefile-mode
+        (list 'all-the-icons-faicon "wrench" :v-adjust -0.1))
 
        (fn/add-major-mode-icon
         'special-mode
@@ -865,8 +884,14 @@
        :bind (:map fn-standard-prefix-map
                    ("x e" . eshell))
        :config
-       (setq eshell-directory-name (expand-file-name "eshell" fn/cache-dir)
-             eshell-prefer-lisp-functions t))
+       (defun fn/eshell-prompt-function ()
+         "My eshell prompt function."
+         (concat " λ "))
+
+       (setq eshell-highlight-prompt nil
+          eshell-directory-name (expand-file-name "eshell" fn/cache-dir)
+          eshell-prefer-lisp-functions t
+          eshell-prompt-function #'fn/eshell-prompt-function))
    #+END_SRC
 
 *** Autocompletion
@@ -3069,17 +3094,29 @@
     Just indent before I save when working with code.
 
     #+BEGIN_SRC emacs-lisp :block-id fa5c65de-552d-f599-b71c-d25689845d72
+      (make-variable-buffer-local
+       (defvar fn/indent-buffer-on-save t
+         "When non-nil, indent buffer on save"))
+
       (defun fn/indent-buffer ()
         "The editor itself is the best formatter"
         (interactive)
-        (indent-region (point-min) (point-max)))
+        (when fn/indent-buffer-on-save
+          (message "Indenting buffer in %s." (current-buffer))
+          (indent-region (point-min) (point-max))))
 
       (defun fn/indent-before-save ()
         "Indent buffer after saving to make handling the editor sane.
       This somehow disregards SVN formatting in favor of the editor"
         (add-hook 'before-save-hook #'fn/indent-buffer nil t))
 
-      (add-hook 'prog-mode-hook #'fn/indent-before-save)
+      (defun fn/disable-indent-buffer-before-save ()
+        "Disable `fn/indent-before-save' for a specific mode."
+        (setq-local fn/indent-buffer-on-save nil))
+
+      (add-hook 'makefile-mode-hook 'fn/disable-indent-buffer-before-save t)
+
+      (add-hook 'prog-mode-hook 'fn/indent-before-save)
     #+END_SRC
 
 *** smartparens
@@ -4665,6 +4702,23 @@
                          :box (:line-width 2 :color "#e3ffff") :weight bold :height 0.9)))))
    #+END_SRC
 
+** sauron
+   The eye of all notifier
+
+   #+BEGIN_SRC emacs-lisp :block-id 17b26472-bee7-1712-9c92-ce929629a3e0
+     (use-package sauron
+       :ensure t
+       :defer t
+       :config
+       (setq sauron-modules (list 'sauron-erc
+                            'sauron-jabber
+                            'sauron-dbus))
+
+       (setq sauron-separate-frame nil
+          sauron-sticky-frame nil
+          sauron-hide-mode-line nil))
+   #+END_SRC
+
 ** sx
    Stack Exchange api
 
@@ -4680,7 +4734,6 @@
        :config
        (setq sx-cache-directory (expand-file-name ".sx" fn/cache-dir)))
    #+END_SRC
-
 ** bbdb
    People organization
 
