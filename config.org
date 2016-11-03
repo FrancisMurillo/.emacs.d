@@ -112,12 +112,15 @@
      (defconst fn/cache-dir (expand-file-name fn/cache-dir-name user-emacs-directory)
        "Every cached or moving file should be here like with Spacemacs")
 
+     (make-directory fn/cache-dir t)
 
      (defconst fn/lib-dir-name "lib"
        "External non-standard files directory")
 
      (defconst fn/lib-dir (expand-file-name fn/lib-dir-name user-emacs-directory)
        "External library directory")
+
+     (make-directory fn/lib-dir t)
 
 
      (defconst fn/extra-dir-name "extra"
@@ -126,6 +129,8 @@
      (defconst fn/extra-dir (expand-file-name fn/extra-dir-name user-emacs-directory)
        "Anything under the sun directory")
 
+     (make-directory fn/extra-dir t)
+
 
      (defconst fn/custom-module-dir-name "modules"
        "Custom elisp packages directory name")
@@ -133,17 +138,23 @@
      (defconst fn/custom-module-dir (expand-file-name fn/custom-module-dir-name fn/library-dir)
        "Custom elisp packages directory")
 
+     (make-directory fn/custom-module-dir t)
+
      (defconst fn/custom-script-dir-name "scripts"
        "Custom elisp script directory name")
 
      (defconst fn/custom-script-dir (expand-file-name fn/custom-script-dir-name fn/library-dir)
        "Custom elisp script directory")
 
+     (make-directory fn/custom-script-dir t)
+
      (add-to-list 'load-path fn/custom-script-dir)
 
 
      (defconst fn/external-module-dir (expand-file-name "Modules" "~")
        "My external module directory name.")
+
+     (make-directory fn/external-module-dir t)
    #+END_SRC
 
 * Basic Setup
@@ -3834,7 +3845,7 @@
         (defconst fn/jdee-server-dir (expand-file-name "jdee-server/" fn/custom-module-dir)
           "My jdee server dir.")
 
-        (setq jdee-server-dir (expand-file-name "target/" fn/jdee-server-dir)))
+        (setq jdee-server-dir (expand-file-name "./" fn/jdee-server-dir)))
 
       (use-package malabar-mode
         :ensure t
@@ -4644,6 +4655,17 @@
          "Show jabber roster buffer"
          (interactive)
          (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
+   #+END_SRC
+
+** skype
+   Sometimes when you just need a blue sky.
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package skype
+       :ensure t
+       :defer t
+       :config
+       (setq skype--my-user-handle "favmurillo"))
    #+END_SRC
 
 ** slack
@@ -5725,6 +5747,16 @@
        "Just a quick shortcut to my fakespace folder"
        (interactive)
        (dired "~/Fakespace"))
+
+     (defun fn/dired-home-dir ()
+       "Quickly visit home directory"
+       (interactive)
+       (dired "~"))
+
+     (defun fn/dired-lib-dir ()
+       "Quickly visit library directory"
+       (interactive)
+       (dired fn/lib-dir))
    #+END_SRC
 
 ** Summarize Text
@@ -6313,6 +6345,8 @@
     (define-key fn-custom-prefix-map (kbd "d d") #'fn/dired-download-dir)
     (define-key fn-custom-prefix-map (kbd "d m") #'fn/dired-mountain-dir)
     (define-key fn-custom-prefix-map (kbd "d f") #'fn/dired-fakespace-dir)
+    (define-key fn-custom-prefix-map (kbd "d ~") #'fn/dired-home-dir)
+    (define-key fn-custom-prefix-map (kbd "d l") #'fn/dired-lib-dir)
 
     (define-key fn-custom-prefix-map (kbd "^") #'fn/dired-parent)
 
