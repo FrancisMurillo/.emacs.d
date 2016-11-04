@@ -17,3 +17,8 @@ lib/packages
 !lib/scripts
 /.config.org
 /.safe-config.org
+
+
+GPATH
+GTAGS
+GRTAGS
