@@ -93,14 +93,27 @@
   "The code block end format.")
 
 
+(defvar fn/current-org-block-info nil
+  "The current block info being tangled by `org-babel-tangle-single-block'.
+Hacked on v9 since it is lexically binded.")
+
+(defun fn/set-current-org-block-info (orig-tangle &rest args)
+  "Set `fn/current-org-block-info' with the current code block being tangled."
+  (prog2
+      (setq fn/current-org-block-info (org-babel-get-src-block-info))
+      (apply orig-tangle args)
+    (setq fn/current-org-block-info nil)))
+
+(advice-add 'org-babel-tangle-single-block :around #'fn/set-current-org-block-info)
+
+
 (defun fn/org-babel-tangle-wrap-block-info ()
-  "Wraps a code block with `fn/code-block-id-symbol'.
-If you want to use directly, set `info' to `(org-babel-tangle-get-src-block-info'."
-  (let* ((block-params (nth 2 info))  ;; org-babel-tangle binding
-         (block-id (cdr (assoc fn/code-block-id-symbol params))))
+  "Wraps a code block with `fn/code-block-id-symbol'."
+  (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
+      (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-            (block-end (format fn/code-block-end-format block-id)))
+          (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)
@@ -110,34 +123,6 @@ If you want to use directly, set `info' to `(org-babel-tangle-get-src-block-info
           (insert "\n")
           (insert block-end))))))
 
-(defmacro fn/code-block-safety (block-id &rest body)
-  "Wraps a buffer with a block safety given BLOCK-ID and BODY."
-  (let ((error-symbol (make-symbol "ex")))
-    `(condition-case ,error-symbol
-         ,@body
-       ('error
-        (message "Error loading block %s: %s"
-                 ,block-id
-                 (error-message-string ,error-symbol))))))
-
-(defun fn/org-babel-tangle-wrap-block-safety ()
-  "Wraps a code block with `fn/code-block-'"
-  (let* ((block-params (nth 2 info))  ;; org-babel-tangle binding
-      (block-id (cdr (assoc fn/code-block-id-symbol params))))
-    (when block-id
-      (let ((block-start (format fn/code-block-start-format block-id))
-          (block-end (format fn/code-block-end-format block-id)))
-        (save-excursion
-          (beginning-of-buffer)
-          (insert (format "(fn/code-block-safety \"%s\" " block-id))
-          (insert "\n")
-
-          (end-of-buffer)
-          (insert "\n")
-          (insert ")"))))))
-
-
-;; (add-hook 'org-babel-tangle-body-hook #'fn/org-babel-tangle-wrap-block-safety)
 (add-hook 'org-babel-tangle-body-hook #'fn/org-babel-tangle-wrap-block-info)
 
 
