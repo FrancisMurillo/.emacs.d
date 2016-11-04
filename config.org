@@ -2469,7 +2469,23 @@
        (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
           org-directory (concat fn/org-dir "/"))
 
-       (fn/persistence-manage-symbol 'org-insert-link-history))
+       (fn/persistence-manage-symbol 'org-insert-link-history)
+
+
+       ;; Same windowed
+       (defun fn/org-switch-to-buffer-other-window (&rest args)
+         "This is an hacked form of `org-switch-to-buffer-other-window' to make it open in the same window."
+         (org-no-popups
+          (apply #'switch-to-buffer args)))
+
+       (fset 'org-switch-to-buffer-other-window #'fn/org-switch-to-buffer-other-window)
+
+       (defun fn/org-ignore-delete-other-windows (orig-fun &rest args)
+         "Advice ORIG-FUN to ignore `delete-other-windows'"
+         (prog2
+             (advice-add 'delete-other-windows :override #'ignore)
+             (apply orig-fun args)
+             (advice-remove 'delete-other-windows #'ignore))))
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -2520,38 +2536,8 @@
                (list 'file+headline  fn/org-event-file "Events")
                "* %? :event:")))
 
-        (defun fn/org-switch-to-buffer-other-window (&rest args)
-          "This is an hacked form of `org-switch-to-buffer-other-window' to make it open in the same window."
-          (org-no-popups
-           (apply #'switch-to-buffer args)))
-
-        (defun fn/org-capture-place-template (&optional inhibit-wconf-store)
-          "This is hacked form of `org-capture-place-template' to make it open in the same window."
-          (unless inhibit-wconf-store
-            (org-capture-put :return-to-wconf (current-window-configuration)))
-          ;; (delete-other-windows)
-          (org-switch-to-buffer-other-window
-           (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
-          (widen)
-          (outline-show-all)
-          (goto-char (org-capture-get :pos))
-          (setq-local outline-level 'org-outline-level)
-          (pcase (org-capture-get :type)
-            ((or `nil `entry) (org-capture-place-entry))
-            (`table-line (org-capture-place-table-line))
-            (`plain (org-capture-place-plain-text))
-            (`item (org-capture-place-item))
-            (`checkitem (org-capture-place-item)))
-          (org-capture-mode 1)
-          (setq-local org-capture-current-plist org-capture-plist))
-
-        ;; Overrides here
-        (defun fn/override-org-capture-display-functions (&rest args)
-          "Override org-capture functions to make it display in the same window"
-          (fset 'org-capture-place-template #'fn/org-capture-place-template)
-          (fset 'org-switch-to-buffer-other-window #'fn/org-switch-to-buffer-other-window))
-
-        (advice-add 'org-capture :before 'fn/override-org-capture-display-functions))
+        ;; Same window
+        (advice-add 'org-capture-place-template :around #'fn/org-ignore-delete-other-windows))
     #+END_SRC
 
 *** org-agenda
@@ -2567,7 +2553,10 @@
               org-agenda-files (list
                                 fn/org-main-file
                                 fn/org-todo-file
-                                fn/org-event-file)))
+                                fn/org-event-file))
+
+
+        (advice-add 'org-agenda-get-restriction-and-command :around #'fn/org-ignore-delete-other-windows))
     #+END_SRC
 
 *** org-refile
