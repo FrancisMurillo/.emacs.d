@@ -376,6 +376,14 @@
      (add-hook 'makefile-mode 'indent-tabs-mode)
    #+END_SRC
 
+** Bookmark
+   Bookmark configuration
+
+   #+BEGIN_SRC emacs-lisp :block-id 3730e40d-63fb-3b03-1830-a85c557fe522
+     (setq bookmark-default-file (expand-file-name "bookmarks" fn/cache-dir)
+        bookmark-save-flag t)
+   #+END_SRC
+
 ** Search
    You must have this setup, it's like butter and you're the bread.
 
@@ -1311,6 +1319,36 @@
 * Ergonomic
   Things to assist in managing Emacs
 
+** Jump
+   Things to jump around with
+*** recentf
+    Accessing the files recently
+
+    #+BEGIN_SRC emacs-lisp :block-id 3f6c8b53-5f56-d1bb-8852-71807ad0c314
+      (use-package recentf
+        :bind (("C-x C-r" . recentf-open-files))
+        :config
+        (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
+
+              recentf-max-menu-items 1000
+              recentf-max-saved-items 1000
+
+              recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
+
+        (recentf-mode t))
+    #+END_SRC
+
+*** bookmark+
+    Enhancement for normal bookmarking
+
+    #+BEGIN_SRC emacs-lisp :block-id 3165bffb-1127-0d5d-0a4f-7ff0b07d7612
+      (use-package bookmark+
+        :ensure t
+        :demand t
+        :config
+        nil)
+    #+END_SRC
+
 ** Windows
    Anything related to window management
 
@@ -1545,23 +1583,6 @@
 
 ** Interface
    Anything related to buffers
-
-*** recentf
-    Accessing the files recently
-
-    #+BEGIN_SRC emacs-lisp :block-id 3f6c8b53-5f56-d1bb-8852-71807ad0c314
-      (use-package recentf
-        :bind (("C-x C-r" . recentf-open-files))
-        :config
-        (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
-
-              recentf-max-menu-items 1000
-              recentf-max-saved-items 1000
-
-              recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
-
-        (recentf-mode t))
-    #+END_SRC
 
 *** projectile
     Must have a project finder when using a project.
@@ -2412,6 +2433,8 @@
      (add-to-list 'safe-local-variable-values '(auto-save-default))
      (add-to-list 'safe-local-variable-values  '(backup-inhibited . t))
      (add-to-list 'safe-local-variable-values '(epa-file-encrypt-to))
+
+     (add-to-list 'auto-mode-alist (cons "\\.org\\.gpg\\'" 'org-mode))
    #+END_SRC
 ** org
    org-mode my buddy. This is filed under external modes since I download a new copy of org mode to be updated.
@@ -2533,11 +2556,7 @@
           (org-set-local 'org-capture-current-plist org-capture-plist))
 
         ;; Weird fix here
-        (advice-add
-         #'org-capture
-         :before
-         (lambda (&rest args)
-           (fset 'org-capture-place-template #'fq/org-capture-place-template))))
+      )
     #+END_SRC
 
 *** org-agenda
@@ -2616,7 +2635,6 @@
               org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
 
         (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
-
         (setq org-journal-find-file 'find-file)
 
         (defun fm/insert-private-file-headers ()
@@ -4655,17 +4673,6 @@
          "Show jabber roster buffer"
          (interactive)
          (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
-   #+END_SRC
-
-** skype
-   Sometimes when you just need a blue sky.
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package skype
-       :ensure t
-       :defer t
-       :config
-       (setq skype--my-user-handle "favmurillo"))
    #+END_SRC
 
 ** slack
