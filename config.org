@@ -2512,51 +2512,46 @@
       (use-feature org-capture
         (org)
         (setq org-capture-templates
-              (list
-               (list "t" "Todo" 'entry
-                     (list 'file+headline fn/org-todo-file "Todo")
-                     "* TODO %?\n   %i")
-               (list "e" "Event" 'entry
-                     (list 'file+headline  fn/org-event-file "Events")
-                     "* %? :event:")))
+           (list
+            (list "t" "Todo" 'entry
+               (list 'file+headline fn/org-todo-file "Todo")
+               "* TODO %?\n   %i")
+            (list "e" "Event" 'entry
+               (list 'file+headline  fn/org-event-file "Events")
+               "* %? :event:")))
 
-        ;; Open org-capture template in one window, not nice but good enough
-        ;; LINK: https://stackoverflow.com/questions/21195327/emacs-force-org-mode-capture-buffer-to-open-in-a-new-window
-        (defun fq/org-switch-to-buffer (&rest args)
-          "Customized switch to buffer for capture template."
+        (defun fn/org-switch-to-buffer-other-window (&rest args)
+          "This is an hacked form of `org-switch-to-buffer-other-window' to make it open in the same window."
           (org-no-popups
            (apply #'switch-to-buffer args)))
 
-        (defun fq/org-capture-place-template (&optional inhibit-wconf-store)
-          "Insert the template at the target location, and display the buffer.
-            When `inhibit-wconf-store', don't store the window configuration, as it
-            may have been stored before."
+        (defun fn/org-capture-place-template (&optional inhibit-wconf-store)
+          "This is hacked form of `org-capture-place-template' to make it open in the same window."
           (unless inhibit-wconf-store
             (org-capture-put :return-to-wconf (current-window-configuration)))
-                                              ;(delete-other-windows)
-          ;; (org-switch-to-buffer-other-window
-          ;;  (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
-          (fq/org-switch-to-buffer
+          ;; (delete-other-windows)
+          (org-switch-to-buffer-other-window
            (org-capture-get-indirect-buffer (org-capture-get :buffer) "CAPTURE"))
           (widen)
-          (show-all)
+          (outline-show-all)
           (goto-char (org-capture-get :pos))
-          (org-set-local 'org-capture-target-marker
-                         (point-marker))
-          (org-set-local 'outline-level 'org-outline-level)
-          (let* ((template (org-capture-get :template))
-                 (type (org-capture-get :type)))
-            (case type
-              ((nil entry) (org-capture-place-entry))
-              (table-line (org-capture-place-table-line))
-              (plain (org-capture-place-plain-text))
-              (item (org-capture-place-item))
-              (checkitem (org-capture-place-item))))
+          (setq-local outline-level 'org-outline-level)
+          (pcase (org-capture-get :type)
+            ((or `nil `entry) (org-capture-place-entry))
+            (`table-line (org-capture-place-table-line))
+            (`plain (org-capture-place-plain-text))
+            (`item (org-capture-place-item))
+            (`checkitem (org-capture-place-item)))
           (org-capture-mode 1)
-          (org-set-local 'org-capture-current-plist org-capture-plist))
+          (setq-local org-capture-current-plist org-capture-plist))
 
-        ;; Weird fix here
-      )
+        ;; Overrides here
+        (defun fn/override-org-capture-display-functions (&rest args)
+          "Override org-capture functions to make it display in the same window"
+          (fset 'org-capture-place-template #'fn/org-capture-place-template)
+          (fset 'org-switch-to-buffer-other-window #'fn/org-switch-to-buffer-other-window))
+
+        (advice-add 'org-capture :before 'fn/override-org-capture-display-functions))
     #+END_SRC
 
 *** org-agenda
