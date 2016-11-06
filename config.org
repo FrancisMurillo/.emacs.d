@@ -1245,20 +1245,23 @@
         :init
         (add-hook 'prog-mode-hook 'company-mode)
         :config
-        (setq company-idle-delay 0.2
-              company-minimum-prefix-length 4
+        (setq company-idle-delay (/ 60.0)
+           company-minimum-prefix-length 3
 
-              company-begin-commands (list 'self-insert-command))
+           company-begin-commands (list 'self-insert-command))
+
 
         (setq company-show-numbers t
-              company-tooltip-limit 20
-              company-tooltip-align-annotations t)
+           company-tooltip-limit 20
+           company-tooltip-align-annotations t)
+
 
         (setq company-dabbrev-time-limit 0.001
-              company-dabbrev-code-time-limit 0.001)
+           company-dabbrev-code-time-limit 0.001)
 
 
         (setq company-backends (list))
+
         (add-to-list 'company-backends 'company-capf)
         (add-to-list 'company-backends 'company-dabbrev)
         (add-to-list 'company-backends 'company-elisp)
@@ -1352,6 +1355,49 @@
 ** Windows
    Anything related to window management
 
+*** desktop
+    Managing buffers the Emacs way.
+
+    #+BEGIN_SRC emacs-lisp :block-id d638037a-5b8e-86de-e653-20b58c670c66
+      (defconst fn/desktop-map (fn/make-prefixed-keymap (kbd "d") fn-standard-prefix-map)
+        "My custom desktop bookmarked map.")
+
+      (use-package desktop
+        :demand t
+        :config
+        (defconst fn/desktop-dir (expand-file-name "desktop/" fn/cache-dir)
+          "My desktop dir")
+
+        (make-directory fn/desktop-dir t)
+
+        (setq desktop-path (list)
+           desktop-base-file-name "blank"
+           desktop-base-lock-name ".desk-lock"
+           desktop-save 'if-exists
+
+           desktop-restore-eager 15
+           desktop-lazy-idle-delay 10
+           desktop-lazy-verbose t)
+
+        (desktop-save-mode)
+
+        (use-feature bookmarked-desktop
+          (bookmark+)
+          (define-key fn/desktop-map (kbd "s") 'bmkp-set-desktop-bookmark)
+
+          (setq bmkp-desktop-default-directory fn/desktop-dir
+             bmkp-desktop-jump-save-before-flag t)))
+
+      (use-package desktop+
+        :ensure t
+        :after desktop
+        :bind (:map fn/desktop-map
+                    ("s" . desktop+-create)
+                    ("l" . desktop+-load))
+        :config
+        (setq desktop+-base-dir fn/desktop-dir))
+    #+END_SRC
+
 *** workgroup
     Saving window state is very helpful specially when you move a lots
 
@@ -1388,48 +1434,6 @@
            wg-emacs-exit-save-behavior           'save
            wg-workgroups-mode-exit-save-behavior 'save)
 
-        (use-feature workgroup-recentf-association
-          (recentf)
-          (require 'f)
-
-          (defun fn/get-buffer-major-mode (buffer)
-            "Get the major mode of the BUFFER."
-            (with-current-buffer buffer
-              major-mode))
-
-          (defun fn/buffer-derived-mode-p (buffer &rest modes)
-            "Check if BUFFER mode is derived from MODE."
-            (with-current-buffer buffer
-              (apply #'derived-mode-p modes)))
-
-          (defun fn/get-dired-buffer-name (buffer)
-            "Get the BUFFER name in the style of DIRED."
-            (with-current-buffer buffer
-              (expand-file-name default-directory)))
-
-
-          (defun fn/recentf-contains-workgroup-buffer-p (workgroup buffer)
-            "Checks if BUFFER exists in `recentf-list'."
-            (when (boundp 'recentf-list)
-              (lexical-let* ((main-mode (fn/get-buffer-major-mode buffer))
-                  (result
-                   (cond
-                    ((eq main-mode 'dired-mode)
-                     (lexical-let ((file-name (fn/get-dired-buffer-name buffer)))
-                       (-find (lambda (recent-file-name) (f-parent-of-p file-name recent-file-name))
-                              recentf-list)))
-                    ((fn/buffer-derived-mode-p
-                      buffer
-                      'prog-mode 'text-mode 'fundamental-mode)
-                     (lexical-let ((file-name (buffer-file-name buffer)))
-                       (-find (lambda (recent-file-name) (string-equal file-name recent-file-name))
-                              recentf-list)))
-                    (t nil))))
-                (if result 'weak nil))))
-
-          (setq wg-buffer-auto-association-on t
-             wg-buffer-auto-association #'fn/recentf-contains-workgroup-buffer-p))
-
         (defun fn/wg-session-list-buffers (&optional frame)
           "Get the current session buffers."
           (-reject
@@ -1462,7 +1466,7 @@
             (switch-to-buffer buffer)))
 
         (defun fn/wg-create-workgroup ()
-          "Create a blank workgroup"
+          "Create a blank workgroup."
           (interactive)
           (let ((current-prefix-arg t))
             (call-interactively #'wg-create-workgroup)))
@@ -1477,7 +1481,12 @@
                                        (vector 'remap 'wg-create-workgroup)
                                        #'fn/wg-create-workgroup)))
 
-        (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect))
+        (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect)
+
+
+        ;; Performance
+        ;; Avoid doing things with `post-command-hook'
+        (advice-add 'wg-undoify-window-configuration-change :override 'ignore))
     #+END_SRC
 
 *** winner
@@ -1908,6 +1917,7 @@
     #+BEGIN_SRC emacs-lisp :block-id a6d7d940-ad4f-97d2-3a24-48ae273f7add
       (use-package ivy
         :ensure t
+        :disabled t
         :bind (("M-x" . counsel-M-x))
         :config
         (setq ivy-use-virtual-buffers t))
@@ -2469,7 +2479,8 @@
        (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
           org-directory (concat fn/org-dir "/"))
 
-       (fn/persistence-manage-symbol 'org-insert-link-history)
+
+       (add-to-list 'savehist-additional-variables 'org-insert-link-history)
 
 
        ;; Same windowed
@@ -2519,6 +2530,10 @@
         (setq org-todo-keywords
               '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
                 (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
+
+      (use-feature org-src-desktop
+        (org desktop)
+        (add-to-list 'desktop-modes-not-to-save 'org-src-mode))
     #+END_SRC
 
 *** org-capture
@@ -2753,7 +2768,7 @@
         (use-package org
           :after org
           :bind (:map fn-standard-prefix-map
-                      ("d" . org-drill))
+                      ("D" . org-drill))
           :demand t
           :config
           (add-to-list 'org-modules 'org-drill)
@@ -4171,6 +4186,45 @@
         :after clojure-mode)
     #+END_SRC
 
+** C
+   The base of all languages
+
+   #+BEGIN_SRC emacs-lisp :block-id 892cb575-f270-c080-6840-b8d52e52b535
+
+   #+END_SRC
+
+*** IDE
+    A lot of irony for an IDE
+
+    #+BEGIN_SRC emacs-lisp :block-id cbcaef17-718e-c364-2cb8-c46ef34bd4b5
+      (use-package irony
+        :ensure t
+        :after (c-mode c++-mode)
+        :config
+        nil)
+
+      (use-package company-irony
+        :ensure t
+        :after irony
+        :config
+        (add-to-list 'company-backends 'company-irony))
+    #+END_SRC
+
+*** Linter
+    Flycheck with irony works
+
+    #+BEGIN_SRC emacs-lisp :block-id 36a98771-3bc7-bf93-9605-354cf09b41bf
+      (use-feature flycheck-irony
+        (flycheck irony)
+        (use-package flycheck-irony
+          :ensure t
+          :after flycheck
+          :init
+          (add-hook 'c-mode 'flycheck-mode)
+          :config
+          (flycheck-irony-setup)))
+    #+END_SRC
+
 ** Guile
    If Elisp is Guile, then I am prepared.
 
@@ -4471,11 +4525,13 @@
        (setq erc-try-new-nick-p t
           erc-password nil
 
-          erc-autojoin-channels-alist (list (list "freenode.net"
-                                            "#emacs"
-                                            "#conkeror"
-                                            "#flowtype"
-                                            "#rethinkdb"))
+          erc-autojoin-channels-alist
+          (list
+           (list "freenode.net"
+              "#emacs"
+              "#conkeror"
+              "#flowtype"
+              "#rethinkdb"))
           erc-rename-buffers t
           erc-interpret-mirc-color t
 
@@ -4601,9 +4657,6 @@
 
        ;; alerts
        (setq jabber-alert-message-hooks nil)
-
-       (add-hook 'jabber-alert-message-hooks #'jabber-message-libnotify)
-       (add-hook 'jabber-alert-message-hooks #'jabber-message-echo)
 
        (use-feature jabber-alert-custom
          (alert)
@@ -5911,7 +5964,7 @@
        (fmd/get-document-block-property "SUMMARY" selected-buffer))
 
 
-     (defconst fmd/md-root "/mnt/veracrypt1/media-diary/compile/"
+     (defconst fmd/md-root "~/Mountain/diary/media-diary/compile/"
        "The media diary directory")
 
      (defconst fmd/md-compile-date-filter (expand-file-name ".date" fmd/md-root)
