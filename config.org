@@ -433,7 +433,7 @@
            (message "Deleting trailing whitespace in %s" (current-buffer))
            (delete-trailing-whitespace (point-min) (point-max)))))
 
-     (add-hook 'before-save-hook 'fn/delete-trailing-whitespace-on-save)
+     ;; (add-hook 'before-save-hook 'fn/delete-trailing-whitespace-on-save)
 
      (defun fn/disable-delete-trailing-whitespace-on-save ()
        "Disable `fn/delete-trailing-whitespace-on-save' for a specific mode."
@@ -1539,6 +1539,36 @@
               (select-window-by-number window-number)))))
     #+END_SRC
 
+*** window-layout
+    Making window layouts
+
+    #+BEGIN_SRC emacs-lisp :block-id 1f3782e2-bdbf-c261-74b3-5ce6bbb064e6
+      (use-package window-layout
+        :ensure t
+        :config
+        (use-feature window-numbered-layout
+          (window-numbering)
+          (require 'dash)
+
+          (defvar fn/current-window-layout nil
+            "The current window layout.")
+
+          (defun fn/window-numbering-assign-func ()
+            "Window number assignment based on the current window layout."
+            (ignore-errors
+              (lexical-let ((this-window (selected-window)))
+                (when (wlf:wset-p fn/current-window-layout)
+                  (let ((layout-index
+                       (-find-index
+                        (lambda (winfo) (eq (wlf:window-window winfo) this-window))
+                        (wlf:wset-winfo-list fn/current-window-layout))))
+                    (if layout-index
+                        layout-index
+                      nil))))))
+
+          (setq window-numbering-assign-func 'fn/window-numbering-assign-func)))
+    #+END_SRC
+
 *** golden-ratio
     Makes windows large enough to see.
 
@@ -2291,6 +2321,17 @@
 
 ** Coding
    Whatever pertains to coding
+
+*** focus-mode
+    Seems like a good mode
+
+    #+BEGIN_SRC emacs-lisp :block-id 2141a379-9505-12c0-a682-edba8c2a3b58
+      (use-package focus
+        :ensure t
+        :defer t
+        :bind (:map fn-standard-prefix-map
+                    ("f" . focus-mode)))
+    #+END_SRC
 
 *** font-lock
     Syntax highlighting is a requirement
@@ -3118,6 +3159,17 @@
 ** Support
    Generic support for coding
 
+*** Whitespace Cleanup
+    Some nice whitespace cleanup.
+
+    #+BEGIN_SRC emacs-lisp :block-id 177ce3cd-1ce9-388e-0edb-22c0a08ec60b
+      (use-package ws-butler
+        :ensure t
+        :init
+        (add-hook 'prog-mode-hook 'ws-butler-mode)
+        (add-hook 'org-mode-hook 'ws-butler-mode))
+    #+END_SRC
+
 *** Indent Everywhere
     Just indent before I save when working with code.
 
@@ -3317,7 +3369,13 @@
         :config
         (use-feature eldoc-ggtags
           (eldoc)
-          (setq-local eldoc-documentation-function #'ggtags-eldoc-function)))
+          (setq-local eldoc-documentation-function #'ggtags-eldoc-function))
+
+        (use-package helm-gtags
+          :ensure t
+          :after ggtags
+          :config
+          nil))
     #+END_SRC
 
 *** helm-swoop
@@ -3995,11 +4053,11 @@
         :defer t
         :no-require t
         :init
-        (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+        ;; (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
         (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
         (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
         :config
-        (require 'haskell-interactive-mode)
+        ;; (require 'haskell-interactive-mode)
         (require 'haskell-process)
         ;; Reset mapping as it does more damage than good
         (setq haskell-cabal-mode-map (make-keymap)
@@ -4026,12 +4084,12 @@
         ;; (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)
 
         ;; Interactive Haskell
-        (define-key interactive-haskell-mode-map (kbd "C-c M-.") 'haskell-mode-goto-loc)
-        (define-key interactive-haskell-mode-map (kbd "C-c M-t") 'haskell-mode-show-type-at)
+        ;; (define-key interactive-haskell-mode-map (kbd "C-c M-.") 'haskell-mode-goto-loc)
+        ;; (define-key interactive-haskell-mode-map (kbd "C-c M-t") 'haskell-mode-show-type-at)
 
         (setq haskell-stylish-on-save t)
 
-        (setq interactive-haskell-mode t)
+        ;; (setq interactive-haskell-mode t)
 
         (setq haskell-process-suggest-remove-import-lines t
               haskell-process-auto-import-loaded-modules t
@@ -4199,9 +4257,25 @@
     #+BEGIN_SRC emacs-lisp :block-id cbcaef17-718e-c364-2cb8-c46ef34bd4b5
       (use-package irony
         :ensure t
-        :after (c-mode c++-mode)
+        :init
+
+        (add-hook 'c-mode-hook 'irony-mode)
+        (add-hook 'c++-mode-hook 'irony-mode)
         :config
-        nil)
+        (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
+           irony-server-install-prefix irony-user-dir)
+
+        (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
+
+        (defun fn/irony-mode-setup ()
+          (define-key irony-mode-map [remap completion-at-point]
+            'irony-completion-at-point-async)
+          (define-key irony-mode-map [remap complete-symbol]
+            'irony-completion-at-point-async))
+
+        (add-hook 'irony-mode-hook 'fn/irony-mode-setup)
+
+        (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
 
       (use-package company-irony
         :ensure t
