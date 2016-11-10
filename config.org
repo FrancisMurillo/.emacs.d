@@ -416,6 +416,8 @@
    Some programming configuration that make sense
 
    #+BEGIN_SRC emacs-lisp :block-id 0654a092-0c78-f18e-e9bb-515041e26a3a
+     (setq save-interprogram-paste-before-kill t)
+
      ;; Please indent after newline to maintain sanity
      (global-set-key (kbd "RET") 'newline-and-indent)
 
@@ -3317,6 +3319,25 @@
         :ensure t
         :defer t)
     #+END_SRC
+
+*** pastebin
+    Paste bin integration
+
+    #+BEGIN_SRC emacs-lisp :block-id 5fdd0f40-7058-106a-2aa2-d2025fea8502
+      (defconst fn/emacs-pastebin-package-dir (expand-file-name "emacs-pastebin/" fn/custom-module-dir)
+        "My emacs pastebin package directory.")
+
+      (use-package neopastebin
+        :load-path fn/emacs-pastebin-package-dir
+        :bind (:map fn-standard-prefix-map
+                    ("C-y n" . pastebin-new)
+                    ("C-y l" . pastebin-list-buffer-refresh))
+        :demand t
+        :config
+        ;; Login in personal.el
+        nil)
+    #+END_SRC
+
 *** ag
     The silver searcher is a fine tool
 
