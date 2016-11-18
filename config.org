@@ -586,7 +586,7 @@
            "PATH" "MANPATH"
            "PROMPT" "PS1"
 
-           "JAVA_HOME")
+           "JAVA_HOME" "ECLIPSE_HOME")
           exec-path-from-shell-arguments
           (list
            "-l" "-i"))
@@ -1723,7 +1723,7 @@
         (projectile-mode)
         (setq projectile-indexing-method 'native
            projectile-enable-caching t
-           projectile-enable-idle-timer t)
+           projectile-enable-idle-timer nil)
 
         (setq projectile-sort-order 'modification-time)
 
@@ -2323,6 +2323,21 @@
 
 ** Coding
    Whatever pertains to coding
+
+*** Scratch
+    Making *scratch* behave better.
+
+    #+BEGIN_SRC emacs-lisp :block-id 13c9501f-b096-0655-b454-55f245ff7742
+      (use-package scratch
+        :ensure t
+        :demand t)
+
+      (use-package scratch-ext
+        :ensure t
+        :after scratch
+        :config
+        (setq scratch-ext-log-directory (expand-file-name ".scratch" fn/cache-dir)))
+    #+END_SRC
 
 *** focus-mode
     Seems like a good mode
@@ -3933,19 +3948,32 @@
     How I hate that word specially when talking about Java
 
     #+BEGIN_SRC emacs-lisp :block-id eae7c8e8-8138-a1f4-5ebf-15bd6953e699
-      (use-package jdee
-        :ensure t
-        :after java
-        :disabled t
-        :config
-        (defconst fn/jdee-server-dir (expand-file-name "jdee-server/" fn/custom-module-dir)
-          "My jdee server dir.")
 
-        (setq jdee-server-dir (expand-file-name "./" fn/jdee-server-dir)))
 
       (use-package malabar-mode
         :ensure t
+        :disabled t
         :after java)
+
+      (use-package eclim
+        :ensure t
+        :after java
+        :init
+        (add-hook 'java-mode-hook 'eclim-mode)
+        :config
+        (require 'eclimd)
+
+        (setq eclimd-eclipse-dirs (getenv "ECLIPSE_HOME")
+           eclimd-executable (expand-file-name "eclimd" eclimd-eclipse-dirs)
+
+           eclimd-default-workspace "~/espace"
+           eclimd-wait-for-process t)
+
+        (use-package company-emacs-eclim
+          :ensure t
+          :after eclim
+          :config
+          (company-emacs-eclim-setup)))
     #+END_SRC
 
 *** Android
@@ -4319,6 +4347,15 @@
           :config
           (flycheck-irony-setup)))
     #+END_SRC
+
+** Fluxus                                                      :experimental:
+   Nice graphical environment
+
+   #+BEGIN_SRC emacs-lisp :block-id fc504796-e991-d5e2-1620-4df729d08197
+     (use-package fluxus-mode
+       :ensure t
+       :demand t)
+   #+END_SRC
 
 ** Guile
    If Elisp is Guile, then I am prepared.
