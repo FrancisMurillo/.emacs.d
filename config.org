@@ -1934,12 +1934,47 @@
          :demand t
          :config
          (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
-               smex-history-length (or helm-adaptive-history-length 100)))
+            smex-history-length (or helm-adaptive-history-length 100)))
 
        (use-package helm-smex
          :ensure t
          :after smex
-         :bind (("M-x" . helm-smex)))
+         :bind (("M-x" . helm-smex))
+         :config
+         (defun fn/command-keybinding-to-string (cmd)
+           "Copied over `org-drill' to avoid dependencies."
+           (let ((key (where-is-internal cmd overriding-local-map t)))
+             (if key (key-description key))))
+
+         (defun fn/helm-smex-transformer (candidates)
+           "Add keybinding to transformer with CANDIDATES."
+           (mapcar
+            (lambda (candidate)
+              (cons
+               (let ((binding (fn/command-keybinding-to-string (intern-soft candidate))))
+                 (if (null binding)
+                     candidate
+                   (format "%s (%s)"
+                           candidate
+                           (propertize
+                            binding
+                            'face 'helm-M-x-key))))
+               candidate))
+            candidates))
+
+         ;; Override helm-smex source to have a candidate-transformer which just adds key binding
+         (defclass helm-smex-source (helm-source-sync)
+           ((init :initform 'helm-smex--init)
+            (candidates :initform 'smex-ido-cache)
+
+            (candidate-transformer :initform #'fn/helm-smex-transformer)
+
+            (match :initform 'helm-fuzzy-match)
+            (action :initform 'helm-smex--execute-command)
+            (coerce :initform 'intern)
+            (persistent-action
+             :initform helm-smex--persistent-action)
+            (persistent-help :initform "Describe command"))))
      #+END_SRC
 
 *** ivy
@@ -4144,6 +4179,7 @@
               haskell-process-auto-import-loaded-modules t
               haskell-process-log t
               haskell-process-suggest-hoogle-imports t
+              haskell-process-type 'stack-ghci
               haskell-interactive-mode-eval-mode 'haskell-mode))
     #+END_SRC
 
@@ -4253,6 +4289,83 @@
 
 *** Build Tools
     Maybe stack or hack?
+*** Literate Programming
+    Literate programming for ease
+
+    #+BEGIN_SRC emacs-lisp :block-id 15965ab3-0934-edf8-da0d-a33886b982c9
+      (defconst fn/ob-haskell-package-dir (expand-file-name "ob-haskell/" fn/custom-module-dir)
+        "My ob-haskell package dir.")
+
+      (use-feature org-haskell
+        (haskell-mode org)
+        (use-package ob-haskell
+          :load-path fn/ob-haskell-package-dir
+          :demand t
+          :config
+          (add-to-list 'org-babel-load-languages '(haskell . t))
+
+          (defconst fn/haskell-file-extension ".hs"
+            "The de facto haskell file extension.")
+
+          (defun fn/add-haskell-file-extension (name)
+            "Add the extension of .hs to a file or buffer NAME."
+            (if (string/ends-with name fn/haskell-file-extension)
+                name (concat name fn/haskell-file-extension)))
+
+          (defun fn/haskellize-buffer-file (&optional buffer)
+            "Renames an BUFFER with a .hs extension if it doesn't have one."
+            (interactive)
+            (with-current-buffer (or buffer (current-buffer))
+              (save-buffer)
+              (lexical-let ((name (buffer-name))
+                  (file-name (buffer-file-name)))
+                (if (not (and file-name (file-exists-p file-name)))
+                    (error "Buffer '%s' has no backing file" name)
+                  (lexical-let ((haskellized-name (fn/add-haskell-file-extension name))
+                      (haskellized-file-name (fn/add-haskell-file-extension file-name)))
+                    (cond
+                     ((get-buffer haskellized-name)
+                      (error "A buffer named '%s' already exists" haskellized-name))
+                     ((string-equal name haskellized-name)
+                      (message "Buffer %s is already haskellized" haskellized-name))
+                     (t
+                      (rename-file file-name haskellized-file-name t)
+                      (rename-buffer haskellized-name)
+                      (set-visited-file-name haskellized-file-name)
+                      (set-buffer-modified-p nil)
+                      (message "Buffer %s is now haskellized" haskellized-name))))))))
+
+          (defun fn/org-haskell-buffer-p (&optional buffer)
+            "Check if BUFFER is an org-haskell buffer."
+            (with-current-buffer (or buffer (current-buffer))
+              (and (eq major-mode 'haskell-mode)
+                 (fboundp 'org-src-edit-buffer-p)
+                 (org-src-edit-buffer-p))))
+
+          (defun fn/haskellize-org-haskell-buffer (&rest _)
+            "Haskellize org haskell buffer."
+            (when (fn/org-haskell-buffer-p)
+              (fn/haskellize-buffer-file (current-buffer))))
+
+          (defun fn/save-org-haskell-buffer (&rest _)
+            "Save haskell buffer along with the edit buffer."
+            (when (fn/org-haskell-buffer-p)
+              (save-buffer)))
+
+          (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
+            "Cleanup the org-haskell buffer when exiting the edit buffer."
+            (lexical-let ((org-haskell-file-name (buffer-file-name)))
+              (prog1
+                  (apply orig-fun args)
+                (when (and (file-exists-p org-haskell-file-name)
+                         (fn/org-haskell-buffer-p))
+                  (delete-file org-haskell-file-name)))))
+
+          (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
+          (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
+          (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)))
+    #+END_SRC
+
 ** Clojure
    Scheme would be nice but there is a modern alternative.
 
@@ -4625,6 +4738,16 @@
 
 * Random Was Alone
   Anything that just does something useful
+
+** w3m
+   Web browsing is a must
+
+   #+BEGIN_SRC emacs-lisp :block-id 4ef8aaa9-5b2f-30e3-c126-323935e0f9f6
+     (use-package w3m
+       :ensure t
+       :config
+       nil)
+   #+END_SRC
 
 ** twittering
    Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
