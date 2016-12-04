@@ -1941,10 +1941,13 @@
          :after smex
          :bind (("M-x" . helm-smex))
          :config
+         (require 'helm-command)
+
          (defun fn/command-keybinding-to-string (cmd)
-           "Copied over `org-drill' to avoid dependencies."
-           (let ((key (where-is-internal cmd overriding-local-map t)))
-             (if key (key-description key))))
+           "This returns the first key binding of CMD. Copied over `org-drill' to avoid dependencies."
+           (let ((key (where-is-internal cmd nil t)))
+             (if (null key) nil
+               (key-description key))))
 
          (defun fn/helm-smex-transformer (candidates)
            "Add keybinding to transformer with CANDIDATES."
@@ -4354,11 +4357,11 @@
 
           (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
             "Cleanup the org-haskell buffer when exiting the edit buffer."
-            (lexical-let ((org-haskell-file-name (buffer-file-name)))
+            (lexical-let ((org-haskell-file-name (buffer-file-name))
+                (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
               (prog1
                   (apply orig-fun args)
-                (when (and (file-exists-p org-haskell-file-name)
-                         (fn/org-haskell-buffer-p))
+                (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
                   (delete-file org-haskell-file-name)))))
 
           (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
