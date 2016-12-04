@@ -1941,43 +1941,7 @@
          :after smex
          :bind (("M-x" . helm-smex))
          :config
-         (require 'helm-command)
-
-         (defun fn/command-keybinding-to-string (cmd)
-           "This returns the first key binding of CMD. Copied over `org-drill' to avoid dependencies."
-           (let ((key (where-is-internal cmd nil t)))
-             (if (null key) nil
-               (key-description key))))
-
-         (defun fn/helm-smex-transformer (candidates)
-           "Add keybinding to transformer with CANDIDATES."
-           (mapcar
-            (lambda (candidate)
-              (cons
-               (let ((binding (fn/command-keybinding-to-string (intern-soft candidate))))
-                 (if (null binding)
-                     candidate
-                   (format "%s (%s)"
-                           candidate
-                           (propertize
-                            binding
-                            'face 'helm-M-x-key))))
-               candidate))
-            candidates))
-
-         ;; Override helm-smex source to have a candidate-transformer which just adds key binding
-         (defclass helm-smex-source (helm-source-sync)
-           ((init :initform 'helm-smex--init)
-            (candidates :initform 'smex-ido-cache)
-
-            (candidate-transformer :initform #'fn/helm-smex-transformer)
-
-            (match :initform 'helm-fuzzy-match)
-            (action :initform 'helm-smex--execute-command)
-            (coerce :initform 'intern)
-            (persistent-action
-             :initform helm-smex--persistent-action)
-            (persistent-help :initform "Describe command"))))
+         (setq helm-smex-show-bindings t))
      #+END_SRC
 
 *** ivy
