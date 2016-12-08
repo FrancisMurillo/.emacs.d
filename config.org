@@ -228,9 +228,6 @@
      (global-set-key (kbd "C-c m") fn-custom-prefix-map)
    #+END_SRC
 
-   #+RESULTS:
-   | keymap |
-
 ** Startup
    Everything related to the startup state
 
