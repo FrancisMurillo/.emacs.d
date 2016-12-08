@@ -177,6 +177,10 @@
    Basis for configuration
 
    #+BEGIN_SRC emacs-lisp :block-id 8e36f9f4-4f43-646d-eb41-4ff7d425d03e
+     ;; Don't really care about custom file
+     (setq custom-file (expand-file-name ".custom-file.el" fn/cache-dir))
+
+
      (defgroup fn nil
        "My namespace for customizing my configuration")
 
@@ -223,6 +227,9 @@
      (global-set-key (kbd "C-c n") fn-standard-prefix-map)
      (global-set-key (kbd "C-c m") fn-custom-prefix-map)
    #+END_SRC
+
+   #+RESULTS:
+   | keymap |
 
 ** Startup
    Everything related to the startup state
@@ -1016,7 +1023,13 @@
 
        (defun fn/prodigy-switch-to-process-buffer (service)
          "Just an wrapper for said function with SERVICE."
-         (prodigy-switch-to-process-buffer service))
+         (if (prodigy-service-started-p service)
+             (prodigy-switch-to-process-buffer service)
+           (lexical-let* ((service-delay 3)
+               (service service))
+             (message "Starting %s service." (plist-get service :name))
+             (prodigy-start-service service)
+             (run-with-idle-timer service-delay nil 'fn/prodigy-switch-to-process-buffer service))))
 
        (defun fn/prodigy-prepared-switch-to-process-buffer (service)
          "Another wrapper to make specific functions for viewing SERVICE."
@@ -1033,7 +1046,7 @@
                     (fn/prodigy-switch-to-process-buffer (quote ,service))))
            function-symbol))
 
-        (defun fn/prodigy-define-service (&rest args)
+       (defun fn/prodigy-define-service (&rest args)
          "When creating a service, check for a :bind keyword to create an automatic keybinding for it."
          (let ((result (apply #'prodigy-define-service args)))
            (prog1
@@ -2104,6 +2117,8 @@
         :ensure t
         :demand t
         :config
+        (require 'deferred)
+
         (make-directory fn/local-elpa-mirror-dir t)
         (setq elpamr-default-output-directory fn/local-elpa-mirror-dir)
 
@@ -2139,12 +2154,41 @@
 
         (defun fn/update-local-elpa-mirror ()
           "Update local elpa mirror when it is older than `package-user-dir'."
-          (interactive)
           (when (file-newer-than-file-p package-user-dir fn/local-elpa-mirror-dir)
-            (message "Updating local elpa mirror... in case of emergency.")
-            (elpamr-create-mirror-for-installed)))
+            (fn/batch-update-local-elpa-mirror)))
 
-        (add-hook 'kill-emacs-hook #'fn/update-local-elpa-mirror))
+        (defun fn/batch-update-local-elpa-mirror ()
+          "Updat local elpa mirror using batch invokation."
+          (interactive)
+          (lexical-let ((emacs-command "emacs")
+              (local-elpa-mirror-glob (expand-file-name "*" fn/local-elpa-mirror-dir)))
+            (deferred:$
+              (deferred:next
+                (lambda () (message "Starting to update... Cleaning up old packages.")))
+              (deferred:process-shell-bufferc it ;; TODO: Windows?
+                "rm" "-rf"
+                local-elpa-mirror-glob)
+              (deferred:nextc it
+                (lambda (&rest args) (message "Updating elpa mirror.")))
+              (deferred:process-shell-bufferc it
+                emacs-command
+                "--batch"
+                "-l" user-init-file
+                "--eval='(elpamr-create-mirror-for-installed)'")
+              (deferred:nextc it
+                (lambda (&rest args) (message "Done updating local elpa mirror."))))))
+
+        (add-hook 'after-init-hook 'fn/update-local-elpa-mirror)
+
+
+        (use-feature paradox-elpa-mirror
+          (elpa-mirror paradox)
+          (defun fn/paradox-update-local-elpa-mirror (&rest args)
+            "Update elpa mirror when paradox is finished."
+            (debug)
+            (fn/update-local-elpa-mirror))
+
+          (add-hook 'paradox-after-execute-functions 'fn/paradox-update-local-elpa-mirror)))
     #+END_SRC
 
 * Artist
@@ -2202,9 +2246,9 @@
 
    #+BEGIN_SRC emacs-lisp :block-id ce022e28-6f80-1566-89e8-ea2d1ac41d47
      (load-theme 'tronesque t)
-
-     ;; Default mode line
      (tronesque-mode-line)
+     ;; (load-theme 'xresources t)
+
 
 
    #+END_SRC
@@ -3258,7 +3302,7 @@
         (add-hook 'prog-mode-hook 'flycheck-mode)
         :config
         (setq flycheck-highlighting-mode 'lines
-           flycheck-check-syntax-automatically '(save mode-enabled)
+           flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
            flycheck-checker-error-threshold nil))
 
       (use-package flycheck-pos-tip
@@ -3441,6 +3485,67 @@
         :after helm
         :config
         (setq wgrep-auto-save-buffer t))
+    #+END_SRC
+
+*** wordgen
+    Random word generator for random test data.
+
+    #+BEGIN_SRC emacs-lisp :block-id f0300ef0-69cb-0157-dab6-59253b365cd4
+      (use-package wordgen
+        :ensure t
+        :defer t
+        :config
+        nil)
+    #+END_SRC
+
+*** rest-client
+    I need REST.
+
+    #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
+      (use-package restclient
+        :ensure t
+        :mode ("\\.http\\'" . restclient-mode)
+        :defer t
+        :config
+        ;; Setting it up as editing mode
+        (add-hook 'restclient-mode-hook 'whitespace-mode)
+
+        (defun fn/restclient-indent-function ()
+          "Thanks to `https://github.com/pashky/restclient.el/issues/85'"
+          (require 'js)
+          (setq-local indent-line-function 'js-indent-line))
+
+        (add-hook 'restclient-mode-hook 'fn/restclient-indent-function)
+
+
+        (use-feature restclient-mode--mode-icon
+          (restclient all-the-icons)
+          (fn/add-major-mode-icon
+           'restclient-mode
+           (list 'all-the-icons-faicon "arrow-circle-o-up" :v-adjust -0.1)))
+
+        (use-feature restclient-smartpar
+          (restclient smartparens paredit)
+          (add-hook 'restclient-mode-hook 'paredit-mode)
+          (add-hook 'restclient-mode-hook 'smartparens-mode))
+
+
+        (use-feature restclient-company
+          (restclient company)
+          (use-package company-restclient
+            :ensure t
+            :demand t
+            :config
+            (add-hook 'restclient-mode-hook 'company-mode)
+            (add-to-list 'company-backends 'company-restclient)))
+
+        (use-feature literate-restclient
+          (restclient org)
+          (use-package ob-restclient
+            :ensure t
+            :demand t
+            :config
+            (add-to-list 'org-babel-load-languages '(restclient . t)))))
     #+END_SRC
 
 ** Helper
@@ -3946,25 +4051,24 @@
 *** Mode
     Already a built in mode
 
+    #+BEGIN_SRC emacs-lisp :block-id 8bb9a156-88c3-3dc2-a0c1-f9a80813a822
+      (use-package meghanada
+        :ensure t
+        :after java
+        :init
+        (add-hook 'java-mode-hook 'meghanada-mode)
+        :config
+        (setq meghanada-server-install-dir (expand-file-name "meghanada" fn/cache-dir)))
+    #+END_SRC
+
 *** IDE
     How I hate that word specially when talking about Java
 
     #+BEGIN_SRC emacs-lisp :block-id eae7c8e8-8138-a1f4-5ebf-15bd6953e699
-
-
-      (use-package malabar-mode
-        :ensure t
-        :disabled t
-        :after java)
-
       (use-package eclim
         :ensure t
         :after java
-        :init
-        (add-hook 'java-mode-hook 'eclim-mode)
         :config
-        (require 'eclimd)
-
         (setq eclimd-eclipse-dirs (getenv "ECLIPSE_HOME")
            eclimd-executable (expand-file-name "eclimd" eclimd-eclipse-dirs)
 
