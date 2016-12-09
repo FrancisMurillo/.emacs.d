@@ -741,9 +741,11 @@
        (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
 
 
-       (fn/add-major-mode-icon
-        'log4e-mode
-        (list 'all-the-icons-octicon "clippy" :v-adjust 0.0)))
+       (use-feature log4e-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'log4e-mode
+          (list 'all-the-icons-octicon "clippy" :v-adjust 0.0))))
    #+END_SRC
 
 ** auto-compile
@@ -814,35 +816,38 @@
    it properly.
 
    #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
-     (use-package all-the-icons
-       :ensure t
-       :demand t
-       :config
-       (defun fn/add-major-mode-icon (main-mode icon-config)
-         "Add icon mapping to major mode given MAIN-MODE, ICON-CONFIG."
-         (add-to-list
-          'all-the-icons-mode-icon-alist
-          (append (list main-mode) icon-config)))
+     (fset 'fn/add-major-mode-icon 'ignore)
 
-       (fn/add-major-mode-icon
-        'makefile-mode
-        (list 'all-the-icons-faicon "wrench" :v-adjust -0.1))
+     (unless noninteractive
+       (use-package all-the-icons
+         :ensure t
+         :demand t
+         :config
+         (defun fn/add-major-mode-icon (main-mode icon-config)
+           "Add icon mapping to major mode given MAIN-MODE, ICON-CONFIG."
+           (add-to-list
+            'all-the-icons-mode-icon-alist
+            (append (list main-mode) icon-config)))
 
-       (fn/add-major-mode-icon
-        'special-mode
-        (list 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
+         (fn/add-major-mode-icon
+          'makefile-mode
+          (list 'all-the-icons-faicon "wrench" :v-adjust -0.1))
 
-       (fn/add-major-mode-icon
-        'fundamental-mode
-        (list 'all-the-icons-faicon "pencil" :v-adjust -0.1))
+         (fn/add-major-mode-icon
+          'special-mode
+          (list 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
 
-       (fn/add-major-mode-icon
-        'compilation-mode
-        (list 'all-the-icons-faicon "cog" :v-adjust -0.1))
+         (fn/add-major-mode-icon
+          'fundamental-mode
+          (list 'all-the-icons-faicon "pencil" :v-adjust -0.1))
 
-       (fn/add-major-mode-icon
-        'process-menu-mode
-        (list 'all-the-icons-faicon "list" :v-adjust -0.1)))
+         (fn/add-major-mode-icon
+          'compilation-mode
+          (list 'all-the-icons-faicon "cog" :v-adjust -0.1))
+
+         (fn/add-major-mode-icon
+          'process-menu-mode
+          (list 'all-the-icons-faicon "list" :v-adjust -0.1))))
    #+END_SRC
 
 * Terminator
@@ -1249,86 +1254,88 @@
     A replacement for =autocomplete=.
 
     #+BEGIN_SRC emacs-lisp :block-id 14b030d6-a17c-98ae-444f-7529560d8b4d
-      (use-package company
-        :ensure t
-        :diminish company-mode
-        :defines company-backends
-        :demand t
-        :init
-        (add-hook 'prog-mode-hook 'company-mode)
-        :config
-        (setq company-idle-delay (/ 60.0)
-           company-minimum-prefix-length 3
+      (unless noninteractive
+        (use-package company
+          :ensure t
+          :diminish company-mode
+          :defines company-backends
+          :demand t
+          :init
+          (add-hook 'prog-mode-hook 'company-mode)
+          :config
+          (setq company-idle-delay (/ 60.0)
+             company-minimum-prefix-length 3
 
-           company-begin-commands (list 'self-insert-command))
-
-
-        (setq company-show-numbers t
-           company-tooltip-limit 20
-           company-tooltip-align-annotations t)
+             company-begin-commands (list 'self-insert-command))
 
 
-        (setq company-dabbrev-time-limit 0.001
-           company-dabbrev-code-time-limit 0.001)
+          (setq company-show-numbers t
+             company-tooltip-limit 20
+             company-tooltip-align-annotations t)
 
 
-        (setq company-backends (list))
+          (setq company-dabbrev-time-limit 0.001
+             company-dabbrev-code-time-limit 0.001)
 
-        (add-to-list 'company-backends 'company-capf)
-        (add-to-list 'company-backends 'company-dabbrev)
-        (add-to-list 'company-backends 'company-elisp)
 
-        (defun fn/combine-backends (backend new-backend)
-          "Combine BACKEND with NEW-BACKEND."
-          (if (and (listp backend) (member new-backend backend))
-              backend
-            (let* ((list-backend (if (consp backend)
-                                     backend
-                                   (list backend)))
-                   (with-backend (if (member ':with list-backend)
-                                     list-backend
-                                   (append list-backend '(:with)))))
-              (append with-backend (list new-backend)))))
+          (setq company-backends (list))
 
-        (defun fn/append-to-backends (new-backend)
-          "Append NEW-BACKEND to company."
-          (setq company-backends
-                (mapcar
-                 (lambda (backend)
-                   (fn/combine-backends backend new-backend))
-                 company-backends)))
+          (add-to-list 'company-backends 'company-capf)
+          (add-to-list 'company-backends 'company-dabbrev)
+          (add-to-list 'company-backends 'company-elisp)
 
-        (setq fn/company-prog-backends (list 'company-dabbrev-code))
+          (defun fn/combine-backends (backend new-backend)
+            "Combine BACKEND with NEW-BACKEND."
+            (if (and (listp backend) (member new-backend backend))
+                backend
+              (let* ((list-backend (if (consp backend)
+                                    backend
+                                  (list backend)))
+                  (with-backend (if (member ':with list-backend)
+                                    list-backend
+                                  (append list-backend '(:with)))))
+                (append with-backend (list new-backend)))))
 
-        (defun fn/backend-with-prog ()
-          (fn/append-to-backends 'company-keywords)))
+          (defun fn/append-to-backends (new-backend)
+            "Append NEW-BACKEND to company."
+            (setq company-backends
+               (mapcar
+                (lambda (backend)
+                  (fn/combine-backends backend new-backend))
+                company-backends)))
+
+          (setq fn/company-prog-backends (list 'company-dabbrev-code))
+
+          (defun fn/backend-with-prog ()
+            (fn/append-to-backends 'company-keywords))))
     #+END_SRC
 
 *** yasnippet
     Snippet system along with autocomplete is awesome
 
     #+BEGIN_SRC emacs-lisp :block-id 26aea11a-6b42-e3c0-dc5f-a8ba5ceb6f42
-      (use-package yasnippet
-        :ensure t
-        :after company
-        :defer t
-        :diminish yas-minor-mode
-        :bind (:map fn-standard-prefix-map
-                    ("y" . yas-new-snippet))
-        :init
-        (setq yas-verbosity 3
-              yas-snippet-dirs (list (expand-file-name "snippets" fn/extra-dir)))
+      (unless noninteractive
+        (use-package yasnippet
+          :ensure t
+          :after company
+          :defer t
+          :diminish yas-minor-mode
+          :bind (:map fn-standard-prefix-map
+                      ("y" . yas-new-snippet))
+          :init
+          (setq yas-verbosity 3
+             yas-snippet-dirs (list (expand-file-name "snippets" fn/extra-dir)))
 
-        (add-hook 'prog-mode-hook 'yas/minor-mode-on)
-        :config
+          (add-hook 'prog-mode-hook 'yas/minor-mode-on)
+          :config
 
-        (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
+          (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
 
-        (yas-reload-all)
+          (yas-reload-all)
 
-        (defun fn/add-company-yasnippet ()
-          "Add yasnippet to company backends"
-          (fn/append-to-backends 'company-yasnippet)))
+          (defun fn/add-company-yasnippet ()
+            "Add yasnippet to company backends"
+            (fn/append-to-backends 'company-yasnippet))))
     #+END_SRC
 
 * Ergonomic
@@ -1340,28 +1347,30 @@
     Accessing the files recently
 
     #+BEGIN_SRC emacs-lisp :block-id 3f6c8b53-5f56-d1bb-8852-71807ad0c314
-      (use-package recentf
-        :bind (("C-x C-r" . recentf-open-files))
-        :config
-        (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
+      (unless noninteractive
+        (use-package recentf
+          :bind (("C-x C-r" . recentf-open-files))
+          :config
+          (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
 
-              recentf-max-menu-items 1000
-              recentf-max-saved-items 1000
+             recentf-max-menu-items 1000
+             recentf-max-saved-items 1000
 
-              recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
+             recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
 
-        (recentf-mode t))
+          (recentf-mode t)))
     #+END_SRC
 
 *** bookmark+
     Enhancement for normal bookmarking
 
     #+BEGIN_SRC emacs-lisp :block-id 3165bffb-1127-0d5d-0a4f-7ff0b07d7612
-      (use-package bookmark+
-        :ensure t
-        :demand t
-        :config
-        nil)
+      (unless noninteractive
+        (use-package bookmark+
+          :ensure t
+          :demand t
+          :config
+          nil))
     #+END_SRC
 
 ** Windows
@@ -1515,40 +1524,41 @@
     A must to navigate through windows with numbers.
 
     #+BEGIN_SRC emacs-lisp :block-id 8f1e9fc0-580e-1fdb-c8a1-f4c042ce0d68
-      (use-package window-numbering
-        :ensure t
-        :demand t
-        :config
-        (window-numbering-mode t)
+      (unless noninteractive
+        (use-package window-numbering
+          :ensure t
+          :demand t
+          :config
+          (window-numbering-mode t)
 
 
-        (require 'dash)
+          (require 'dash)
 
-        (defun fn/get-window-by-number (window-number)
-          "Get window by WINDOW-NUMBER."
-          (-find
-           (lambda (window)
-             (= (window-numbering-get-number window) window-number))
-           (window-list)))
+          (defun fn/get-window-by-number (window-number)
+            "Get window by WINDOW-NUMBER."
+            (-find
+             (lambda (window)
+               (= (window-numbering-get-number window) window-number))
+             (window-list)))
 
-        (defun fn/swap-windows (this-window that-window)
-          "Swap THIS-WINDOW and THAT-WINDOW"
-          (let ((this-buffer (window-buffer this-window))
+          (defun fn/swap-windows (this-window that-window)
+            "Swap THIS-WINDOW and THAT-WINDOW"
+            (let ((this-buffer (window-buffer this-window))
                 (that-buffer (window-buffer that-window)))
-            (unless (eq this-buffer that-buffer)
-              (set-window-buffer this-window that-buffer)
-              (set-window-buffer that-window this-buffer))))
+              (unless (eq this-buffer that-buffer)
+                (set-window-buffer this-window that-buffer)
+                (set-window-buffer that-window this-buffer))))
 
-        (defun fn/swap-with-numbered-window (window-number)
-          "Swap with current window with numbered window."
-          (interactive "NWhat window number? ")
-          (let ((this-window (selected-window))
+          (defun fn/swap-with-numbered-window (window-number)
+            "Swap with current window with numbered window."
+            (interactive "NWhat window number? ")
+            (let ((this-window (selected-window))
                 (that-window (fn/get-window-by-number window-number)))
-            (if (null that-window)
-                (message "Window %s does not exist"
-                         window-number)
-              (fn/swap-windows this-window that-window)
-              (select-window-by-number window-number)))))
+              (if (null that-window)
+                  (message "Window %s does not exist"
+                           window-number)
+                (fn/swap-windows this-window that-window)
+                (select-window-by-number window-number))))))
     #+END_SRC
 
 *** window-layout
@@ -1585,41 +1595,42 @@
     Makes windows large enough to see.
 
     #+BEGIN_SRC emacs-lisp :block-id dc0fe50a-04d2-ef04-47f4-fcbf8059e81a
-      (use-package golden-ratio
-        :ensure t
-        :after window-numbering
-        :diminish golden-ratio-mode
-        :bind (("C-c q" . golden-ratio)
-               :map fn-standard-prefix-map
-               ("q" . golden-ratio-mode))
-        :demand T
-        :config
-        (golden-ratio-mode t)
+      (unless noninteractive
+        (use-package golden-ratio
+          :ensure t
+          :after window-numbering
+          :diminish golden-ratio-mode
+          :bind (("C-c q" . golden-ratio)
+                 :map fn-standard-prefix-map
+                 ("q" . golden-ratio-mode))
+          :demand T
+          :config
+          (golden-ratio-mode t)
 
-        (setq split-width-threshold nil
-              golden-ratio-adjust-factor 1.0)
-
-
-        ;; Frame entry exit fix
-        (add-hook 'focus-in-hook #'golden-ratio)
-        (add-hook 'focus-out-hook #'golden-ratio)
+          (setq split-width-threshold nil
+             golden-ratio-adjust-factor 1.0)
 
 
-        (use-feature golden-workgroups
-          (workgroups2)
-          ;; When switching workgroups, make sure the screen is rationed correctly
-          (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
+          ;; Frame entry exit fix
+          (add-hook 'focus-in-hook #'golden-ratio)
+          (add-hook 'focus-out-hook #'golden-ratio)
 
 
-        (use-feature golden-window-numbering
-          (window-numbering)
-          (defun fn/golden-ratio-after-select-window-by-number (&rest args)
-            (golden-ratio))
+          (use-feature golden-workgroups
+            (workgroups2)
+            ;; When switching workgroups, make sure the screen is rationed correctly
+            (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
 
-          (advice-add
-           #'select-window-by-number
-           :after
-           #'fn/golden-ratio-after-select-window-by-number)))
+
+          (use-feature golden-window-numbering
+            (window-numbering)
+            (defun fn/golden-ratio-after-select-window-by-number (&rest args)
+              (golden-ratio))
+
+            (advice-add
+             #'select-window-by-number
+             :after
+             #'fn/golden-ratio-after-select-window-by-number))))
     #+END_SRC
 
 *** uniquify
@@ -1639,158 +1650,160 @@
     Must have a project finder when using a project.
 
     #+BEGIN_SRC emacs-lisp :block-id 8ee23fbf-548c-e172-18e6-0df51729e123
-      (use-package projectile
-        :ensure t
-        :diminish projectile-mode
-        :demand t
-        :config
-        (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
-           projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
+      (unless noninteractive
+        (use-package projectile
+          :ensure t
+          :diminish projectile-mode
+          :demand t
+          :config
+          (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
+             projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
 
-        (defconst fn/project-file ".project.el"
-          "Project configuration file")
+          (defconst fn/project-file ".project.el"
+            "Project configuration file")
 
-        (defconst fn/project-local-file ".project-locals.el"
-          "Project local setting file")
+          (defconst fn/project-local-file ".project-locals.el"
+            "Project local setting file")
 
-        (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
-          "Project init files")
+          (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
+            "Project init files")
 
-        (defun fn/create-projectile-file ()
-          (interactive)
-          (lexical-let* ((target-dir  (read-directory-name "Where do you want to the .projectile placed?"))
-              (projectile-file-name ".projectile")
-              (projectile-file (expand-file-name projectile-file-name target-dir)))
-            (cond
-             ((file-exists-p projectile-file)
-              (message "Projectile file alread exists"))
-             (t
-              (message "Creating %s" projectile-file)
-              (find-file projectile-file)))))
+          (defun fn/create-projectile-file ()
+            (interactive)
+            (lexical-let* ((target-dir  (read-directory-name "Where do you want to the .projectile placed?"))
+                (projectile-file-name ".projectile")
+                (projectile-file (expand-file-name projectile-file-name target-dir)))
+              (cond
+               ((file-exists-p projectile-file)
+                (message "Projectile file alread exists"))
+               (t
+                (message "Creating %s" projectile-file)
+                (find-file projectile-file)))))
 
-        (defun fn/load-project-file ()
-          ;; When the project is switched, run a custom initialization file.
-          ;; Be careful though with side effects, make the init file fast and pure/side-effect free
-          (interactive)
-          (when (projectile-project-p)
-            (let* ((current-project-root (projectile-project-root))
-                (project-init-file (expand-file-name fn/project-file current-project-root)))
-              (when (file-exists-p project-init-file)
-                (message "Loading project init file for %s" (projectile-project-name))
-                (condition-case ex
-                    (load project-init-file t)
-                  ('error (message "There was an error loading %s: %s"
-                                   project-init-file
-                                   (error-message-string ex))))))))
+          (defun fn/load-project-file ()
+            ;; When the project is switched, run a custom initialization file.
+            ;; Be careful though with side effects, make the init file fast and pure/side-effect free
+            (interactive)
+            (when (projectile-project-p)
+              (let* ((current-project-root (projectile-project-root))
+                  (project-init-file (expand-file-name fn/project-file current-project-root)))
+                (when (file-exists-p project-init-file)
+                  (message "Loading project init file for %s" (projectile-project-name))
+                  (condition-case ex
+                      (load project-init-file t)
+                    ('error (message "There was an error loading %s: %s"
+                                     project-init-file
+                                     (error-message-string ex))))))))
 
-        (defun fn/load-project-local-file ()
-          (interactive)
-          (when (projectile-project-p)
-            (let* ((current-project-root (projectile-project-root))
-                (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
-              (when (and  (file-exists-p project-local-init-file)
-                        (not (member (buffer-file-name) fn/project-init-files)))
-                (message "Loading project local file for %s on %s" (projectile-project-name) (buffer-name))
-                (condition-case ex
-                    (load project-local-init-file t)
-                  ('error (message "There was an error loading %s: %s"
-                                   project-local-init-file
-                                   (error-message-string ex))))))))
-
-
-        ;; This must go before load-project-hook
-        (add-hook 'find-file-hook #'fn/load-project-local-file t)
-        (add-hook 'find-dired-hook #'fn/load-project-local-file t)
+          (defun fn/load-project-local-file ()
+            (interactive)
+            (when (projectile-project-p)
+              (let* ((current-project-root (projectile-project-root))
+                  (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+                (when (and  (file-exists-p project-local-init-file)
+                          (not (member (buffer-file-name) fn/project-init-files)))
+                  (message "Loading project local file for %s on %s" (projectile-project-name) (buffer-name))
+                  (condition-case ex
+                      (load project-local-init-file t)
+                    ('error (message "There was an error loading %s: %s"
+                                     project-local-init-file
+                                     (error-message-string ex))))))))
 
 
-        (lexical-let* ((project-memoized
-             (lambda ()
-               (lexical-let ((initialized-projects (list ".")))
-                 #'(lambda ()
-                     (when (projectile-project-p)
-                       (lexical-let ((current-project (projectile-project-root)))
-                         (if (not (member current-project initialized-projects))
-                             (progn
-                               (add-to-list 'initialized-projects current-project)
-                               (fn/load-project-file))
-                           current-project)))))))
-            (load-project-hook (funcall project-memoized)))
-
-          (add-hook 'find-file-hook load-project-hook)
-          (add-hook 'find-dired-hook load-project-hook))
+          ;; This must go before load-project-hook
+          (add-hook 'find-file-hook #'fn/load-project-local-file t)
+          (add-hook 'find-dired-hook #'fn/load-project-local-file t)
 
 
-        (defun fn/find-project-root ()
-          "Visit project root."
-          (interactive)
-          (dired-x-find-file (projectile-project-root)))
+          (lexical-let* ((project-memoized
+               (lambda ()
+                 (lexical-let ((initialized-projects (list ".")))
+                   #'(lambda ()
+                       (when (projectile-project-p)
+                         (lexical-let ((current-project (projectile-project-root)))
+                           (if (not (member current-project initialized-projects))
+                               (progn
+                                 (add-to-list 'initialized-projects current-project)
+                                 (fn/load-project-file))
+                             current-project)))))))
+              (load-project-hook (funcall project-memoized)))
 
-        (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
+            (add-hook 'find-file-hook load-project-hook)
+            (add-hook 'find-dired-hook load-project-hook))
 
-        (setq projectile-switch-project-action #'fn/find-project-root)
+
+          (defun fn/find-project-root ()
+            "Visit project root."
+            (interactive)
+            (dired-x-find-file (projectile-project-root)))
+
+          (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
+
+          (setq projectile-switch-project-action #'fn/find-project-root)
 
 
-        (projectile-mode)
-        (setq projectile-indexing-method 'native
-           projectile-enable-caching t
-           projectile-enable-idle-timer nil)
+          (projectile-mode)
+          (setq projectile-indexing-method 'native
+                projectile-enable-caching t
+                projectile-enable-idle-timer nil)
 
-        (setq projectile-sort-order 'modification-time)
+          (setq projectile-sort-order 'modification-time)
 
-        (add-to-list 'projectile-project-root-files "config.xml"))
+          (add-to-list 'projectile-project-root-files "config.xml")))
     #+END_SRC
 
 *** helm
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp :block-id c632c3e5-f6f1-819f-7739-ae22cdda46a2
-      (use-package helm
-        :ensure t
-        :diminish helm-mode
-        :bind (("M-x" . helm-M-x)
-               ("C-c f" . helm-recentf)
-               ("C-h a" . helm-apropos)
-               ("C-h r" . helm-info-emacs)
-               ("C-x b" . helm-mini)
-               ("C-x C-f" . helm-find-files)
-               ("M-s o" . helm-occur)
-               ("M-s i" . helm-imenu)
-               ("C-c C-/" . helm-dabbrev))
-        :demand t
-        :config
-        (require 'helm-config)
+      (unless noninteractive
+        (use-package helm
+          :ensure t
+          :diminish helm-mode
+          :bind (("M-x" . helm-M-x)
+                 ("C-c f" . helm-recentf)
+                 ("C-h a" . helm-apropos)
+                 ("C-h r" . helm-info-emacs)
+                 ("C-x b" . helm-mini)
+                 ("C-x C-f" . helm-find-files)
+                 ("M-s o" . helm-occur)
+                 ("M-s i" . helm-imenu)
+                 ("C-c C-/" . helm-dabbrev))
+          :demand t
+          :config
+          (require 'helm-config)
 
-        (helm-mode t)
+          (helm-mode t)
 
-        ;; core & utils
-        (setq helm-yank-symbol-first t
+          ;; core & utils
+          (setq helm-yank-symbol-first t
 
-              helm-mode-fuzzy-match nil
+             helm-mode-fuzzy-match nil
 
-              helm-su-or-sudo "sudo"
+             helm-su-or-sudo "sudo"
 
-              helm-input-idle-delay (/ 1 60.0) ;; 60fps
-              helm-exit-idle-delay (/ 1 60.0)  ;; ditto
+             helm-input-idle-delay (/ 1 60.0) ;; 60fps
+             helm-exit-idle-delay (/ 1 60.0)  ;; ditto
 
-              helm-echo-input-in-header-line nil ;; If the theme does not block it
+             helm-echo-input-in-header-line nil ;; If the theme does not block it
 
-              helm-split-window-default-side 'same
+             helm-split-window-default-side 'same
 
-              helm-debug-root-directory fn/cache-dir)
-
-
-        ;; files & command
-        (setq helm-ff-file-name-history-use-recentf t
-              helm-ff-auto-update-initial-value t
-
-              helm-M-x-always-save-history t)
+             helm-debug-root-directory fn/cache-dir)
 
 
-        ;; adaptive
-        (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
-              helm-adaptive-history-length 100)
+          ;; files & command
+          (setq helm-ff-file-name-history-use-recentf t
+             helm-ff-auto-update-initial-value t
 
-        (helm-adaptive-mode t))
+             helm-M-x-always-save-history t)
+
+
+          ;; adaptive
+          (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
+             helm-adaptive-history-length 100)
+
+          (helm-adaptive-mode t)))
     #+END_SRC
 
 **** helm-projectile
@@ -1800,151 +1813,152 @@
        (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-module-dir)
          "My custom helm projectile package")
 
-       (use-feature helm-projectile
-         (projectile helm)
-         (use-package helm-projectile
-           :ensure t
-           :bind (("C-c p h" . helm-projectile)
-                  ("C-c p p" . helm-projectile-switch-project))
-           :demand t
-           :config
-           (require 'dash)
-           (require 's)
-           (require 'f)
+       (unless noninteractive
+         (use-feature helm-projectile
+           (projectile helm)
+           (use-package helm-projectile
+             :ensure t
+             :bind (("C-c p h" . helm-projectile)
+                    ("C-c p p" . helm-projectile-switch-project))
+             :demand t
+             :config
+             (require 'dash)
+             (require 's)
+             (require 'f)
+
+             (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
+               "Just a constant name for the completion buffer")
 
 
-           (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
-             "Just a constant name for the completion buffer")
+             (defface fmc/completion-label  '((t (:weight bold :height 1.1)))
+               "Label face")
+
+             (defface fmc/completion-delimiter '((t (:weight light :height 0.9)))
+               "Delimiter face")
+
+             (defface fmc/completion-description '((t (:weight extra-light :height 0.9)))
+               "Description face")
 
 
-           (defface fmc/completion-label  '((t (:weight bold :height 1.1)))
-             "Label face")
+             (defconst fmc/reverse-notation-separator ".."
+               "My reversed separator")
 
-           (defface fmc/completion-delimiter '((t (:weight light :height 0.9)))
-             "Delimiter face")
+             (defconst fmc/completion-separator ">>"
+               "My completion separator")
 
-           (defface fmc/completion-description '((t (:weight extra-light :height 0.9)))
-             "Description face")
+             (defun fmc/uniquify-project-paths (project-paths)
+               "Customize how projectile files and more are displayed"
+               (lexical-let*
+                   ((fn-notation
+                     (lambda (path)
+                       (lexical-let ((fn-pieces (f-split path)))
+                         (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
+                    (relative-parent-path
+                     (lambda (path relative-path)
+                       (lexical-let
+                           ((split-path (f-split path))
+                            (split-relative-path (f-split relative-path)))
+                         (string-join
+                          (-drop-last (length split-relative-path) split-path)
+                          (f-path-separator)))))
 
+                    (as-pair
+                     (lambda (ish)
+                       (if (listp ish)
+                           ish (cons ish ish))))
+                    (map-car
+                     (lambda (f pair)
+                       (cons (funcall f (car pair))
+                          (cdr pair))))
+                    (pair-as-label
+                     (lambda (pairs)
+                       (lexical-let*
+                           ((display-formatter
+                             (lambda (name description)
+                               (format "%-s %s %-s"
+                                       (propertize name 'font-lock-face 'fmc/completion-label)
+                                       (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter)
+                                       (propertize description 'font-lock-face 'fmc/completion-description)))))
+                         (lambda (pair)
+                           (lexical-let*
+                               ((unique-path (car pair))
+                                (full-path (cdr pair))
+                                (parent-path
+                                 (funcall relative-parent-path
+                                          full-path
+                                          unique-path))
 
-           (defconst fmc/reverse-notation-separator ".."
-             "My reversed separator")
+                                (display-name
+                                 (funcall fn-notation unique-path))
+                                (display-description
+                                 (funcall fn-notation parent-path))
 
-           (defconst fmc/completion-separator ">>"
-             "My completion separator")
+                                (display-label
+                                 (funcall display-formatter
+                                          display-name
+                                          display-description)))
+                             (cons display-label (cdr pair)))))))
+                    (uniquify-paths
+                     (lambda (paths)
+                       ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
+                       (lexical-let*
+                           ((is-dir
+                             (lambda (path)
+                               (string-equal (f-path-separator)
+                                             (s-right 1 path))))
 
-           (defun fmc/uniquify-project-paths (project-paths)
-             "Customize how projectile files and more are displayed"
-             (lexical-let*
-                 ((fn-notation
-                   (lambda (path)
-                     (lexical-let ((fn-pieces (f-split path)))
-                       (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
-                  (relative-parent-path
-                   (lambda (path relative-path)
-                     (lexical-let
-                         ((split-path (f-split path))
-                          (split-relative-path (f-split relative-path)))
-                       (string-join
-                        (-drop-last (length split-relative-path) split-path)
-                        (f-path-separator)))))
+                            (swap-pair (lambda (pair)
+                                         (cons (cdr pair) (car pair))))
+                            (map-pair
+                             (lambda (f pair)
+                               (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
 
-                  (as-pair
-                   (lambda (ish)
-                     (if (listp ish)
-                         ish (cons ish ish))))
-                  (map-car
-                   (lambda (f pair)
-                     (cons (funcall f (car pair))
-                           (cdr pair))))
-                  (pair-as-label
-                   (lambda (pairs)
-                     (lexical-let*
-                         ((display-formatter
-                           (lambda (name description)
-                             (format "%-s %s %-s"
-                                     (propertize name 'font-lock-face 'fmc/completion-label)
-                                     (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter)
-                                     (propertize description 'font-lock-face 'fmc/completion-description)))))
-                       (lambda (pair)
-                         (lexical-let*
-                             ((unique-path (car pair))
-                              (full-path (cdr pair))
-                              (parent-path
-                               (funcall relative-parent-path
-                                        full-path
-                                        unique-path))
+                            (remove-last-separator
+                             (lambda (text)
+                               (s-left (1- (length text)) text)))
+                            (add-separator
+                             (lambda (text)
+                               (concat text (f-path-separator)))))
+                         (mapcar (-compose
+                                  swap-pair)
+                                 (if (-any is-dir paths)
+                                     ;; Remove separator, uniquify and add separator back
+                                     ;; Weird performance shiznit
+                                     (funcall
+                                      (-compose
+                                       (-partial #'mapcar (-partial map-pair add-separator))
+                                       #'f-uniquify-alist
+                                       (-partial #'mapcar remove-last-separator))
+                                      paths)
+                                   (f-uniquify-alist paths))))))
+                    (refined-paths  (funcall uniquify-paths project-paths)))
+                 (mapcar (-compose
+                          (funcall pair-as-label refined-paths)
+                          as-pair)
+                         refined-paths)))
 
-                              (display-name
-                               (funcall fn-notation unique-path))
-                              (display-description
-                               (funcall fn-notation parent-path))
+             (defun fmc/custom-helm-completion (prompt choices)
+               "Just a custom helm completion for projection"
+               (prog1
+                   (helm-comp-read prompt (fmc/uniquify-project-paths choices)
+                                   :buffer fmc/completion-buffer-name
+                                   :must-match t)
+                 (kill-buffer fmc/completion-buffer-name)))
 
-                              (display-label
-                               (funcall display-formatter
-                                        display-name
-                                        display-description)))
-                           (cons display-label (cdr pair)))))))
-                  (uniquify-paths
-                   (lambda (paths)
-                     ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
-                     (lexical-let*
-                         ((is-dir
-                           (lambda (path)
-                             (string-equal (f-path-separator)
-                                           (s-right 1 path))))
-
-                          (swap-pair (lambda (pair)
-                                       (cons (cdr pair) (car pair))))
-                          (map-pair
-                           (lambda (f pair)
-                             (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
-
-                          (remove-last-separator
-                           (lambda (text)
-                             (s-left (1- (length text)) text)))
-                          (add-separator
-                           (lambda (text)
-                             (concat text (f-path-separator)))))
-                       (mapcar (-compose
-                                swap-pair)
-                               (if (-any is-dir paths)
-                                   ;; Remove separator, uniquify and add separator back
-                                   ;; Weird performance shiznit
-                                   (funcall
-                                    (-compose
-                                     (-partial #'mapcar (-partial map-pair add-separator))
-                                     #'f-uniquify-alist
-                                     (-partial #'mapcar remove-last-separator))
-                                    paths)
-                                 (f-uniquify-alist paths))))))
-                  (refined-paths  (funcall uniquify-paths project-paths)))
-               (mapcar (-compose
-                        (funcall pair-as-label refined-paths)
-                        as-pair)
-                       refined-paths)))
-
-           (defun fmc/custom-helm-completion (prompt choices)
-             "Just a custom helm completion for projection"
-             (prog1
-                 (helm-comp-read prompt (fmc/uniquify-project-paths choices)
-                                 :buffer fmc/completion-buffer-name
-                                 :must-match t)
-               (kill-buffer fmc/completion-buffer-name)))
-
-           (setq projectile-completion-system #'fmc/custom-helm-completion)))
+             (setq projectile-completion-system #'fmc/custom-helm-completion))))
      #+END_SRC
 
 **** helm-smex
      =smex= is faster than =helm-M-x=
 
      #+BEGIN_SRC emacs-lisp :block-id 7f1cc404-a888-5187-4df6-dcba60ae2373
-       (use-package smex
-         :ensure t
-         :demand t
-         :config
-         (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
-            smex-history-length (or helm-adaptive-history-length 100)))
+       (unless noninteractive
+         (use-package smex
+           :ensure t
+           :demand t
+           :config
+           (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
+              smex-history-length (or helm-adaptive-history-length 100))))
 
        (use-package helm-smex
          :ensure t
@@ -1974,12 +1988,13 @@
     A command log when needed
 
     #+BEGIN_SRC emacs-lisp :block-id f36a2bde-d269-2571-e02f-c3998aaf439b
-      (use-package command-log-mode
-        :ensure t
-        :diminish command-log-mode
-        :demand t
-        :config
-        (global-command-log-mode t))
+      (unless noninteractive
+        (use-package command-log-mode
+          :ensure t
+          :diminish command-log-mode
+          :demand t
+          :config
+          (global-command-log-mode t)))
     #+END_SRC
 
 *** keyfreq
@@ -2002,12 +2017,13 @@
     A mnemionic for key bindings
 
     #+BEGIN_SRC emacs-lisp :block-id f7b62f99-7365-6e12-adc8-0a1a6e8eadda
-      (use-package which-key
-        :ensure t
-        :diminish which-key-mode
-        :demand t
-        :config
-        (which-key-mode t))
+      (unless noninteractive
+        (use-package which-key
+          :ensure t
+          :diminish which-key-mode
+          :demand t
+          :config
+          (which-key-mode t)))
     #+END_SRC
 
 *** which-function
@@ -2122,18 +2138,18 @@
         (defun fn/only-github-elpa-mirror-package-archive ()
           "Make `package-archives' be the github elpa mirror repo."
           (setq package-archives
-             (list
-              (cons fn/mirror-elpa-repo
-                 (format "https://raw.githubusercontent.com/%s/%s/master/"
-                         fn/user-github-name
-                         fn/mirror-elpa-repo)))))
+                (list
+                 (cons fn/mirror-elpa-repo
+                       (format "https://raw.githubusercontent.com/%s/%s/master/"
+                               fn/user-github-name
+                               fn/mirror-elpa-repo)))))
 
         (defun fn/only-local-mirror-elpa-package-archive ()
           "Make `package-archives' be the `fn/local-elpa-mirror-dir'."
           (interactive)
           (setq package-archives
-             (list
-              (cons fn/mirror-elpa-repo fn/local-elpa-mirror-dir))))
+                (list
+                 (cons fn/mirror-elpa-repo fn/local-elpa-mirror-dir))))
 
         (defun fn/push-local-elpa-mirror-to-github ()
           "Push local elpa mirror to github repo."
@@ -2151,8 +2167,11 @@
 
         (defun fn/update-local-elpa-mirror ()
           "Update local elpa mirror when it is older than `package-user-dir'."
+          (interactive)
           (when (file-newer-than-file-p package-user-dir fn/local-elpa-mirror-dir)
-            (fn/batch-update-local-elpa-mirror)))
+            (message "Package mirror is older than current package repo. Will update.")
+            (fn/batch-update-local-elpa-mirror)
+            nil))
 
         (defun fn/batch-update-local-elpa-mirror ()
           "Updat local elpa mirror using batch invokation."
@@ -2162,7 +2181,7 @@
             (deferred:$
               (deferred:next
                 (lambda () (message "Starting to update... Cleaning up old packages.")))
-              (deferred:process-shell-bufferc it ;; TODO: Windows?
+              (deferred:process-shell-bufferc it
                 "rm" "-rf"
                 local-elpa-mirror-glob)
               (deferred:nextc it
@@ -2175,14 +2194,13 @@
               (deferred:nextc it
                 (lambda (&rest args) (message "Done updating local elpa mirror."))))))
 
-        (add-hook 'after-init-hook 'fn/update-local-elpa-mirror)
+        (add-hook 'after-init-hook 'fn/update-local-elpa-mirror t)
 
 
         (use-feature paradox-elpa-mirror
           (elpa-mirror paradox)
           (defun fn/paradox-update-local-elpa-mirror (&rest args)
             "Update elpa mirror when paradox is finished."
-            (debug)
             (fn/update-local-elpa-mirror))
 
           (add-hook 'paradox-after-execute-functions 'fn/paradox-update-local-elpa-mirror)))
@@ -2292,37 +2310,38 @@
       (defconst fn/zone-animation-dir (expand-file-name "custom-zone/" fn/custom-module-dir)
         "Custom zone animation directory")
 
-      (use-package zone
-        :ensure t
-        :demand t
-        :config
-        (defconst fn/zone-idle-time (* fn/minute-per-second 5)
-          "Time for zone to zone")
+      (unless noninteractive
+        (use-package zone
+          :ensure t
+          :demand t
+          :config
+          (defconst fn/zone-idle-time (* fn/minute-per-second 5)
+            "Time for zone to zone")
 
-        (zone-when-idle fn/zone-idle-time)
+          (zone-when-idle fn/zone-idle-time)
 
-        (defvar fn/zoning-out-p nil
-          "Are we zoning yet?")
+          (defvar fn/zoning-out-p nil
+            "Are we zoning yet?")
 
-        (defun fn/focused-zone (orig-zone &rest args)
-          "Only show one window while zoning."
-          (save-window-excursion
-            (delete-other-windows)
-            (setq fn/zoning-out-p t)
-            (prog1
-                (apply orig-zone args)
-              (setq fn/zoning-out-p nil))))
+          (defun fn/focused-zone (orig-zone &rest args)
+            "Only show one window while zoning."
+            (save-window-excursion
+              (delete-other-windows)
+              (setq fn/zoning-out-p t)
+              (prog1
+                  (apply orig-zone args)
+                (setq fn/zoning-out-p nil))))
 
-        (advice-add #'zone :around #'fn/focused-zone)
+          (advice-add #'zone :around #'fn/focused-zone)
 
 
-        ;; Garbage collect after zoning
-        (advice-add #'zone :after #'garbage-collect)
+          ;; Garbage collect after zoning
+          (advice-add #'zone :after #'garbage-collect)
 
-        ;; Update mode line if there is.
-        (advice-add #'zone :before #'force-mode-line-update)
+          ;; Update mode line if there is.
+          (advice-add #'zone :before #'force-mode-line-update)
 
-        (setq zone-programs (list)))
+          (setq zone-programs (list))))
 
       ;; Custom zone
       (use-package zone-end-of-buffer
@@ -2499,22 +2518,23 @@
      (defconst fn/alert-package-dir (expand-file-name "alert/" fn/custom-module-dir)
        "My customized alert package")
 
-     (use-package alert
-       :load-path fn/alert-package-dir
-       :demand t
-       :config
-       (setq alert-default-style 'libnotify
-          alert-log-messages t)
+     (unless noninteractive
+       (use-package alert
+         :load-path fn/alert-package-dir
+         :demand t
+         :config
+         (setq alert-default-style 'libnotify
+            alert-log-messages t)
 
-       (defun fn/alert-log-open ()
-         "Open alert log."
-         (interactive)
-         (if (fboundp 'alert--log-open-log)
-             (alert--log-open-log)
-           (error "No alert logs yet")))
+         (defun fn/alert-log-open ()
+           "Open alert log."
+           (interactive)
+           (if (fboundp 'alert--log-open-log)
+               (alert--log-open-log)
+             (error "No alert logs yet")))
 
-       ;; HACK: Bug #30 in alert to allow default style override
-       (alert-add-rule))
+         ;; HACK: Bug #30 in alert to allow default style override
+         (alert-add-rule)))
    #+END_SRC
 
 ** epa
@@ -2722,80 +2742,81 @@
     Having a journal is good
 
     #+BEGIN_SRC emacs-lisp :block-id 8001477c-95ea-ea34-54a7-094ad6f5ff4c
-      (use-package org-journal
-        :ensure t
-        :after org
-        :bind (:map fn-standard-prefix-map
-                    ("j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
-        :config
-        (setq org-journal-dir
-              (expand-file-name "diary" fn/org-dir))
+      (unless noninteractive
+        (use-package org-journal
+          :ensure t
+          :after org
+          :bind (:map fn-standard-prefix-map
+                      ("j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+          :config
+          (setq org-journal-dir
+             (expand-file-name "diary" fn/org-dir))
 
-        (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
-              org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
+          (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
+             org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
 
-        (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
-        (setq org-journal-find-file 'find-file)
+          (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
+          (setq org-journal-find-file 'find-file)
 
-        (defun fm/insert-private-file-headers ()
-          (interactive)
-          (add-file-local-variable-prop-line 'backup-inhibited t)
-          (add-file-local-variable-prop-line 'auto-save-default nil))
+          (defun fm/insert-private-file-headers ()
+            (interactive)
+            (add-file-local-variable-prop-line 'backup-inhibited t)
+            (add-file-local-variable-prop-line 'auto-save-default nil))
 
-        (defun fm/insert-org-gpg-headers ()
-          (interactive)
-          (add-file-local-variable-prop-line
-           'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
-          (fm/insert-private-file-headers))
+          (defun fm/insert-org-gpg-headers ()
+            (interactive)
+            (add-file-local-variable-prop-line
+             'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
+            (fm/insert-private-file-headers))
 
-        (defun fmj/insert-summary-block ()
-          "Insert summary block at point, this is pretty much #+BEGIN_SRC except summary"
-          (interactive)
-          (let ((summary-block
+          (defun fmj/insert-summary-block ()
+            "Insert summary block at point, this is pretty much #+BEGIN_SRC except summary"
+            (interactive)
+            (let ((summary-block
                  (string-join (list "#+BEGIN_SUMMARY"
-                                    "Something happened but I was too lazy to write it down"
-                                    "#+END_SUMMARY")
+                                 "Something happened but I was too lazy to write it down"
+                                 "#+END_SUMMARY")
                               "\n")))
-            (insert (concat summary-block "\n"))))
+              (insert (concat summary-block "\n"))))
 
-        (defun fmj/insert-org-journal-headers ()
-          (interactive)
-          (fm/insert-org-gpg-headers)
+          (defun fmj/insert-org-journal-headers ()
+            (interactive)
+            (fm/insert-org-gpg-headers)
 
-          (end-of-visual-line)
-          (newline-and-indent)
+            (end-of-visual-line)
+            (newline-and-indent)
 
-          (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
-                              (buffer-name))
-            (let ((year  (string-to-number (match-string 1 (buffer-name))))
+            (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
+                                (buffer-name))
+              (let ((year  (string-to-number (match-string 1 (buffer-name))))
                   (month (string-to-number (match-string 2 (buffer-name))))
                   (day (string-to-number (match-string 3 (buffer-name))))
                   (datim nil))
-              (setq datim (encode-time 0 0 0 day month year))
+                (setq datim (encode-time 0 0 0 day month year))
 
-              (insert "#+STARTUP: content\n")
-              (insert (format-time-string
-                       "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
+                (insert "#+STARTUP: content\n")
+                (insert (format-time-string
+                         "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
 
-              (fmj/insert-summary-block)
+                (fmj/insert-summary-block)
 
 
-              (insert (format-time-string
-                       "* %Y-%b-%d %a" datim)))))
+                (insert (format-time-string
+                         "* %Y-%b-%d %a" datim)))))
 
-        (auto-insert-mode t)
-        (setq auto-insert-query t) ;; Don't ask, just put it in there
-        (add-hook 'find-file-hook 'auto-insert)
+          (auto-insert-mode t)
+          (setq auto-insert-query t) ;; Don't ask, just put it in there
+          (add-hook 'find-file-hook 'auto-insert)
 
-        (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fm/insert-org-gpg-headers))
-        (add-to-list 'auto-insert-alist '(".*\.private.org" . fm/insert-private-file-headers))
-        (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers))
+          (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fm/insert-org-gpg-headers))
+          (add-to-list 'auto-insert-alist '(".*\.private.org" . fm/insert-private-file-headers))
+          (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers))
 
-        (use-feature org-journal-mode--mode-icon
-          (all-the-icons)
-          (fn/add-major-mode-icon
-           'org-journal-mode
-           (list 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0))))
+          (use-feature org-journal-mode--mode-icon
+            (all-the-icons)
+            (fn/add-major-mode-icon
+             'org-journal-mode
+             (list 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0)))))
     #+END_SRC
 
 *** org-reveal
@@ -2864,33 +2885,34 @@
     Flash cards are a must
 
     #+BEGIN_SRC emacs-lisp :block-id ff080889-3108-6353-b008-70a78290ef1c
-      (use-feature org-drill
-        (org)
-        (use-package org
-          :after org
-          :bind (:map fn-standard-prefix-map
-                      ("D" . org-drill))
-          :demand t
-          :config
-          (add-to-list 'org-modules 'org-drill)
+      (unless noninteractive
+        (use-feature org-drill
+          (org)
+          (use-package org
+            :after org
+            :bind (:map fn-standard-prefix-map
+                        ("D" . org-drill))
+            :demand t
+            :config
+            (add-to-list 'org-modules 'org-drill)
 
-          (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
-            "Main org drill files")
+            (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
+              "Main org drill files")
 
-          (add-to-list 'org-capture-templates
-                       (list "r" "Review/Remember" 'entry
-                             (list 'file+headline fn/org-review-file "Learning Notes")
-                             "* %? :drill:\n  CREATED_ON: %T"))
+            (add-to-list 'org-capture-templates
+                         (list "r" "Review/Remember" 'entry
+                            (list 'file+headline fn/org-review-file "Learning Notes")
+                            "* %? :drill:\n  CREATED_ON: %T"))
 
-          (add-to-list 'org-capture-templates
-                       (list "m" "Music Piece" 'entry
-                             (list 'file+headline fn/org-review-file "Music Pieces")
-                             "* %? :drill:music-piece:\n  CREATED_ON: %T"))
+            (add-to-list 'org-capture-templates
+                         (list "m" "Music Piece" 'entry
+                            (list 'file+headline fn/org-review-file "Music Pieces")
+                            "* %? :drill:music-piece:\n  CREATED_ON: %T"))
 
-          (add-to-list 'org-agenda-files fn/org-review-file)
+            (add-to-list 'org-agenda-files fn/org-review-file)
 
-          (setq org-drill-scope
-                (list fn/org-review-file))))
+            (setq org-drill-scope
+               (list fn/org-review-file)))))
     #+END_SRC
 *** org-mobile
     Mobile org document
@@ -2921,12 +2943,13 @@
    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
    #+BEGIN_SRC emacs-lisp :block-id d49639d7-14d6-68a0-5afa-25bae73f3762
-     (use-package flyspell
-       :ensure t
-       :defer t
-       :diminish flyspell-mode
-       :init
-       (add-hook 'org-mode-hook 'flyspell-mode t))
+     (unless noninteractive
+       (use-package flyspell
+         :ensure t
+         :defer t
+         :diminish flyspell-mode
+         :init
+         (add-hook 'org-mode-hook 'flyspell-mode t)))
    #+END_SRC
 
 ** dired
@@ -3291,16 +3314,17 @@
     Syntax checking is very important
 
     #+BEGIN_SRC emacs-lisp :block-id 0bd8c66a-906d-497b-c519-52c3cd914bfc
-      (use-package flycheck
-        :ensure t
-        :defer  t
-        :diminish flycheck-mode
-        :init
-        (add-hook 'prog-mode-hook 'flycheck-mode)
-        :config
-        (setq flycheck-highlighting-mode 'lines
-           flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
-           flycheck-checker-error-threshold nil))
+      (unless noninteractive
+        (use-package flycheck
+          :ensure t
+          :defer  t
+          :diminish flycheck-mode
+          :init
+          (add-hook 'prog-mode-hook 'flycheck-mode)
+          :config
+          (setq flycheck-highlighting-mode 'lines
+             flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
+             flycheck-checker-error-threshold nil)))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -3385,29 +3409,31 @@
       (defconst fn/emacs-pastebin-package-dir (expand-file-name "emacs-pastebin/" fn/custom-module-dir)
         "My emacs pastebin package directory.")
 
-      (use-package neopastebin
-        :load-path fn/emacs-pastebin-package-dir
-        :bind (:map fn-standard-prefix-map
-                    ("C-y n" . pastebin-new)
-                    ("C-y l" . pastebin-list-buffer-refresh))
-        :demand t
-        :config
-        ;; Login in personal.el
-        nil)
+      (unless noninteractive
+        (use-package neopastebin
+          :load-path fn/emacs-pastebin-package-dir
+          :bind (:map fn-standard-prefix-map
+                      ("C-y n" . pastebin-new)
+                      ("C-y l" . pastebin-list-buffer-refresh))
+          :demand t
+          :config
+          ;; Login in personal.el
+          nil))
     #+END_SRC
 
 *** ag
     The silver searcher is a fine tool
 
     #+BEGIN_SRC emacs-lisp :block-id 8038dda0-39ce-19f3-21bd-7ab7acccfb25
-      (use-package ag
-        :ensure t
-        :demand t
-        :config
-        (setq ag-highlight-search t
+      (unless noninteractive
+        (use-package ag
+          :ensure t
+          :demand t
+          :config
+          (setq ag-highlight-search t
 
-              ag-reuse-window t
-              ag-reuse-buffers t))
+             ag-reuse-window t
+             ag-reuse-buffers t)))
     #+END_SRC
 
     With [[helm]]
@@ -3645,7 +3671,7 @@
     Prettify some symbols to make it visible.
 
     #+BEGIN_SRC emacs-lisp :block-id cd91807f-6008-2cb5-5716-f6ee48077fc7
-      (use-function precttify-elisp
+      (use-function prettify-elisp
         prettify-symbols-mode
         (add-hook
          'emacs-lisp-mode-hook
@@ -3724,12 +3750,13 @@
          'cask-mode
          (list 'all-the-icons-faicon "glass" :v-adjust 0.1)))
 
-      (use-package header2
-        :ensure t
-        :demand t
-        :functions auto-make-header
-        :init
-        (add-hook 'emacs-lisp-mode-hook 'auto-make-header))
+      (unless noninteractive
+        (use-package header2
+          :ensure t
+          :demand t
+          :functions auto-make-header
+          :init
+          (add-hook 'emacs-lisp-mode-hook 'auto-make-header)))
 
       (use-package overseer
         :ensure t
@@ -3854,41 +3881,48 @@
       (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-module-dir)
         "My performance customization on tern")
 
-      (use-package tern
-        :ensure t
-        :diminish tern-mode
-        :init
-        (add-hook 'js2-mode-hook #'tern-mode)
-        :config
-        (setq tern-idle-time 10.0)
-
-        (use-package company-tern
+      (unless noninteractive
+        (use-package tern
           :ensure t
-          :after company
+          :diminish tern-mode
+          :init
+          (add-hook 'js2-mode-hook #'tern-mode)
           :config
-          (add-to-list 'company-backends 'company-tern))
+          (setq tern-idle-time 10.0)
 
-        (use-feature tern-prodigy
-          (tern)
-          (prodigy-define-tag
-            :name 'tern)))
+          (use-package company-tern
+            :ensure t
+            :after company
+            :config
+            (add-to-list 'company-backends 'company-tern))
+
+          (use-feature tern-prodigy
+            (tern)
+            (prodigy-define-tag
+              :name 'tern))))
 
 
-      (use-package company-flow
-        :ensure t
-        :demand t
-        :config
-        (add-to-list 'company-backends 'company-flow))
+      (unless noninteractive
+        (use-feature company-flow
+          (js2-mode company)
+          (use-package company-flow
+            :ensure t
+            :demand t
+            :config
+            (add-to-list 'company-backends 'company-flow))))
     #+END_SRC
 
 *** Linter
     My linter if you will for JS.
 
     #+BEGIN_SRC emacs-lisp :block-id da802e8e-8302-f301-51f5-6042384a98a7
-      (use-package flycheck-flow
-        :demand t
-        :config
-        (flycheck-add-next-checker 'javascript-eslint (cons t 'javascript-flow) t))
+      (unless noninteractive
+        (use-feature flycheck-flow
+          (flycheck)
+          (use-package flycheck-flow
+            :demand t
+            :config
+            (flycheck-add-next-checker 'javascript-eslint (cons t 'javascript-flow) t))))
     #+END_SRC
 
 *** Formatter
@@ -4249,6 +4283,12 @@
               haskell-process-suggest-hoogle-imports t
               haskell-process-type 'stack-ghci
               haskell-interactive-mode-eval-mode 'haskell-mode))
+
+      (use-feature helm-hoogle
+        (helm haskell-mode)
+        (use-package helm-hoogle
+          :ensure t
+          :demand t))
     #+END_SRC
 
 *** Motion
@@ -4277,19 +4317,20 @@
     Company for Haskell
 
     #+BEGIN_SRC emacs-lisp :block-id dba28809-a145-d57f-9414-702cd3759be1
-      (use-feature company-haskell
-        (haskell-mode company)
-        (use-package company-ghc
-          :ensure t
-          :after company
-          :config
-          (add-to-list 'company-backends 'company-ghc))
+      (unless noninteractive
+        (use-feature company-haskell
+          (haskell-mode company)
+          (use-package company-ghc
+            :ensure t
+            :after company
+            :config
+            (add-to-list 'company-backends 'company-ghc))
 
-        (use-package company-ghci
-          :ensure t
-          :after company
-          :config
-          (add-to-list 'company-backends 'company-ghci)))
+          (use-package company-ghci
+            :ensure t
+            :after company
+            :config
+            (add-to-list 'company-backends 'company-ghci))))
     #+END_SRC
 
 *** Formatter
@@ -4302,7 +4343,12 @@
         :init
         (add-hook 'haskell-mode-hook #'hindent-mode)
         :config
-        (setq hindent-style "johan-tibell"))
+        (setq hindent-style "johan-tibell")
+
+        (defun fn/hindent-before-save ()
+          "Reformat before saving."
+          (interactive)
+          (add-hook 'before-save-hook 'hindent-reformat-buffer t t)))
     #+END_SRC
 
 *** Linter
@@ -4348,11 +4394,12 @@
     Easy snippets for Haskell
 
     #+BEGIN_SRC emacs-lisp :block-id 5f1b278b-5b7e-5d87-7f25-f5af49d9230d
-      (use-feature haskell-snippets
-        (yasnippet haskell-mode)
-        (use-package haskell-snippets
-          :ensure t
-          :demand t))
+      (unless noninteractive
+        (use-feature haskell-snippets
+          (yasnippet haskell-mode)
+          (use-package haskell-snippets
+            :ensure t
+            :demand t)))
     #+END_SRC
 
 *** Build Tools
@@ -4364,74 +4411,91 @@
       (defconst fn/ob-haskell-package-dir (expand-file-name "ob-haskell/" fn/custom-module-dir)
         "My ob-haskell package dir.")
 
-      (use-feature org-haskell
-        (haskell-mode org)
-        (use-package ob-haskell
-          :load-path fn/ob-haskell-package-dir
-          :demand t
-          :config
-          (add-to-list 'org-babel-load-languages '(haskell . t))
+      (unless noninteractive
+        (use-feature org-haskell
+          (haskell-mode org)
+          (use-package ob-haskell
+            :load-path fn/ob-haskell-package-dir
+            :demand t
+            :config
+            (add-to-list 'org-babel-load-languages '(haskell . t))
 
-          (defconst fn/haskell-file-extension ".hs"
-            "The de facto haskell file extension.")
+            (defconst fn/haskell-file-extension ".hs"
+              "The de facto haskell file extension.")
 
-          (defun fn/add-haskell-file-extension (name)
-            "Add the extension of .hs to a file or buffer NAME."
-            (if (string/ends-with name fn/haskell-file-extension)
-                name (concat name fn/haskell-file-extension)))
+            (defun fn/add-haskell-file-extension (name)
+              "Add the extension of .hs to a file or buffer NAME."
+              (if (string/ends-with name fn/haskell-file-extension)
+                  name (concat name fn/haskell-file-extension)))
 
-          (defun fn/haskellize-buffer-file (&optional buffer)
-            "Renames an BUFFER with a .hs extension if it doesn't have one."
-            (interactive)
-            (with-current-buffer (or buffer (current-buffer))
-              (save-buffer)
-              (lexical-let ((name (buffer-name))
-                  (file-name (buffer-file-name)))
-                (if (not (and file-name (file-exists-p file-name)))
-                    (error "Buffer '%s' has no backing file" name)
-                  (lexical-let ((haskellized-name (fn/add-haskell-file-extension name))
-                      (haskellized-file-name (fn/add-haskell-file-extension file-name)))
-                    (cond
-                     ((get-buffer haskellized-name)
-                      (error "A buffer named '%s' already exists" haskellized-name))
-                     ((string-equal name haskellized-name)
-                      (message "Buffer %s is already haskellized" haskellized-name))
-                     (t
-                      (rename-file file-name haskellized-file-name t)
-                      (rename-buffer haskellized-name)
-                      (set-visited-file-name haskellized-file-name)
-                      (set-buffer-modified-p nil)
-                      (message "Buffer %s is now haskellized" haskellized-name))))))))
+            (defvar fn/org-haskell-mode-hook nil
+              "Hook when buffer is haskellized.")
 
-          (defun fn/org-haskell-buffer-p (&optional buffer)
-            "Check if BUFFER is an org-haskell buffer."
-            (with-current-buffer (or buffer (current-buffer))
-              (and (eq major-mode 'haskell-mode)
-                 (fboundp 'org-src-edit-buffer-p)
-                 (org-src-edit-buffer-p))))
+            (defun fn/haskellize-buffer-file (&optional buffer)
+              "Renames an BUFFER with a .hs extension if it doesn't have one."
+              (interactive)
+              (with-current-buffer (or buffer (current-buffer))
+                (save-buffer)
+                (lexical-let ((name (buffer-name))
+                    (file-name (buffer-file-name)))
+                  (if (not (and file-name (file-exists-p file-name)))
+                      (error "Buffer '%s' has no backing file" name)
+                    (lexical-let ((haskellized-name (fn/add-haskell-file-extension name))
+                        (haskellized-file-name (fn/add-haskell-file-extension file-name)))
+                      (cond
+                       ((get-buffer haskellized-name)
+                        (error "A buffer named '%s' already exists" haskellized-name))
+                       ((string-equal name haskellized-name)
+                        (message "Buffer %s is already haskellized" haskellized-name))
+                       (t
+                        (rename-file file-name haskellized-file-name t)
+                        (rename-buffer haskellized-name)
+                        (set-visited-file-name haskellized-file-name)
+                        (set-buffer-modified-p nil)
+                        (message "Buffer %s is now haskellized" haskellized-name))))))))
 
-          (defun fn/haskellize-org-haskell-buffer (&rest _)
-            "Haskellize org haskell buffer."
-            (when (fn/org-haskell-buffer-p)
-              (fn/haskellize-buffer-file (current-buffer))))
+            (defun fn/org-haskell-buffer-p (&optional buffer)
+              "Check if BUFFER is an org-haskell buffer."
+              (with-current-buffer (or buffer (current-buffer))
+                (and (eq major-mode 'haskell-mode)
+                   (fboundp 'org-src-edit-buffer-p)
+                   (org-src-edit-buffer-p))))
 
-          (defun fn/save-org-haskell-buffer (&rest _)
-            "Save haskell buffer along with the edit buffer."
-            (when (fn/org-haskell-buffer-p)
-              (save-buffer)))
+            (defun fn/haskellize-org-haskell-buffer (&rest _)
+              "Haskellize org haskell buffer."
+              (when (fn/org-haskell-buffer-p)
+                (fn/haskellize-buffer-file (current-buffer))
+                (run-hooks 'fn/org-haskell-mode-hook)))
 
-          (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
-            "Cleanup the org-haskell buffer when exiting the edit buffer."
-            (lexical-let ((org-haskell-file-name (buffer-file-name))
-                (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
-              (prog1
-                  (apply orig-fun args)
-                (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
-                  (delete-file org-haskell-file-name)))))
+            (defun fn/save-org-haskell-buffer (&rest _)
+              "Save haskell buffer along with the edit buffer."
+              (when (fn/org-haskell-buffer-p)
+                (save-buffer)))
 
-          (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
-          (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
-          (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)))
+            (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
+              "Cleanup the org-haskell buffer when exiting the edit buffer."
+              (lexical-let ((org-haskell-file-name (buffer-file-name))
+                  (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
+                (prog1
+                    (apply orig-fun args)
+                  (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
+                    (delete-file org-haskell-file-name)))))
+
+            (defun fn/haskell-process-load-or-reload ()
+              "Invoke reload process without switching buffers"
+              (save-window-excursion
+                (haskell-process-load-or-reload)))
+
+            (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
+
+            (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
+
+            (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
+            (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
+
+            (use-feature literate-haskell-hindent
+              (haskell-mode hindent)
+              (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)))))
     #+END_SRC
 
 ** Clojure
@@ -4528,15 +4592,6 @@
           :config
           (flycheck-irony-setup)))
     #+END_SRC
-
-** Fluxus                                                      :experimental:
-   Nice graphical environment
-
-   #+BEGIN_SRC emacs-lisp :block-id fc504796-e991-d5e2-1620-4df729d08197
-     (use-package fluxus-mode
-       :ensure t
-       :demand t)
-   #+END_SRC
 
 ** Guile
    If Elisp is Guile, then I am prepared.
@@ -4709,9 +4764,10 @@
     Still using [[company]] with [[robe]]
 
     #+BEGIN_SRC emacs-lisp :block-id bd7bd68d-d482-cc97-7f3c-291b81169358
-      (use-feature company-robe
-        (robe company)
-        (add-to-list 'company-backends 'company-robe))
+      (unless noninteractive
+        (use-feature company-robe
+          (robe company)
+          (add-to-list 'company-backends 'company-robe)))
     #+END_SRC
 
 *** IDE
@@ -5523,7 +5579,6 @@
    #+BEGIN_SRC emacs-lisp :block-id b8e02d73-638d-d7b5-2520-32fe159fdffb
      (use-feature workgroup-configuration
        (workgroups2)
-
        (require 'dash)
 
 
@@ -5594,9 +5649,9 @@
          (-if-let* ((current-workgroup-name (fmwc/current-workgroup-name))
                     (result (assoc current-workgroup-name fmwc/workgroup-config-icons)))
              (let* ((icon-result (cdr result))
-                 (icon-font-function (car icon-result))
-                 (icon-function (cadr icon-result))
-                 (icon-args (cddr icon-result)))
+                    (icon-font-function (car icon-result))
+                    (icon-function (cadr icon-result))
+                    (icon-args (cddr icon-result)))
                (propertize
                 (format " %s " (apply icon-function icon-args))
                 'help-echo (format "Workgroup: `%s`" current-workgroup-name)
@@ -5677,8 +5732,8 @@
            :v-adjust -0.1))
         (progn
           (when (fboundp 'fn/prodigy-with-default-filters)
-           (fn/prodigy-with-default-filters
-            (fn/prodigy-add-default-tag-filter 'fn-log))))
+            (fn/prodigy-with-default-filters
+             (fn/prodigy-add-default-tag-filter 'fn-log))))
         nil)
 
        (fmwc/define-workgroup-configs
@@ -5691,8 +5746,8 @@
            :v-adjust -0.1))
         (progn
           (when (fboundp 'fn/prodigy-with-default-filters)
-           (fn/prodigy-with-default-filters
-            (fn/prodigy-add-default-tag-filter 'frontend-functions))))
+            (fn/prodigy-with-default-filters
+             (fn/prodigy-add-default-tag-filter 'frontend-functions))))
         nil)
 
 
@@ -5760,8 +5815,8 @@
                        (funcall init-function)
                      (setq fmwc/current-workgroup-config nil))
                    (add-to-list 'fmwc/workgroup-configs-loaded config-name))
-                 nil)
-             ('error (message "Workgroup config init error: " (error-message-string ex))))
+               nil)
+           ('error (message "Workgroup config init error: " (error-message-string ex))))
          (condition-case ex
              (-if-let* ((config (fmwc/get-current-workgroup-config))
                         (setup-function (fmwc/workgroup-config-setup-function config)))
@@ -5797,12 +5852,12 @@
                  (-map-indexed
                   (lambda (index config)
                     (lexical-let* ((config-name (fmwc/workgroup-config-name config))
-                        (workgroups (fmwc/workgroups))
-                        (workgroup-index
-                         (-find-index
-                          (lambda (workgroup)
-                            (string-equal (fmwc/workgroup-name workgroup) config-name))
-                          workgroups)))
+                                   (workgroups (fmwc/workgroups))
+                                   (workgroup-index
+                                    (-find-index
+                                     (lambda (workgroup)
+                                       (string-equal (fmwc/workgroup-name workgroup) config-name))
+                                     workgroups)))
                       (cond
                        ((null workgroup-index)
                         (message "Creating workspace %s" config-name)

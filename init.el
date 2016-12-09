@@ -8,34 +8,48 @@
 ;; You may delete these explanatory comments.
 ;; (package-initialize) ;; This is handled by `init-standard.el` instead.
 
-(setq fn/home-switch "-H")
+(defconst fn/home-switch "-H"
+  "Command arg to indicate if it using a custom home directory.")
 
-(setq fn/standard-init-file "init-standard.el" fn/default-init-file "init.el")
+(defconst fn/standard-init-file-name "init-standard.el"
+  "My init file name.")
+
+(defconst fn/default-init-file-name "init.el"
+  "The default init file name.")
 
 
 (defun fn/get-switch-arg (switch)
+  "Get the `fn/home-switch' value"
   (let ((found-switch (member switch command-line-args)))
     (if found-switch
         (car (cdr found-switch))
       nil)))
 
 (defun fn/bootstrap-emacs ()
-;;; Reference: https://stackoverflow.com/questions/2112256/emacs-custom-command-line-argument
+  "Bootstrap Emacs with the correct init file."
+  ;; Reference: https://stackoverflow.com/questions/2112256/emacs-custom-command-line-argument
   (let ((new-home (fn/get-switch-arg fn/home-switch))
-      (bootstrap-file (expand-file-name fn/standard-init-file user-emacs-directory)))
+      (bootstrap-file
+       (expand-file-name fn/standard-init-file-name user-emacs-directory)))
     (when new-home
-      (setq user-emacs-directory new-home user-init-file (expand-file-name fn/default-init-file
-                                                                        user-emacs-directory)
+      (setq user-emacs-directory new-home user-init-file
+         (expand-file-name fn/default-init-file-name user-emacs-directory)
          bootstrap-file user-init-file))
     (load bootstrap-file))
 
   ;; This is to let the home switch pass through normally, not as a invalid argument
-  (add-to-list 'command-switch-alist '(fn/home-switch . identity)))
+  (add-to-list 'command-switch-alist (cons fn/home-switch 'identity)))
 
 (defun fn/bootstrap-new-emacs (new-home)
-  (async-shell-command (mapconcat 'identity (list "emacs" "--debug-init" fn/home-switch new-home)
-                                  " "))
-  (message (mapconcat 'identity (list "Bootstrapped Emacs from" new-home
-                                   "so go open that window since I can't... for now") " ")))
+  "Bootstrap new Emacs."
+  (async-shell-command
+   (string-join
+    (list "emacs" "--debug-init"
+       fn/home-switch new-home)
+    " "))
+  (message
+   "Bootstrapped Emacs from %s."
+   new-home))
+
 
 (fn/bootstrap-emacs)
