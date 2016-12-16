@@ -64,18 +64,20 @@
    Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
 
    #+BEGIN_SRC emacs-lisp :block-id 8ec65bd3-dc31-0455-99d0-301267fdd059
-     (defconst fn/package-archives (list
-                                    (cons "gnu" "http://elpa.gnu.org/packages/")
-                                    (cons "org" "http://orgmode.org/elpa/")
-                                    (cons "melpa" "http://melpa.org/packages/")
-                                    (cons "melpa-stable" "https://stable.melpa.org/packages/"))
+     (defconst fn/package-archives
+       (list
+        (cons "gnu" "http://elpa.gnu.org/packages/")
+        (cons "org" "http://orgmode.org/elpa/")
+        (cons "melpa" "http://melpa.org/packages/")
+        (cons "melpa-stable" "https://stable.melpa.org/packages/"))
        "List of my packages")
 
-     (mapc (lambda (package-archive)
-             (pcase-let ((`(,name . ,_) package-archive))
-               (unless (assoc-default name package-archives)
-                 (add-to-list 'package-archives package-archive))))
-           fn/package-archives)
+     (mapc
+      (lambda (package-archive)
+        (pcase-let ((`(,name . ,_) package-archive))
+          (unless (assoc-default name package-archives)
+            (add-to-list 'package-archives package-archive))))
+      fn/package-archives)
 
    #+END_SRC
 
@@ -583,6 +585,7 @@
 
      (use-package exec-path-from-shell
        :ensure t
+       :if (not (eq system-type 'windows-nt)) ;; Sorry Windows
        :demand t
        :config
        (setq exec-path-from-shell-variables
@@ -847,7 +850,11 @@
 
          (fn/add-major-mode-icon
           'process-menu-mode
-          (list 'all-the-icons-faicon "list" :v-adjust -0.1))))
+          (list 'all-the-icons-faicon "list" :v-adjust -0.1))
+
+         (fn/add-major-mode-icon
+          'package-menu-mode
+          (list 'all-the-icons-octicon "package" :v-adjust 0.0))))
    #+END_SRC
 
 * Terminator
@@ -858,6 +865,7 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 17fd5dfb-4c56-cb92-865d-448fd1e56804
      (use-package nsm
+       :demand t
        :config
        (setq nsm-settings-file (expand-file-name "network-security.data" fn/cache-dir)
              network-security-level 'high))
@@ -1358,7 +1366,11 @@
 
              recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
 
-          (recentf-mode t)))
+          (recentf-mode t))
+
+        (use-package recentf-ext
+          :ensure t
+          :after recentf))
     #+END_SRC
 
 *** bookmark+
@@ -1498,11 +1510,17 @@
 
 
         (run-with-idle-timer 0 nil (lambda  ()
-                                     (define-key workgroups-mode-map
-                                       (vector 'remap 'wg-create-workgroup)
-                                       #'fn/wg-create-workgroup)))
+                                   (define-key workgroups-mode-map
+                                     (vector 'remap 'wg-create-workgroup)
+                                     #'fn/wg-create-workgroup)))
 
-        (add-hook 'wg-after-switch-to-workgroup-hook #'garbage-collect)
+
+        (defun fn/wg-cleanup ()
+          "Some cleanup with workgroups since it becomes really slow speciall with `execute-extended-command' with `smex'."
+          (wg-perform-session-maintenance))
+
+        (add-hook 'wg-after-switch-to-workgroup-hook 'fn/wg-cleanup)
+        (add-hook 'wg-after-switch-to-workgroup-hook 'garbage-collect)
 
 
         ;; Performance
@@ -2135,6 +2153,8 @@
         (make-directory fn/local-elpa-mirror-dir t)
         (setq elpamr-default-output-directory fn/local-elpa-mirror-dir)
 
+        (add-to-list 'package-archives (cons "elpa-mirror" (concat fn/local-elpa-mirror-dir "/")))
+
         (defun fn/only-github-elpa-mirror-package-archive ()
           "Make `package-archives' be the github elpa mirror repo."
           (setq package-archives
@@ -2176,23 +2196,21 @@
         (defun fn/batch-update-local-elpa-mirror ()
           "Updat local elpa mirror using batch invokation."
           (interactive)
-          (lexical-let ((emacs-command "emacs")
-              (local-elpa-mirror-glob (expand-file-name "*" fn/local-elpa-mirror-dir)))
-            (deferred:$
-              (deferred:next
-                (lambda () (message "Starting to update... Cleaning up old packages.")))
-              (deferred:process-shell-bufferc it
-                "rm" "-rf"
-                local-elpa-mirror-glob)
-              (deferred:nextc it
-                (lambda (&rest args) (message "Updating elpa mirror.")))
-              (deferred:process-shell-bufferc it
-                emacs-command
-                "--batch"
-                "-l" user-init-file
-                "--eval='(elpamr-create-mirror-for-installed)'")
-              (deferred:nextc it
-                (lambda (&rest args) (message "Done updating local elpa mirror."))))))
+          (deferred:$
+            (deferred:next
+              (lambda () (message "Starting to update... Cleaning up old packages.")))
+            (deferred:process-shell-bufferc it
+              "rm" "-rf"
+              (expand-file-name "*" fn/local-elpa-mirror-dir))
+            (deferred:nextc it
+              (lambda (&rest args) (message "Updating elpa mirror.")))
+            (deferred:process-shell-bufferc it
+              "emacs"
+              "--batch"
+              "-l" user-init-file
+              "--eval='(elpamr-create-mirror-for-installed)'")
+            (deferred:nextc it
+              (lambda (&rest args) (message "Done updating local elpa mirror.")))))
 
         (add-hook 'after-init-hook 'fn/update-local-elpa-mirror t)
 
@@ -2213,7 +2231,27 @@
    I like fixed font specially DejaVu Mono
 
    #+BEGIN_SRC emacs-lisp :block-id bbcd3af3-f5e6-c215-4497-52fa53348966
-     (set-frame-font "DejaVu Sans Mono-8" t t )
+     (defconst fn/primary-font-name "DejaVu Sans Mono"
+       "My ideal font.")
+
+     (defconst fn/secondary-font-name "Courier"
+       "My backup font.")
+
+
+     (defconst fn/primary-font-size 8
+       "My ideal font size.")
+
+
+     (cond
+      ((member fn/primary-font-name (font-family-list))
+       (set-frame-font (format "%s-%s" fn/primary-font-name fn/primary-font-size) t t))
+      ((member fn/secondary-font-name (font-family-list))
+       (set-frame-font (format "%s-%s" fn/secondary-font-name fn/primary-font-size) t t))
+      (t
+       (message "Darn it, you have no ideal font set.")))
+
+
+
    #+END_SRC
 
 ** Screen
@@ -2617,7 +2655,12 @@
          (prog2
              (advice-add 'delete-other-windows :override #'ignore)
              (apply orig-fun args)
-             (advice-remove 'delete-other-windows #'ignore))))
+           (advice-remove 'delete-other-windows #'ignore))))
+
+     (use-package org-plus-contrib
+       :ensure t
+       :disabled t
+       :after org)
    #+END_SRC
 
    I prefer to see my main org file on boot
@@ -2907,7 +2950,12 @@
             (add-to-list 'org-capture-templates
                          (list "m" "Music Piece" 'entry
                             (list 'file+headline fn/org-review-file "Music Pieces")
-                            "* %? :drill:music-piece:\n  CREATED_ON: %T"))
+                            "* %? :drill:music:\n  CREATED_ON: %T"))
+
+            (add-to-list 'org-capture-templates
+                         (list "v" "Technical Video" 'entry
+                            (list 'file+headline fn/org-review-file "Technical Video")
+                            "* %? :drill:video:\n  CREATED_ON: %T"))
 
             (add-to-list 'org-agenda-files fn/org-review-file)
 
@@ -3054,10 +3102,13 @@
    Something to keep track of my finances
 
    #+BEGIN_SRC emacs-lisp :block-id 4e3b93da-bda6-0881-7e81-3e23e833f1cc
+     (defconst fn/ledger-file (expand-file-name "ledger.dat.gpg" "~/Fakespace/nobody-library")
+       "My ledger file.")
+
      (use-package ledger-mode
        :ensure t
        :defer t
-       :init
+       :config
        (setq ledger-clear-whole-transactions t)
 
        ;; Encrypting my ledger
@@ -3078,7 +3129,12 @@
          (all-the-icons)
          (fn/add-major-mode-icon
           'ledger-report-mode
-          (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1))))
+          (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1)))
+
+       (defun fn/find-ledger-file ()
+         "Find ledger file."
+         (interactive)
+         (find-file fn/ledger-file)))
    #+END_SRC
 
 ** engine
@@ -3416,9 +3472,8 @@
                       ("C-y n" . pastebin-new)
                       ("C-y l" . pastebin-list-buffer-refresh))
           :demand t
-          :config
-          ;; Login in personal.el
-          nil))
+          :init
+          (setq pastebin-data-dir (expand-file-name "pastebin-data" fn/cache-dir))))
     #+END_SRC
 
 *** ag
@@ -4486,9 +4541,14 @@
               (save-window-excursion
                 (haskell-process-load-or-reload)))
 
+            (defun fn/haskell-reload-on-save ()
+              "Reload interactive haskell process on save."
+              (add-hook 'after-save-hook 'fn/haskell-process-load-or-reload t t))
+
             (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
 
             (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
+            (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-reload-on-save)
 
             (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
             (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
@@ -6179,6 +6239,11 @@
        "Quickly visit library directory"
        (interactive)
        (dired fn/lib-dir))
+
+     (defun fn/dired-module-dir ()
+       "Quickly visit modules library"
+       (interactive)
+       (dired "~/Modules"))
    #+END_SRC
 
 ** Summarize Text
@@ -6757,6 +6822,8 @@
     ;; Files
     (define-key fn-custom-prefix-map (kbd "b c") 'fn/find-config-file)
     (define-key fn-custom-prefix-map (kbd "b o") 'fn/find-main-org-file)
+    (define-key fn-custom-prefix-map (kbd "b l") 'fn/find-ledger-file)
+
 
     ;; Special Buffers
     (define-key fn-custom-prefix-map (kbd "b j") 'fn/display-jabber-roster-buffer)
@@ -6765,10 +6832,11 @@
     ;; Dired
     (define-key fn-custom-prefix-map (kbd "d h") #'fn/dired-emacs-dir)
     (define-key fn-custom-prefix-map (kbd "d d") #'fn/dired-download-dir)
-    (define-key fn-custom-prefix-map (kbd "d m") #'fn/dired-mountain-dir)
+    (define-key fn-custom-prefix-map (kbd "d M") #'fn/dired-mountain-dir)
     (define-key fn-custom-prefix-map (kbd "d f") #'fn/dired-fakespace-dir)
     (define-key fn-custom-prefix-map (kbd "d ~") #'fn/dired-home-dir)
     (define-key fn-custom-prefix-map (kbd "d l") #'fn/dired-lib-dir)
+    (define-key fn-custom-prefix-map (kbd "d m") #'fn/dired-module-dir)
 
     (define-key fn-custom-prefix-map (kbd "^") #'fn/dired-parent)
 
