@@ -125,6 +125,24 @@
      (make-directory fn/lib-dir t)
 
 
+     (defconst fn/system-dir-name "system"
+       "System library dependencies directory")
+
+     (defconst fn/system-dir (expand-file-name fn/system-dir-name fn/lib-dir)
+       "System library for external files.")
+
+     (make-directory fn/system-dir t)
+
+
+     (defconst fn/font-dir-name "fonts"
+       "Font dependencies directory")
+
+     (defconst fn/font-dir (expand-file-name fn/font-dir-name fn/system-dir)
+       "External font directory.")
+
+     (make-directory fn/font-dir t)
+
+
      (defconst fn/extra-dir-name "extra"
        "Anything under the sun you can put here")
 
@@ -147,6 +165,7 @@
 
      (defconst fn/custom-script-dir (expand-file-name fn/custom-script-dir-name fn/library-dir)
        "Custom elisp script directory")
+
 
      (make-directory fn/custom-script-dir t)
 
@@ -2257,6 +2276,10 @@
    #+BEGIN_SRC emacs-lisp :block-id bbcd3af3-f5e6-c215-4497-52fa53348966
      (defconst fn/primary-font-name "DejaVu Sans Mono"
        "My ideal font.")
+
+     (unless (member fn/primary-font-name (font-family-list))
+       (message "Hey, you're favorite font isn't installed. You can find a copy in %s and get good." fn/font-dir))
+
 
      (defconst fn/secondary-font-name "Courier"
        "My backup font.")
