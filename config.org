@@ -819,6 +819,18 @@
    it properly.
 
    #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
+     (defconst fn/all-the-icon-font-dir (expand-file-name "all-the-icons-font" fn/custom-module-dir)
+       "All the icon font library.")
+
+     (defconst fn/all-the-icon-font-families
+       (list
+        (cons "FontAwesome" "fontawesome.ttf")
+        (cons "Weather Icons" "weathericons.ttf")
+        (cons "file-icons" "file-icons.ttf")
+        (cons "github-octicons" "octicons.ttf")
+        (cons "all-the-icons" "all-the-icons.ttf"))
+       "The font available.")
+
      (fset 'fn/add-major-mode-icon 'ignore)
 
      (unless noninteractive
@@ -854,7 +866,19 @@
 
          (fn/add-major-mode-icon
           'package-menu-mode
-          (list 'all-the-icons-octicon "package" :v-adjust 0.0))))
+          (list 'all-the-icons-octicon "package" :v-adjust 0.0))
+
+
+         (defun fn/check-installed-font-families ()
+           "Check if `fn/all-the-icon-font-families' is intalled."
+           (mapc
+            (lambda (pair)
+              (pcase-let ((`(,family . ,_) pair))
+                (unless (member family (font-family-list))
+                  (message "The %s is not installed, you might want it installed." family))))
+            fn/all-the-icon-font-families))
+
+         (add-hook 'after-init-hook 'fn/check-installed-font-families)))
    #+END_SRC
 
 * Terminator
@@ -2868,7 +2892,7 @@
     #+BEGIN_SRC emacs-lisp :block-id 3f6d71ed-f861-c6a4-d043-820b5f369b1d
       (use-package ox-reveal
         :ensure t
-        :after org
+        :after org-plus-contrib
         :config
         (setq org-reveal-root "file:////home/fnmurillo/Fakespace/reveal-js")
 
