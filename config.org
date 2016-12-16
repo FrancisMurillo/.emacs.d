@@ -5393,6 +5393,51 @@
    #+END_SRC
 
 * Scripts
+** Clean Home
+   Make sure my Emacs home is clean
+
+   #+BEGIN_SRC emacs-lisp :block-id 8f1e63f0-f81c-3a52-5f37-b194db21d050
+     (require 'f)
+
+     (defconst fn/user-emacs-home-files
+       (list
+        ".cache"
+        "config.el"
+        "config.org"
+        "extra"
+        ".git"
+        ".gitignore"
+        "init.el"
+        "init-standard.el"
+        "lib"
+        "personal.el"
+        ".projectile"
+        ".project-locals.el"
+        "README.org"
+        ".safe-config.el"
+        ".safe-config.org")
+       "Known Emacs home files")
+
+
+     (defun fn/clean-user-emacs-home ()
+       "Make sure Emacs only has the following files as specified by `fn/user-emacs-home-files'"
+       (interactive)
+       (message "Cleaning emacs home.")
+       (mapc
+        (lambda (home-file)
+          (unless (member home-file fn/user-emacs-home-files )
+            (message "Deleting trash file %s" home-file)
+            (delete-file (expand-file-name home-file user-emacs-directory))))
+        (mapcar ;; You can use `directory-files' but you have to filter `.' and `..'
+         'f-filename
+         (append
+          (f-files user-emacs-directory)
+          (f-directories user-emacs-directory))))
+       (message "All clean."))
+
+     (add-hook 'after-init-hook 'fn/clean-user-emacs-home)
+   #+END_SRC
+
 ** Initial View
    My intial view when Emacs boots up
 
