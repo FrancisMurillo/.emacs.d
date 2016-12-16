@@ -6409,11 +6409,16 @@
 
        (defun fn/record-cpu-usage ()
          "Record cpu usage."
-         (deferred:nextc
-           (deferred:process-shell
-             fn/cpu-usage-command)
-           (lambda (value)
-             (setq fn/current-cpu-usage (string-to-number value)))))
+         (deferred:error
+           (deferred:nextc
+             (deferred:process-shell
+               fn/cpu-usage-command)
+             (lambda (value)
+               (setq fn/current-cpu-usage (string-to-number value))))
+           (lambda ()
+             (cancel-timer fn/cpu-timer)
+             (unintern 'fn/current-cpu-usage)
+             (message "Error with CPU monitor, shutting it down"))))
 
        (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
          "A cpu timer if you ever want to quit it."))
@@ -6428,11 +6433,16 @@
 
        (defun fn/record-memory-usage ()
          "Record memory usage."
-         (deferred:nextc
-           (deferred:process-shell
-             fn/memory-usage-command)
-           (lambda (value)
-             (setq fn/current-memory-usage (string-to-number value)))))
+         (deferred:error
+           (deferred:nextc
+             (deferred:process-shell
+               fn/memory-usage-command)
+             (lambda (value)
+               (setq fn/current-memory-usage (string-to-number value))))
+           (lambda ()
+             (cancel-timer fn/memory-timer)
+             (unintern 'fn/current-memory-usage)
+             (message "Error with RAM monitor, shutting it down"))))
 
        (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
          "A memory timer."))
