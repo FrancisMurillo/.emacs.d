@@ -3041,6 +3041,7 @@
      (unless noninteractive
        (use-package flyspell
          :ensure t
+         :if (not (eq system-type 'windows-nt))
          :defer t
          :diminish flyspell-mode
          :init
