@@ -3340,6 +3340,17 @@
        (advice-add 'camcorder-stop :before #'fn/camcorder-state-stop))
    #+END_SRC
 
+** list-processes+
+   A better way of viewing processes
+
+   #+BEGIN_SRC emacs-lisp :block-id b627e0fd-bda7-5a5a-cec1-ecba55ba606d
+     (use-package list-processes+
+       :ensure t
+       :defer t
+       :bind (:map fn-standard-prefix-map
+                   ("M-p" . list-processes+)))
+   #+END_SRC
+
 * Code Monkey
   Modes for my programming experiences
 
@@ -6859,8 +6870,6 @@
     ;; Shell
     (define-key fn-standard-prefix-map (kbd "x s") 'shell)
 
-    ;; Process
-    (define-key fn-standard-prefix-map (kbd "M-p") 'list-processes)
 
     ;; Customize
     (define-key fn-standard-prefix-map (kbd "C g") 'customize-group)
