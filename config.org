@@ -3351,6 +3351,31 @@
                    ("M-p" . list-processes+)))
    #+END_SRC
 
+** symon
+   CPU and RAM information is good
+
+   #+BEGIN_SRC emacs-lisp :block-id 1975b8c8-7ce8-8160-97af-c2faf6c3fc30
+     (use-package symon
+       :ensure t
+       :init
+       (add-hook 'after-init-hook 'symon-mode)
+       :config
+       (setq symon-refresh-rate 5
+          symon-monitors (list))
+
+       (cond
+        ((eq system-type 'windows-nt)
+         (add-to-list 'symon-monitors 'symon-windows-memory-monitor)
+         (add-to-list 'symon-monitors 'symon-windows-cpu-monitor))
+        ((eq system-type 'gnu/linux)
+         (add-to-list 'symon-monitors 'symon-linux-memory-monitor)
+         (add-to-list 'symon-monitors 'symon-linux-cpu-monitor)))
+
+       ;; No need to display
+       ;; (fset 'symon-display 'ignore)
+       )
+   #+END_SRC
+
 * Code Monkey
   Modes for my programming experiences
 
@@ -6394,7 +6419,7 @@
          "A cpu timer if you ever want to quit it."))
 
      (use-feature memory-usage
-       (deferred)
+       (deferred symon)
        (defvar fn/current-memory-usage 0.0
          "Memory recording.")
 
