@@ -3358,11 +3358,8 @@
      (use-package symon
        :ensure t
        :init
-       (add-hook 'after-init-hook 'symon-mode)
-       :config
        (setq symon-refresh-rate 5
-          symon-monitors (list))
-
+            symon-monitors (list))
        (cond
         ((eq system-type 'windows-nt)
          (add-to-list 'symon-monitors 'symon-windows-memory-monitor)
@@ -3371,6 +3368,9 @@
          (add-to-list 'symon-monitors 'symon-linux-memory-monitor)
          (add-to-list 'symon-monitors 'symon-linux-cpu-monitor)))
 
+       ;; (add-hook 'after-init-hook 'symon-mode)
+       :config
+       nil
        ;; No need to display
        ;; (fset 'symon-display 'ignore)
        )
