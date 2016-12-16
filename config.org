@@ -5427,7 +5427,7 @@
         (lambda (home-file)
           (unless (member home-file fn/user-emacs-home-files )
             (message "Deleting trash file %s" home-file)
-            (delete-file (expand-file-name home-file user-emacs-directory))))
+            (f-delete (expand-file-name home-file user-emacs-directory))))
         (mapcar ;; You can use `directory-files' but you have to filter `.' and `..'
          'f-filename
          (append
