@@ -3367,37 +3367,6 @@
                    ("M-p" . list-processes+)))
    #+END_SRC
 
-** symon
-   CPU and RAM information is good
-
-   #+BEGIN_SRC emacs-lisp :block-id 1975b8c8-7ce8-8160-97af-c2faf6c3fc30
-          (use-package symon
-            :ensure t
-            :init
-            (setq symon-refresh-rate 5
-               symon-sparkline-type 'plain
-               symon-monitors (list))
-            (cond
-             ((eq system-type 'windows-nt)
-              (add-to-list 'symon-monitors 'symon-windows-memory-monitor)
-              (add-to-list 'symon-monitors 'symon-windows-cpu-monitor))
-             ((eq system-type 'gnu/linux)
-              (add-to-list 'symon-monitors 'symon-linux-memory-monitor)
-              (add-to-list 'symon-monitors 'symon-linux-cpu-monitor)))
-
-            (defun fn/listen ()
-              (message "Hello"))
-
-            (advice-add 'define-symon-monitor :after 'fn/listen)
-
-            ;; (add-hook 'after-init-hook 'symon-mode)
-            :config
-            nil
-            ;; No need to display
-            ;; (fset 'symon-display 'ignore)
-            )
-   #+END_SRC
-
 * Code Monkey
   Modes for my programming experiences
 
@@ -6467,52 +6436,53 @@
 
        (add-hook 'pre-command-hook #'fn/-mark-time))
 
-     (use-feature cpu-usage
-       (deferred)
-       (defvar fn/current-cpu-usage 0.0
-         "Cpu recording.")
+     (unless (eq system-type 'windows-nt) ;; Windows requires powershell just to poll it. WTF!?
+       (use-feature cpu-usage
+         (deferred)
+         (defvar fn/current-cpu-usage 0.0
+           "Cpu recording.")
 
-       (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
+         (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
 
-       (defun fn/record-cpu-usage ()
-         "Record cpu usage."
-         (deferred:error
-           (deferred:nextc
-             (deferred:process-shell
-               fn/cpu-usage-command)
-             (lambda (value)
-               (setq fn/current-cpu-usage (string-to-number value))))
-           (lambda ()
-             (cancel-timer fn/cpu-timer)
-             (unintern 'fn/current-cpu-usage)
-             (message "Error with CPU monitor, shutting it down"))))
+         (defun fn/record-cpu-usage ()
+           "Record cpu usage."
+           (deferred:error
+             (deferred:nextc
+               (deferred:process-shell
+                 fn/cpu-usage-command)
+               (lambda (value)
+                 (setq fn/current-cpu-usage (string-to-number value))))
+             (lambda ()
+               (cancel-timer fn/cpu-timer)
+               (unintern 'fn/current-cpu-usage)
+               (message "Error with CPU monitor, shutting it down"))))
 
-       (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
-         "A cpu timer if you ever want to quit it."))
+         (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
+           "A cpu timer if you ever want to quit it."))
 
-     (use-feature memory-usage
-       (deferred symon)
-       (defvar fn/current-memory-usage 0.0
-         "Memory recording.")
+       (use-feature memory-usage
+         (deferred)
+         (defvar fn/current-memory-usage 0.0
+           "Memory recording.")
 
-       (defconst fn/memory-usage-command
-         "free | grep Mem | awk '{print $3/$2 * 100.0}'")
+         (defconst fn/memory-usage-command
+           "free | grep Mem | awk '{print $3/$2 * 100.0}'")
 
-       (defun fn/record-memory-usage ()
-         "Record memory usage."
-         (deferred:error
-           (deferred:nextc
-             (deferred:process-shell
-               fn/memory-usage-command)
-             (lambda (value)
-               (setq fn/current-memory-usage (string-to-number value))))
-           (lambda ()
-             (cancel-timer fn/memory-timer)
-             (unintern 'fn/current-memory-usage)
-             (message "Error with RAM monitor, shutting it down"))))
+         (defun fn/record-memory-usage ()
+           "Record memory usage."
+           (deferred:error
+             (deferred:nextc
+               (deferred:process-shell
+                 fn/memory-usage-command)
+               (lambda (value)
+                 (setq fn/current-memory-usage (string-to-number value))))
+             (lambda ()
+               (cancel-timer fn/memory-timer)
+               (unintern 'fn/current-memory-usage)
+               (message "Error with RAM monitor, shutting it down"))))
 
-       (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
-         "A memory timer."))
+         (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
+           "A memory timer.")))
    #+END_SRC
 
 ** starup and shutdown hook
