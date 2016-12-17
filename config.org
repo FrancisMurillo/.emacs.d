@@ -1112,6 +1112,21 @@
                  (message "Creating binding for %s" name)
                  (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service)))))))
 
+
+       ;; Display prodigy buffers on the same windowx
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*prodigy*" eos)
+         (cons 'display-buffer-same-window (list))))
+
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*prodigy-" (* anything))
+         (cons 'display-buffer-same-window (list))))
+
+
        (use-feature prodigy-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
@@ -2398,6 +2413,7 @@
       (unless noninteractive
         (use-package zone
           :ensure t
+          :if (not (eq system-type 'windows-nt))
           :demand t
           :config
           (defconst fn/zone-idle-time (* fn/minute-per-second 5)
@@ -3355,25 +3371,31 @@
    CPU and RAM information is good
 
    #+BEGIN_SRC emacs-lisp :block-id 1975b8c8-7ce8-8160-97af-c2faf6c3fc30
-     (use-package symon
-       :ensure t
-       :init
-       (setq symon-refresh-rate 5
-            symon-monitors (list))
-       (cond
-        ((eq system-type 'windows-nt)
-         (add-to-list 'symon-monitors 'symon-windows-memory-monitor)
-         (add-to-list 'symon-monitors 'symon-windows-cpu-monitor))
-        ((eq system-type 'gnu/linux)
-         (add-to-list 'symon-monitors 'symon-linux-memory-monitor)
-         (add-to-list 'symon-monitors 'symon-linux-cpu-monitor)))
+          (use-package symon
+            :ensure t
+            :init
+            (setq symon-refresh-rate 5
+               symon-sparkline-type 'plain
+               symon-monitors (list))
+            (cond
+             ((eq system-type 'windows-nt)
+              (add-to-list 'symon-monitors 'symon-windows-memory-monitor)
+              (add-to-list 'symon-monitors 'symon-windows-cpu-monitor))
+             ((eq system-type 'gnu/linux)
+              (add-to-list 'symon-monitors 'symon-linux-memory-monitor)
+              (add-to-list 'symon-monitors 'symon-linux-cpu-monitor)))
 
-       ;; (add-hook 'after-init-hook 'symon-mode)
-       :config
-       nil
-       ;; No need to display
-       ;; (fset 'symon-display 'ignore)
-       )
+            (defun fn/listen ()
+              (message "Hello"))
+
+            (advice-add 'define-symon-monitor :after 'fn/listen)
+
+            ;; (add-hook 'after-init-hook 'symon-mode)
+            :config
+            nil
+            ;; No need to display
+            ;; (fset 'symon-display 'ignore)
+            )
    #+END_SRC
 
 * Code Monkey
