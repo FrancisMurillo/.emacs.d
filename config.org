@@ -5470,9 +5470,25 @@
         (interactive)
         (setq new-home (read-directory-name "What Emacs config would you like to boot?" "~"))
         (fn/bootstrap-new-emacs new-home))
+
+
+      (defvar fn/previous-bootstrap-dir nil)
+
+      (defun fn/store-bootstrap-dir (new-home)
+        "Store previously bootstrap directory"
+        (setq fn/previous-bootstrap-dir new-home))
+
+      (advice-add 'fn/bootstrap-new-emacs :after 'fn/store-bootstrap-dir)
+
+
+      (defun fn/bootstrap-previous ()
+        "Bootstrap the previously chosen one, `fn/previous-bootstrap-dir'"
+        (interactive)
+        (fn/bootstrap-new-emacs fn/previous-bootstrap-dir))
     #+END_SRC
 
 *** Itself
+
     Load another copy of this configuration for vanity sake I suppose?
 
     #+BEGIN_SRC emacs-lisp :block-id 41b5319b-c982-bcd7-516b-39d81c4bc266
@@ -5603,14 +5619,10 @@
 
     ;; Custom Emacs
     (define-key fn-custom-prefix-map (kbd  "e e") 'fn/bootstrap-experimental)
+    (define-key fn-custom-prefix-map (kbd  "e C-p") 'fn/bootstrap-previous)
     (define-key fn-custom-prefix-map (kbd  "e s") 'fn/bootstrap-spacemacs)
     (define-key fn-custom-prefix-map (kbd  "e f") 'fn/bootstrap-from-dir)
 
-    ;; Review Custom Emacs
-    (define-key fn-custom-prefix-map (kbd  "e p") 'fn/bootstrap-steve-purcell)
-    (define-key fn-custom-prefix-map (kbd  "e z") 'fn/bootstrap-zak-elep)
-    (define-key fn-custom-prefix-map (kbd  "e c") 'fn/bootstrap-sacha-chua)
-    (define-key fn-custom-prefix-map (kbd  "e j") 'fn/bootstrap-john-wiegley)
   #+END_SRC
 
 * Sandbox
