@@ -66,13 +66,17 @@
   (use-package org-plus-contrib
     :ensure t)
 
+  (use-package benchmark-init
+    :ensure t)
+
   (kill-emacs))
 
 (require 'use-package)
 
+
 (use-package benchmark-init
-  :ensure t
   :demand t)
+
 
 (defcustom fn/pre-config-file "pre-config.el"
   "File script to load before the main configuration loads, useful for setting options")
