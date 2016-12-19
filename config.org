@@ -199,7 +199,7 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 8e36f9f4-4f43-646d-eb41-4ff7d425d03e
      ;; Don't really care about custom file
-     (setq custom-file (expand-file-name ".custom-file.el" fn/cache-dir))
+     (setq custom-file (expand-file-name "custom-file.el" fn/cache-dir))
 
 
      (defgroup fn nil
@@ -1397,7 +1397,7 @@
 
           (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
 
-          (yas-reload-all)
+          ;; (yas-reload-all)
 
           (defun fn/add-company-yasnippet ()
             "Add yasnippet to company backends"
@@ -2856,7 +2856,7 @@
                       ("j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
           :config
           (setq org-journal-dir
-             (expand-file-name "diary" fn/org-dir))
+             (expand-file-name "diary/" fn/org-dir))
 
           (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
              org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
@@ -2914,9 +2914,9 @@
           (setq auto-insert-query t) ;; Don't ask, just put it in there
           (add-hook 'find-file-hook 'auto-insert)
 
-          (add-to-list 'auto-insert-alist '(".*\.org\.gpg$" . fm/insert-org-gpg-headers))
-          (add-to-list 'auto-insert-alist '(".*\.private.org" . fm/insert-private-file-headers))
-          (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg" . fmj/insert-org-journal-headers))
+          (add-to-list 'auto-insert-alist '(".*\.org\.gpg\\'" . fm/insert-org-gpg-headers))
+          (add-to-list 'auto-insert-alist '(".*\.private.org\\'" . fm/insert-private-file-headers))
+          (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg\\'" . fmj/insert-org-journal-headers))
 
           (use-feature org-journal-mode--mode-icon
             (all-the-icons)
@@ -3497,11 +3497,13 @@
 
       (use-package git-timemachine
         :ensure t
+        :defer t
         :bind (("M-g t" . git-timemachine)))
 
       (use-package git-gutter
         :ensure t
         :diminish git-gutter-mode
+        :defer t
         :config
         (global-git-gutter-mode t))
     #+END_SRC
@@ -3546,7 +3548,6 @@
           :bind (:map fn-standard-prefix-map
                       ("C-y n" . pastebin-new)
                       ("C-y l" . pastebin-list-buffer-refresh))
-          :demand t
           :init
           (setq pastebin-data-dir (expand-file-name "pastebin-data" fn/cache-dir))))
     #+END_SRC
@@ -4367,7 +4368,6 @@
       (use-package haskell-mode
         :ensure t
         :defer t
-        :no-require t
         :init
         ;; (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
         (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
@@ -6966,41 +6966,3 @@
     (define-key fn-custom-prefix-map (kbd  "e f") 'fn/bootstrap-from-dir)
 
   #+END_SRC
-
-* Sandbox
-
-  #+BEGIN_SRC emacs-lisp :block-id 11924ff1-bd52-69da-c463-3ab89942f1f9
-    (defconst fn/elk-package-dir (expand-file-name "~/Fakespace/elk.el")
-      "My elk package dir")
-
-    (defconst fn/elk-magic-package-dir (expand-file-name  "~/Fakespace/elk-magic.el")
-      "My elk-magic package dir.")
-
-    (use-package elk
-      :load-path fn/elk-package-dir
-      :demand t)
-
-    (use-package elk-magic
-      :load-path fn/elk-magic-package-dir
-      :after elk)
-
-
-    (defconst fn/stream-package-dir (expand-file-name  "~/Fakespace/stream.el")
-      "My stream package dir.")
-
-    (use-package stream
-      :load-path fn/stream-package-dir
-      :demand t)
-
-
-    (defconst fn/transducer-package-dir (expand-file-name  "~/Fakespace/transducer.el")
-      "My transducer package dir.")
-
-    (use-package transducer
-      :load-path fn/transducer-package-dir
-      :demand t)
-  #+END_SRC
-
-* Reference
-  - [[https://github.com/sachac/.emacs.d/blob/gh-pages/Sacha.org][Sacha Chua]]: I took her configuration as a base to make this org configuration
-  - [[https://github.com/zakame/.emacs.d][Zak Elep]]: One of the master and first known ally.
