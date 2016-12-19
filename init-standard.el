@@ -70,6 +70,10 @@
 
 (require 'use-package)
 
+(use-package benchmark-init
+  :ensure t
+  :demand t)
+
 (defcustom fn/pre-config-file "pre-config.el"
   "File script to load before the main configuration loads, useful for setting options")
 
@@ -111,10 +115,10 @@ Hacked on v9 since it is lexically binded.")
 (defun fn/org-babel-tangle-wrap-block-info ()
   "Wraps a code block with `fn/code-block-id-symbol'."
   (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
-         (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
+      (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-            (block-end (format fn/code-block-end-format block-id)))
+          (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)
