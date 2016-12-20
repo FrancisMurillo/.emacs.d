@@ -2778,6 +2778,42 @@
       (use-feature org-src-desktop
         (org desktop)
         (add-to-list 'desktop-modes-not-to-save 'org-src-mode))
+
+
+      (use-feature org-src-edit
+        (org)
+        (require 'dash)
+        (make-variable-buffer-local
+         (defvar fn/org-babel-get-src-block-info-mapper nil
+           "A mapper for `org-babel-get-src-block-info'. Useful in manipulating its value"))
+
+
+        (add-to-list 'safe-local-variable-values (cons 'fn/org-babel-get-src-block-info-mapper t))
+
+        (defun fn/org-babel-get-src-block-info-mapper (orig-fun &rest args)
+          "Maps over `org-babel-get-src-block-info' if `fn/org-babel-get-src-block-info-mapper' is present."
+          (let ((value (apply orig-fun args)))
+            (funcall
+             (if (null fn/org-babel-get-src-block-info-mapper)
+                 'identity fn/org-babel-get-src-block-info-mapper)
+             value)))
+
+        (defun fn/org-info-file-to-tangle-mapper (info)
+          "Defaults an empty `:tangle' option to its `:file' parameter which may be manipulated by `:output-dir'."
+          (let* ((null-or-no-p
+               (lambda (value) (if (or (null value) (string= value "no")) nil value)))
+              (params (nth 2 info))
+              (tangle-param
+               (funcall null-or-no-p (cdr (assoc :tangle params))))
+              (file-param
+               (funcall null-or-no-p (cdr (assoc :file params))))
+              (new-tangle-param
+               (if (and file-param (null tangle-param)) file-param nil)))
+            (if new-tangle-param
+                (-replace-at 2 (cons (cons :tangle new-tangle-param) params) info)
+              info)))
+
+        (advice-add 'org-babel-get-src-block-info :around 'fn/org-babel-get-src-block-info-mapper))
     #+END_SRC
 
 *** org-capture
@@ -4578,91 +4614,92 @@
           (haskell-mode org)
           (use-package ob-haskell
             :load-path fn/ob-haskell-package-dir
+            :disabled t
             :demand t
             :config
-            (add-to-list 'org-babel-load-languages '(haskell . t))
+            (add-to-list 'org-babel-load-languages '(haskell . t)))
 
-            (defconst fn/haskell-file-extension ".hs"
-              "The de facto haskell file extension.")
+          (defconst fn/haskell-file-extension ".hs"
+            "The de facto haskell file extension.")
 
-            (defun fn/add-haskell-file-extension (name)
-              "Add the extension of .hs to a file or buffer NAME."
-              (if (string/ends-with name fn/haskell-file-extension)
-                  name (concat name fn/haskell-file-extension)))
+          (defun fn/add-haskell-file-extension (name)
+            "Add the extension of .hs to a file or buffer NAME."
+            (if (string/ends-with name fn/haskell-file-extension)
+                name (concat name fn/haskell-file-extension)))
 
-            (defvar fn/org-haskell-mode-hook nil
-              "Hook when buffer is haskellized.")
+          (defvar fn/org-haskell-mode-hook nil
+            "Hook when buffer is haskellized.")
 
-            (defun fn/haskellize-buffer-file (&optional buffer)
-              "Renames an BUFFER with a .hs extension if it doesn't have one."
-              (interactive)
-              (with-current-buffer (or buffer (current-buffer))
-                (save-buffer)
-                (lexical-let ((name (buffer-name))
-                    (file-name (buffer-file-name)))
-                  (if (not (and file-name (file-exists-p file-name)))
-                      (error "Buffer '%s' has no backing file" name)
-                    (lexical-let ((haskellized-name (fn/add-haskell-file-extension name))
-                        (haskellized-file-name (fn/add-haskell-file-extension file-name)))
-                      (cond
-                       ((get-buffer haskellized-name)
-                        (error "A buffer named '%s' already exists" haskellized-name))
-                       ((string-equal name haskellized-name)
-                        (message "Buffer %s is already haskellized" haskellized-name))
-                       (t
-                        (rename-file file-name haskellized-file-name t)
-                        (rename-buffer haskellized-name)
-                        (set-visited-file-name haskellized-file-name)
-                        (set-buffer-modified-p nil)
-                        (message "Buffer %s is now haskellized" haskellized-name))))))))
+          (defun fn/haskellize-buffer-file (&optional buffer)
+            "Renames an BUFFER with a .hs extension if it doesn't have one."
+            (interactive)
+            (with-current-buffer (or buffer (current-buffer))
+              (save-buffer)
+              (lexical-let ((name (buffer-name))
+                  (file-name (buffer-file-name)))
+                (if (not (and file-name (file-exists-p file-name)))
+                    (error "Buffer '%s' has no backing file" name)
+                  (lexical-let ((haskellized-name (fn/add-haskell-file-extension name))
+                      (haskellized-file-name (fn/add-haskell-file-extension file-name)))
+                    (cond
+                     ((get-buffer haskellized-name)
+                      (error "A buffer named '%s' already exists" haskellized-name))
+                     ((string-equal name haskellized-name)
+                      (message "Buffer %s is already haskellized" haskellized-name))
+                     (t
+                      (rename-file file-name haskellized-file-name t)
+                      (rename-buffer haskellized-name)
+                      (set-visited-file-name haskellized-file-name)
+                      (set-buffer-modified-p nil)
+                      (message "Buffer %s is now haskellized" haskellized-name))))))))
 
-            (defun fn/org-haskell-buffer-p (&optional buffer)
-              "Check if BUFFER is an org-haskell buffer."
-              (with-current-buffer (or buffer (current-buffer))
-                (and (eq major-mode 'haskell-mode)
-                   (fboundp 'org-src-edit-buffer-p)
-                   (org-src-edit-buffer-p))))
+          (defun fn/org-haskell-buffer-p (&optional buffer)
+            "Check if BUFFER is an org-haskell buffer."
+            (with-current-buffer (or buffer (current-buffer))
+              (and (eq major-mode 'haskell-mode)
+                 (fboundp 'org-src-edit-buffer-p)
+                 (org-src-edit-buffer-p))))
 
-            (defun fn/haskellize-org-haskell-buffer (&rest _)
-              "Haskellize org haskell buffer."
-              (when (fn/org-haskell-buffer-p)
-                (fn/haskellize-buffer-file (current-buffer))
-                (run-hooks 'fn/org-haskell-mode-hook)))
+          (defun fn/haskellize-org-haskell-buffer (&rest _)
+            "Haskellize org haskell buffer."
+            (when (fn/org-haskell-buffer-p)
+              (fn/haskellize-buffer-file (current-buffer))
+              (run-hooks 'fn/org-haskell-mode-hook)))
 
-            (defun fn/save-org-haskell-buffer (&rest _)
-              "Save haskell buffer along with the edit buffer."
-              (when (fn/org-haskell-buffer-p)
-                (save-buffer)))
+          (defun fn/save-org-haskell-buffer (&rest _)
+            "Save haskell buffer along with the edit buffer."
+            (when (fn/org-haskell-buffer-p)
+              (save-buffer)))
 
-            (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
-              "Cleanup the org-haskell buffer when exiting the edit buffer."
-              (lexical-let ((org-haskell-file-name (buffer-file-name))
-                  (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
-                (prog1
-                    (apply orig-fun args)
-                  (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
-                    (delete-file org-haskell-file-name)))))
+          (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
+            "Cleanup the org-haskell buffer when exiting the edit buffer."
+            (lexical-let ((org-haskell-file-name (buffer-file-name))
+                (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
+              (prog1
+                  (apply orig-fun args)
+                (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
+                  (delete-file org-haskell-file-name)))))
 
-            (defun fn/haskell-process-load-or-reload ()
-              "Invoke reload process without switching buffers"
-              (save-window-excursion
-                (haskell-process-load-or-reload)))
+          (defun fn/haskell-process-load-or-reload ()
+            "Invoke reload process without switching buffers"
+            (save-window-excursion
+              (haskell-process-load-or-reload)))
 
-            (defun fn/haskell-reload-on-save ()
-              "Reload interactive haskell process on save."
-              (add-hook 'after-save-hook 'fn/haskell-process-load-or-reload t t))
+          (defun fn/haskell-reload-on-save ()
+            "Reload interactive haskell process on save."
+            (add-hook 'after-save-hook 'fn/haskell-process-load-or-reload t t)))
 
-            (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
+          (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
 
-            (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
-            (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-reload-on-save)
+          (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
+          (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-reload-on-save)
 
-            (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
-            (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
+          (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
+          (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
 
-            (use-feature literate-haskell-hindent
-              (haskell-mode hindent)
-              (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)))))
+          (use-feature literate-haskell-hindent
+            (haskell-mode hindent)
+            (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)))
     #+END_SRC
 
 ** Clojure
