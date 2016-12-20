@@ -5502,22 +5502,11 @@
    My intial view when Emacs boots up
 
    #+BEGIN_SRC emacs-lisp :block-id 3a40c500-5ad9-4d98-85de-75bc79d992f9
-     (defconst fn/preferred-text-width 60
-       "Just enough characters to read my windwos")
-
      (defun fn/setup-initial-view ()
        "Setup your personal view"
        (interactive)
        (message "Setting up initial view")
-       (let ((text-width (/ (window-text-width) 2.0)))
-         (fn/find-main-org-file)
-
-         ;; If there is enough width, show the org-todo view
-         (when (>= text-width fn/preferred-text-width)
-           (split-window-horizontally)
-           (other-window 1)
-           (org-todo-list)
-           (other-window 1)))
+       (fn/find-main-org-file)
 
        (select-frame-set-input-focus (selected-frame)))
 
