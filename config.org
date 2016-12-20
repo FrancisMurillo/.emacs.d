@@ -66,17 +66,18 @@
    #+BEGIN_SRC emacs-lisp :block-id 8ec65bd3-dc31-0455-99d0-301267fdd059
      (defconst fn/package-archives
        (list
-        (cons "gnu" "http://elpa.gnu.org/packages/")
-        (cons "org" "http://orgmode.org/elpa/")
-        (cons "melpa" "http://melpa.org/packages/")
-        (cons "melpa-stable" "https://stable.melpa.org/packages/"))
+        (list "gnu" "http://elpa.gnu.org/packages/" 10)
+        (list "org" "http://orgmode.org/elpa/" 0 )
+        (list "melpa" "http://melpa.org/packages/" 20)
+        (list "melpa-stable" "http://stable.melpa.org/packages/" 5))
        "List of my packages")
 
      (mapc
       (lambda (package-archive)
-        (pcase-let ((`(,name . ,_) package-archive))
-          (unless (assoc-default name package-archives)
-            (add-to-list 'package-archives package-archive))))
+        (pcase-let ((`(,id ,location ,priority) package-archive))
+          (unless (assoc-default id package-archives)
+            (add-to-list 'package-archives (cons id location))
+            (add-to-list 'package-archive-priorities (cons id priority)))))
       fn/package-archives)
 
    #+END_SRC
@@ -260,9 +261,10 @@
 
 
      (defvar fn/my-lightning (concat
-                         (propertize " MY LIGHTNING "
-                                     'face '(:background "#ff1e02" :foreground "#110200"
-                                                         :box (:line-width 0 :color "#ff1e02")))
+                         (propertize
+                          " MY LIGHTNING "
+                          'face '(:background "#ff1e02" :foreground "#110200"
+                                              :box (:line-width 0 :color "#ff1e02")))
                          "...")
        "A reference to continue?987654321.
      May I accept the lightning.")
@@ -270,9 +272,10 @@
      (defvar fn/my-prayer (format "%s %s"
                              fn/my-lightning
                              (concat
-                              (propertize " MY PRAYER "
-                                          'face '(:background "#ffffff" :foreground "#121212"
-                                                              :box (:line-width 0 :color "#ffffff")))
+                              (propertize
+                               " MY PRAYER "
+                               'face '(:background "#ffffff" :foreground "#121212"
+                                                   :box (:line-width 0 :color "#ffffff")))
                               "..."))
        "The closing message for garbage collection.
      May I be lift up.")
@@ -300,7 +303,7 @@
 
 
      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-           initial-scratch-message nil)
+        initial-scratch-message nil)
    #+END_SRC
 
 ** Environment
@@ -804,15 +807,15 @@
 
        (defmacro use-feature (name features &rest body)
          (let ((now-var (make-symbol "now"))
-               (elapsed-var (make-symbol "elapsed"))
-               (feature-name-var (make-symbol "feature-name")))
+             (elapsed-var (make-symbol "elapsed"))
+             (feature-name-var (make-symbol "feature-name")))
            `(promise-then
              (apply #'promise-all-features (list ,@(if features
-                                                       (mapcar (lambda (feature) (list 'quote feature)) features)
-                                                     (list (list 'quote 'use-package)))))
+                                                (mapcar (lambda (feature) (list 'quote feature)) features)
+                                              (list (list 'quote 'use-package)))))
              (lambda (loaded-features)
                (let ((,feature-name-var ,(symbol-name name))
-                     (,now-var (current-time)))
+                   (,now-var (current-time)))
                  (message "Loading feature package %s" ,feature-name-var)
                  ,@body
                  (let ((,elapsed-var (float-time (time-subtract (current-time) ,now-var))))
@@ -1075,14 +1078,16 @@
 
 
        (defun fn/prodigy-switch-to-process-buffer (service)
-         "Just an wrapper for said function with SERVICE."
-         (if (prodigy-service-started-p service)
-             (prodigy-switch-to-process-buffer service)
-           (lexical-let* ((service-delay 3)
-               (service service))
+         "Just an wrapper for said function with SERVICE. If there is a prefix argument, it will stop it instead."
+         (if current-prefix-arg
+             (if (prodigy-service-stopping-p service)
+                 (message "Service already stopping")
+               (message "Stopping %s service." (plist-get service :name))
+               (prodigy-stop-service service t))
+           (if (prodigy-service-started-p service)
+               (prodigy-switch-to-process-buffer service)
              (message "Starting %s service." (plist-get service :name))
-             (prodigy-start-service service)
-             (run-with-idle-timer service-delay nil 'fn/prodigy-switch-to-process-buffer service))))
+             (prodigy-start-service service (apply-partially prodigy-switch-to-process-buffer service)))))
 
        (defun fn/prodigy-prepared-switch-to-process-buffer (service)
          "Another wrapper to make specific functions for viewing SERVICE."
@@ -2199,8 +2204,21 @@
       (defconst fn/mirror-elpa-repo "mirror-elpa"
         "The name of the elpa mirror repo.")
 
+      (defconst fn/mirror-elpa-id "elpa-mirror"
+        "My mirror repo id.")
+
       (defconst fn/local-elpa-mirror-dir (expand-file-name fn/mirror-elpa-repo fn/external-module-dir)
         "My local elpa mirror.")
+
+
+      (defconst fn/mirror-github-elpa-id "elpa-github-mirror"
+        "Elpa github mirror id")
+
+      (defconst fn/mirror-github-elpa-repo
+        (format "https://raw.githubusercontent.com/%s/%s/master/"
+                fn/user-github-name
+                fn/mirror-elpa-repo)
+        "Url of github elpa mirror")
 
       (use-package elpa-mirror
         :ensure t
@@ -2211,16 +2229,15 @@
         (make-directory fn/local-elpa-mirror-dir t)
         (setq elpamr-default-output-directory fn/local-elpa-mirror-dir)
 
-        (add-to-list 'package-archives (cons "elpa-mirror" (concat fn/local-elpa-mirror-dir "/")))
 
-        (defun fn/only-github-elpa-mirror-package-archive ()
-          "Make `package-archives' be the github elpa mirror repo."
-          (setq package-archives
-                (list
-                 (cons fn/mirror-elpa-repo
-                       (format "https://raw.githubusercontent.com/%s/%s/master/"
-                               fn/user-github-name
-                               fn/mirror-elpa-repo)))))
+        ;; Local Mirror
+        (add-to-list 'package-archives (cons fn/mirror-elpa-id fn/local-elpa-mirror-dir))
+        (add-to-list 'package-archive-priorities (cons fn/mirror-elpa-id -1))
+
+        ;; Github Mirror
+        (add-to-list 'package-archives (cons fn/mirror-github-elpa-id fn/mirror-github-elpa-repo))
+        (add-to-list 'package-archive-priorities (cons fn/mirror-github-elpa-id 0))
+
 
         (defun fn/only-local-mirror-elpa-package-archive ()
           "Make `package-archives' be the `fn/local-elpa-mirror-dir'."
@@ -3653,6 +3670,7 @@
     #+END_SRC
 
 *** rest-client
+
     I need REST.
 
     #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
@@ -3700,6 +3718,15 @@
             :demand t
             :config
             (add-to-list 'org-babel-load-languages '(restclient . t)))))
+    #+END_SRC
+
+*** YAML
+    YAML editing
+
+    #+BEGIN_SRC emacs-lisp :block-id d33121e6-bc01-1990-3e5a-c98f230b5b43
+      (use-package yaml-mode
+        :ensure t
+        :defer t)
     #+END_SRC
 
 ** Helper
@@ -4492,7 +4519,12 @@
           :init
           (add-hook 'haskell-mode-hook 'flycheck-mode)
           :config
-          (flycheck-haskell-setup)))
+          (flycheck-haskell-setup))
+
+        (use-package flycheck-stack
+          :ensure t
+          :after flycheck-haskell
+          :config))
     #+END_SRC
 
 *** Prettify
