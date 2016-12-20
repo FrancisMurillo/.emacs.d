@@ -1406,7 +1406,9 @@
 
           (defun fn/add-company-yasnippet ()
             "Add yasnippet to company backends"
-            (fn/append-to-backends 'company-yasnippet))))
+            (fn/append-to-backends 'company-yasnippet))
+
+          (add-hook 'after-init-hook 'fn/add-company-yasnippet)))
     #+END_SRC
 
 * Ergonomic
@@ -4466,7 +4468,7 @@
         ;; (define-key interactive-haskell-mode-map (kbd "C-c M-.") 'haskell-mode-goto-loc)
         ;; (define-key interactive-haskell-mode-map (kbd "C-c M-t") 'haskell-mode-show-type-at)
 
-        (setq haskell-stylish-on-save t)
+        ;; (setq haskell-stylish-on-save t)
 
         ;; (setq interactive-haskell-mode t)
 
@@ -4475,7 +4477,16 @@
               haskell-process-log t
               haskell-process-suggest-hoogle-imports t
               haskell-process-type 'stack-ghci
-              haskell-interactive-mode-eval-mode 'haskell-mode))
+              haskell-interactive-mode-eval-mode 'haskell-mode)
+
+
+        (add-hook 'haskell-interactive-mode-hook 'smartparens-mode)
+        (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
+
+
+        ;; Hoogle
+        (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
+        (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle))
 
       (use-feature helm-hoogle
         (helm haskell-mode)
@@ -4494,16 +4505,24 @@
         :init
         (add-hook 'haskell-mode-hook 'structured-haskell-mode)
         :config
-        ;; (define-key shm-map  "\C-j" 'shm/newline-indent)
+        (define-key shm-map (kbd "C-j") 'shm/newline-indent)
         (define-key shm-map (kbd "M-a") 'shm/goto-parent)
         (define-key shm-map (kbd "M-e") 'shm/goto-parent-end)
-        ;; (define-key shm-map  "\C-+" 'shm/add-operand)
+        (define-key shm-map (kbd "C-+") 'shm/add-operand)
         (define-key shm-map (kbd "M-r") 'shm/raise)
         (define-key shm-map (kbd "M-^") 'shm/delete-indentation)
         (define-key shm-map (kbd "M-k") 'shm/kill)
         (define-key shm-map (kbd "C-y") 'shm/yank)
         (define-key shm-map (kbd "M-k") 'shm/kill-line)
-        (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
+
+
+        ;; SHM with interactive-haskell
+        (defun fn/shm-interactive-config (&rest args)
+          "Setup SHM with interactive-haskell-mode"
+          (require 'shm-case-split)
+          (define-key shm-map (kbd "C-c C-s") 'shm/case-split))
+
+        (eval-after-load 'haskell-interactive-mode #'fn/shm-interactive-config))
     #+END_SRC
 
 *** Autocomplete
