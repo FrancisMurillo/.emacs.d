@@ -4552,15 +4552,15 @@
         (flycheck haskell-mode)
         (use-package flycheck-haskell
           :ensure t
-          :init
-          (add-hook 'haskell-mode-hook 'flycheck-mode)
+          :demand t
           :config
           (flycheck-haskell-setup))
 
         (use-package flycheck-stack
           :ensure t
           :after flycheck-haskell
-          :config))
+          :config
+          nil))
     #+END_SRC
 
 *** Prettify
