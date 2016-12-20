@@ -1,15 +1,19 @@
 -/.cache
 -/.cask
 
-
 -/.git
 -.git
 
--/lib
+
 -/extra
 
--/.python-environments
-
--/haskell-fun
 
 -/.safe-config*
+
+packages
+
+*.elc
+
+*.ttf
+*.jar
+.#*
