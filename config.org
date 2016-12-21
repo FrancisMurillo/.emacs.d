@@ -2906,10 +2906,13 @@
            (lambda ()
              (when (org-entry-is-done-p)
                (org-archive-subtree)))
-           t 'agenda))
+           t 'agenda)
+          (org-save-all-org-buffers))
 
-        ;; Archive done tasks on m
-        (add-hook 'after-init-hook #'fn/org-archive-done-agenda-tasks))
+        ;; Archive done tasks on load
+        (add-hook
+         'after-init-hook
+         (apply-partially 'run-with-idle-timer 0 nil 'fn/org-archive-done-agenda-tasks)))
     #+END_SRC
 
 *** org-journal
@@ -3267,6 +3270,14 @@
          "Find ledger file."
          (interactive)
          (find-file fn/ledger-file)))
+
+     (use-feature ledger-capture
+       (org ledger-mode)
+       (add-to-list
+        'org-capture-templates
+        (list "l" "Ledger" 'plain
+           (list 'file fn/ledger-file)
+           "%(org-read-date) * %i  \n\n")))
    #+END_SRC
 
 ** engine
