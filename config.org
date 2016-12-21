@@ -1641,7 +1641,19 @@
                   (message "Window %s does not exist"
                            window-number)
                 (fn/swap-windows this-window that-window)
-                (select-window-by-number window-number))))))
+                (select-window-by-number window-number)))))
+
+
+        (use-package winum
+          :ensure t
+          :disabled t
+          :demand t
+          :config
+          (setq window-numbering-scope 'global
+             winum-auto-setup-mode-line nil ;; moder.el does this for me
+             winum-keymap-prefix (kbd "C-c n w"))
+
+          (winum-mode)))
     #+END_SRC
 
 *** window-layout
@@ -1721,7 +1733,8 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 0daef306-f44a-5bc5-dead-1578ba3b8e9d
       (use-package uniquify
-        :if (version<= emacs-version "24.3.1")
+        :if (version<= "24.3.1" emacs-version)
+        :demand t
         :config
         (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
     #+END_SRC
@@ -4484,6 +4497,9 @@
         (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
 
 
+        (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
+
+
         ;; Hoogle
         (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
         (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle))
@@ -4580,31 +4596,6 @@
           :after flycheck-haskell
           :config
           nil))
-    #+END_SRC
-
-*** Prettify
-    My symbols for Haskell
-
-    #+BEGIN_SRC emacs-lisp :block-id 645c5f8f-82a1-dd6d-6318-f3528bbb7cb7
-      (use-function prettify-haskell
-        prettify-symbols-mode
-        (use-feature prettify-haskell
-          (prettify-symbols-mode haskell-mode)
-          (defun fn/prettiy-haskell ()
-            "Some haskell prettifier"
-            (push '("->" . ?→) prettify-symbols-alist)
-            (push '("let" . ?ν) prettify-symbols-alist)
-            (push '("if" . ?α) prettify-symbols-alist)
-            (push '("in" . ?ε) prettify-symbols-alist)
-            (push '("then" . ?σ) prettify-symbols-alist)
-            (push '("else" . ?τ) prettify-symbols-alist)
-            (push '("where" . ?δ) prettify-symbols-alist)
-            (push '("module" . ?θ) prettify-symbols-alist)
-            (push '("data" . ?Τ) prettify-symbols-alist)
-            (push '("deriving" . ?Δ) prettify-symbols-alist)
-            (prettify-symbols-mode t))
-
-          (add-hook 'haskell-mode-hook #'fn/prettiy-haskell)))
     #+END_SRC
 
 *** Snippets

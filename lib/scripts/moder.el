@@ -181,10 +181,17 @@
 ;;* Piece
 (defun moder-piece-window-number ()
   "A piece for window numbering."
-  (if (and (fboundp 'window-numbering-get-number)
-         (boundp 'window-numbering-mode)
-         (not (null window-numbering-mode)))
-      (format " %s " (window-numbering-get-number))))
+  (cond
+   ((and (fboundp 'window-numbering-get-number)
+       (boundp 'window-numbering-mode)
+       (not (null window-numbering-mode)))
+    (format " %s " (window-numbering-get-number)))
+   ((and (fboundp 'winum-get-number)
+       (boundp 'winum-mode)
+       (not (null winum-mode)))
+    (format " %s " (winum-get-number)))
+   (t nil)))
+
 
 (defun moder-piece-modified ()
   "Indicates if the buffer is modified."
