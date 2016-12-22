@@ -1132,6 +1132,14 @@
          (cons 'display-buffer-same-window (list))))
 
 
+       ;; Prodigy recipes
+       (prodigy-define-tag
+         :name 'jekyll
+         :command "jekyll"
+         :args (list "serve")
+         :kill-signal 'sigkill)
+
+
        (use-feature prodigy-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
@@ -3273,11 +3281,12 @@
 
      (use-feature ledger-capture
        (org ledger-mode)
-       (add-to-list
-        'org-capture-templates
-        (list "l" "Ledger" 'plain
-           (list 'file fn/ledger-file)
-           "%(org-read-date) * %i  \n\n")))
+       (when nil ;; BUG: Emacs hangs with a GPG file for a capture
+         (add-to-list
+          'org-capture-templates
+          (list "l" "Ledger" 'plain
+             (list 'file fn/ledger-file)
+             "%(org-read-date) * %i  \n\n"))))
    #+END_SRC
 
 ** engine
