@@ -510,11 +510,16 @@
 
    #+BEGIN_SRC emacs-lisp :block-id fd8d45fa-ef70-5322-8ec6-04d8fc1e13d5
      (use-package dash
-       :ensure t)
+       :ensure t
+       :defer t)
 
      (use-package dash-functional
        :ensure t
        :after dash)
+
+     (use-package kv
+       :ensure t
+       :defer t)
    #+END_SRC
 
 ** async
@@ -652,6 +657,7 @@
        "Htmlize package dir")
 
      (use-package htmlize
+       :disabled t
        :load-path fn/htmlize-package-dir
        :after ox-reveal)
    #+END_SRC
@@ -903,6 +909,15 @@
          (add-hook 'after-init-hook 'fn/check-installed-font-families)))
    #+END_SRC
 
+** Optional
+   Dependencies that aren't really required
+
+   #+BEGIN_SRC emacs-lisp :block-id a79a8916-14f1-f6da-278f-48bb7915b472
+     (use-package org-jekyll-blogger
+       :load-path fn/custom-script-dir
+       :defer t)
+   #+END_SRC
+
 * Terminator
   Shell related aspect
 
@@ -928,6 +943,17 @@
        (fn/add-major-mode-icon
         'shell-mode
         (list 'all-the-icons-faicon "terminal" :v-adjust 0.0)))
+   #+END_SRC
+
+** sh
+   More things for sh-mode
+
+   #+BEGIN_SRC emacs-lisp :block-id f5c18b8e-734c-f4e2-e191-f7ef929289fa
+     (use-package company-shell
+       :ensure t
+       :demand t
+       :config
+       (add-to-list 'company-backends 'company-shell))
    #+END_SRC
 
 ** term
@@ -3281,12 +3307,12 @@
 
      (use-feature ledger-capture
        (org ledger-mode)
-       (when nil ;; BUG: Emacs hangs with a GPG file for a capture
+       (when t ;; BUG: Emacs hangs with a GPG file for a capture
          (add-to-list
           'org-capture-templates
           (list "l" "Ledger" 'plain
              (list 'file fn/ledger-file)
-             "%(org-read-date) * %i  \n\n"))))
+             "%(org-read-date) * %?  \n\n"))))
    #+END_SRC
 
 ** engine
@@ -3441,7 +3467,37 @@
 
        (advice-add 'camcorder-record :after  #'fn/camcorder-state-start)
        (advice-add 'camcorder-pause :before  #'fn/camcorder-state-pause)
-       (advice-add 'camcorder-stop :before #'fn/camcorder-state-stop))
+       (advice-add 'camcorder-stop :before #'fn/camcorder-state-stop)
+
+       ;; Preload
+       (defconst fn/camcorder-demo-file (expand-file-name "camcorder-demo.txt" fn/custom-script-dir)
+         "Initial buffer when recording.")
+
+       (defconst fn/camcorder-demo-buffer-name "*Space Channel 5"
+         "The name of the demo buffer.")
+
+       (defun fn/camcorder-demo-buffer ()
+         "Open a blank special buffer when recording."
+         (let ((demo-buffer (find-file fn/camcorder-demo-file)))
+           (with-current-buffer demo-buffer
+             (switch-to-buffer demo-buffer)
+             (rename-buffer fn/camcorder-demo-buffer-name)
+             (emacs-lisp-mode))))
+
+       (defconst fn/camcorder-init-file (expand-file-name "camcorder-init.el" fn/custom-script-dir)
+         "Init script when recording.")
+
+       (defun fn/camcorder-init ()
+         "Load an initial script when recording."
+         (load fn/camcorder-init-file t))
+
+       (defun fn/camcorder-ready-message ()
+         "Message when camcorder starts."
+         (message "Hey there, space cats! Ulala here, comin' at you from Spaceport 9."))
+
+       (add-hook 'camcorder-mode-hook #'fn/camcorder-demo-buffer)
+       (add-hook 'camcorder-mode-hook #'fn/camcorder-init t)
+       (add-hook 'camcorder-mode-hook #'fn/camcorder-ready-message t))
    #+END_SRC
 
 ** list-processes+
@@ -3747,7 +3803,7 @@
     #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
       (use-package restclient
         :ensure t
-        :mode ("\\.http\\'" . restclient-mode)
+        :mode ("\\.rest\\'" . restclient-mode)
         :defer t
         :config
         ;; Setting it up as editing mode
