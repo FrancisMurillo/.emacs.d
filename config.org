@@ -977,8 +977,8 @@
        ;; Set the term program and ask for a name
        (defadvice ansi-term (before ansi-term-force-shell)
          (interactive (list (getenv "SHELL")
-                            (let ((term-name (string-trim (read-from-minibuffer "Name the term buffer: "))))
-                              (if (string-empty-p term-name) nil term-name)))))
+               (let ((term-name (string-trim (read-from-minibuffer "Name the term buffer: "))))
+                 (if (string-empty-p term-name) nil term-name)))))
        (ad-activate 'ansi-term)
 
 
@@ -5162,25 +5162,47 @@
      (use-package w3m
        :ensure t
        :defer t
+       :bind (:map fn-standard-prefix-map
+                   ("w w" . w3m))
        :config
+       ;; Main
+       (setq w3m-add-tab-number t
+
+          w3m-use-header-line t
+          w3m-use-header-line-title t
+
+          w3m-use-title-buffer-name t
+
+          w3m-home-page "https://duckduckgo.com"
+
+          w3m-use-cookies t
+          w3m-cookie-file (expand-file-name ".w3m-cookie" fn/cache-dir))
+
+
+       ;; Search Engine
        (setq w3m-search-engine-alist (list)
-          w3m-search-default-engine 'duckduckgo)
+          w3m-search-default-engine "duckduckgo")
 
        (add-to-list 'w3m-search-engine-alist
                     (list "duckduckgo" "https://duckduckgo.com?q=%s"))
        (add-to-list 'w3m-search-engine-alist
                     (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
 
+       ;; Conkeror / Lnum
+       (require 'w3m-lnum)
+       (add-hook 'w3m-mode-hook #'w3m-lnum-mode t)
 
-       (defun fn/w3m-kill-current-url ()
-         "Kill current url of page."
-         (interactive)
-         (if (null w3m-current-url)
-             (error "Buffer has no `w3m-current-url'")
-           (kill-new w3m-current-url)
-           (message "Killed %s" w3m-current-url)))
 
-       (define-key w3m-mode-map (kbd "C-c b u") #'fn/w3m-kill-current-url))
+       ;; Persistent Session
+       (require 'w3m-session)
+       (setq w3m-session-file (expand-file-name "w3m-session" fn/cache-dir))
+
+
+       (use-feature w3m-mode--mode-icon
+         (all-the-icons)
+         (fn/add-major-mode-icon
+          'w3m-mode
+          (list 'all-the-icons-faicon "globe" :v-adjust -0.1))))
    #+END_SRC
 
 ** twittering
