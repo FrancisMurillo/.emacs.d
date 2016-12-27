@@ -952,6 +952,8 @@
      (use-package company-shell
        :ensure t
        :demand t
+       :init
+       (add-hook 'sh-mode-hook 'company-mode)
        :config
        (add-to-list 'company-backends 'company-shell))
    #+END_SRC

@@ -1,0 +1,22 @@
+;; Hypothetical Intialization for this library
+;; This also creates the structure for it
+(setq project (org-jekyll-blogger-define-project
+            "my-project"
+            :project-root "~/Fakespace/jekyll-org-project"
+            :publish-root "~/Fakespace/jekyll-project"))
+
+(setq main-blog (org-jekyll-blogger-define-blog
+              "main"
+              :project project
+              :post-options
+              (list
+               :category (list "main")))
+   second-blog (org-jekyll-blogger-define-blog
+                "secondary"
+                :project project
+                :post-options
+                (list
+                 :category (list "second"))))
+
+;; Time to publish
+;; Both blogs published
