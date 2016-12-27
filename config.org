@@ -5161,8 +5161,26 @@
    #+BEGIN_SRC emacs-lisp :block-id 4ef8aaa9-5b2f-30e3-c126-323935e0f9f6
      (use-package w3m
        :ensure t
+       :defer t
        :config
-       nil)
+       (setq w3m-search-engine-alist (list)
+          w3m-search-default-engine 'duckduckgo)
+
+       (add-to-list 'w3m-search-engine-alist
+                    (list "duckduckgo" "https://duckduckgo.com?q=%s"))
+       (add-to-list 'w3m-search-engine-alist
+                    (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
+
+
+       (defun fn/w3m-kill-current-url ()
+         "Kill current url of page."
+         (interactive)
+         (if (null w3m-current-url)
+             (error "Buffer has no `w3m-current-url'")
+           (kill-new w3m-current-url)
+           (message "Killed %s" w3m-current-url)))
+
+       (define-key w3m-mode-map (kbd "C-c b u") #'fn/w3m-kill-current-url))
    #+END_SRC
 
 ** twittering
