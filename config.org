@@ -2219,7 +2219,8 @@
                    (push command-option which-key-highlighted-command-list))
                  (when (consp command-option)
                    (setcdr command-option
-                           (if minor-mode
+                           (if (and (boundp minor-mode)
+                                  (symbol-value minor-mode))
                                'fn/which-key-active-mode-face 'fn/which-key-inactive-mode-face
                              )))))
              minor-mode-list)
