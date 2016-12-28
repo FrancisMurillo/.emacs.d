@@ -5685,6 +5685,7 @@
 
      (defconst fn/user-emacs-home-files
        (list
+        "bootstrap"
         ".cache"
         "config.el"
         "config.org"

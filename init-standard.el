@@ -6,6 +6,7 @@
 (unless (eq (server-running-p) t)
   (server-start))
 
+
 ;; Turn off mouse interface early in startup to avoid momentary display
 (if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
 (if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
@@ -15,81 +16,53 @@
   (message "This config works only for Emacs version 24 and higher")
   (kill-emacs))
 
-;; Helper functions
-(defun string/ends-with (s ending)
-  "Return non-nil if string S ends with ENDING."
-  (cond ((>= (length s) (length ending))
-         (let ((elength (length ending)))
-           (string= (substring s (- 0 elength)) ending)))
-        (t nil)))
 
-(require 'cl)
-(setq load-path
-      (remove-if
-       (lambda (text) (string/ends-with text "org"))
-       load-path))
-
+;; Package Manager
+(require 'package)
 
 (setq load-prefer-newer t)
 
-
-(require 'package)
 
 (defconst fn/library-dir (expand-file-name "lib" user-emacs-directory)
   "A library directory for the dependencies.")
 
 (defconst fn/package-dir (expand-file-name "packages" fn/library-dir)
-  "A library for my emacs packages.")
+  "A library for my Emacs packages.")
 
-(setq package-user-dir fn/package-dir)
+(setq package-user-dir fn/package-dir
+   package-enable-at-startup nil)
 
-;; customize loading the packages
-(package-initialize t)
-
-;; Load the rest of the packages
 (package-initialize nil)
 
-;; Configuration bootstrapping
-;; use-package is fundamental to this configuration
-(unless (package-installed-p 'use-package)
-  (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-  (add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/"))
-  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-  (add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
 
-  (package-refresh-contents)
-  (package-install 'use-package)
+;; Bootstrapping
+(defconst fn/bootstrap-dir (expand-file-name "bootstrap")
+  "Bootstrap directory.")
 
+(defconst fn/bootstrap-packages (list 'use-package 'org 'org-plus-contrib)
+  "Required bootstrap packages.")
 
-  (use-package org
-	       :ensure t)
-  (use-package org-plus-contrib
-	       :ensure t)
-
-  (use-package benchmark-init
-	       :ensure t)
-
-  (kill-emacs))
-
-(require 'use-package)
+(mapc
+ (lambda (package)
+   (unless (package-installed-p package)
+     (let ((package-file
+          (expand-file-name
+           (format "%s.tar" (symbol-name package))
+           fn/bootstrap-dir)))
+       (package-install-file package-file))))
+ fn/bootstrap-packages)
 
 
-(use-package benchmark-init
-	     :demand t)
-
-
+;; Preconfig
 (defcustom fn/pre-config-file "pre-config.el"
   "File script to load before the main configuration loads, useful for setting options")
 
 (load (expand-file-name fn/pre-config-file user-emacs-directory) t)
 
-;; This part assumes ony org-babel-load-file is available
-(setq package-enable-at-startup nil)
 
+;; Block Tagging
 (defcustom fn/config-file (expand-file-name "config.org" user-emacs-directory)
   "Main org file to load")
-
-
 
 
 (defconst fn/code-block-id-symbol :block-id
@@ -115,14 +88,13 @@ Hacked on v9 since it is lexically binded.")
 
 (advice-add 'org-babel-tangle-single-block :around #'fn/set-current-org-block-info)
 
-
 (defun fn/org-babel-tangle-wrap-block-info ()
   "Wraps a code block with `fn/code-block-id-symbol'."
   (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
-         (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
+      (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-            (block-end (format fn/code-block-end-format block-id)))
+          (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)
@@ -135,6 +107,7 @@ Hacked on v9 since it is lexically binded.")
 (add-hook 'org-babel-tangle-body-hook #'fn/org-babel-tangle-wrap-block-info)
 
 
+;; Config & Backup
 (defconst fn/config-backup-file (expand-file-name ".safe-config.org" user-emacs-directory)
   "Secondary org file in case of error.")
 
@@ -148,7 +121,7 @@ Hacked on v9 since it is lexically binded.")
   (message "Config backup good"))
 
 (defun fn/load-backup-config ()
-  "Load secondary config"
+  "Load secondary config."
   (interactive)
   (org-babel-load-file fn/config-backup-file))
 
@@ -159,8 +132,8 @@ Hacked on v9 since it is lexically binded.")
 (add-hook 'after-init-hook #'fn/backup-config-file)
 
 
-;; Environement specific files, don't commit that file
-(defcustom fn/post-config-file ".init-extension.el"
-  "Post script to load after the main configuration loads")
+;; Post Config
+(defconst fn/post-config-file (expand-file-name ".init-extension.el")
+  "Post script to load after the main configuration loads.")
 
 (load (expand-file-name fn/post-config-file "~") t)
