@@ -67,7 +67,16 @@
        (propertize "o" 'face '(:foreground "#fbbc05"))
        (propertize "g" 'face '(:foreground "#4285f4"))
        (propertize "l" 'face '(:foreground "#34a853"))
-       (propertize "e" 'face '(:foreground "#ea4335")))))
+       (propertize "e" 'face '(:foreground "#ea4335"))))
+
+   (cons "clojure"
+      (concat  ;; clojure
+       (propertize
+        "clo" 'face '(:foreground "#63b132" :box (:line-weight 2 :color "ffffff")))
+       (propertize
+        "j" 'face '(:foreground "#ffffff"))
+       (propertize
+        "ure" 'face '(:foreground "#5881d8")))))
   "An alist of words with their `cdr' as its colored form."
   :type '(alist :key-type string :value-type string)
   :group 'fn)
