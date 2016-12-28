@@ -896,6 +896,10 @@
           'package-menu-mode
           (list 'all-the-icons-octicon "package" :v-adjust 0.0))
 
+         (fn/add-major-mode-icon
+          'outline-mode
+          (list 'all-the-icons-faicon "list-ul" :v-adjust -0.1))
+
 
          (defun fn/check-installed-font-families ()
            "Check if `fn/all-the-icon-font-families' is intalled."
@@ -2146,7 +2150,7 @@
     #+END_SRC
 
 *** which-key
-    A mnemionic for key bindings
+    A mnemonic for key bindings
 
     #+BEGIN_SRC emacs-lisp :block-id f7b62f99-7365-6e12-adc8-0a1a6e8eadda
       (unless noninteractive
@@ -2155,7 +2159,97 @@
           :diminish which-key-mode
           :demand t
           :config
-          (which-key-mode t)))
+          (which-key-mode t)
+          (which-key-setup-side-window-bottom)
+
+          (setq which-key-idle-delay 0.8
+
+             which-key-separator " → "
+             which-key-unicode-correction 3
+
+             which-key-prefix-prefix ""
+             which-key-show-prefix 'top
+             which-key-echo-keystrokes nil
+
+             which-key-show-remaining-keys nil
+
+             which-key-sort-order 'which-key-description-order)
+
+
+          (defun fn/which-key-prefix-command-replacement (kb)
+            "My custom label for prefix command."
+            (cons (car kb)
+               (format
+                "/Σ-%2d/"
+                (let ((which-key--current-prefix
+                     (apply #'vector (listify-key-sequence (kbd (car kb))))))
+                  (length (which-key--get-current-bindings))))))
+
+
+          ;; Mode Highlighting
+          (require 's)
+
+          ;; NOTE: Avoid changing height since it destroys the layout
+          (defface fn/which-key-active-mode-face '((t . (:underline t :foreground "#dddddd")))
+            "Face for active modes."
+            :group 'fn)
+
+          (defface fn/which-key-inactive-mode-face '((t . (:underline t :foreground "#444444")))
+            "Face for inactive modes."
+            :group 'fn)
+
+          (defun fn/which-key-highlight-modes ()
+            "Add active and inactive modes to `which-key-highlighted-command-list'."
+            (message "Updating which-key mode highlighting.")
+            (mapc
+             (lambda (command-option)
+               (when (and (consp command-option)
+                        (s-ends-with-p "-mode$" (car command-option)))
+                 (setcdr command-option 'fn/which-key-inactive-mode-face)))
+             which-key-highlighted-command-list)
+            (mapc
+             (lambda (minor-mode)
+               (lexical-let* ((mode-name (symbol-name minor-mode))
+                   (mode-regex (concat mode-name "$"))
+                   (command-option
+                    (assoc mode-regex which-key-highlighted-command-list)))
+                 (unless command-option
+                   (setq command-option
+                      (cons mode-regex 'italic))
+                   (push command-option which-key-highlighted-command-list))
+                 (when (consp command-option)
+                   (setcdr command-option
+                           (if minor-mode
+                               'fn/which-key-active-mode-face 'fn/which-key-inactive-mode-face
+                             )))))
+             minor-mode-list)
+
+
+            (lexical-let* ((generic-mode-regex ".*-mode$")
+                (command-option (assoc generic-mode-regex which-key-highlighted-command-list)))
+              (unless command-option
+                (add-to-list 'which-key-highlighted-command-list
+                             (cons generic-mode-regex
+                                'fn/which-key-inactive-mode-face)
+                             t))))
+
+          (advice-add 'which-key--init-buffer :before #'fn/which-key-highlight-modes)
+          (add-hook 'after-init-hook #'fn/which-key-highlight-modes t)
+
+
+          ;; Namespace Highlighting
+          (defface fn/which-key-personal-namespace-face '((t . (:foreground "#9b59b6")))
+            "Face for my personal namespace."
+            :group 'fn)
+
+          (add-to-list 'which-key-highlighted-command-list
+                       (cons "^f.*/" 'fn/which-key-personal-namespace-face))
+
+
+          ;; Customized prefix display
+          (add-to-list 'which-key-replacement-alist
+                       (cons (cons nil "Prefix Command")
+                          #'fn/which-key-prefix-command-replacement))))
     #+END_SRC
 
 *** which-function
@@ -5163,7 +5257,8 @@
        :ensure t
        :defer t
        :bind (:map fn-standard-prefix-map
-                   ("w w" . w3m))
+                   ("w w" . w3m)
+                   ("w s" . w3m-search))
        :config
        ;; Main
        (setq w3m-add-tab-number t
