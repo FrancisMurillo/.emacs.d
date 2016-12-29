@@ -2699,19 +2699,18 @@
     #+BEGIN_SRC emacs-lisp :block-id 33344847-5b8c-bb8f-614a-816e2b6bc0f8
       (use-package rainbow-delimiters
         :ensure t
+        :defer t
         :init
         (add-hook 'prog-mode-hook 'rainbow-delimiters-mode)
         :config
-        (custom-set-faces
-         ;; Thanks to https://ericscrivner.me/2015/06/better-emacs-rainbow-delimiters-color-scheme/
-         '(rainbow-delimiters-depth-1-face ((t (:foreground "dark orange"))))
-         '(rainbow-delimiters-depth-2-face ((t (:foreground "deep pink"))))
-         '(rainbow-delimiters-depth-3-face ((t (:foreground "chartreuse"))))
-         '(rainbow-delimiters-depth-4-face ((t (:foreground "deep sky blue"))))
-         '(rainbow-delimiters-depth-5-face ((t (:foreground "yellow"))))
-         '(rainbow-delimiters-depth-6-face ((t (:foreground "orchid"))))
-         '(rainbow-delimiters-depth-7-face ((t (:foreground "spring green"))))
-         '(rainbow-delimiters-depth-8-face ((t (:foreground "sienna1"))))))
+        (set-face-attribute 'rainbow-delimiters-depth-1-face nil :foreground "dark orange")
+        (set-face-attribute 'rainbow-delimiters-depth-2-face nil :foreground "deep pink")
+        (set-face-attribute 'rainbow-delimiters-depth-3-face nil :foreground "chartreuse")
+        (set-face-attribute 'rainbow-delimiters-depth-4-face nil :foreground "deep sky blue")
+        (set-face-attribute 'rainbow-delimiters-depth-5-face nil :foreground "yellow")
+        (set-face-attribute 'rainbow-delimiters-depth-6-face nil :foreground "orchid")
+        (set-face-attribute 'rainbow-delimiters-depth-7-face nil :foreground "spring green")
+        (set-face-attribute 'rainbow-delimiters-depth-8-face nil :foreground "sienna1"))
 
     #+END_SRC
 
