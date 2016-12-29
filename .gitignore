@@ -1,6 +1,9 @@
 config.el
 personal.el
 .cache
+extra
+.project-locals.el
+working-config.org
 
 lib/sandbox
 lib/packages

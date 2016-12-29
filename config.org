@@ -5696,9 +5696,7 @@
         "personal.el"
         ".projectile"
         ".project-locals.el"
-        "README.org"
-        ".safe-config.el"
-        ".safe-config.org")
+        "README.org")
        "Known Emacs home files")
 
 
@@ -7148,13 +7146,18 @@
    #+BEGIN_SRC emacs-lisp :block-id 32fbaff6-e859-4eea-25bf-cfd59fdf4644
      (use-package magin
        :load-path fn/custom-script-dir
-       :defer 2
+       :defer 1
        :config
        (magin-write-to-project
         `(context
           (file "config.el")
           (file "personal.el")
+
           (dir ".cache")
+          (dir "extra")
+
+          (file ".project-locals.el")
+          (file "working-config.org")
 
           (newline)
           (path
