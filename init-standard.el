@@ -36,7 +36,7 @@
 
 
 ;; Bootstrapping
-(defconst fn/bootstrap-dir (expand-file-name "bootstrap")
+(defconst fn/bootstrap-dir (expand-file-name "bootstrap" user-emacs-directory)
   "Bootstrap directory.")
 
 (defconst fn/bootstrap-packages (list 'use-package 'org 'org-plus-contrib)
@@ -108,7 +108,7 @@ Hacked on v9 since it is lexically binded.")
 
 
 ;; Config & Backup
-(defconst fn/config-backup-file (expand-file-name ".safe-config.org" user-emacs-directory)
+(defconst fn/config-backup-file (expand-file-name "working-config.org" fn/bootstrap-dir)
   "Secondary org file in case of error.")
 
 
@@ -127,7 +127,6 @@ Hacked on v9 since it is lexically binded.")
 
 
 (org-babel-load-file fn/config-file)
-
 
 (add-hook 'after-init-hook #'fn/backup-config-file)
 

@@ -1,24 +1,13 @@
-config.org~ emacs-init.el~ emacs-init.org~ init.el~
-*~
-
 config.el
-
-.cache
-elpa
-
 personal.el
-extra/**
-.cask/
-/*.el
+.cache
 
 lib/sandbox
 lib/packages
 !lib/modules
 !lib/scripts
-/.config.org
-/.safe-config.org
 
-
+# Block for gtags
 GPATH
 GTAGS
 GRTAGS

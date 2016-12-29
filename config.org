@@ -2711,7 +2711,6 @@
         (set-face-attribute 'rainbow-delimiters-depth-6-face nil :foreground "orchid")
         (set-face-attribute 'rainbow-delimiters-depth-7-face nil :foreground "spring green")
         (set-face-attribute 'rainbow-delimiters-depth-8-face nil :foreground "sienna1"))
-
     #+END_SRC
 
 *** color-identifiers-mode
@@ -7141,6 +7140,35 @@
              (t (error "Source file does not have a file name."))))
            (target-path (car (find-file-read-args "Find target file: " t))))
          (insert (fn/relative-path source-path target-path))))
+   #+END_SRC
+
+** Managed .gitignore
+   A quick DSL makes me feel good.
+
+   #+BEGIN_SRC emacs-lisp :block-id 32fbaff6-e859-4eea-25bf-cfd59fdf4644
+     (use-package magin
+       :load-path fn/custom-script-dir
+       :defer 2
+       :config
+       (magin-write-to-project
+        `(context
+          (file "config.el")
+          (file "personal.el")
+          (dir ".cache")
+
+          (newline)
+          (path
+           "lib"
+           (context
+            (dir "sandbox")
+            (dir "packages"))
+           (include
+            (dir "modules")
+            (dir "scripts")))
+
+          (newline)
+          (block gtags))
+        user-emacs-directory))
    #+END_SRC
 
 * Key Bindings
