@@ -1,19 +1,12 @@
--/.cache
--/.cask
+-*.ttf
+-*.jar
+-*.tar
 
--/.git
--.git
+-.cache
+-extra
+-packages
 
-
--/extra
-
-
--/.safe-config*
-
-packages
-
-*.elc
-
-*.ttf
-*.jar
-.#*
+# Block for emacs
+-.#*
+-*.elc
+-/target

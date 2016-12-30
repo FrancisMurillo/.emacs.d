@@ -39,18 +39,20 @@
 (defconst fn/bootstrap-dir (expand-file-name "bootstrap" user-emacs-directory)
   "Bootstrap directory.")
 
-(defconst fn/bootstrap-packages (list 'use-package 'org 'org-plus-contrib)
+(defconst fn/bootstrap-packages (list 'use-package 'org
+                            ;; 'org-plus-contrib
+                            )
   "Required bootstrap packages.")
 
-(mapc
- (lambda (package)
-   (unless (package-installed-p package)
-     (let ((package-file
-          (expand-file-name
-           (format "%s.tar" (symbol-name package))
-           fn/bootstrap-dir)))
-       (package-install-file package-file))))
- fn/bootstrap-packages)
+(unless (package-installed-p 'use-package)
+  (package-install-file
+   (expand-file-name "use-package.tar" fn/bootstrap-dir)))
+
+(unless (package-installed-p 'org)
+  (package-install-file
+   (expand-file-name "org.tar" fn/bootstrap-dir))
+  (package-install-file
+   (expand-file-name "org-plus-contrib.tar" fn/bootstrap-dir)))
 
 
 ;; Preconfig
@@ -91,10 +93,10 @@ Hacked on v9 since it is lexically binded.")
 (defun fn/org-babel-tangle-wrap-block-info ()
   "Wraps a code block with `fn/code-block-id-symbol'."
   (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
-      (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
+         (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-          (block-end (format fn/code-block-end-format block-id)))
+            (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)

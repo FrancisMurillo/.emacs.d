@@ -900,6 +900,10 @@
           'outline-mode
           (list 'all-the-icons-faicon "list-ul" :v-adjust -0.1))
 
+         (fn/add-major-mode-icon
+          'conf-unix-mode
+          (list 'all-the-icons-faicon "code" :v-adjust -0.1))
+
 
          (defun fn/check-installed-font-families ()
            "Check if `fn/all-the-icon-font-families' is intalled."
@@ -2744,6 +2748,12 @@
      (add-to-list
       'display-buffer-alist
       (cons
+       (rx bos "*Help*" eos)
+       (cons 'display-buffer-same-window (list))))
+
+     (add-to-list
+      'display-buffer-alist
+      (cons
        (rx bos "*Async Shell Command*")
        (cons 'display-buffer-same-window (list))))
    #+END_SRC
@@ -3482,6 +3492,17 @@
      (use-package gnus
        :bind (:map fn-standard-prefix-map
                    ("g" . gnus)))
+   #+END_SRC
+
+** sendmail
+   Sending mail is just as important as receiving it.
+
+   #+BEGIN_SRC emacs-lisp :block-id 3a1e1a82-45f0-7f56-2597-b327ab24a413
+     (use-package smtpmail
+       :defer t
+       :config
+       (setq smtpmail-default-smtp-server "mail.ytandex.com"
+          smtpmail-local-domain "fnmurillo.com"))
    #+END_SRC
 
 ** conkeror
@@ -7177,11 +7198,34 @@
              (dir "scripts"))))
 
           (block gtags)
-
           (block emacs))
         user-emacs-directory))
    #+END_SRC
 
+** Managed .projectile
+   Copying =magin= for .projectile, might want to refactor.
+
+   #+BEGIN_SRC emacs-lisp :block-id 8d1d2ce7-1e9c-3162-ccbe-ac105f53a069
+     (use-package projin
+       :load-path fn/custom-script-dir
+       :after majin
+       :config
+       (projin-write-to-project
+        `(delimited
+          (context
+           (file "*.ttf")
+
+           (file "*.jar")
+           (file "*.tar"))
+
+          (context
+           (dir ,(file-name-base fn/cache-dir))
+           (dir ,(file-name-base fn/extra-dir))
+           (dir ,(file-name-base fn/package-dir)))
+
+          (block emacs))
+        user-emacs-directory))
+   #+END_SRC
 * Key Bindings
   Here is where all the key binding I mapped to
 
