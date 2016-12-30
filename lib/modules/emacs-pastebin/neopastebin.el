@@ -268,7 +268,7 @@
    (paste-list :initarg :paste-list "The list of pastes for this user")
    (list-buffer :initarg :list-buffer "Done by do-list-buffer")
    (sort-by :initarg :sort-by "Order to sort :paste-list")
-  )
+   )
   "Class representing a pastebin.com user")
 
 (defmethod is-logged ((user pastebin--paste-user))
@@ -278,9 +278,9 @@
 (defmethod fetch-list-xml ((user pastebin--paste-user))
   "Fetch the list of pastes as xml, and return that buffer"
   (let* ((params (concat "api_dev_key=" (oref user dev-key)
-                         "&api_user_key=" (oref user usr-key)
-                         "&api_results_limit=" (format "%d" pastebin-default-paste-list-limit)
-                         "&api_option=list")))
+                      "&api_user_key=" (oref user usr-key)
+                      "&api_results_limit=" (format "%d" pastebin-default-paste-list-limit)
+                      "&api_option=list")))
     (with-current-buffer (pastebin--url-retrieve-synchronously pastebin-post-request-paste-url
                                                                "POST"
                                                                params)
@@ -295,10 +295,10 @@
   (with-current-buffer (fetch-list-xml user)
     (goto-char (point-min))
     (let ((i (point-min))
-          plist)
+        plist)
       (while (re-search-forward "</paste>" nil t)
         (let ((paste-sexp (xml-parse-region i (point)))
-              p)
+            p)
           (setq i (point))
           (condition-case err
               (progn
@@ -323,11 +323,11 @@
        (error "pastebin--sort-by-stirng-attr attr is not a keyword"))
 
      (unless (member ,attr '(:key :title :format_long :format_short :url :date :private))
-      (error "pastebin--sort-by-string-attr attr is not in '(:key :title :format_long :format_short :url)"))
+       (error "pastebin--sort-by-string-attr attr is not in '(:key :title :format_long :format_short :url)"))
 
      (oset ,user :paste-list (sort (oref ,user :paste-list) (lambda (p1 p2)
-                                                          (string< (downcase (oref p1 ,attr))
-                                                                   (downcase (oref p2 ,attr))))))
+                                                              (string< (downcase (oref p1 ,attr))
+                                                                       (downcase (oref p2 ,attr))))))
      )
   )
 
@@ -396,8 +396,8 @@ Some keybinds are setted"
   (if (slot-boundp user :usr-key)
       (oref user :usr-key)
     (let* ((params (concat "api_dev_key=" (oref user :dev-key)
-                           "&api_user_name=" (url-hexify-string (oref user :username))
-                           "&api_user_password=" (url-hexify-string (oref user :password)))))
+                        "&api_user_name=" (url-hexify-string (oref user :username))
+                        "&api_user_password=" (url-hexify-string (oref user :password)))))
 
       (with-current-buffer (pastebin--url-retrieve-synchronously pastebin-post-request-login-url
                                                                  "POST"
@@ -407,16 +407,16 @@ Some keybinds are setted"
 (defmethod paste-new ((user pastebin--paste-user) &optional unlisted)
   "Upload a new paste to pastebin.com"
   (let* ((ptitle (buffer-name))
-         (pbuffer (current-buffer))
-         (pprivate (if unlisted "1" "0"))
-         (params (concat "api_dev_key=" (oref user :dev-key)
-                         "&api_user_key=" (oref user :usr-key)
-                         "&api_paste_name=" (url-hexify-string ptitle)
-                         "&api_paste_format=" (url-hexify-string (pastebin--get-format-string-from-major-mode))
-                         "&api_paste_code=" (url-hexify-string (with-current-buffer pbuffer
-                                                                 (buffer-string)))
-                         "&api_option=paste"
-                         "&api_paste_private=" pprivate)))
+      (pbuffer (current-buffer))
+      (pprivate (if unlisted "1" "0"))
+      (params (concat "api_dev_key=" (oref user :dev-key)
+                      "&api_user_key=" (oref user :usr-key)
+                      "&api_paste_name=" (url-hexify-string ptitle)
+                      "&api_paste_format=" (url-hexify-string (pastebin--get-format-string-from-major-mode))
+                      "&api_paste_code=" (url-hexify-string (with-current-buffer pbuffer
+                                                              (buffer-string)))
+                      "&api_option=paste"
+                      "&api_paste_private=" pprivate)))
     (with-current-buffer (pastebin--url-retrieve-synchronously pastebin-post-request-paste-url
                                                                "POST"
                                                                params)
@@ -548,8 +548,8 @@ If no buffer is given current buffer is used"
     (with-current-buffer buffer
       (goto-char (point-min))
       (re-search-forward "\n\n")
-    (kill-region (point-min) (point))
-    buffer)))
+      (kill-region (point-min) (point))
+      buffer)))
 
 (defun pastebin--get-paste-at-point ()
   "Get the paste at point at current-buffer"
@@ -570,16 +570,16 @@ See `fetch-list-xml' for more information"
     (error "pastebin--sexp-to-paste called without cons type"))
   (condition-case err
       (pastebin--paste (concat "paste@" (pastebin--sexp-get-attr-h paste-sexp 'paste_key))
-             :key (pastebin--sexp-get-attr-h paste-sexp 'paste_key)
-             :date (pastebin--sexp-get-attr-h paste-sexp 'paste_date)
-             :title (pastebin--sexp-get-attr-h paste-sexp 'paste_title "UNTITLED")
-             :size (pastebin--sexp-get-attr-h paste-sexp 'paste_size)
-             :expire_date (pastebin--sexp-get-attr-h paste-sexp 'paste_expire_date)
-             :private (pastebin--sexp-get-attr-h paste-sexp 'paste_private)
-             :format_long (pastebin--sexp-get-attr-h paste-sexp 'paste_format_long)
-             :format_short (pastebin--sexp-get-attr-h paste-sexp 'paste_format_short)
-             :url (pastebin--sexp-get-attr-h paste-sexp 'paste_url)
-             )
+                       :key (pastebin--sexp-get-attr-h paste-sexp 'paste_key)
+                       :date (pastebin--sexp-get-attr-h paste-sexp 'paste_date)
+                       :title (pastebin--sexp-get-attr-h paste-sexp 'paste_title "UNTITLED")
+                       :size (pastebin--sexp-get-attr-h paste-sexp 'paste_size)
+                       :expire_date (pastebin--sexp-get-attr-h paste-sexp 'paste_expire_date)
+                       :private (pastebin--sexp-get-attr-h paste-sexp 'paste_private)
+                       :format_long (pastebin--sexp-get-attr-h paste-sexp 'paste_format_long)
+                       :format_short (pastebin--sexp-get-attr-h paste-sexp 'paste_format_short)
+                       :url (pastebin--sexp-get-attr-h paste-sexp 'paste_url)
+                       )
     ((debug error)
      (error "Cant construct paste from sexp %s\nError: %s" paste-sexp err))))
 
@@ -609,9 +609,9 @@ See `fetch-list-xml' for more information"
 (defun pastebin--ask-for-password (prompt)
   "Ask user for a password and if want to store it"
   (let* ((lexical-binding t)
-         (p (read-passwd prompt)))
+      (p (read-passwd prompt)))
     (when (yes-or-no-p "Store password on disk? ")
-        (pastebin--store-password p))
+      (pastebin--store-password p))
     p))
 
 (defun pastebin--url-retrieve-synchronously (url method params)
@@ -622,15 +622,15 @@ See `fetch-list-xml' for more information"
   (unless (stringp method)
     (error "pastebin--url-retrieve-synchronously `method' need to be a string"))
 
-    (unless (stringp params)
+  (unless (stringp params)
     (error "pastebin--url-retrieve-synchronously `params' need to be a string"))
 
   (let* ((inhibit-read-only t)
-         (url-request-method method)
-         (url-request-extra-headers
-          '(("Content-Type" . "application/x-www-form-urlencoded")))
-         (url-request-data params)
-         (content-buf (url-retrieve-synchronously url)))
+      (url-request-method method)
+      (url-request-extra-headers
+       '(("Content-Type" . "application/x-www-form-urlencoded")))
+      (url-request-data params)
+      (content-buf (url-retrieve-synchronously url)))
     (unless (pastebin--http-200-p content-buf) ;; check HTTP header
       (when debug-on-error
         (with-current-buffer (get-buffer-create "*pastebin-debug*")
@@ -683,9 +683,9 @@ See `fetch-list-xml' for more information"
   "Return url string from buf"
   (unless (and (or (bufferp buf)
                    (stringp buf))
-                (get-buffer buf))
-     (error (concat "pastebin--get-pst-url `buf' need\n"
-                    "be a existing buffer or buffer name as string")))
+               (get-buffer buf))
+    (error (concat "pastebin--get-pst-url `buf' need\n"
+                   "be a existing buffer or buffer name as string")))
 
   (with-current-buffer buf
     (save-excursion
@@ -763,10 +763,10 @@ Operates on current buffer"
     (goto-char (point-min))
     (pastebin-mode 1)
     (let* ((lexical-binding t)
-           (pbuf (paste-new pastebin--default-user p))
-           (url (pastebin--get-pst-url pbuf))
-           (x-select-enable-clipboard t)
-           (link-point (re-search-forward "http://[A-Za-z0-9_-]+\.[A-Za-z0-9]+" nil t)))
+        (pbuf (paste-new pastebin--default-user p))
+        (url (pastebin--get-pst-url pbuf))
+        (x-select-enable-clipboard t)
+        (link-point (re-search-forward "http://[A-Za-z0-9_-]+\.[A-Za-z0-9]+" nil t)))
       (kill-new url)
       (message "URL: %s%s" url
                (if link-point
@@ -781,9 +781,9 @@ be strings"
   ;; Keyword arguments work arround
   ;; I want to get rid of cl dependence here
   (let* ((lexical-bind t)
-         username
-         dev-key
-         password)
+      username
+      dev-key
+      password)
     (while args
       (cond ((eq (car-safe args) :username)
              (setq username (car-safe (cdr-safe args))))
@@ -795,21 +795,21 @@ be strings"
     (unless (and username dev-key)
       (error "pastebin-login argument missing. (dev-key or username)"))
     (let ((lexical-binding t)
-          (p (if (pastebin--password-file-exists-p)
-                         (pastebin--read-password-from-file)
-                       (pastebin--ask-for-password "Pastebin password: "))))
+        (p (if (pastebin--password-file-exists-p)
+               (pastebin--read-password-from-file)
+             (pastebin--ask-for-password "Pastebin password: "))))
       (setq pastebin--default-user (pastebin--paste-user username
-                                                         :username username
-                                                         :dev-key dev-key
-                                                         :password p)))
+                                                      :username username
+                                                      :dev-key dev-key
+                                                      :password p)))
     (message "User %s created, login is on demand. Have a nice day!" username)
     ) ;; (let* ((lexical-bind t)
   ) ;; (defun pastebin-create-login &rest args)
 
 ;; Setup minor mode keymap
 (or (assq 'pastebin-mode minor-mode-map-alist)
-    (setq minor-mode-map-alist (cons (cons 'pastebin-mode pastebin--mode-map)
-                                     minor-mode-map-alist)))
+   (setq minor-mode-map-alist (cons (cons 'pastebin-mode pastebin--mode-map)
+                              minor-mode-map-alist)))
 
 (provide 'neopastebin)
 
