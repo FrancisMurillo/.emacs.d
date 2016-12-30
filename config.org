@@ -7149,28 +7149,36 @@
        :defer 1
        :config
        (magin-write-to-project
-        `(context
-          (file "config.el")
-          (file "personal.el")
+        `(delimited
+          (context
+           (comment "Base files")
+           (file ,(format "%s.el" (file-name-base fn/config-file)))
+           (file ,(format "%s.el" (file-name-base fn/personal-file))))
 
-          (dir ".cache")
-          (dir "extra")
+          (context
+           (comment "Base directory")
+           (dir ".cache")
+           (dir "extra"))
 
-          (file ".project-locals.el")
-          (file "working-config.org")
+          (context
+           (comment "Project specific")
+           (file ".project-locals.el")
+           (file "working-config.org"))
 
-          (newline)
-          (path
-           "lib"
-           (context
-            (dir "sandbox")
-            (dir "packages"))
-           (include
-            (dir "modules")
-            (dir "scripts")))
+          (context
+           (comment "Library")
+           (path
+            "lib"
+            (context
+             (dir "sandbox")
+             (dir "packages"))
+            (include
+             (dir "modules")
+             (dir "scripts"))))
 
-          (newline)
-          (block gtags))
+          (block gtags)
+
+          (block emacs))
         user-emacs-directory))
    #+END_SRC
 

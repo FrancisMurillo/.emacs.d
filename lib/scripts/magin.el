@@ -69,11 +69,11 @@
   "Main compiler DSL with an ENV."
   (pcase-let ((`(,rule . ,_) dsl))
     (lexical-let* ((rule-name (symbol-name rule))
-                   (rule-handler
-                    (intern-soft
-                     (format "%s%s"
-                             magin-dsl-prefix
-                             rule-name))))
+        (rule-handler
+         (intern-soft
+          (format "%s%s"
+                  magin-dsl-prefix
+                  rule-name))))
       (if (null rule-handler)
           (error "No rule to handle %s at dsl: %s" rule-name dsl)
         (funcall rule-handler dsl env)))))
@@ -119,7 +119,7 @@
   "DSL and ENV for file."
   (pcase-let ((`(file ,file) dsl))
     (lexical-let* ((parent (cdr (assoc :parent env)))
-        (include (if (cdr (assoc :include env))"!" nil)))
+                   (include (if (cdr (assoc :include env))"!" nil)))
       (concat include parent file))))
 
 (defalias 'magin--dsl-dir 'magin--dsl-file
@@ -167,6 +167,22 @@
       block-def-name)))
 
 
+(defun magin--dsl-delimited (dsl env)
+  "DSL and ENV for delimited."
+  (pcase-let ((`(delimited  . ,subdsls) dsl))
+    (lexical-let ((delimited-dsls
+         (cdr
+          (apply #'append
+             (mapcar
+              (lambda (dsl)
+                (list '(newline) dsl))
+              subdsls)))))
+      (magin--compiler
+       `(context
+         ,@delimited-dsls)
+       env))))
+
+
 ;;;###autoload
 (defun magin-write-to-project (dsl project)
   "Write compiled DSL to PROJECT."
@@ -178,12 +194,20 @@
 
 
 ;; Preset Blocks
-(magin-compile
+(magin--dsl-defblock
  `(defblock gtags
     (comment "Block for gtags")
     (file "GPATH")
     (file "GTAGS")
-    (file "GRTAGS")))
+    (file "GRTAGS"))
+ (list))
+
+(magin--dsl-defblock
+ `(defblock emacs
+    (comment "Block for emacs")
+    (file "*.elc")
+    (file ".#*"))
+ (list))
 
 
 (provide 'magin)
