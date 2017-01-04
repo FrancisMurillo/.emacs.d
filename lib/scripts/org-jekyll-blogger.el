@@ -51,6 +51,9 @@
 
 (require 'subr-x)
 
+(require 'org)
+(require 'ox-publish)
+
 
 ;; Header
 (eval-when-compile
@@ -258,7 +261,7 @@
 
 (defun org-jekyll-blogger--make-org-project (project)
   "Make `org-publish' recognize PROJECT."
-  (lexical-let ((project-name  (plist-get project :project-name)))
+  (lexical-let ((project-name (org-jekyll-blogger--project-command project)))
     (setq org-publish-project-alist
           (remove
            (assoc project-name org-publish-project-alist)
@@ -337,6 +340,10 @@
     (make-directory (org-jekyll-blogger--blog-draft-dir blog) t)
     (make-directory (org-jekyll-blogger--blog-image-dir blog) t)nil))
 
+(defun org-jekyll-blogger--project-command (project)
+  "Compute a PROJECT's publish command."
+  (plist-get project :project-name))
+
 (defun org-jekyll-blogger--remove-blog (blog)
   "Remove BLOG from table and its associations on `org-publish'."
   (remhash (plist-get blog :blog-name) org-jekyll-blogger--blogs)
@@ -355,7 +362,6 @@
                   (assoc support-command-name org-publish-project-alist)
                   org-publish-project-alist)))
          support-publish-commands)))
-    nil
 
     (lexical-let* ((project-name (plist-get blog :project-name))
                    (project-command (assoc project-name org-publish-project-alist))
@@ -368,11 +374,13 @@
        (list project-name
              :components updated-project-blogs)))))
 
+
 (defun org-jekyll-blogger--blog-command (blog)
   "Compute a BLOG's publish command."
   (format "%s->%s"
           (plist-get blog :project-name)
           (plist-get blog :blog-name)))
+
 
 (defun org-jekyll-blogger--blog-key (project-name blog-name)
   "Compute a blog key by PROJECT-NAME and BLOG-NAME"
@@ -487,6 +495,22 @@
         (cdr (assoc result collection))
       result)))
 
+(defun org-jekyll-blogger-read-project ()
+  (lexical-let ((active-project-names
+                 (org-jekyll-blogger--get-active-project-names)))
+    (unless active-project-names
+      (error "No projects with blogs defined yet"))
+
+    (lexical-let* ((project-name
+                    (org-jekyll-blogger--completing-read
+                     "Select a project: "
+                     active-project-names
+                     nil
+                     t))
+                   (project
+                    (gethash project-name org-jekyll-blogger--projects)))
+      project)))
+
 (defun org-jekyll-blogger-read-project-and-blog ()
   "Select a project and blog and output it as pair."
   (lexical-let ((active-project-names
@@ -515,7 +539,41 @@
                      org-jekyll-blogger--blogs)))
       (cons project blog))))
 
-;; Motion
+(defun org-jekyll-blogger--read-post ()
+  "Find an draft or post."
+  (pcase-let* ((`(,_ . ,blog)
+                (org-jekyll-blogger-read-project-and-blog))
+               (draft-posts
+                (org-jekyll-blogger--blog-drafts blog))
+               (posted-posts
+                (cl-sort
+                 (org-jekyll-blogger--blog-posts blog)
+                 (lambda (x y)
+                   (string>
+                    (cadr x)
+                    (cadr y)))))
+               (posts
+                (append
+                 (mapcar
+                  (lambda (draft)
+                    (cons (format "(%10s) %s" "" (car draft))
+                          (cdr draft)))
+                  draft-posts)
+                 (mapcar
+                  (lambda (posted)
+                    (cons (format "(%10s) %s" (cadr posted) (car posted))
+                          (caddr posted)))
+                  posted-posts))))
+    (unless posts
+      (error "No posts for the blog yet"))
+
+    (lexical-let* ((selected-post
+                    (org-jekyll-blogger--completing-read
+                     "Select a post: "
+                     posts
+                     nil
+                     t)))
+      selected-post)))
 
 
 ;; Drafts
@@ -650,39 +708,8 @@
 (defun org-jekyll-blogger-find-post ()
   "Find a post(or draft)."
   (interactive)
-  (pcase-let* ((`(,_ . ,blog)
-                (org-jekyll-blogger-read-project-and-blog))
-               (draft-posts
-                (org-jekyll-blogger--blog-drafts blog))
-               (posted-posts
-                (cl-sort
-                 (org-jekyll-blogger--blog-posts blog)
-                 (lambda (x y)
-                   (string>
-                    (cadr x)
-                    (cadr y)))))
-               (posts
-                (append
-                 (mapcar
-                  (lambda (draft)
-                    (cons (format "(%10s) %s" "" (car draft))
-                          (cdr draft)))
-                  draft-posts)
-                 (mapcar
-                  (lambda (posted)
-                    (cons (format "(%10s) %s" (cadr posted) (car posted))
-                          (caddr posted)))
-                  posted-posts))))
-    (unless posts
-      (error "No drafts for the blog yet"))
-
-    (lexical-let* ((selected-post
-                    (org-jekyll-blogger--completing-read
-                     "Select a draft: "
-                     posts
-                     nil
-                     t)))
-      (find-file selected-post))))
+  (lexical-let* ((selected-post (org-jekyll-blogger--read-post)))
+    (find-file selected-post)))
 
 
 (defun org-jekyll-blogger--publish-file ()
@@ -690,11 +717,34 @@
   (save-excursion
     (org-publish-current-file)))
 
-;; Writting
+;; Writing
 (defun org-jekyll-blogger-auto-publish-on-save ()
   "Publish current file whenever saved."
   (interactive)
   (add-hook 'after-save-hook #'org-jekyll-blogger--publish-file t t))
+
+
+;; Publishing
+(defun org-jekyll-blogger-publish-project ()
+  "Publish a jekyll project."
+  (interactive)
+  (lexical-let* ((project (org-jekyll-blogger-read-project))
+                 (project-command (org-jekyll-blogger--project-command project)))
+    (org-publish project-command)))
+
+(defun org-jekyll-blogger-publish-blog ()
+  "Publish a jekyll blog."
+  (interactive)
+
+  (lexical-let* ((project (org-jekyll-blogger-read-project))
+      (project-command (org-jekyll-blogger--project-command project)))
+    (org-publish project-command)))
+
+(defun org-jekyll-blogger-publish-post ()
+  "Publish a post(or draft)."
+  (interactive)
+  (lexical-let* ((selected-post (org-jekyll-blogger--read-post)))
+    (org-publish-file selected-post)))
 
 
 (provide 'org-jekyll-blogger)

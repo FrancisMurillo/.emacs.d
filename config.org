@@ -7233,15 +7233,16 @@
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
       (lexical-let* ((key-trigger key)
-          (trigger (lambda ()
-                     (interactive)
-                     (let ((key-command (key-binding key-trigger)))
-                       (cond
-                        (key-command
-                         (message "Triggering %s" key-command)
-                         (command-execute key-command))
-                        (t
-                         (message "No key bound to %s" key-trigger)))))))
+          (trigger
+           (lambda ()
+             (interactive)
+             (let ((key-command (key-binding key-trigger)))
+               (cond
+                (key-command
+                 (message "Triggering %s" key-command)
+                 (command-execute key-command))
+                (t
+                 (message "No key bound to %s" key-trigger)))))))
         trigger))
 
 
