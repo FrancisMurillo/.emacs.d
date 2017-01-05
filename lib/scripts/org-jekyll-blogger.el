@@ -254,7 +254,7 @@
 (defun org-jekyll-blogger--update-tables-by-project (project)
   "Update `org-jekyll-blogger--blogs' and `org-jekyll-blogger--projects' by PROJECT."
   (lexical-let ((project-name
-       (plist-get project :project-name)))
+                 (plist-get project :project-name)))
     ;; Update project list
     (puthash
      project-name
@@ -478,7 +478,7 @@
     (add-to-list
      'org-publish-project-alist
      (list publish-command
-        :components (list publish-content-command publish-static-command)))
+        :components (list publish-content-command publish-static-command publish-data-command)))
 
     (lexical-let* ((project-name (plist-get blog :project-name))
         (project-command (assoc project-name org-publish-project-alist))
@@ -523,54 +523,54 @@
 (defun org-jekyll-blogger--completing-read (prompt collection &rest args)
   "Completing read to support alist collections without invoking other libraries."
   (lexical-let ((result
-       (apply #'completing-read
-          (append (list prompt collection) args))))
+                 (apply #'completing-read
+                        (append (list prompt collection) args))))
     (if (org-jekyll-blogger--alist-p collection)
         (cdr (assoc result collection))
       result)))
 
 (defun org-jekyll-blogger-read-project ()
   (lexical-let ((active-project-names
-       (org-jekyll-blogger--get-active-project-names)))
+                 (org-jekyll-blogger--get-active-project-names)))
     (unless active-project-names
       (error "No projects with blogs defined yet"))
 
     (lexical-let* ((project-name
-         (org-jekyll-blogger--completing-read
-          "Select a project: "
-          active-project-names
-          nil
-          t))
-        (project
-         (gethash project-name org-jekyll-blogger--projects)))
+                    (org-jekyll-blogger--completing-read
+                     "Select a project: "
+                     active-project-names
+                     nil
+                     t))
+                   (project
+                    (gethash project-name org-jekyll-blogger--projects)))
       project)))
 
 (defun org-jekyll-blogger-read-project-and-blog ()
   "Select a project and blog and output it as pair."
   (lexical-let ((active-project-names
-       (org-jekyll-blogger--get-active-project-names)))
+                 (org-jekyll-blogger--get-active-project-names)))
     (unless active-project-names
       (error "No projects with blogs defined yet"))
 
     (lexical-let* ((project-name
-         (org-jekyll-blogger--completing-read
-          "Select a project: "
-          active-project-names
-          nil
-          t))
-        (project
-         (gethash project-name org-jekyll-blogger--projects))
+                    (org-jekyll-blogger--completing-read
+                     "Select a project: "
+                     active-project-names
+                     nil
+                     t))
+                   (project
+                    (gethash project-name org-jekyll-blogger--projects))
 
-        (blog-name
-         (org-jekyll-blogger--completing-read
-          "Select a blog: "
-          (org-jekyll-blogger--get-blog-names-by-project-name project-name)
-          nil
-          t))
-        (blog
-         (gethash
-          (org-jekyll-blogger--blog-key project-name blog-name)
-          org-jekyll-blogger--blogs)))
+                   (blog-name
+                    (org-jekyll-blogger--completing-read
+                     "Select a blog: "
+                     (org-jekyll-blogger--get-blog-names-by-project-name project-name)
+                     nil
+                     t))
+                   (blog
+                    (gethash
+                     (org-jekyll-blogger--blog-key project-name blog-name)
+                     org-jekyll-blogger--blogs)))
       (cons project blog))))
 
 (defun org-jekyll-blogger--read-post ()
