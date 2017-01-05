@@ -3753,7 +3753,14 @@
 
         (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
 
-        (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration))
+        (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
+
+        ;; Commit message same buffer
+        (add-to-list
+         'display-buffer-alist
+         (cons
+          (rx bos "COMMIT_EDITMSG")
+          (cons 'display-buffer-same-window (list)))))
 
       (use-package git-timemachine
         :ensure t
@@ -5291,6 +5298,7 @@
           w3m-home-page "https://duckduckgo.com"
 
           w3m-use-cookies t
+          w3m-confirm-leaving-secure-page nil
           w3m-cookie-file (expand-file-name ".w3m-cookie" fn/cache-dir))
 
 
@@ -7208,7 +7216,7 @@
    #+BEGIN_SRC emacs-lisp :block-id 8d1d2ce7-1e9c-3162-ccbe-ac105f53a069
      (use-package projin
        :load-path fn/custom-script-dir
-       :after majin
+       :after magin
        :config
        (projin-write-to-project
         `(delimited
