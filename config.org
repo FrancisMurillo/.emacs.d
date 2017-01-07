@@ -929,17 +929,6 @@
 * Terminator
   Shell related aspect
 
-** nsm
-   The network security manager for Emacs
-
-   #+BEGIN_SRC emacs-lisp :block-id 17fd5dfb-4c56-cb92-865d-448fd1e56804
-     (use-package nsm
-       :demand t
-       :config
-       (setq nsm-settings-file (expand-file-name "network-security.data" fn/cache-dir)
-             network-security-level 'high))
-   #+END_SRC
-
 ** shell
    Some configurations on the terminal
 

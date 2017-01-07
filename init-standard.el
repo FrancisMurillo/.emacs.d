@@ -20,6 +20,23 @@
 ;; Package Manager
 (require 'package)
 
+;; Cache
+(defconst fn/cache-dir-name ".cache"
+  "Place every moving file in this directory")
+
+(defconst fn/cache-dir (expand-file-name fn/cache-dir-name user-emacs-directory)
+  "Every cached or moving file should be here like with Spacemacs")
+
+(make-directory fn/cache-dir t)
+
+
+(when (version<= "25" emacs-version)
+  (require 'nsm)
+  (setq nsm-settings-file
+     (expand-file-name "network-security" fn/cache-dir)
+     network-security-level 'high))
+
+
 (setq load-prefer-newer t)
 
 
@@ -93,10 +110,10 @@ Hacked on v9 since it is lexically binded.")
 (defun fn/org-babel-tangle-wrap-block-info ()
   "Wraps a code block with `fn/code-block-id-symbol'."
   (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
-         (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
+      (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-            (block-end (format fn/code-block-end-format block-id)))
+          (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)
