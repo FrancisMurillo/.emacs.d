@@ -1,6 +1,7 @@
 # Base files
 config.el
 personal.el
+personal.el
 
 # Base directory
 .cache
@@ -9,6 +10,7 @@ extra
 # Project specific
 .project-locals.el
 working-config.org
+my-macros.el
 
 # Library
 lib/sandbox

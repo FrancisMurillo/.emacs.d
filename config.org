@@ -7305,6 +7305,7 @@
           (context
            (comment "Base files")
            (file ,(format "%s.el" (file-name-base fn/config-file)))
+           (file ,(format "%s.el" (file-name-base fn/personal-file)))
            (file ,(format "%s.el" (file-name-base fn/personal-file))))
 
           (context
@@ -7315,7 +7316,10 @@
           (context
            (comment "Project specific")
            (file ".project-locals.el")
-           (file "working-config.org"))
+           (file "working-config.org")
+
+           (file  ,(format "%s.el" (file-name-base fmk/macro-file))))
+
 
           (context
            (comment "Library")
