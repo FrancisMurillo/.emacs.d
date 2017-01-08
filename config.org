@@ -5342,6 +5342,29 @@
        (setq w3m-session-file (expand-file-name "w3m-session" fn/cache-dir))
 
 
+       ;; Video Player
+       (defconst fn/w3m-video-executable "vlc"
+         "The executable that can run a network video stream.")
+
+       (defun fn/w3m-video ()
+         "Get image video url."
+         (or
+          (w3m-anchor)
+          w3m-current-url))
+
+       (defun fn/w3m-view-video ()
+         "View the video url with `fn/w3m-video-executable'"
+         (interactive)
+         (let ((url (w3m-url-valid (fn/w3m-video))))
+           (if (null url)
+               (w3m-message "No video at point")
+             (start-process
+              (format "%s %s" "w3m" url)
+              nil
+              fn/w3m-video-executable
+              url))))
+
+
        ;; Util
        (defun fn/w3m-new-buffer ()
          "Opens a new, empty w3m buffer.
@@ -6149,7 +6172,9 @@
              (mapc
               (lambda (macro)
                 (insert-kbd-macro macro))
-              (fmk/current-macros))
+              macros)
+
+             (save-buffer)
 
              (message "Macros saved")))))
 
