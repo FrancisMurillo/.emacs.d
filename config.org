@@ -5343,14 +5343,25 @@
 
 
        ;; Video Player
+       (require 'w3m-cookie)
        (defconst fn/w3m-video-executable "vlc"
          "The executable that can run a network video stream.")
 
+       (defconst fn/w3m-video-args (list)
+         "Extra arguments to run `fn/w3m-video-executable'")
+
+       (defun fn/w3m-video-url-p (url)
+         "Check if URL is a video."
+         (ignore-errors
+           (lexical-let* ((pieces (w3m-parse-http-url url))
+               (host (elt pieces 1)))
+             (if (or (string= host "www.youtube.com"))
+                 url nil))))
+
        (defun fn/w3m-video ()
          "Get image video url."
-         (or
-          (w3m-anchor)
-          w3m-current-url))
+         (fn/w3m-video-url-p
+          (or (w3m-anchor) w3m-current-url)))
 
        (defun fn/w3m-view-video ()
          "View the video url with `fn/w3m-video-executable'"
@@ -5358,11 +5369,25 @@
          (let ((url (w3m-url-valid (fn/w3m-video))))
            (if (null url)
                (w3m-message "No video at point")
-             (start-process
-              (format "%s %s" "w3m" url)
-              nil
-              fn/w3m-video-executable
-              url))))
+             (apply #'start-process
+                (append
+                 (list
+                  (format "%s %s" "w3m" url)
+                  nil
+                  fn/w3m-video-executable)
+                 fn/w3m-video-args
+                 (list url))))))
+
+       (defun fn/w3m-view-this-video-or-url (&rest args)
+         "View this video or url."
+         (lexical-let ((video-url (fn/w3m-video)))
+           (when
+               (and video-url
+                  (yes-or-no-p
+                   (format "This url is a video, view it with %s?" fn/w3m-video-executable)))
+             (fn/w3m-view-video))))
+
+       (advice-add 'w3m-view-this-url :before #'fn/w3m-view-this-video-or-url)
 
 
        ;; Util
