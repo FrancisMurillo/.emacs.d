@@ -904,6 +904,10 @@
           'conf-unix-mode
           (list 'all-the-icons-faicon "code" :v-adjust -0.1))
 
+         (fn/add-major-mode-icon
+          'edmacro-mode
+          (list 'all-the-icons-faicon "pause-circle" :v-adjust -0.1))
+
 
          (defun fn/check-installed-font-families ()
            "Check if `fn/all-the-icon-font-families' is intalled."
@@ -1191,6 +1195,15 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 13d23dc8-e0a7-3d2c-71b6-13cefdd9fb96
      (use-package emamux
+       :ensure t
+       :defer t)
+   #+END_SRC
+
+** multi-term
+   Emacs and term
+
+   #+BEGIN_SRC emacs-lisp :block-id d9dc0195-7512-f1f8-b4c7-236b3754a637
+     (use-package multi-term
        :ensure t
        :defer t)
    #+END_SRC
@@ -3368,6 +3381,12 @@
      (defconst fn/ledger-file (expand-file-name "ledger.dat.gpg" "~/Fakespace/nobody-library")
        "My ledger file.")
 
+     (defun fn/find-ledger-file ()
+       "Find ledger file."
+       (interactive)
+       (find-file fn/ledger-file))
+
+
      (use-package ledger-mode
        :ensure t
        :defer t
@@ -3377,10 +3396,10 @@
        ;; Encrypting my ledger
        ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
        (setq ledger-reports
-             '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
-               ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
-               ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
-               ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
+          '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
+            ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
+            ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
+            ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
 
        (use-feature ledger-mode--mode-icon
          (all-the-icons)
@@ -3394,19 +3413,14 @@
           'ledger-report-mode
           (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1)))
 
-       (defun fn/find-ledger-file ()
-         "Find ledger file."
-         (interactive)
-         (find-file fn/ledger-file)))
-
-     (use-feature ledger-capture
-       (org ledger-mode)
-       (when t ;; BUG: Emacs hangs with a GPG file for a capture
-         (add-to-list
-          'org-capture-templates
-          (list "l" "Ledger" 'plain
-             (list 'file fn/ledger-file)
-             "%(org-read-date) * %?  \n\n"))))
+       (use-feature ledger-capture
+         (org ledger-mode)
+         (when t ;; BUG: Emacs hangs with a GPG file for a capture
+           (add-to-list
+            'org-capture-templates
+            (list "l" "Ledger" 'plain
+               (list 'file fn/ledger-file)
+               "%(org-read-date) * %?  \n\n")))))
    #+END_SRC
 
 ** engine
@@ -5274,13 +5288,16 @@
        :defer t
        :bind (:map fn-standard-prefix-map
                    ("w w" . w3m)
-                   ("w s" . w3m-search))
+                   ("w s" . w3m-search-new-session)
+                   ("w g" . w3m-goto-url))
        :config
        ;; Main
        (setq w3m-add-tab-number t
+          w3m-make-new-session nil
 
           w3m-use-header-line t
           w3m-use-header-line-title t
+          w3m-show-graphic-icons-in-header-line t
 
           w3m-use-title-buffer-name t
 
@@ -5300,14 +5317,64 @@
        (add-to-list 'w3m-search-engine-alist
                     (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
 
+
+       ;; Bookmarking
+       (require 'w3m-bookmark)
+
+       (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/cache-dir)
+          w3m-bookmark-default-section "Misc")
+
+
        ;; Conkeror / Lnum
        (require 'w3m-lnum)
        (add-hook 'w3m-mode-hook #'w3m-lnum-mode t)
 
 
+       ;; History
+       (require 'w3m-hist)
+
+       (setq w3m-history-reuse-history-elements t)
+
+
        ;; Persistent Session
        (require 'w3m-session)
+
        (setq w3m-session-file (expand-file-name "w3m-session" fn/cache-dir))
+
+
+       ;; Util
+       (defun fn/w3m-new-buffer ()
+         "Opens a new, empty w3m buffer.
+     Thanks to https://www.emacswiki.org/emacs/WThreeMTabs"
+         (interactive)
+         (w3m-goto-url-new-session "about://"))
+
+
+       ;; Key (re)binding
+       (define-key w3m-mode-map (kbd "q") 'w3m-delete-buffer)
+       (define-key w3m-mode-map (kbd "Q") 'w3m-quit)
+
+       (define-key w3m-mode-map (kbd "c") 'w3m-lnum-print-this-url)
+       (define-key w3m-mode-map (kbd "f") 'w3m-lnum-follow)
+
+       (define-key w3m-mode-map (kbd "h") 'w3m-history)
+       (define-key w3m-mode-map (kbd "H") 'w3m-db-history)
+
+       (define-key w3m-mode-map (kbd "M-p") 'w3m-previous-buffer)
+       (define-key w3m-mode-map (kbd "M-n") 'w3m-next-buffer)
+
+       (define-key w3m-mode-map (kbd "i") 'w3m-toggle-inline-image)
+       (define-key w3m-mode-map (kbd "I") 'w3m-toggle-inline-images)
+
+       (define-key w3m-mode-map (kbd "t") 'fn/w3m-new-buffer)
+       (unbind-key (kbd "t") w3m-lnum-mode-map)
+
+       (define-key w3m-mode-map (kbd "V") 'w3m-bookmark-view)
+       (define-key w3m-mode-map (kbd "v") 'w3m-bookmark-add-current-url)
+
+       (define-key w3m-mode-map (kbd "S") 'w3m-search-new-session)
+       (define-key w3m-mode-map (kbd "s") 'w3m-search)
+       (define-key w3m-mode-map (kbd "RET") 'w3m-view-this-url-new-session)
 
 
        (use-feature w3m-mode--mode-icon
@@ -6020,6 +6087,73 @@
        (run-hooks 'fn/org-edit-src-exit-hook))
 
      (advice-add 'org-edit-src-exit :after #'fn/org-edit-src-exit-hook-run)
+   #+END_SRC
+
+** Personal Macros
+   My macro space
+
+   #+BEGIN_SRC emacs-lisp :block-id 07db9c61-3246-684b-3a85-a327cc803253
+     (require 'cl)
+
+     (defconst fn/macro-map (fn/make-prefixed-keymap (kbd "k") fn-custom-prefix-map)
+       "My keyboard macro map.")
+
+     (defconst fmk/macro-file (expand-file-name "my-macros.el" fn/custom-script-dir)
+       "My macro files.")
+
+     (unless (file-exists-p fmk/macro-file)
+       (with-temp-file fmk/macro-file
+         (insert ";;; My Personal Macros")))
+
+     (defun fn/load-personal-macros ()
+       "Load personal macros"
+       (interactive)
+       (load-file fmk/macro-file))
+
+
+     (defun fmk/auto-name-last-macro (&rest args)
+       "Auto name last macro."
+       (lexical-let* ((macro-prefix "fmk/prefix-")
+           (auto-name (format-time-string "%Y-%m-%d-%H-%M-%S"))
+           (macro-name (format "%s%s" macro-prefix auto-name)))
+         (kmacro-name-last-macro (intern macro-name))
+         (message "Auto named last macro as %s" macro-name)))
+
+     (advice-add 'kmacro-end-macro :after #'fmk/auto-name-last-macro)
+
+
+     (defun fmk/current-macros ()
+       "Get current macros."
+       (cl-remove-if-not
+        (lambda (elt)
+          (and (fboundp elt)
+             (or (stringp (symbol-function elt))
+                (vectorp (symbol-function elt))
+                (get elt 'kmacro))))
+        obarray))
+
+
+     (defun fmk/persist-macros ()
+       "Persist created macros for examination."
+       (interactive)
+       (lexical-let ((macros (fmk/current-macros)))
+         (if (null macros)
+             (message "No macros defined.")
+           (with-current-buffer (find-file-noselect fmk/macro-file)
+             (end-of-buffer)
+
+             (insert "\n")
+             (insert (format ";; Macros on %s" (format-time-string "%FT%T%z")))
+             (insert "\n")
+
+             (mapc
+              (lambda (macro)
+                (insert-kbd-macro macro))
+              (fmk/current-macros))
+
+             (message "Macros saved")))))
+
+     (add-hook 'kill-emacs-hook #'fmk/persist-macros)
    #+END_SRC
 
 ** Session Configurations
@@ -7222,6 +7356,22 @@
 
           (block emacs))
         user-emacs-directory))
+   #+END_SRC
+** Org-Jekyll Blogger
+   My blogging script
+
+   #+BEGIN_SRC emacs-lisp :block-id 8041bf29-7026-2f87-21c3-e589b8cb6027
+     (defconst fn/org-jekyll-blogger-map (fn/make-prefixed-keymap (kbd "B") fn-standard-prefix-map)
+       "My custom org-jekyll-blogger map.")
+
+
+     (use-package org-jekyll-blogger
+       :load-path fn/custom-script-dir
+       :defer t
+       :bind (:map fn/org-jekyll-blogger-map
+                   ("d" . org-jekyll-blogger-create-draft)
+                   ("f" . org-jekyll-blogger-find-post)
+                   ("p" . org-jekyll-blogger-post-draft)))
    #+END_SRC
 * Key Bindings
   Here is where all the key binding I mapped to
