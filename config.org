@@ -812,6 +812,7 @@
                 (message "Configured function %s" ,function-name-var)))))
 
        (defmacro use-feature (name features &rest body)
+         "The equivalent for `use-package' but for combining features as promises."
          (let ((now-var (make-symbol "now"))
              (elapsed-var (make-symbol "elapsed"))
              (feature-name-var (make-symbol "feature-name")))
@@ -4104,7 +4105,7 @@
            (push '("define" . ?δ) prettify-symbols-alist)
            (push '("defconst" . ?φ) prettify-symbols-alist)
 
-           (push '("defconst" . ?τ) prettify-symbols-alist)
+           (push '("defcustom" . ?τ) prettify-symbols-alist)
            (push '("defface" . ?κ) prettify-symbols-alist)
 
            (push '("let" . ?▷) prettify-symbols-alist)
@@ -7536,6 +7537,7 @@
         user-emacs-directory))
    #+END_SRC
 ** Org-Jekyll Blogger
+
    My blogging script
 
    #+BEGIN_SRC emacs-lisp :block-id 8041bf29-7026-2f87-21c3-e589b8cb6027
@@ -7550,6 +7552,70 @@
                    ("d" . org-jekyll-blogger-create-draft)
                    ("f" . org-jekyll-blogger-find-post)
                    ("p" . org-jekyll-blogger-post-draft)))
+   #+END_SRC
+** Custom Buffer Select
+   I need some keybindings to select buffers quickly.
+
+   #+BEGIN_SRC emacs-lisp :block-id 01be910a-0180-2e64-258a-f63ab68d00b4
+     (defun fn/list-buffers-by (prompt pred)
+       "Like `list-buffers' but specialized by a predicate."
+       (completing-read
+        prompt
+        (mapcar
+         (lambda (buffer)
+           (cons (buffer-name buffer) buffer))
+         (buffer-list))
+        (lambda (pair)
+          (lexical-let* ((buffer (cdr pair)))
+            (funcall pred buffer)))))
+
+     (defconst fmb/list-buffer-map (fn/make-prefixed-keymap (kbd "B") fn-custom-prefix-map)
+       "My list buffer map.")
+
+     (defconst fmb/command-prefix "fmb/"
+       "My command key prefix.")
+
+     (defun fn/define-custom-switch-buffer (command-name key prompt pred)
+       "Create a quick list buffer command."
+       (lexical-let* ((full-command-name
+            (format "%s%s" fmb/command-prefix command-name))
+           (command-symbol
+            (intern full-command-name))
+           (pred pred)
+           (command
+            `(lambda ()
+               ,(format "List buffers with %s" command-name)
+               (interactive)
+               (switch-to-buffer
+                (fn/list-buffers-by ,prompt ,pred)))))
+         (fset command-symbol command)
+         (define-key fmb/list-buffer-map key command-symbol)))
+
+     (defun fn/define-custom-switch-buffer-by-mode (key prompt main-mode)
+       "Create a quick list buffer command by mode."
+       (fn/define-custom-switch-buffer
+        (symbol-name main-mode)
+        key prompt
+        (lexical-let ((main-mode main-mode))
+          (lambda (buffer) (eq (with-current-buffer buffer major-mode) main-mode)))))
+
+     (defun fn/define-custom-switch-buffer-by-minor-mode (key prompt sub-mode)
+       "Create a quick list buffer command by minor mode."
+       (fn/define-custom-switch-buffer
+        (symbol-name sub-mode)
+        key prompt
+        (lexical-let ((sub-mode sub-mode))
+          (lambda (buffer)
+            (with-current-buffer buffer
+              (and (boundp sub-mode) (symbol-value sub-mode)))))))
+
+
+     ;; Major Modes
+     (fn/define-custom-switch-buffer-by-mode "w" "Select a page: " 'w3m-mode)
+     (fn/define-custom-switch-buffer-by-mode "e" "Select a irc channel: " 'org-g)
+
+     ;; Minor Modes
+     (fn/define-custom-switch-buffer-by-minor-mode "o" "Select a org-source buffer: " 'org-src-mode)
    #+END_SRC
 ** Text-To-Speech
    Some contrivances

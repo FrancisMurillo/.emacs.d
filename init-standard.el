@@ -71,6 +71,10 @@
   (package-install-file
    (expand-file-name "org-plus-contrib.tar" fn/bootstrap-dir)))
 
+(unless (package-installed-p 'benchmark-init)
+  (package-install-file
+   (expand-file-name "benchmark-init.tar" fn/bootstrap-dir)))
+
 
 ;; Preconfig
 (defcustom fn/pre-config-file "pre-config.el"
@@ -144,6 +148,8 @@ Hacked on v9 since it is lexically binded.")
   (interactive)
   (org-babel-load-file fn/config-backup-file))
 
+
+(benchmark-init/activate)
 
 (org-babel-load-file fn/config-file)
 
