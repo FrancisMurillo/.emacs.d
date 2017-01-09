@@ -5461,13 +5461,14 @@
              fn/w3m-sumy-args
              (list url)))
            (lambda (summary-output)
-             (split-string (string-trim-right summary-output) "\n"))))
+             (lexical-let ((processed-text (string-trim-right summary-output)))
+               (if (string-empty-p processed-text)
+                   nil (split-string processed-text "\n"))))))
 
        (defun fn/w3m-fontify-summary ()
          "Fontify summary points."
          (lexical-let ((fontifier
               (lambda (text)
-                (message "Pointing out %s" text)
                 (let ((inhibit-read-only t)
                     (new-text (string-join (split-string text " ") "\n*\s*")))
                   (goto-char (point-min))
@@ -5480,17 +5481,19 @@
              (deferred:nextc
                fn/w3m-fontify-summary
                (lambda (text-points)
-                 (message "Summarizing points on %s" w3m-current-url)
-                 (mapc fontifier text-points)
-
-                 (message "Summary on %s:\n%s"
-                          (w3m-current-title)
-                          (string-join
-                           (mapcar
-                            (lambda (text-point)
-                              (format "* %s" text-point))
-                            text-points)
-                           "\n")))))))
+                 (setq-local fn/w3m-fontify-summary nil)
+                 (if (null text-points)
+                     (message "No summary for %s" (w3m-current-title))
+                   (message "Summarizing points on %s" w3m-current-url)
+                   (mapc fontifier text-points)
+                   (message "Summary on %s:\n%s"
+                            (w3m-current-title)
+                            (string-join
+                             (mapcar
+                              (lambda (text-point)
+                                (format "* %s" text-point))
+                              text-points)
+                             "\n"))))))))
 
        (defun fn/w3m-kill-page-summarizer ()
          "Kill page summarizer."
