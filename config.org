@@ -7671,6 +7671,9 @@
     (define-key fn-custom-prefix-map (kbd "v h") #'fmv/insert-hyphenated)
 
 
+    ;; Espeak
+    (define-key fn-standard-prefix-map (kbd "M-s s") #'fn/espeak)
+
     ;; Functions
     (define-key fn-custom-prefix-map (kbd  "r s") 'fn/startup)
     (define-key fn-custom-prefix-map (kbd  "r c") 'fn/cleanup)
