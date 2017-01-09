@@ -5293,23 +5293,27 @@
                    ("w g" . w3m-goto-url))
        :config
        ;; Main
+       (setq w3m-home-page "https://duckduckgo.com"
+
+          w3m-use-cookies t
+          w3m-confirm-leaving-secure-page nil
+          w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
+
+
+       ;; Tabs
        (setq w3m-add-tab-number t
           w3m-make-new-session nil
 
           w3m-use-header-line t
           w3m-use-header-line-title t
-          w3m-show-graphic-icons-in-header-line t
+          w3m-show-graphic-icons-in-header-line nil
 
-          w3m-use-title-buffer-name t
-
-          w3m-home-page "https://duckduckgo.com"
-
-          w3m-use-cookies t
-          w3m-confirm-leaving-secure-page nil
-          w3m-cookie-file (expand-file-name ".w3m-cookie" fn/cache-dir))
+          w3m-use-title-buffer-name t)
 
 
        ;; Search Engine
+       (require 'w3m-search)
+
        (setq w3m-search-engine-alist (list)
           w3m-search-default-engine "duckduckgo")
 
@@ -5328,6 +5332,7 @@
 
        ;; Conkeror / Lnum
        (require 'w3m-lnum)
+
        (add-hook 'w3m-mode-hook #'w3m-lnum-mode t)
 
 
@@ -5346,10 +5351,10 @@
        ;; Video Player
        (require 'w3m-cookie) ;; Required by `w3m-parse-http-url'
 
-       (defconst fn/w3m-video-executable "vlc"
+       (defcustom fn/w3m-video-executable "vlc"
          "The executable that can run a network video stream.")
 
-       (defconst fn/w3m-video-args
+       (defcustom fn/w3m-video-args
          (list
           ;; This skews how the process is managed for vlc
           "--one-instance"
@@ -5437,10 +5442,10 @@
        ;; Summarization
        (require 'deferred)
 
-       (defconst fn/w3m-sumy-executable "sumy"
+       (defcustom fn/w3m-sumy-executable "sumy"
          "The executable that can run a summarize articles.")
 
-       (defconst fn/w3m-sumy-args
+       (defcustom fn/w3m-sumy-args
          (list
           "lex-rank"
           "--length" "5"
@@ -5485,7 +5490,8 @@
                  (if (null text-points)
                      (message "No summary for %s" (w3m-current-title))
                    (message "Summarizing points on %s" w3m-current-url)
-                   (mapc fontifier text-points)
+                   (save-excursion
+                     (mapc fontifier text-points))
                    (message "Summary on %s:\n%s"
                             (w3m-current-title)
                             (string-join
@@ -5504,10 +5510,8 @@
 
          (setq-local fn/w3m-page-summarizer nil))
 
-       (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
-       (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
-
-
+       ;; (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
+       ;; (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
 
 
        ;; Util
@@ -7546,6 +7550,31 @@
                    ("d" . org-jekyll-blogger-create-draft)
                    ("f" . org-jekyll-blogger-find-post)
                    ("p" . org-jekyll-blogger-post-draft)))
+   #+END_SRC
+** Text-To-Speech
+   Some contrivances
+
+   #+BEGIN_SRC emacs-lisp :block-id 2fa9e396-3cb3-4b55-356b-c5c688147cc5
+     (defcustom fn/espeak-executable "espeak"
+       "The speech voicer.")
+
+     (defcustom fn/espeak-args (list)
+       "The speech voicer args.")
+
+     (defun fn/espeak (text)
+       "Speak up."
+       (interactive "sWhat do you want to say? ")
+       (apply #'start-process
+          (append
+           (list fn/espeak-executable nil fn/espeak-executable)
+           fn/espeak-args
+           (list text))))
+
+     (defun fn/espeak-region ()
+       "Speak up in the region."
+       (interactive)
+       (fn/espeak
+        (buffer-substring-no-properties (region-beginning) (region-end))))
    #+END_SRC
 * Key Bindings
   Here is where all the key binding I mapped to
