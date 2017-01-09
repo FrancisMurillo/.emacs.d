@@ -5515,6 +5515,50 @@
        ;; (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
 
 
+       ;; Zone
+       (defun fn/w3m-zone-retrieve (&rest args)
+         (with-current-buffer (current-buffer)
+           (let ((inhibit-read-only t))
+             (erase-buffer)
+             (goto-char (point-min)))
+           (setq-local fn/w3m-zone-timer
+                       (run-at-time
+                        (/ 10.0)
+                        (/ 30.0)
+                        (lambda ()
+                          (let ((inhibit-read-only t)
+                              (increment (- 6 (random 12))))
+                            (unless (boundp 'fn/w3m-zone-counter)
+                              (setq-local fn/w3m-zone-counter (+ 20 (random 20))))
+                            (setq-local fn/w3m-zone-counter
+                                        (+ fn/w3m-zone-counter increment))
+
+                            (setq-local fn/w3m-zone-counter (max fn/w3m-zone-counter 1))
+
+                            (insert
+                             (string-join
+                              (mapcar
+                               (lambda (ch)
+                                 (cond
+                                  ((< 0 increment) "\\")
+                                  ((> 0 increment) "/")
+                                  (t "-")))
+                               (number-sequence 1 fn/w3m-zone-counter))
+                              ""))
+                            (insert "\n")))))))
+
+       (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
+
+       (defun fn/w3m-cancel-zone-render (&rest args)
+         (when (and (boundp 'fn/w3m-zone-timer)
+                  (timerp fn/w3m-zone-timer))
+           (cancel-timer fn/w3m-zone-timer))
+         (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
+         (setq-local fn/w3m-zone-timer nil))
+
+       (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
+
+
        ;; Util
        (defun fn/w3m-new-buffer ()
          "Opens a new, empty w3m buffer.
@@ -7612,7 +7656,7 @@
 
      ;; Major Modes
      (fn/define-custom-switch-buffer-by-mode "w" "Select a page: " 'w3m-mode)
-     (fn/define-custom-switch-buffer-by-mode "e" "Select a irc channel: " 'org-g)
+     (fn/define-custom-switch-buffer-by-mode "e" "Select a irc channel: " 'erc-mode)
 
      ;; Minor Modes
      (fn/define-custom-switch-buffer-by-minor-mode "o" "Select a org-source buffer: " 'org-src-mode)
