@@ -1696,8 +1696,9 @@
           :demand t
           :config
           (setq window-numbering-scope 'global
-             winum-auto-setup-mode-line nil ;; moder.el does this for me
-             winum-keymap-prefix (kbd "C-c n w"))
+             winum-auto-setup-mode-line nil)
+
+          (winum-set-keymap-prefix (kbd "C-c C-x w"))
 
           (winum-mode)))
     #+END_SRC
@@ -5343,11 +5344,17 @@
 
 
        ;; Video Player
-       (require 'w3m-cookie)
+       (require 'w3m-cookie) ;; Required by `w3m-parse-http-url'
+
        (defconst fn/w3m-video-executable "vlc"
          "The executable that can run a network video stream.")
 
-       (defconst fn/w3m-video-args (list)
+       (defconst fn/w3m-video-args
+         (list
+          ;; This skews how the process is managed for vlc
+          "--one-instance"
+          ;; "--play-and-exit"
+          )
          "Extra arguments to run `fn/w3m-video-executable'")
 
        (defun fn/w3m-video-url-p (url)
@@ -5358,36 +5365,146 @@
              (if (or (string= host "www.youtube.com"))
                  url nil))))
 
-       (defun fn/w3m-video ()
+       (defun fn/w3m-video (&optional url)
          "Get image video url."
          (fn/w3m-video-url-p
-          (or (w3m-anchor) w3m-current-url)))
+          (or url (w3m-anchor) w3m-current-url)))
 
        (defun fn/w3m-view-video ()
          "View the video url with `fn/w3m-video-executable'"
          (interactive)
          (let ((url (w3m-url-valid (fn/w3m-video))))
            (if (null url)
-               (w3m-message "No video at point")
-             (apply #'start-process
-                (append
-                 (list
-                  (format "%s %s" "w3m" url)
-                  nil
-                  fn/w3m-video-executable)
-                 fn/w3m-video-args
-                 (list url))))))
+               (prog1
+                   (w3m-message "No video at point")
+                 nil)
+             (lexical-let ((video-process
+                  (apply #'start-process
+                     (append
+                      (list
+                       (format "%s-%s" "w3m" fn/w3m-video-executable)
+                       nil
+                       fn/w3m-video-executable)
+                      fn/w3m-video-args
+                      (list url)))))
+               (fn/w3m-kill-page-process)
 
-       (defun fn/w3m-view-this-video-or-url (&rest args)
-         "View this video or url."
+               (setq-local fn/w3m-page-process video-process)))))
+
+       (defun fn/w3m-view-this-video-external (url)
+         "View this video externally"
          (lexical-let ((video-url (fn/w3m-video)))
            (when
                (and video-url
                   (yes-or-no-p
-                   (format "This url is a video, view it with %s?" fn/w3m-video-executable)))
+                   (format "%s is a video, view it with %s?"
+                           video-url fn/w3m-video-executable)))
              (fn/w3m-view-video))))
 
-       (advice-add 'w3m-view-this-url :before #'fn/w3m-view-this-video-or-url)
+       (defun fn/w3m-kill-page-process ()
+         (when (and (eq major-mode 'w3m-mode)
+                  (boundp 'fn/w3m-page-process)
+                  fn/w3m-page-process
+                  (process-live-p fn/w3m-page-process))
+           (kill-process fn/w3m-page-process))
+
+         (setq-local fn/w3m-page-process nil))
+
+       (defun fn/w3m-auto-kill-page-process (url)
+         "If the page has a process, quit it."
+         (fn/w3m-kill-page-process))
+
+       (defun fn/w3m-single-page-process (result)
+         "If the page process is a singleton, adjust page container accordingly."
+         (when result
+           (lexical-let ((this-page (current-buffer)))
+             (mapc
+              (lambda (page)
+                (unless (eq page this-page)
+                  (with-current-buffer page
+                    (setq-local fn/w3m-page-process nil))))
+              (w3m-list-buffers))))
+         result)
+
+
+       (add-hook 'w3m-display-hook #'fn/w3m-auto-kill-page-process t)
+       (add-hook 'w3m-display-hook #'fn/w3m-view-this-video-external t)
+       (add-hook 'kill-buffer-hook #'fn/w3m-kill-page-process t)
+
+       (advice-add 'fn/w3m-view-video :filter-return  #'fn/w3m-single-page-process)
+
+
+       ;; Summarization
+       (require 'deferred)
+
+       (defconst fn/w3m-sumy-executable "sumy"
+         "The executable that can run a summarize articles.")
+
+       (defconst fn/w3m-sumy-args
+         (list
+          "lex-rank"
+          "--length" "5"
+          "--url"
+          )
+         "Extra arguments to run `fn/w3m-sumy-executable'")
+
+       (defface fn/w3m-summary '((t (:weight bold :height 1.1 :box (:line-width 2 :color "grey75" :style released-button))))
+         "Summary face.")
+
+       (defun fn/w3m-summarize-url (url)
+         "Summarize URL for easier comprehension"
+         (deferred:nextc
+           (apply
+            #'deferred:process-shell
+            (append
+             (list fn/w3m-sumy-executable)
+             fn/w3m-sumy-args
+             (list url)))
+           (lambda (summary-output)
+             (split-string (string-trim-right summary-output) "\n"))))
+
+       (defun fn/w3m-fontify-summary ()
+         "Fontify summary points."
+         (lexical-let ((fontifier
+              (lambda (text)
+                (message "Pointing out %s" text)
+                (let ((inhibit-read-only t)
+                    (new-text (string-join (split-string text " ") "\n*\s*")))
+                  (goto-char (point-min))
+                  (while (re-search-forward new-text nil t)
+                    (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
+           (setq-local fn/w3m-fontify-summary (fn/w3m-summarize-url w3m-current-url))
+
+           (with-current-buffer (current-buffer)
+             (message "Summarizing %s" w3m-current-url)
+             (deferred:nextc
+               fn/w3m-fontify-summary
+               (lambda (text-points)
+                 (message "Summarizing points on %s" w3m-current-url)
+                 (mapc fontifier text-points)
+
+                 (message "Summary on %s:\n%s"
+                          (w3m-current-title)
+                          (string-join
+                           (mapcar
+                            (lambda (text-point)
+                              (format "* %s" text-point))
+                            text-points)
+                           "\n")))))))
+
+       (defun fn/w3m-kill-page-summarizer ()
+         "Kill page summarizer."
+         (when (and (boundp 'fn/w3m-page-summarizer)
+                  fn/w3m-page-summarizer
+                  (deferred-p fn/w3m-page-summarizer))
+           (deferred:cancel fn/w3m-page-summarizer))
+
+         (setq-local fn/w3m-page-summarizer nil))
+
+       (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
+       (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
+
+
 
 
        ;; Util
