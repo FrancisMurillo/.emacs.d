@@ -119,9 +119,9 @@
   (cl-reduce
    (lambda (item acc)
      (if (and (symbolp item)
-              (equal
-               (substring-no-properties (symbol-name item) 0 1)
-               ":"))
+            (equal
+             (substring-no-properties (symbol-name item) 0 1)
+             ":"))
          (cons item acc)
        acc))
    plist
@@ -133,7 +133,7 @@
   (mapcar
    (lambda (key)
      (cons key
-           (plist-get plist key)))
+        (plist-get plist key)))
    (org-jekyll-blogger--plist-keys plist)))
 
 (defun org-jekyll-blogger--plist-merge (&rest plists)
@@ -222,17 +222,27 @@
    "\n"))
 
 
+;; Lists
+(defun org-jekyll-blogger-projects ()
+  "Get projects."
+  (hash-table-values org-jekyll-blogger--projects))
+
+(defun org-jekyll-blogger-blogs ()
+  "Get blogs."
+  (hash-table-values org-jekyll-blogger--blogs))
+
+
 ;; Project
 (defun* org-jekyll-blogger-define-project (project-name &key project-root publish-root post-headers post-options)
   "Define a jekyll project specialed with an org project mindset."
   (lexical-let ((project
-                 (list
-                  :project-name project-name
-                  :project-root (expand-file-name project-root)
-                  :publish-root (expand-file-name publish-root)
+       (list
+        :project-name project-name
+        :project-root (expand-file-name project-root)
+        :publish-root (expand-file-name publish-root)
 
-                  :post-headers (or post-headers org-jekyll-blogger-default-post-headers)
-                  :post-options (or post-options org-jekyll-blogger-default-post-options))))
+        :post-headers (or post-headers org-jekyll-blogger-default-post-headers)
+        :post-options (or post-options org-jekyll-blogger-default-post-options))))
     (org-jekyll-blogger--setup-project-structure project)
     (org-jekyll-blogger--update-tables-by-project project)
     (org-jekyll-blogger--make-org-project project)
@@ -248,9 +258,9 @@
 (defun org-jekyll-blogger--setup-project-structure (project)
   "Setup PROJECT structure."
   (lexical-let ((project-root
-                 (plist-get project :project-root))
-                (publish-root
-                 (plist-get project :publish-root)))
+       (plist-get project :project-root))
+      (publish-root
+       (plist-get project :publish-root)))
     (make-directory project-root t)
     (make-directory publish-root t)
 
@@ -260,7 +270,7 @@
 (defun org-jekyll-blogger--update-tables-by-project (project)
   "Update `org-jekyll-blogger--blogs' and `org-jekyll-blogger--projects' by PROJECT."
   (lexical-let ((project-name
-                 (plist-get project :project-name)))
+       (plist-get project :project-name)))
     ;; Update project list
     (puthash
      project-name
@@ -280,14 +290,14 @@
   "Make `org-publish' recognize PROJECT."
   (lexical-let ((project-name (org-jekyll-blogger--project-command project)))
     (setq org-publish-project-alist
-          (remove
-           (assoc project-name org-publish-project-alist)
-           org-publish-project-alist))
+       (remove
+        (assoc project-name org-publish-project-alist)
+        org-publish-project-alist))
 
     (add-to-list
      'org-publish-project-alist
      (list project-name
-           :components (list)))))
+        :components (list)))))
 
 
 ;; Blog
