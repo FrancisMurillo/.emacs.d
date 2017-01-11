@@ -69,11 +69,11 @@
   "Main compiler DSL with an ENV."
   (pcase-let ((`(,rule . ,_) dsl))
     (lexical-let* ((rule-name (symbol-name rule))
-        (rule-handler
-         (intern-soft
-          (format "%s%s"
-                  magin-dsl-prefix
-                  rule-name))))
+                   (rule-handler
+                    (intern-soft
+                     (format "%s%s"
+                             magin-dsl-prefix
+                             rule-name))))
       (if (null rule-handler)
           (error "No rule to handle %s at dsl: %s" rule-name dsl)
         (funcall rule-handler dsl env)))))
@@ -170,12 +170,12 @@
   "DSL and ENV for delimited."
   (pcase-let ((`(delimited  . ,subdsls) dsl))
     (lexical-let ((delimited-dsls
-                   (cdr
-                    (apply #'append
-                           (mapcar
-                            (lambda (dsl)
-                              (list '(newline) dsl))
-                            subdsls)))))
+         (cdr
+          (apply #'append
+             (mapcar
+              (lambda (dsl)
+                (list '(newline) dsl))
+              subdsls)))))
       (magin--compiler
        `(context
          ,@delimited-dsls)

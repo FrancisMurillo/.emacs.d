@@ -786,6 +786,27 @@
   (lexical-let* ((selected-post (org-jekyll-blogger--read-post)))
     (org-publish-file selected-post)))
 
+(defun org-jekyll-blogger-cleanup-site-drafts (&optional blog)
+  "Cleanout a BLOG's site draft directory."
+  (interactive)
+  (lexical-let* ((the-blog
+       (or blog
+          (cdr (org-jekyll-blogger-read-project-and-blog))))
+      (publish-root
+       (plist-get the-blog :blog-publish-root))
+      (site-draft-dir
+       (expand-file-name
+        org-jekyll-blogger--drafts-dir-name
+        publish-root)))
+    (mapc
+     (lambda (file-name)
+       (unless (or (string= "." file-name) (string= ".." file-name))
+         (delete-file (expand-file-name file-name) t))
+       )
+     (directory-files site-draft-dir))
+
+    (message "%s cleaned." site-draft-dir)))
+
 
 
 (defun org-jekyll-blogger--parent (file)

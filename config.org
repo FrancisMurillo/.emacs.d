@@ -1003,6 +1003,7 @@
          (concat " λ "))
 
        (setq eshell-highlight-prompt nil
+          eshell-hist-ignoredups t
           eshell-directory-name (expand-file-name "eshell" fn/cache-dir)
           eshell-prefer-lisp-functions t
           eshell-prompt-function #'fn/eshell-prompt-function))
@@ -3300,7 +3301,9 @@
 
           langtool-disabled-rules (list))
 
-       (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE"))
+       (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE")
+       (add-to-list 'langtool-disabled-rules "EN_QUOTES")
+       (add-to-list 'langtool-disabled-rules "EN_UNPAIRED_BRACKETS"))
    #+END_SRC
 
 ** dired
