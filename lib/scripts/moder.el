@@ -175,7 +175,7 @@
   "Check if the window is sleeping."
   (not
    (and (boundp 'fn/zoning-out-p)
-      (not (null fn/zoning-out-p)))))
+        (not (null fn/zoning-out-p)))))
 
 
 ;;* Piece
@@ -183,12 +183,12 @@
   "A piece for window numbering."
   (cond
    ((and (fboundp 'window-numbering-get-number)
-       (boundp 'window-numbering-mode)
-       (not (null window-numbering-mode)))
+         (boundp 'window-numbering-mode)
+         (not (null window-numbering-mode)))
     (format " %s " (window-numbering-get-number)))
    ((and (fboundp 'winum-get-number)
-       (boundp 'winum-mode)
-       (not (null winum-mode)))
+         (boundp 'winum-mode)
+         (not (null winum-mode)))
     (format " %s " (winum-get-number)))
    (t nil)))
 
@@ -196,25 +196,25 @@
 (defun moder-piece-modified ()
   "Indicates if the buffer is modified."
   (let* ((config-alist
-       '(("*"
-          all-the-icons-faicon-family
-          all-the-icons-faicon
-          "chain-broken"
-          :v-adjust 0.0)
-         ("-"
-          all-the-icons-faicon-family
-          all-the-icons-faicon
-          "link"
-          :v-adjust 0.0)
-         ("%"
-          all-the-icons-octicon-family
-          all-the-icons-octicon
-          "lock"
-          :v-adjust 0.0)))
-      (result (cdr (assoc (format-mode-line "%*") config-alist)))
-      (icon-font-function (car result))
-      (icon-function (cadr result))
-      (icon-args (cddr result)))
+          '(("*"
+             all-the-icons-faicon-family
+             all-the-icons-faicon
+             "chain-broken"
+             :v-adjust 0.0)
+            ("-"
+             all-the-icons-faicon-family
+             all-the-icons-faicon
+             "link"
+             :v-adjust 0.0)
+            ("%"
+             all-the-icons-octicon-family
+             all-the-icons-octicon
+             "lock"
+             :v-adjust 0.0)))
+         (result (cdr (assoc (format-mode-line "%*") config-alist)))
+         (icon-font-function (car result))
+         (icon-function (cadr result))
+         (icon-args (cddr result)))
     (->>
      (propertize
       (format " %s " (apply icon-function icon-args))
@@ -398,26 +398,28 @@
 (defun moder-piece-note ()
   "A piece for a random note."
   (lexical-let* ((note-index (random (length moder-note-notes)))
-                 (note (nth note-index moder-note-notes)))
+      (note (nth note-index moder-note-notes)))
     (format " %s " note)))
 
 (defun moder-piece-camcorder-state ()
   "A piece for camcording state."
   (when (and (boundp 'fn/camcorder-state)
-             (boundp 'camcorder-recording-frame)
-             (eq (selected-frame) camcorder-recording-frame)
-             (not (null fn/camcorder-state)))
+           (boundp 'camcorder-recording-frame)
+           (eq (selected-frame) camcorder-recording-frame)
+           (not (null fn/camcorder-state)))
     (let* ((state (symbol-name fn/camcorder-state))
-           (icon (if (eq fn/camcorder-state 'recording)
-                     (propertize
-                      (all-the-icons-faicon "play" :v-adjust -0.0)
-                      'face (list :family (all-the-icons-faicon-family))
-                      'help-echo (format "Camcording: `%s`" state))
-                   (propertize
-                    (all-the-icons-faicon "stop-circle" :v-adjust -0.0)
-                    'face (list :family (all-the-icons-faicon-family))
-                    'help-echo (format "Camcording: `%s`" state)))))
-      (format " %s " (or icon state)))))
+        (icon (if (eq fn/camcorder-state 'recording)
+                  (propertize
+                   (all-the-icons-faicon "play" :v-adjust -0.0)
+                   'face (list :family (all-the-icons-faicon-family))
+                   'help-echo (format "Camcording: `%s`" state))
+                (propertize
+                 (all-the-icons-faicon "stop-circle" :v-adjust -0.0)
+                 'face (list :family (all-the-icons-faicon-family))
+                 'help-echo (format "Camcording: `%s`" state))))
+        (elapsed-time (float-time
+                       (time-subtract (current-time) fn/camcorder-start-time))))
+      (format " %s[%2.0ds] " (or icon state)  elapsed-time))))
 
 
 ;;* Separator

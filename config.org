@@ -3278,6 +3278,31 @@
          (add-hook 'org-mode-hook 'flyspell-mode t)))
    #+END_SRC
 
+** langtool
+   Also a good grammar checker.
+
+   #+BEGIN_SRC emacs-lisp :block-id edb37fe1-f13c-60a5-6755-8fb7e6b5e2e6
+     (use-package langtool
+       :ensure t
+       :defer t
+       :bind
+       (:map fn-standard-prefix-map
+             ("C-l c" . langtool-check-buffer)
+             ("C-l n" . langtool-goto-next-error)
+             ("C-l p" . langtool-goto-previous-error))
+       :config
+       (setq langtool-language-tool-jar
+          (expand-file-name "languagetool-commandline.jar" "~/.local/lib/LanguageTool-3.6")
+          langtool-java-classpath nil
+
+          langtool-default-language "en"
+          langtool-mother-tongue "en"
+
+          langtool-disabled-rules (list))
+
+       (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE"))
+   #+END_SRC
+
 ** dired
    Directory management for Emacs
 
@@ -3565,10 +3590,14 @@
        (defvar fn/camcorder-state nil
          "The state of the recording. Possible values are `nil', `recording' and `paused'.")
 
+       (defvar fn/camcorder-start-time nil
+         "The start time of a recording.")
+
 
        (defun fn/camcorder-state-start ()
          "Set the start state of the recording."
-         (setq fn/camcorder-state 'recording)
+         (setq fn/camcorder-state 'recording
+            fn/camcorder-start-time (current-time))
 
          (select-frame-set-input-focus camcorder-recording-frame))
 
@@ -3584,7 +3613,8 @@
 
        (defun fn/camcorder-state-stop ()
          "Set the stop state of the recording."
-         (setq fn/camcorder-state nil))
+         (setq fn/camcorder-state nil
+            fn/camcorder-start-time nil))
 
        (advice-add 'camcorder-record :after  #'fn/camcorder-state-start)
        (advice-add 'camcorder-pause :before  #'fn/camcorder-state-pause)
@@ -3608,16 +3638,20 @@
        (defconst fn/camcorder-init-file (expand-file-name "camcorder-init.el" fn/custom-script-dir)
          "Init script when recording.")
 
-       (defun fn/camcorder-init ()
-         "Load an initial script when recording."
+       (defun fn/camcorder-load-init ()
+         "Load camcorder init for test."
          (load fn/camcorder-init-file t))
+
+       (defun fn/camcorder-init ()
+         "Load an initial script when recording with a little delay."
+         (run-with-idle-timer 1 nil #'fn/camcorder-load-init))
 
        (defun fn/camcorder-ready-message ()
          "Message when camcorder starts."
          (message "Hey there, space cats! Ulala here, comin' at you from Spaceport 9."))
 
-       (add-hook 'camcorder-mode-hook #'fn/camcorder-demo-buffer)
-       (add-hook 'camcorder-mode-hook #'fn/camcorder-init t)
+       (add-hook 'camcorder-mode-hook #'fn/camcorder-demo-buffer t)
+       (add-hook 'camcorder-mode-hook #'fn/camcorder-load-init t)
        (add-hook 'camcorder-mode-hook #'fn/camcorder-ready-message t))
    #+END_SRC
 
@@ -5358,23 +5392,14 @@
        (defcustom fn/w3m-video-args
          (list
           ;; This skews how the process is managed for vlc
-          "--one-instance"
+          ;; "--one-instance"
           ;; "--play-and-exit"
           )
          "Extra arguments to run `fn/w3m-video-executable'")
 
-       (defun fn/w3m-video-url-p (url)
-         "Check if URL is a video."
-         (ignore-errors
-           (lexical-let* ((pieces (w3m-parse-http-url url))
-               (host (elt pieces 1)))
-             (if (or (string= host "www.youtube.com"))
-                 url nil))))
-
        (defun fn/w3m-video (&optional url)
          "Get image video url."
-         (fn/w3m-video-url-p
-          (or url (w3m-anchor) w3m-current-url)))
+         (or url (w3m-anchor) w3m-current-url))
 
        (defun fn/w3m-view-video ()
          "View the video url with `fn/w3m-video-executable'"
@@ -5393,13 +5418,24 @@
                        fn/w3m-video-executable)
                       fn/w3m-video-args
                       (list url)))))
-               (fn/w3m-kill-page-process)
+               (with-current-buffer (current-buffer)
+                 (fn/w3m-kill-page-process)
 
-               (setq-local fn/w3m-page-process video-process)))))
+                 (setq-local fn/w3m-page-process video-process))))))
+
+       (defun fn/w3m-video-url-p (url)
+         "Check if URL is a video."
+         (ignore-errors
+           (lexical-let* ((pieces (w3m-parse-http-url url))
+               (host (elt pieces 1))
+               (path (elt pieces 3)))
+             (if (or (and (string= host "www.youtube.com")
+                       (string-prefix-p "/watch" path)))
+                 url nil))))
 
        (defun fn/w3m-view-this-video-external (url)
          "View this video externally"
-         (lexical-let ((video-url (fn/w3m-video)))
+         (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
            (when
                (and video-url
                   (yes-or-no-p
@@ -5408,13 +5444,14 @@
              (fn/w3m-view-video))))
 
        (defun fn/w3m-kill-page-process ()
-         (when (and (eq major-mode 'w3m-mode)
-                  (boundp 'fn/w3m-page-process)
-                  fn/w3m-page-process
-                  (process-live-p fn/w3m-page-process))
-           (kill-process fn/w3m-page-process))
+         "Kill the `fn/w3m-page-process' of the current buffer."
+         (interactive)
+         (with-current-buffer (current-buffer)
+           (when (and (boundp 'fn/w3m-page-process)
+                    (process-live-p fn/w3m-page-process))
+             (kill-process fn/w3m-page-process))
 
-         (setq-local fn/w3m-page-process nil))
+           (setq-local fn/w3m-page-process nil)))
 
        (defun fn/w3m-auto-kill-page-process (url)
          "If the page has a process, quit it."
@@ -5423,13 +5460,18 @@
        (defun fn/w3m-single-page-process (result)
          "If the page process is a singleton, adjust page container accordingly."
          (when result
-           (lexical-let ((this-page (current-buffer)))
+           (lexical-let ((this-page (current-buffer))
+               (active-process nil))
              (mapc
               (lambda (page)
-                (unless (eq page this-page)
-                  (with-current-buffer page
-                    (setq-local fn/w3m-page-process nil))))
-              (w3m-list-buffers))))
+                (with-current-buffer page
+                  (when (process-live-p fn/w3m-page-process)
+                    (setq active-process fn/w3m-page-process))
+
+                  (setq-local fn/w3m-page-process nil)))
+              (w3m-list-buffers))
+             (with-current-buffer this-page
+               (setq-local fn/w3m-page-process active-process))))
          result)
 
 
@@ -5469,14 +5511,20 @@
            (lambda (summary-output)
              (lexical-let ((processed-text (string-trim-right summary-output)))
                (if (string-empty-p processed-text)
-                   nil (split-string processed-text "\n"))))))
+                   nil
+                 (mapcar
+                  (lambda (text) (replace-regexp-in-string "\n" " " text))
+                  (split-string processed-text "\\\.\n")))))))
 
        (defun fn/w3m-fontify-summary ()
          "Fontify summary points."
+         (interactive)
          (lexical-let ((fontifier
               (lambda (text)
                 (let ((inhibit-read-only t)
-                    (new-text (string-join (split-string text " ") "\n*\s*")))
+                    (new-text
+                     (string-join
+                      (split-string (regexp-quote text) " ") "\n*\s*")))
                   (goto-char (point-min))
                   (while (re-search-forward new-text nil t)
                     (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
@@ -5511,8 +5559,8 @@
 
          (setq-local fn/w3m-page-summarizer nil))
 
-       ;; (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
-       ;; (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
+       (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
+       (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
 
 
        ;; Zone
@@ -5547,7 +5595,7 @@
                               ""))
                             (insert "\n")))))))
 
-       (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
+       ;; (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
 
        (defun fn/w3m-cancel-zone-render (&rest args)
          (when (and (boundp 'fn/w3m-zone-timer)
@@ -5556,7 +5604,7 @@
          (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
          (setq-local fn/w3m-zone-timer nil))
 
-       (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
+       ;; (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
 
 
        ;; Util
@@ -7656,7 +7704,8 @@
 
      ;; Major Modes
      (fn/define-custom-switch-buffer-by-mode "w" "Select a page: " 'w3m-mode)
-     (fn/define-custom-switch-buffer-by-mode "e" "Select a irc channel: " 'erc-mode)
+     (fn/define-custom-switch-buffer-by-mode "e" "Select an (e)shell: " 'eshell-mode)
+     (fn/define-custom-switch-buffer-by-mode "i" "Select an (e)rc channel: " 'erc-mode)
 
      ;; Minor Modes
      (fn/define-custom-switch-buffer-by-minor-mode "o" "Select a org-source buffer: " 'org-src-mode)

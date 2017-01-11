@@ -118,7 +118,7 @@
   "DSL and ENV for file."
   (pcase-let ((`(file ,file) dsl))
     (lexical-let* ((parent (cdr (assoc :parent env)))
-        (include (if (cdr (assoc :include env))"!" nil)))
+                   (include (if (cdr (assoc :include env))"!" nil)))
       (concat include parent file))))
 
 (defalias 'magin--dsl-dir 'magin--dsl-file
@@ -186,7 +186,7 @@
 (defun magin-write-to-project (dsl project)
   "Write compiled DSL to PROJECT."
   (lexical-let* ((compiled-file (expand-file-name magin-compiled-file-name project))
-                 (compiled-text (magin-compile dsl)))
+      (compiled-text (magin-compile dsl)))
     (with-temp-file compiled-file
       (insert compiled-text))
     (message "%s of %s updated" magin-compiled-file-name project)))
@@ -205,7 +205,9 @@
  `(defblock emacs
     (comment "Block for emacs")
     (file "*.elc")
-    (file ".#*"))
+    (file ".#*")
+    (file "*Org Src*") ;; Org Src buffers
+    )
  (list))
 
 

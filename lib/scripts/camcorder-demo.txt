@@ -1,22 +1,5 @@
-;; Hypothetical Intialization for this library
-;; This also creates the structure for it
-(setq project (org-jekyll-blogger-define-project
-            "my-project"
-            :project-root "~/Fakespace/jekyll-org-project"
-            :publish-root "~/Fakespace/jekyll-project"))
+;; I am going to open w3m and browse to a youtube url
+(w3m-gohome)
 
-(setq main-blog (org-jekyll-blogger-define-blog
-              "main"
-              :project project
-              :post-options
-              (list
-               :category (list "main")))
-   second-blog (org-jekyll-blogger-define-blog
-                "secondary"
-                :project project
-                :post-options
-                (list
-                 :category (list "second"))))
-
-;; Time to publish
-;; Both blogs published
+(w3m-goto-url-new-session ;; A wonderful execution of Faure's Pavane
+ "https://www.youtube.com/watch?v=wQDoN40-_C4")

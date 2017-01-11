@@ -26,3 +26,4 @@ GRTAGS
 # Block for emacs
 *.elc
 .#*
+*Org Src*
