@@ -5491,6 +5491,9 @@
        (defcustom fn/w3m-sumy-executable "sumy"
          "The executable that can run a summarize articles.")
 
+       (defvar fn/w3m-sumy--cache (make-hash-table :test 'equal)
+         "A cache to store the results.")
+
        (defcustom fn/w3m-sumy-args
          (list
           "lex-rank"
@@ -5504,20 +5507,21 @@
 
        (defun fn/w3m-summarize-url (url)
          "Summarize URL for easier comprehension"
-         (deferred:nextc
-           (apply
-            #'deferred:process-shell
-            (append
-             (list fn/w3m-sumy-executable)
-             fn/w3m-sumy-args
-             (list url)))
-           (lambda (summary-output)
-             (lexical-let ((processed-text (string-trim-right summary-output)))
-               (if (string-empty-p processed-text)
-                   nil
-                 (mapcar
-                  (lambda (text) (replace-regexp-in-string "\n" " " text))
-                  (split-string processed-text "\\\.\n")))))))
+         (lexical-let ((url url))
+           (deferred:nextc
+             (apply
+              #'deferred:process-shell
+              (append
+               (list fn/w3m-sumy-executable)
+               fn/w3m-sumy-args
+               (list (concat "\"" url "\""))))
+             (lambda (summary-output)
+               (lexical-let ((processed-text (string-trim-right summary-output)))
+                 (if (string-empty-p processed-text)
+                     nil
+                   (mapcar
+                    (lambda (text) (replace-regexp-in-string "\n" " " text))
+                    (split-string processed-text "\\\.\n"))))))))
 
        (defun fn/w3m-fontify-summary ()
          "Fontify summary points."
