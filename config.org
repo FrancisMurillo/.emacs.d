@@ -384,7 +384,11 @@
      (setq bookmark-file (expand-file-name "bookmarks" fn/cache-dir)
            bookmark-default-file (expand-file-name "bookmarks-default" fn/cache-dir))
 
-
+     (add-to-list
+      'display-buffer-alist
+      (cons
+       (rx bos "*Bookmark List*" eos)
+       (cons 'display-buffer-same-window (list))))
    #+END_SRC
 
 ** Editing
@@ -1813,68 +1817,99 @@
           (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
             "Project init files")
 
-          (defun fn/create-projectile-file ()
-            (interactive)
-            (lexical-let* ((target-dir  (read-directory-name "Where do you want to the .projectile placed?"))
-                (projectile-file-name ".projectile")
-                (projectile-file (expand-file-name projectile-file-name target-dir)))
-              (cond
-               ((file-exists-p projectile-file)
-                (message "Projectile file alread exists"))
-               (t
-                (message "Creating %s" projectile-file)
-                (find-file projectile-file)))))
 
           (defun fn/load-project-file ()
-            ;; When the project is switched, run a custom initialization file.
-            ;; Be careful though with side effects, make the init file fast and pure/side-effect free
+            "Loads the `fn/project-file' for a project.
+      This is run once after the project is loaded signifying project setup."
             (interactive)
             (when (projectile-project-p)
-              (let* ((current-project-root (projectile-project-root))
+              (lexical-let* ((current-project-root (projectile-project-root))
                   (project-init-file (expand-file-name fn/project-file current-project-root)))
                 (when (file-exists-p project-init-file)
                   (message "Loading project init file for %s" (projectile-project-name))
                   (condition-case ex
                       (load project-init-file t)
-                    ('error (message "There was an error loading %s: %s"
-                                     project-init-file
-                                     (error-message-string ex))))))))
+                    ('error
+                     (message
+                      "There was an error loading %s: %s"
+                      project-init-file
+                      (error-message-string ex))))))))
 
           (defun fn/load-project-local-file ()
+            "Loads the `fn/project-local-file' for a project.
+      This is run for every time a file in a project is opened signifying per-file setup."
             (interactive)
             (when (projectile-project-p)
               (let* ((current-project-root (projectile-project-root))
                   (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
-                (when (and  (file-exists-p project-local-init-file)
-                          (not (member (buffer-file-name) fn/project-init-files)))
-                  (message "Loading project local file for %s on %s" (projectile-project-name) (buffer-name))
+                (when (and (file-exists-p project-local-init-file)
+                         (not (member (buffer-file-name) fn/project-init-files)))
+                  (message
+                   "Loading project local file for %s on %s"
+                   (projectile-project-name)
+                   (buffer-name))
                   (condition-case ex
                       (load project-local-init-file t)
-                    ('error (message "There was an error loading %s: %s"
-                                     project-local-init-file
-                                     (error-message-string ex))))))))
+                    ('error
+                     (message
+                      "There was an error loading %s: %s"
+                      project-local-init-file
+                      (error-message-string ex))))))))
 
 
-          ;; This must go before load-project-hook
-          (add-hook 'find-file-hook #'fn/load-project-local-file t)
-          (add-hook 'find-dired-hook #'fn/load-project-local-file t)
+          ;; Safety Loader
+          (defvar fn/checked-projects (list)
+            "Projects that are trusted with loading `fn/project-init-files' or not.")
+
+          (defun fn/safe-project-p (project-root)
+            "Check if PROJECT-ROOT can be trusted."
+            (lexical-let* ((last-modification-time
+                 (file-attribute-modification-time (file-attributes project-root)))
+                (safe-project-properties
+                 (or (cdr (assoc project-root fn/checked-projects))
+                    (lexical-let* ((base-properties
+                         (list :last-modification-time last-modification-time
+                            :project-root project-root))
+                        (trusted
+                         (yes-or-no-p
+                          (format "Do you ultimately trust the project at %s?" project-root)))
+                        (new-properties
+                         (plist-put base-properties :trusted trusted)))
+                      new-properties))))
+              (prog1
+                  (plist-get safe-project-properties :trusted)
+                (add-to-list 'fn/checked-projects
+                             (cons project-root safe-project-properties)))))
+
+          (defun fn/safe-load-project-file ()
+            "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
+            (lexical-let ((project-root (projectile-project-root))
+                (project-name (projectile-project-name)))
+              (if (not (fn/safe-project-p project-root))
+                  (message "Project script for %s is not trusted." project-name)
+                (fn/load-project-file))))
+
+          (defun fn/safe-load-project-local-file ()
+            "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
+            (lexical-let ((project-root (projectile-project-root))
+                (project-name (projectile-project-name)))
+              (if (not (fn/safe-project-p project-root))
+                  (message "Project local script for %s is not trusted." project-name)
+                (fn/load-project-local-file))))
 
 
-          (lexical-let* ((project-memoized
-               (lambda ()
-                 (lexical-let ((initialized-projects (list ".")))
-                   #'(lambda ()
-                       (when (projectile-project-p)
-                         (lexical-let ((current-project (projectile-project-root)))
-                           (if (not (member current-project initialized-projects))
-                               (progn
-                                 (add-to-list 'initialized-projects current-project)
-                                 (fn/load-project-file))
-                             current-project)))))))
-              (load-project-hook (funcall project-memoized)))
+          ;; Project root script should run before project file script
+          (add-hook 'find-file-hook #'fn/safe-load-project-file t)
+          (add-hook 'find-dired-hook #'fn/safe-load-project-file t)
+          (add-hook 'dired-mode-hook #'fn/safe-load-project-file t)
 
-            (add-hook 'find-file-hook load-project-hook)
-            (add-hook 'find-dired-hook load-project-hook))
+          (add-hook 'find-file-hook #'fn/safe-load-project-local-file t)
+          (add-hook 'find-dired-hook #'fn/safe-load-project-local-file t)
+          (add-hook 'dired-mode-hook #'fn/safe-load-project-local-file t)
+
+          (with-eval-after-load 'savehist
+            (add-to-list 'savehist-additional-variables 'fn/checked-projects))
+
 
 
           (defun fn/find-project-root ()
@@ -3303,7 +3338,23 @@
 
        (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE")
        (add-to-list 'langtool-disabled-rules "EN_QUOTES")
-       (add-to-list 'langtool-disabled-rules "EN_UNPAIRED_BRACKETS"))
+       (add-to-list 'langtool-disabled-rules "EN_UNPAIRED_BRACKETS")
+
+       (defun fn/langtool-clear-mode-line ()
+         "Clear modeline for langtool."
+         (interactive)
+         (setq mode-line-process (remove '(t langtool-mode-line-message) mode-line-process))
+         (force-mode-line-update))
+
+       (defun fn/langtool-check-buffer ()
+         "Error handled `langtool-check-buffer'."
+         (interactive)
+         (condition-case ex
+             (langtool-check-buffer)
+           ('error (error-message-string ex))))
+
+       (add-hook 'langtool-finish-hook #'fn/langtool-clear-mode-line)
+       (add-hook 'langtool-noerror-hook #'fn/langtool-clear-mode-line))
    #+END_SRC
 
 ** dired
@@ -7608,7 +7659,9 @@
 
           (block gtags)
           (block emacs))
-        user-emacs-directory))
+        user-emacs-directory)
+
+       nil)
    #+END_SRC
 
 ** Managed .projectile
