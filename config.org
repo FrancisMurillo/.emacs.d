@@ -924,6 +924,10 @@
      (use-package text-candy-words
        :load-path fn/custom-script-dir
        :defer t)
+
+     (use-package xpm
+       :load-path fn/custom-script-dir
+       :defer t)
    #+END_SRC
 
 * Terminator
@@ -1779,11 +1783,12 @@
     Nicer naming convention
 
     #+BEGIN_SRC emacs-lisp :block-id 0daef306-f44a-5bc5-dead-1578ba3b8e9d
-      (use-package uniquify
-        :if (version<= "24.3.1" emacs-version)
-        :demand t
-        :config
-        (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
+      (unless noninteractive
+        (use-package uniquify
+          :if (version<= "24.3.1" emacs-version)
+          :demand t
+          :config
+          (setq uniquify-buffer-name-style 'post-forward-angle-brackets)))
     #+END_SRC
 
 ** Interface
@@ -2306,9 +2311,10 @@
     Likewise with key and functions
 
     #+BEGIN_SRC emacs-lisp :block-id a98dab72-3b51-2570-059c-7b17519d0d00
-      (use-feature which-function
-        nil
-        (which-function-mode t))
+      (unless noninteractive
+        (use-feature which-function
+          nil
+          (which-function-mode t)))
     #+END_SRC
 
 *** eldoc
@@ -2587,10 +2593,11 @@
     Got to love that whitespace display
 
     #+BEGIN_SRC emacs-lisp :block-id 8b11bd1d-9022-358b-e3d3-aaba6be1cc1e
-      (use-feature global-whitespace
-        nil
-        (add-hook 'after-init-hook 'global-whitespace-mode)
-        (diminish 'global-whitespace-mode))
+      (unless noninteractive
+        (use-feature global-whitespace
+          nil
+          (add-hook 'after-init-hook 'global-whitespace-mode)
+          (diminish 'global-whitespace-mode)))
     #+END_SRC
 *** hl-line
     Highlight the current line
@@ -2703,9 +2710,10 @@
     Making *scratch* behave better.
 
     #+BEGIN_SRC emacs-lisp :block-id 13c9501f-b096-0655-b454-55f245ff7742
-      (use-package scratch
-        :ensure t
-        :demand t)
+      (unless noninteractive
+        (use-package scratch
+          :ensure t
+          :demand t))
 
       (use-package scratch-ext
         :ensure t
@@ -2807,13 +2815,10 @@
    The mode line customization.
 
    #+BEGIN_SRC emacs-lisp :block-id 671f4309-6508-0ce6-97b4-3bb6060ab82d
-     (use-package xpm
-       :load-path fn/custom-script-dir
-       :demand t)
-
-     (use-package moder
-       :load-path fn/custom-script-dir
-       :demand t)
+     (unless noninteractive
+       (use-package moder
+         :load-path fn/custom-script-dir
+         :demand t))
    #+END_SRC
 
 ** Candy Words
@@ -3395,23 +3400,24 @@
     Text is not enough, images are important too
 
     #+BEGIN_SRC emacs-lisp :block-id cf2771df-8638-4516-f99e-ece5acfa3100
-      (use-package image-dired
-        :ensure t
-        :after dired
-        :defer t
-        :config
-        (setq image-dired-dir (expand-file-name "image-dired" fn/cache-dir-name)
+      (unless noninteractive
+        (use-package image-dired
+          :ensure t
+          :after dired
+          :defer t
+          :config
+          (setq image-dired-dir (expand-file-name "image-dired" fn/cache-dir-name)
 
-              image-dired-gallery-dir image-dired-dir
+             image-dired-gallery-dir image-dired-dir
 
-              image-dired-db-file
-              (expand-file-name ".image-dired_db" image-dired-dir)
-              image-dired-temp-image-file
-              (expand-file-name ".image-dired_temp" image-dired-dir)
-              image-dired-temp-image-file
-              (expand-file-name ".image-dired_rotate_temp" image-dired-dir)
+             image-dired-db-file
+             (expand-file-name ".image-dired_db" image-dired-dir)
+             image-dired-temp-image-file
+             (expand-file-name ".image-dired_temp" image-dired-dir)
+             image-dired-temp-image-file
+             (expand-file-name ".image-dired_rotate_temp" image-dired-dir)
 
-              image-dired-main-image-directory "~/Pictures"))
+             image-dired-main-image-directory "~/Pictures")))
     #+END_SRC
 
 *** tmtxt
@@ -3423,7 +3429,7 @@
 
       (use-package tmtxt-async-tasks
         :load-path fn/tmtxt-package-dir
-        :defer 2
+        :defer t
         :after dired
         :config
         (setq-default tat/window-close-delay "10"
@@ -6484,7 +6490,8 @@
 
              (message "Macros saved")))))
 
-     (add-hook 'kill-emacs-hook #'fmk/persist-macros)
+     (unless noninteractive
+       (add-hook 'kill-emacs-hook #'fmk/persist-macros))
    #+END_SRC
 
 ** Session Configurations
