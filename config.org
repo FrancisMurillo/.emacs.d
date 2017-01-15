@@ -91,6 +91,38 @@
      (setq use-package-verbose t
            use-package-minimum-reported-time 0.025
            use-package-always-defer t)
+
+     (progn ;; Custom
+       (add-to-list 'use-package-keywords :fn-hook t)
+
+       (defun use-package-normalize/:fn-hook (name-symbol keyword args)
+         "`use-package' normalizer for `:fn-hook'."
+         (use-package-only-one (symbol-name keyword) args
+           (lambda (label arg)
+             (cond
+              ((symbolp arg) arg)
+              (t
+               (use-package-error
+                ":fn-hook should be a symbol hook"))))))
+
+       (defun use-package-handler/:fn-hook  (name-symbol keyword hook-symbol rest state)
+         (lexical-let* ((body (use-package-process-keywords name-symbol rest state))
+             (package-hook-symbol
+              (intern
+               (concat
+                "fn/use-package--fn-hook--"
+                (symbol-name name-symbol)
+                "--"
+                (symbol-name hook-symbol)))))
+           (debug)
+           ;; This happens at macro expansion time, not when the expanded code is
+           ;; compiled or evaluated.
+           (if (null archive-name)
+               body
+             (use-package-concat
+              body
+              `((push '(,name-symbol . ,archive-name)
+                      package-pinned-packages)))))))
    #+END_SRC
 
 ** Org Src
@@ -680,107 +712,108 @@
    Nice logging library
 
    #+BEGIN_SRC emacs-lisp :block-id e8344e55-09ff-27a8-a6c0-8d76e44cd3f0
-     (use-package log4e
-       :ensure t
-       :config
-       (log4e:deflogger
-         "chat"
-         ">>> %t \n%m\n<<<"
-         "%F %H:%M:%S"
-         (list (cons 'info "info")))
+     (unless noninteractive
+       (use-package log4e
+         :ensure t
+         :config
+         (log4e:deflogger
+           "chat"
+           ">>> %t \n%m\n<<<"
+           "%F %H:%M:%S"
+           (list (cons 'info "info")))
 
-       (chat--log-enable-logging)
-
-
-       (defface fn/chat-server-name  '((t (:weight bold :height 0.9)))
-         "Chat server name face")
-
-       (defface fn/chat-channel-name  '((t (:weight ultra-bold :height 1.1)))
-         "Chat server  name face")
-
-       (defface fn/chat-chatter-name  '((t (:underline t :weight semi-bold :height 1.0)))
-         "Chat sender name face")
-
-       (defface fn/chat-message  '((t (:weight thin :height 1.0)))
-         "Chat message face")
+         (chat--log-enable-logging)
 
 
-       (defun fn/chat-propertize (text style)
-         "Add extra coloring with TEXT and STYLE."
-         (let ((new-text (substring text)))
-           (add-face-text-property
-            0
-            (length new-text)
-            style
-            nil
-            new-text)
-           new-text))
+         (defface fn/chat-server-name  '((t (:weight bold :height 0.9)))
+           "Chat server name face")
+
+         (defface fn/chat-channel-name  '((t (:weight ultra-bold :height 1.1)))
+           "Chat server  name face")
+
+         (defface fn/chat-chatter-name  '((t (:underline t :weight semi-bold :height 1.0)))
+           "Chat sender name face")
+
+         (defface fn/chat-message  '((t (:weight thin :height 1.0)))
+           "Chat message face")
 
 
-       (defun fn/prettify-word (word)
-         "Prettify word if possible."
-         (if (fboundp 'text-candy-candied-word)
-             (text-candy-candied-word word)
-           word))
-
-       (defun fn/chat-log (server channel chatter message)
-         "Log SERVER, CHANNEL, CHATTER and MESSAGE."
-         (unless (string-empty-p message)
-           (let* ((out
-                (string-trim-right
-                 (format "[%s/%s] %s: %s"
-                         (fn/chat-propertize (fn/prettify-word server) 'fn/chat-server-name)
-                         (fn/chat-propertize (fn/prettify-word channel) 'fn/chat-channel-name)
-                         (fn/chat-propertize chatter 'fn/chat-chatter-name)
-                         (fn/chat-propertize message 'fn/chat-message)))))
-             (chat--log-info out)
-             out)))
-
-       (defun fn/chat-log-open ()
-         "Open chat log."
-         (interactive)
-         (chat--log-open-log))
+         (defun fn/chat-propertize (text style)
+           "Add extra coloring with TEXT and STYLE."
+           (let ((new-text (substring text)))
+             (add-face-text-property
+              0
+              (length new-text)
+              style
+              nil
+              new-text)
+             new-text))
 
 
-       (defconst fn/chat-log-file (expand-file-name ".chat-log.txt.gpg" fn/cache-dir)
-         "My chat log file.")
+         (defun fn/prettify-word (word)
+           "Prettify word if possible."
+           (if (fboundp 'text-candy-candied-word)
+               (text-candy-candied-word word)
+             word))
 
-       (defun fn/chat-log-clear ()
-         "Clear chat log."
-         (interactive)
-         (chat--log-clear-log))
+         (defun fn/chat-log (server channel chatter message)
+           "Log SERVER, CHANNEL, CHATTER and MESSAGE."
+           (unless (string-empty-p message)
+             (let* ((out
+                  (string-trim-right
+                   (format "[%s/%s] %s: %s"
+                           (fn/chat-propertize (fn/prettify-word server) 'fn/chat-server-name)
+                           (fn/chat-propertize (fn/prettify-word channel) 'fn/chat-channel-name)
+                           (fn/chat-propertize chatter 'fn/chat-chatter-name)
+                           (fn/chat-propertize message 'fn/chat-message)))))
+               (chat--log-info out)
+               out)))
 
-       (defun fn/chat-log-flush (&optional retain)
-         "Save log for posterity.  If RETAIN is non-nil, do not clear the log."
-         (ignore-errors
-           (save-window-excursion
-             (fn/chat-log-open) ;; NOTE: Error might result if the log isn't populated yet.
-             (let ((new-log
-                  (with-current-buffer log4e--log-buffer-chat
-                    (buffer-substring-no-properties (point-min) (point-max))))
-                 (file (find-file-noselect fn/chat-log-file)))
-               (with-current-buffer file
-                 (end-of-buffer)
-                 (newline)
-                 (insert new-log)
-                 (save-buffer))
-               (unless retain
-                 (fn/chat-log-clear))
-               nil))))
-
-       (defun fn/chat-log-flush-before-clear (&rest args)
-         "Save the log before clearing."
-         (fn/chat-log-flush t))
-
-       (advice-add 'chat--log-clear-log :before #'fn/chat-log-flush-before-clear)
-       (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
+         (defun fn/chat-log-open ()
+           "Open chat log."
+           (interactive)
+           (chat--log-open-log))
 
 
-       (use-feature log4e-mode--mode-icon
-         (all-the-icons)
-         (fn/add-major-mode-icon
-          'log4e-mode
-          (list 'all-the-icons-octicon "clippy" :v-adjust 0.0))))
+         (defconst fn/chat-log-file (expand-file-name ".chat-log.txt.gpg" fn/cache-dir)
+           "My chat log file.")
+
+         (defun fn/chat-log-clear ()
+           "Clear chat log."
+           (interactive)
+           (chat--log-clear-log))
+
+         (defun fn/chat-log-flush (&optional retain)
+           "Save log for posterity.  If RETAIN is non-nil, do not clear the log."
+           (ignore-errors
+             (save-window-excursion
+               (fn/chat-log-open) ;; NOTE: Error might result if the log isn't populated yet.
+               (let ((new-log
+                      (with-current-buffer log4e--log-buffer-chat
+                        (buffer-substring-no-properties (point-min) (point-max))))
+                     (file (find-file-noselect fn/chat-log-file)))
+                 (with-current-buffer file
+                   (end-of-buffer)
+                   (newline)
+                   (insert new-log)
+                   (save-buffer))
+                 (unless retain
+                   (fn/chat-log-clear))
+                 nil))))
+
+         (defun fn/chat-log-flush-before-clear (&rest args)
+           "Save the log before clearing."
+           (fn/chat-log-flush t))
+
+         (advice-add 'chat--log-clear-log :before #'fn/chat-log-flush-before-clear)
+         (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
+
+
+         (use-feature log4e-mode--mode-icon
+           (all-the-icons)
+           (fn/add-major-mode-icon
+            'log4e-mode
+            (list 'all-the-icons-octicon "clippy" :v-adjust 0.0)))))
    #+END_SRC
 
 ** auto-compile
@@ -1064,7 +1097,7 @@
        :ensure t
        :bind (:map fn/prodigy-map
                    ("P" . prodigy))
-       :demand t
+       :defer t
        :config
        (defmacro fn/prodigy-with-buffer (&rest body)
          "Execute BODY within an exisiting prodigy buffer."
@@ -1497,7 +1530,8 @@
       (unless noninteractive
         (use-package bookmark+
           :ensure t
-          :demand t
+          :defer t
+          ;; :commands ()
           :config
           nil))
     #+END_SRC
@@ -1513,7 +1547,7 @@
         "My custom desktop bookmarked map.")
 
       (use-package desktop
-        :demand t
+        :defer t
         :config
         (defconst fn/desktop-dir (expand-file-name "desktop/" fn/cache-dir)
           "My desktop dir")
@@ -1861,6 +1895,9 @@
           (defvar fn/checked-projects (list)
             "Projects that are trusted with loading `fn/project-init-files' or not.")
 
+          (defvar fn/loaded-projects (list)
+            "Projects that have been loaded by `fn/load-project-file'.")
+
           (defun fn/safe-project-p (project-root)
             "Check if PROJECT-ROOT can be trusted."
             (lexical-let* ((last-modification-time
@@ -1879,23 +1916,27 @@
               (prog1
                   (plist-get safe-project-properties :trusted)
                 (add-to-list 'fn/checked-projects
-                             (cons project-root safe-project-properties)))))
+                             (cons project-root  safe-project-properties)))))
 
           (defun fn/safe-load-project-file ()
             "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
-            (lexical-let ((project-root (projectile-project-root))
-                (project-name (projectile-project-name)))
-              (if (not (fn/safe-project-p project-root))
-                  (message "Project script for %s is not trusted." project-name)
-                (fn/load-project-file))))
+            (when (projectile-project-p)
+              (lexical-let ((project-root (projectile-project-root))
+                  (project-name (projectile-project-name)))
+                (when (not (member project-root fn/loaded-projects))
+                  (if (not (fn/safe-project-p project-root))
+                      (message "Project script for %s is not trusted." project-name)
+                    (fn/load-project-file)
+                    (add-to-list 'fn/loaded-projects project-root))))))
 
           (defun fn/safe-load-project-local-file ()
             "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
-            (lexical-let ((project-root (projectile-project-root))
-                (project-name (projectile-project-name)))
-              (if (not (fn/safe-project-p project-root))
-                  (message "Project local script for %s is not trusted." project-name)
-                (fn/load-project-local-file))))
+            (when (projectile-project-p)
+              (lexical-let ((project-root (projectile-project-root))
+                  (project-name (projectile-project-name)))
+                (if (not (fn/safe-project-p project-root))
+                    (message "Project local script for %s is not trusted." project-name)
+                  (fn/load-project-local-file)))))
 
 
           ;; Project root script should run before project file script
@@ -1909,7 +1950,6 @@
 
           (with-eval-after-load 'savehist
             (add-to-list 'savehist-additional-variables 'fn/checked-projects))
-
 
 
           (defun fn/find-project-root ()
@@ -3353,8 +3393,8 @@
              (langtool-check-buffer)
            ('error (error-message-string ex))))
 
-       (add-hook 'langtool-finish-hook #'fn/langtool-clear-mode-line)
-       (add-hook 'langtool-noerror-hook #'fn/langtool-clear-mode-line))
+       (add-hook 'langtool-noerror-hook #'fn/langtool-clear-mode-line)
+       (add-hook 'langtool-error-exists-hook #'fn/langtool-clear-mode-line))
    #+END_SRC
 
 ** dired
@@ -3820,11 +3860,12 @@
         :ensure t
         :after flycheck)
 
-      (use-package flycheck-package
-        :ensure t
-        :after flycheck
-        :config
-        (flycheck-package-setup))
+      (with-eval-after-load 'elisp-mode
+        (use-package flycheck-package
+          :ensure t
+          :after flycheck
+          :config
+          (flycheck-package-setup)))
     #+END_SRC
 
 *** magit
@@ -4419,7 +4460,7 @@
     #+BEGIN_SRC emacs-lisp :block-id da802e8e-8302-f301-51f5-6042384a98a7
       (unless noninteractive
         (use-feature flycheck-flow
-          (flycheck)
+          (flycheck js2-mode)
           (use-package flycheck-flow
             :demand t
             :config
@@ -6139,10 +6180,7 @@
 
        (select-frame-set-input-focus (selected-frame)))
 
-     (add-hook
-      'after-init-hook #'fn/setup-initial-view
-      t ;; Must be after full screen action
-      )
+     (add-hook 'after-init-hook #'fn/setup-initial-view t)
    #+END_SRC
 
 ** Custom Emacs

@@ -1,5 +1,2 @@
-;; I am going to open w3m and browse to a youtube url
-(w3m-gohome)
-
-(w3m-goto-url-new-session ;; A wonderful execution of Faure's Pavane
- "https://www.youtube.com/watch?v=wQDoN40-_C4")
+;; Going to open a project that will load a script which will trigger `(delete-other-windows)'
+;; The project is projectile-project-loader

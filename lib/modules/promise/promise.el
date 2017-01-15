@@ -201,10 +201,11 @@
    #'promise-all
    (mapcar
     (lambda (feature)
-      (promise
-       (lambda (fulfiller _)
-         (eval-after-load feature
-           (funcall fulfiller feature)))))
+      (lexical-let ((feature feature))
+        (promise
+         (lambda (fulfiller _)
+           (with-eval-after-load feature
+             (funcall fulfiller feature))))))
     features)))
 
 
