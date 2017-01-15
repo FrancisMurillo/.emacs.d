@@ -1796,6 +1796,7 @@
       (unless noninteractive
         (use-package projectile
           :ensure t
+          :defer 1
           :diminish projectile-mode
           :bind (("C-c p p" . projectile-switch-project)
                  ("C-c p f" . projectile-find-file)
@@ -1804,7 +1805,6 @@
           (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
              projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
           :config
-
           (defconst fn/project-file ".project.el"
             "Project configuration file")
 
@@ -1942,7 +1942,7 @@
       (unless noninteractive
         (use-package helm
           :ensure t
-          :defer t
+          :defer 3
           :diminish helm-mode
           :bind (("M-x" . helm-M-x)
                  ("C-c f" . helm-recentf)
