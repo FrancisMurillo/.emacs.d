@@ -89,10 +89,11 @@
      (require 'use-package)
 
      (setq use-package-verbose t
-           use-package-minimum-reported-time 0.025
-           use-package-always-defer t)
+        use-package-check-before-init t
+        use-package-minimum-reported-time 0.025
+        use-package-always-defer t)
 
-     (progn ;; Custom
+     (progn ;; :fn-hook keyword
        (add-to-list 'use-package-keywords :fn-hook t)
 
        (defun use-package-normalize/:fn-hook (name-symbol keyword args)
@@ -106,23 +107,22 @@
                 ":fn-hook should be a symbol hook"))))))
 
        (defun use-package-handler/:fn-hook  (name-symbol keyword hook-symbol rest state)
-         (lexical-let* ((body (use-package-process-keywords name-symbol rest state))
+         (let* ((body (use-package-process-keywords name-symbol rest state))
              (package-hook-symbol
               (intern
                (concat
                 "fn/use-package--fn-hook--"
                 (symbol-name name-symbol)
                 "--"
-                (symbol-name hook-symbol)))))
-           (debug)
-           ;; This happens at macro expansion time, not when the expanded code is
-           ;; compiled or evaluated.
-           (if (null archive-name)
-               body
-             (use-package-concat
-              body
-              `((push '(,name-symbol . ,archive-name)
-                      package-pinned-packages)))))))
+                (symbol-name hook-symbol))))
+             (package-hook
+              (fset package-hook-symbol
+                    `(lambda ()
+                       ,(format "`fn-hook' require hook for `%s' with `%s'"
+                                (symbol-name name-symbol) (symbol-name hook-symbol))
+                       (require (quote ,name-symbol))))))
+           (add-hook hook-symbol package-hook-symbol)
+           body)))
    #+END_SRC
 
 ** Org Src
@@ -552,10 +552,6 @@
      (use-package dash-functional
        :ensure t
        :after dash)
-
-     (use-package kv
-       :ensure t
-       :defer t)
    #+END_SRC
 
 ** async
@@ -563,7 +559,8 @@
 
    #+BEGIN_SRC emacs-lisp :block-id bfae8c52-4b79-e605-1b26-7da4ae8eeade
      (use-package async
-       :ensure t)
+       :ensure t
+       :defer t)
    #+END_SRC
 
 ** s
@@ -662,50 +659,6 @@
            "-l" "-i"))
 
        (exec-path-from-shell-initialize))
-   #+END_SRC
-
-** execute-shell
-   Some external commands might be required, so gotta check them if they
-   exist or install them if you have the time
-
-   #+BEGIN_SRC emacs-lisp :block-id eb59aa17-8976-e43a-85b1-19916b2f9105
-     (defun fn/run-command (command &rest args)
-       ;; Calls the process *command* and gets it's output, nil if there is an error"
-       (condition-case ex
-           (with-temp-buffer
-             (let ((string-args (mapcar (lambda (arg)
-                                          (cond
-                                           ((numberp arg) (number-to-string arg))
-                                           (t arg)))
-                                        args)))
-               (apply 'call-process (append
-                                     (list command nil t nil)
-                                     string-args))
-               (string-trim (buffer-string))))
-         ('error nil)))
-   #+END_SRC
-
-** htmlize
-   For exporting purposes
-
-   #+BEGIN_SRC emacs-lisp :block-id bbe7dfa0-4a96-977f-20e6-ef6ab6642fc5
-     (defconst fn/htmlize-package-dir (expand-file-name "htmlize-custom/" fn/custom-module-dir)
-       "Htmlize package dir")
-
-     (use-package htmlize
-       :disabled t
-       :load-path fn/htmlize-package-dir
-       :after ox-reveal)
-   #+END_SRC
-** request
-   I love them request library like in Python
-
-   #+BEGIN_SRC emacs-lisp :block-id 19aa11f8-524f-986e-84d8-45eb781bbee5
-     (use-package request
-       :ensure t
-       :defer t
-       :config
-       (setq request-storage-directory (expand-file-name "request" fn/cache-dir)))
    #+END_SRC
 
 ** log4e
@@ -822,7 +775,8 @@
    #+BEGIN_SRC emacs-lisp :block-id cf5a9ca5-1bd8-421b-d6f6-76a4cf5194fc
      (use-package auto-compile
        :ensure t
-       :demand t
+       :init
+       (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
        :config
        (auto-compile-on-load-mode)
        (auto-compile-on-save-mode))
@@ -966,6 +920,10 @@
      (use-package org-jekyll-blogger
        :load-path fn/custom-script-dir
        :defer t)
+
+     (use-package text-candy-words
+       :load-path fn/custom-script-dir
+       :defer t)
    #+END_SRC
 
 * Terminator
@@ -988,13 +946,15 @@
    More things for sh-mode
 
    #+BEGIN_SRC emacs-lisp :block-id f5c18b8e-734c-f4e2-e191-f7ef929289fa
-     (use-package company-shell
-       :ensure t
-       :demand t
-       :init
-       (add-hook 'sh-mode-hook 'company-mode)
-       :config
-       (add-to-list 'company-backends 'company-shell))
+     (use-feature company-shell
+       (shell)
+       (use-package company-shell
+         :ensure t
+         :after company
+         :init
+         (add-hook 'sh-mode-hook 'company-mode)
+         :config
+         (add-to-list 'company-backends 'company-shell)))
    #+END_SRC
 
 ** term
@@ -1837,10 +1797,13 @@
         (use-package projectile
           :ensure t
           :diminish projectile-mode
-          :demand t
-          :config
+          :bind (("C-c p p" . projectile-switch-project)
+                 ("C-c p f" . projectile-find-file)
+                 ("C-c p d" . projectile-find-dir))
+          :init
           (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
              projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
+          :config
 
           (defconst fn/project-file ".project.el"
             "Project configuration file")
@@ -1875,9 +1838,9 @@
             (interactive)
             (when (projectile-project-p)
               (let* ((current-project-root (projectile-project-root))
-                  (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+                     (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
                 (when (and (file-exists-p project-local-init-file)
-                         (not (member (buffer-file-name) fn/project-init-files)))
+                           (not (member (buffer-file-name) fn/project-init-files)))
                   (message
                    "Loading project local file for %s on %s"
                    (projectile-project-name)
@@ -1901,18 +1864,18 @@
           (defun fn/safe-project-p (project-root)
             "Check if PROJECT-ROOT can be trusted."
             (lexical-let* ((last-modification-time
-                 (file-attribute-modification-time (file-attributes project-root)))
-                (safe-project-properties
-                 (or (cdr (assoc project-root fn/checked-projects))
-                    (lexical-let* ((base-properties
-                         (list :last-modification-time last-modification-time
-                            :project-root project-root))
-                        (trusted
-                         (yes-or-no-p
-                          (format "Do you ultimately trust the project at %s?" project-root)))
-                        (new-properties
-                         (plist-put base-properties :trusted trusted)))
-                      new-properties))))
+                            (file-attribute-modification-time (file-attributes project-root)))
+                           (safe-project-properties
+                            (or (cdr (assoc project-root fn/checked-projects))
+                                (lexical-let* ((base-properties
+                                                (list :last-modification-time last-modification-time
+                                                      :project-root project-root))
+                                               (trusted
+                                                (yes-or-no-p
+                                                 (format "Do you ultimately trust the project at %s?" project-root)))
+                                               (new-properties
+                                                (plist-put base-properties :trusted trusted)))
+                                  new-properties))))
               (prog1
                   (plist-get safe-project-properties :trusted)
                 (add-to-list 'fn/checked-projects
@@ -1922,7 +1885,7 @@
             "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
             (when (projectile-project-p)
               (lexical-let ((project-root (projectile-project-root))
-                  (project-name (projectile-project-name)))
+                            (project-name (projectile-project-name)))
                 (when (not (member project-root fn/loaded-projects))
                   (if (not (fn/safe-project-p project-root))
                       (message "Project script for %s is not trusted." project-name)
@@ -1933,7 +1896,7 @@
             "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
             (when (projectile-project-p)
               (lexical-let ((project-root (projectile-project-root))
-                  (project-name (projectile-project-name)))
+                            (project-name (projectile-project-name)))
                 (if (not (fn/safe-project-p project-root))
                     (message "Project local script for %s is not trusted." project-name)
                   (fn/load-project-local-file)))))
@@ -1979,6 +1942,7 @@
       (unless noninteractive
         (use-package helm
           :ensure t
+          :defer t
           :diminish helm-mode
           :bind (("M-x" . helm-M-x)
                  ("C-c f" . helm-recentf)
@@ -1989,7 +1953,6 @@
                  ("M-s o" . helm-occur)
                  ("M-s i" . helm-imenu)
                  ("C-c C-/" . helm-dabbrev))
-          :demand t
           :config
           (require 'helm-config)
 
@@ -2033,139 +1996,140 @@
        (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-module-dir)
          "My custom helm projectile package")
 
-       (unless noninteractive
-         (use-feature helm-projectile
-           (projectile helm)
-           (use-package helm-projectile
-             :ensure t
-             :bind (("C-c p h" . helm-projectile)
-                    ("C-c p p" . helm-projectile-switch-project))
-             :demand t
-             :config
-             (require 'dash)
-             (require 's)
-             (require 'f)
+       (use-package helm-projectile
+         :ensure t
+         :defer t
+         :after (projectile helm)
+         :bind (("C-c p h" . helm-projectile)
+                ("C-c p p" . helm-projectile-switch-project))
+         :config
+         (require 'helm)
+         (require 'projectile)
 
-             (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
-               "Just a constant name for the completion buffer")
+         (require 'dash)
+         (require 's)
+         (require 'f)
 
-
-             (defface fmc/completion-label  '((t (:weight bold :height 1.1)))
-               "Label face")
-
-             (defface fmc/completion-delimiter '((t (:weight light :height 0.9)))
-               "Delimiter face")
-
-             (defface fmc/completion-description '((t (:weight extra-light :height 0.9)))
-               "Description face")
+         (defconst fmc/completion-buffer-name "*Hacker Helm Completions"
+           "Just a constant name for the completion buffer")
 
 
-             (defconst fmc/reverse-notation-separator ".."
-               "My reversed separator")
+         (defface fmc/completion-label  '((t (:weight bold :height 1.1)))
+           "Label face")
 
-             (defconst fmc/completion-separator ">>"
-               "My completion separator")
+         (defface fmc/completion-delimiter '((t (:weight light :height 0.9)))
+           "Delimiter face")
 
-             (defun fmc/uniquify-project-paths (project-paths)
-               "Customize how projectile files and more are displayed"
-               (lexical-let*
-                   ((fn-notation
-                     (lambda (path)
-                       (lexical-let ((fn-pieces (f-split path)))
-                         (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
-                    (relative-parent-path
-                     (lambda (path relative-path)
-                       (lexical-let
-                           ((split-path (f-split path))
-                            (split-relative-path (f-split relative-path)))
-                         (string-join
-                          (-drop-last (length split-relative-path) split-path)
-                          (f-path-separator)))))
+         (defface fmc/completion-description '((t (:weight extra-light :height 0.9)))
+           "Description face")
 
-                    (as-pair
-                     (lambda (ish)
-                       (if (listp ish)
-                           ish (cons ish ish))))
-                    (map-car
-                     (lambda (f pair)
-                       (cons (funcall f (car pair))
-                          (cdr pair))))
-                    (pair-as-label
-                     (lambda (pairs)
+
+         (defconst fmc/reverse-notation-separator ".."
+           "My reversed separator")
+
+         (defconst fmc/completion-separator ">>"
+           "My completion separator")
+
+         (defun fmc/uniquify-project-paths (project-paths)
+           "Customize how projectile files and more are displayed"
+           (lexical-let*
+               ((fn-notation
+                 (lambda (path)
+                   (lexical-let ((fn-pieces (f-split path)))
+                     (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
+                (relative-parent-path
+                 (lambda (path relative-path)
+                   (lexical-let
+                       ((split-path (f-split path))
+                        (split-relative-path (f-split relative-path)))
+                     (string-join
+                      (-drop-last (length split-relative-path) split-path)
+                      (f-path-separator)))))
+
+                (as-pair
+                 (lambda (ish)
+                   (if (listp ish)
+                       ish (cons ish ish))))
+                (map-car
+                 (lambda (f pair)
+                   (cons (funcall f (car pair))
+                      (cdr pair))))
+                (pair-as-label
+                 (lambda (pairs)
+                   (lexical-let*
+                       ((display-formatter
+                         (lambda (name description)
+                           (format "%-s %s %-s"
+                                   (propertize name 'font-lock-face 'fmc/completion-label)
+                                   (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter)
+                                   (propertize description 'font-lock-face 'fmc/completion-description)))))
+                     (lambda (pair)
                        (lexical-let*
-                           ((display-formatter
-                             (lambda (name description)
-                               (format "%-s %s %-s"
-                                       (propertize name 'font-lock-face 'fmc/completion-label)
-                                       (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter)
-                                       (propertize description 'font-lock-face 'fmc/completion-description)))))
-                         (lambda (pair)
-                           (lexical-let*
-                               ((unique-path (car pair))
-                                (full-path (cdr pair))
-                                (parent-path
-                                 (funcall relative-parent-path
-                                          full-path
-                                          unique-path))
+                           ((unique-path (car pair))
+                            (full-path (cdr pair))
+                            (parent-path
+                             (funcall relative-parent-path
+                                      full-path
+                                      unique-path))
 
-                                (display-name
-                                 (funcall fn-notation unique-path))
-                                (display-description
-                                 (funcall fn-notation parent-path))
+                            (display-name
+                             (funcall fn-notation unique-path))
+                            (display-description
+                             (funcall fn-notation parent-path))
 
-                                (display-label
-                                 (funcall display-formatter
-                                          display-name
-                                          display-description)))
-                             (cons display-label (cdr pair)))))))
-                    (uniquify-paths
-                     (lambda (paths)
-                       ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
-                       (lexical-let*
-                           ((is-dir
-                             (lambda (path)
-                               (string-equal (f-path-separator)
-                                             (s-right 1 path))))
+                            (display-label
+                             (funcall display-formatter
+                                      display-name
+                                      display-description)))
+                         (cons display-label (cdr pair)))))))
+                (uniquify-paths
+                 (lambda (paths)
+                   ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
+                   (lexical-let*
+                       ((is-dir
+                         (lambda (path)
+                           (string-equal (f-path-separator)
+                                         (s-right 1 path))))
 
-                            (swap-pair (lambda (pair)
-                                         (cons (cdr pair) (car pair))))
-                            (map-pair
-                             (lambda (f pair)
-                               (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
+                        (swap-pair (lambda (pair)
+                                     (cons (cdr pair) (car pair))))
+                        (map-pair
+                         (lambda (f pair)
+                           (cons (funcall f  (car pair)) (funcall f (cdr pair)))))
 
-                            (remove-last-separator
-                             (lambda (text)
-                               (s-left (1- (length text)) text)))
-                            (add-separator
-                             (lambda (text)
-                               (concat text (f-path-separator)))))
-                         (mapcar (-compose
-                                  swap-pair)
-                                 (if (-any is-dir paths)
-                                     ;; Remove separator, uniquify and add separator back
-                                     ;; Weird performance shiznit
-                                     (funcall
-                                      (-compose
-                                       (-partial #'mapcar (-partial map-pair add-separator))
-                                       #'f-uniquify-alist
-                                       (-partial #'mapcar remove-last-separator))
-                                      paths)
-                                   (f-uniquify-alist paths))))))
-                    (refined-paths  (funcall uniquify-paths project-paths)))
-                 (mapcar (-compose
-                          (funcall pair-as-label refined-paths)
-                          as-pair)
-                         refined-paths)))
+                        (remove-last-separator
+                         (lambda (text)
+                           (s-left (1- (length text)) text)))
+                        (add-separator
+                         (lambda (text)
+                           (concat text (f-path-separator)))))
+                     (mapcar (-compose
+                              swap-pair)
+                             (if (-any is-dir paths)
+                                 ;; Remove separator, uniquify and add separator back
+                                 ;; Weird performance shiznit
+                                 (funcall
+                                  (-compose
+                                   (-partial #'mapcar (-partial map-pair add-separator))
+                                   #'f-uniquify-alist
+                                   (-partial #'mapcar remove-last-separator))
+                                  paths)
+                               (f-uniquify-alist paths))))))
+                (refined-paths  (funcall uniquify-paths project-paths)))
+             (mapcar (-compose
+                      (funcall pair-as-label refined-paths)
+                      as-pair)
+                     refined-paths)))
 
-             (defun fmc/custom-helm-completion (prompt choices)
-               "Just a custom helm completion for projection"
-               (prog1
-                   (helm-comp-read prompt (fmc/uniquify-project-paths choices)
-                                   :buffer fmc/completion-buffer-name
-                                   :must-match t)
-                 (kill-buffer fmc/completion-buffer-name)))
+         (defun fmc/custom-helm-completion (prompt choices)
+           "Just a custom helm completion for projection"
+           (prog1
+               (helm-comp-read prompt (fmc/uniquify-project-paths choices)
+                               :buffer fmc/completion-buffer-name
+                               :must-match t)
+             (kill-buffer fmc/completion-buffer-name)))
 
-             (setq projectile-completion-system #'fmc/custom-helm-completion))))
+         (setq projectile-completion-system #'fmc/custom-helm-completion))
      #+END_SRC
 
 **** helm-smex
@@ -2178,14 +2142,15 @@
            :demand t
            :config
            (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
-              smex-history-length (or helm-adaptive-history-length 100))))
+              smex-history-length 100)))
 
        (use-package helm-smex
          :ensure t
-         :after smex
+         :after helm
          :bind (("M-x" . helm-smex))
          :config
-         (setq helm-smex-show-bindings t))
+         (setq helm-smex-show-bindings t
+            smex-history-length (or helm-adaptive-history-length smex-history-length)))
      #+END_SRC
 
 *** ivy
@@ -2622,9 +2587,9 @@
     Got to love that whitespace display
 
     #+BEGIN_SRC emacs-lisp :block-id 8b11bd1d-9022-358b-e3d3-aaba6be1cc1e
-      (use-feature whitespace-mode
+      (use-feature global-whitespace
         nil
-        (global-whitespace-mode t)
+        (add-hook 'after-init-hook 'global-whitespace-mode)
         (diminish 'global-whitespace-mode))
     #+END_SRC
 *** hl-line
@@ -2660,8 +2625,8 @@
       (unless noninteractive
         (use-package zone
           :ensure t
-          :if (not (eq system-type 'windows-nt))
-          :demand t
+          :commands zone
+          :defer fn/minute-per-second
           :config
           (defconst fn/zone-idle-time (* fn/minute-per-second 5)
             "Time for zone to zone")
@@ -2873,7 +2838,8 @@
      (unless noninteractive
        (use-package alert
          :load-path fn/alert-package-dir
-         :demand t
+         :defer t
+         :commands alert
          :config
          (setq alert-default-style 'libnotify
             alert-log-messages t)
@@ -3960,7 +3926,8 @@
       (unless noninteractive
         (use-package ag
           :ensure t
-          :demand t
+          :defer t
+          :commands ag
           :config
           (setq ag-highlight-search t
 
@@ -4215,58 +4182,58 @@
     #+BEGIN_SRC emacs-lisp :block-id cd91807f-6008-2cb5-5716-f6ee48077fc7
       (use-function prettify-elisp
         prettify-symbols-mode
-        (add-hook
-         'emacs-lisp-mode-hook
-         (lambda ()
-           (push '("require" . ?∈) prettify-symbols-alist)
-           (push '("provide" . ?∋) prettify-symbols-alist)
+        (defun fn/prettify-elisp ()
+          "Prettify elisp."
+          (push '("require" . ?∈) prettify-symbols-alist)
+          (push '("provide" . ?∋) prettify-symbols-alist)
 
-           (push '("defun" . ?∫) prettify-symbols-alist)
-           (push '("defun*" . ?∮) prettify-symbols-alist)
-           (push '("lambda" . ?λ) prettify-symbols-alist)
-           (push '("interactive" . ?Ι) prettify-symbols-alist)
+          (push '("defun" . ?∫) prettify-symbols-alist)
+          (push '("defun*" . ?∮) prettify-symbols-alist)
+          (push '("lambda" . ?λ) prettify-symbols-alist)
+          (push '("interactive" . ?Ι) prettify-symbols-alist)
 
-           (push '("&rest" . ?…) prettify-symbols-alist)
-           (push '("&optional" . ?⁇) prettify-symbols-alist)
-           (push '("&key" . ?∴) prettify-symbols-alist)
+          (push '("&rest" . ?…) prettify-symbols-alist)
+          (push '("&optional" . ?⁇) prettify-symbols-alist)
+          (push '("&key" . ?∴) prettify-symbols-alist)
 
-           (push '("defvar" . ?ν) prettify-symbols-alist)
-           (push '("define" . ?δ) prettify-symbols-alist)
-           (push '("defconst" . ?φ) prettify-symbols-alist)
+          (push '("defvar" . ?ν) prettify-symbols-alist)
+          (push '("define" . ?δ) prettify-symbols-alist)
+          (push '("defconst" . ?φ) prettify-symbols-alist)?
 
-           (push '("defcustom" . ?τ) prettify-symbols-alist)
-           (push '("defface" . ?κ) prettify-symbols-alist)
+          (push '("defcustom" . ?τ) prettify-symbols-alist)
+          (push '("defface" . ?κ) prettify-symbols-alist)
 
-           (push '("let" . ?▷) prettify-symbols-alist)
-           (push '("let*" . ?▶) prettify-symbols-alist)
+          (push '("let" . ?▷) prettify-symbols-alist)
+          (push '("let*" . ?▶) prettify-symbols-alist)
 
-           (push '("lexical-let" . ?▭) prettify-symbols-alist)
-           (push '("lexical-let*" . ?▬) prettify-symbols-alist)
+          (push '("lexical-let" . ?▭) prettify-symbols-alist)
+          (push '("lexical-let*" . ?▬) prettify-symbols-alist)
 
-           (push '("letrec" . ?●) prettify-symbols-alist)
+          (push '("letrec" . ?●) prettify-symbols-alist)
 
-           (push '("and" . ?∧) prettify-symbols-alist)
-           (push '("or" . ?∨) prettify-symbols-alist)
-           (push '("not" . ?¬) prettify-symbols-alist)
+          (push '("and" . ?∧) prettify-symbols-alist)
+          (push '("or" . ?∨) prettify-symbols-alist)
+          (push '("not" . ?¬) prettify-symbols-alist)
 
-           (push '("t" . ?⊤) prettify-symbols-alist)
-           (push '("nil" . ?⊥) prettify-symbols-alist)
-
-
-           (push '("funcall" . ?→) prettify-symbols-alist)
-           (push '("apply". ?↦) prettify-symbols-alist)
+          (push '("t" . ?⊤) prettify-symbols-alist)
+          (push '("nil" . ?⊥) prettify-symbols-alist)
 
 
-           (push '("setq" . ?≔) prettify-symbols-alist)
-           (push '("setq-default" . ?⩴) prettify-symbols-alist)
-           (push '("setf". ?≕) prettify-symbols-alist)
+          (push '("funcall" . ?→) prettify-symbols-alist)
+          (push '("apply". ?↦) prettify-symbols-alist)
 
 
-           (push '("list" . ?∅) prettify-symbols-alist)
-           (push '("cons" . ?⊕) prettify-symbols-alist)
+          (push '("setq" . ?≔) prettify-symbols-alist)
+          (push '("setq-default" . ?⩴) prettify-symbols-alist)
+          (push '("setf". ?≕) prettify-symbols-alist)
 
 
-           (prettify-symbols-mode t))))
+          (push '("list" . ?∅) prettify-symbols-alist)
+          (push '("cons" . ?⊕) prettify-symbols-alist)
+
+          (prettify-symbols-mode t))
+
+        (add-hook 'emacs-lisp-mode-hook #'fn/prettify-elisp))
     #+END_SRC
 
 *** Testing
@@ -4533,73 +4500,74 @@
         prettify-symbols-mode
         (use-feature prettify-js2
           (js2-mode)
-          (add-hook 'js2-mode-hook
-                    (lambda ()
-                      (push '("import" . ?∈) prettify-symbols-alist)
-                      (push '("export" . ?∋) prettify-symbols-alist)
-                      (push '("default" . ?τ) prettify-symbols-alist)
-                      (push '("from" . ?∋) prettify-symbols-alist)
+          (defun fn/prettify-js2 ()
+            "Prettify `js2-mode'."
+            (push '("import" . ?∈) prettify-symbols-alist)
+            (push '("export" . ?∋) prettify-symbols-alist)
+            (push '("default" . ?τ) prettify-symbols-alist)
+            (push '("from" . ?∋) prettify-symbols-alist)
 
-                      (push '("function" . ?λ) prettify-symbols-alist)
-                      (push '("arguments" . ?ω) prettify-symbols-alist)
-                      (push '("var" . ?ν) prettify-symbols-alist)
-                      (push '("const" . ?χ) prettify-symbols-alist)
+            (push '("function" . ?λ) prettify-symbols-alist)
+            (push '("arguments" . ?ω) prettify-symbols-alist)
+            (push '("var" . ?ν) prettify-symbols-alist)
+            (push '("const" . ?χ) prettify-symbols-alist)
 
-                      (push '("return" . ?ρ) prettify-symbols-alist)
-                      (push '("this" . ?ι) prettify-symbols-alist)
+            (push '("return" . ?ρ) prettify-symbols-alist)
+            (push '("this" . ?ι) prettify-symbols-alist)
 
-                      (push '("for" . ?∫) prettify-symbols-alist)
-                      (push '("in" . ?⊂ ) prettify-symbols-alist)
+            (push '("for" . ?∫) prettify-symbols-alist)
+            (push '("in" . ?⊂ ) prettify-symbols-alist)
 
-                      (push '("Object" . ?Θ) prettify-symbols-alist)
+            (push '("Object" . ?Θ) prettify-symbols-alist)
 
-                      (push '("if" . ?α) prettify-symbols-alist)
-                      (push '("else if" . ?β) prettify-symbols-alist)
-                      (push '("else" . ?γ) prettify-symbols-alist)
+            (push '("if" . ?α) prettify-symbols-alist)
+            (push '("else if" . ?β) prettify-symbols-alist)
+            (push '("else" . ?γ) prettify-symbols-alist)
 
-                      (push '("->" . ?→) prettify-symbols-alist)
-                      (push '("&&" . ?∧) prettify-symbols-alist)
-                      (push '("||" . ?∨) prettify-symbols-alist)
+            (push '("->" . ?→) prettify-symbols-alist)
+            (push '("&&" . ?∧) prettify-symbols-alist)
+            (push '("||" . ?∨) prettify-symbols-alist)
 
-                      (push '("!" . ?¬) prettify-symbols-alist)
-                      (push '("!!" . ?⌐) prettify-symbols-alist)
+            (push '("!" . ?¬) prettify-symbols-alist)
+            (push '("!!" . ?⌐) prettify-symbols-alist)
 
-                      (push '("=" . ?⟵) prettify-symbols-alist)
-                      (push '(":" . ?⟵) prettify-symbols-alist)
+            (push '("=" . ?⟵) prettify-symbols-alist)
+            (push '(":" . ?⟵) prettify-symbols-alist)
 
-                      (push '("===" . ?≡) prettify-symbols-alist)
-                      (push '("!==" . ?≢) prettify-symbols-alist)
+            (push '("===" . ?≡) prettify-symbols-alist)
+            (push '("!==" . ?≢) prettify-symbols-alist)
 
-                      (push '(">=" . ?≧) prettify-symbols-alist)
-                      (push '("<=" . ?≦) prettify-symbols-alist)
+            (push '(">=" . ?≧) prettify-symbols-alist)
+            (push '("<=" . ?≦) prettify-symbols-alist)
 
-                      (push '("true" . ?⊤) prettify-symbols-alist)
-                      (push '("false" . ?⊥) prettify-symbols-alist)
+            (push '("true" . ?⊤) prettify-symbols-alist)
+            (push '("false" . ?⊥) prettify-symbols-alist)
 
-                      (push '("null" . ?∅) prettify-symbols-alist)
-                      (push '("undefined" . ?↑) prettify-symbols-alist)
+            (push '("null" . ?∅) prettify-symbols-alist)
+            (push '("undefined" . ?↑) prettify-symbols-alist)
 
-                      (push '(", ". ?⟼) prettify-symbols-alist)
-                      (push '("{". ?⟹) prettify-symbols-alist)
-                      (push '("},". ?⟺) prettify-symbols-alist)
-                      (push '("}". ?⟸) prettify-symbols-alist)
-                      (push '("};". ?⟽) prettify-symbols-alist)
+            (push '(", ". ?⟼) prettify-symbols-alist)
+            (push '("{". ?⟹) prettify-symbols-alist)
+            (push '("},". ?⟺) prettify-symbols-alist)
+            (push '("}". ?⟸) prettify-symbols-alist)
+            (push '("};". ?⟽) prettify-symbols-alist)
 
-                      (push '("(". ?⟖) prettify-symbols-alist)
-                      (push '(")". ?⟕) prettify-symbols-alist)
-                      (push '(");". ?⟕) prettify-symbols-alist)
-                      (push '("),". ?⟗) prettify-symbols-alist)
-                      (push '(").". ?⟗) prettify-symbols-alist)
+            (push '("(". ?⟖) prettify-symbols-alist)
+            (push '(")". ?⟕) prettify-symbols-alist)
+            (push '(");". ?⟕) prettify-symbols-alist)
+            (push '("),". ?⟗) prettify-symbols-alist)
+            (push '(").". ?⟗) prettify-symbols-alist)
 
-                      (push '("[". ?⊏) prettify-symbols-alist)
-                      (push '("]". ?⊐) prettify-symbols-alist)
-                      (push '("],". ?⊡) prettify-symbols-alist)
-                      (push '("].". ?⊡) prettify-symbols-alist)
-                      (push '("];". ?⊐) prettify-symbols-alist)
+            (push '("[". ?⊏) prettify-symbols-alist)
+            (push '("]". ?⊐) prettify-symbols-alist)
+            (push '("],". ?⊡) prettify-symbols-alist)
+            (push '("].". ?⊡) prettify-symbols-alist)
+            (push '("];". ?⊐) prettify-symbols-alist)
 
-                      (push '(";". ?⟐) prettify-symbols-alist)
+            (push '(";". ?⟐) prettify-symbols-alist)
 
-                      (prettify-symbols-mode t)))))
+            (prettify-symbols-mode t))
+          (add-hook 'js2-mode-hook #'fn/prettify-js2)))
     #+END_SRC
 *** JSON
     JSON support
@@ -5026,7 +4994,7 @@
           (defun fn/haskell-process-load-or-reload ()
             "Invoke reload process without switching buffers"
             (save-window-excursion
-              (haskell-process-load-or-reload)))
+              (haskell-process-load-or-reload))
 
           (defun fn/haskell-reload-on-save ()
             "Reload interactive haskell process on save."
@@ -5042,7 +5010,7 @@
 
           (use-feature literate-haskell-hindent
             (haskell-mode hindent)
-            (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)))
+            (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save))))
     #+END_SRC
 
 ** Clojure
@@ -6965,75 +6933,6 @@
        (dired ".."))
    #+END_SRC
 
-** Coins.Ph API
-   Some things to help me trade bitcoins, so this section might not be
-   useful to anyone else.
-
-   #+BEGIN_SRC emacs-lisp :block-id a9f60f7c-71c6-c1ce-34ec-0dbc33178462
-     (require 's)
-
-     (defconst fmc/coin-cli-file (expand-file-name "coiner-cli.py" "~/Fakespace/coins-watcher")
-       "The cli file to interact with")
-
-     (defconst fmc/coin-cli-executor "python"
-       "CLI command to run the script")
-
-     (defun fmc/parse-json (json-text)
-       "My shiv of parsing json into alist, sadly json.el doesn't work in parsing weirdly"
-
-       (lexical-let* ((json-regex "\'\\(\\w+\\)\':\s+\\([a-Z0-9.]+\\)[,\}]")
-                      (json-matches (s-match-strings-all json-regex json-text))
-                      (json-key-values (mapcar #'cdr json-matches)))
-         (mapcar (lambda (pair)
-                   (lexical-let* ((key (car pair))
-                                  (value (cadr pair))
-                                  (symbolic-key key)
-                                  (symolic-value (string-to-number value)))
-                     (cons symbolic-key symolic-value)))
-                 json-key-values)))
-
-     (defun fmc/call-cli (command &optional amount)
-       "Main function to execute fmc commands"
-       (lexical-let* ((coin-cli-buffer (find-file-noselect fmc/coin-cli-file)))
-         (with-current-buffer coin-cli-buffer
-           (lexical-let* ((command-args (list fmc/coin-cli-executor fmc/coin-cli-file))
-                          (action-arg (list command))
-                          (amount-args (list "-a" amount))
-                          (base-args (append command-args action-arg))
-                          (args (if amount (append base-args amount-args)
-                                  base-args))
-                          (cli-output (apply 'fn/run-command args)))
-             (fmc/parse-json (format "\"%s\"" cli-output))))))
-
-     (defun fmc/get-quote ()
-       "Get quote from the bitcoin site"
-       (interactive)
-       (fmc/call-cli "quote"))
-
-     (defun fmc/buy-coin ()
-       "Buy coins"
-       (interactive)
-       (lexical-let* ((amount (read-number "Enter amount: "))
-                      (current-quote (fmc/call-cli "quote"))
-                      (current-buy (cdr (assoc "buy" current-quote)))
-                      (current-value (/ amount current-buy))
-                      (confirm-action (yes-or-no-p (format "Are you sure you to buy %f at %f" amount current-buy))))
-         (when confirm-action
-           (fmc/call-cli "buy" amount)
-           (message "Successfully bought %f at %f amounting to %f" amount current-buy current-value))))
-
-     (defun fmc/sell-coin ()
-       "Sell coins"
-       (interactive)
-       (lexical-let* ((amount (read-number "Enter amount: "))
-                      (current-quote (fmc/call-cli "quote"))
-                      (current-sell (cdr (assoc "sell" current-quote)))
-                      (current-value (* amount current-sell))
-                      (confirm-action (yes-or-no-p (format "Are you sure you to sell %f at %f amounting to %f" amount current-sell current-value))))
-         (when confirm-action
-           (fmc/call-cli "sell" amount)
-           (message "Successfully sold %f at %f" amount current-value))))
-   #+END_SRC
 ** Sensitive Mode
    When editiing gpg or sensitve files, I would like to avoid backing it
    up so here is a [[http://anirudhsasikumar.net/blog/2005.01.21.html][minor mode]] to do so.
@@ -7133,44 +7032,6 @@
        (dired "~/Modules"))
    #+END_SRC
 
-** Summarize Text
-   Inspired from text summarizing my email, here is my generic version
-   of it.
-
-   #+BEGIN_SRC emacs-lisp :block-id cdabbfd8-dba9-0286-24da-f54860aef912
-     (defun fn/text-summarizing (&optional text)
-       "Summarize text for easier comprehension"
-       (lexical-let ((raw-text (or text
-                                   (buffer-substring-no-properties (point-min) (point-max))))
-                     (summary-file (make-temp-file ".summary")))
-         (with-temp-file summary-file
-           (insert raw-text))
-         (deferred:nextc
-           (deferred:process-shell
-             "sumy" "lex-rank"
-             "--length" "5"
-             "--file" summary-file)
-           (lambda (summary-output)
-             (prog1
-                 (s-split "\n" (s-trim-right summary-output))
-               (delete-file summary-file))))))
-
-     (defun fn/text-summarize (&optional text)
-       "This just returns the result of fn/text-summarizing immediately"
-       (interactive)
-       (lexical-let ((raw-text (or text
-                                   (buffer-substring-no-properties (point-min) (point-max))))
-                     (summary-file (make-temp-file ".summary")))
-         (with-temp-file summary-file
-           (insert raw-text))
-         (prog1
-             (s-split "\n"
-                      (fn/run-command "sumy" "lex-rank"
-                                      "--length" "5"
-                                      "--file" summary-file))
-           (delete-file summary-file))))
-
-   #+END_SRC
 ** Performance Indicator
    Check if Emacs is running fast.
 
