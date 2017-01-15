@@ -339,10 +339,10 @@
   "A piece for flycheck errors."
   (when (boundp 'flycheck-current-errors)
     (let ((error-count (length
-                        (->> flycheck-current-errors
-                             (-map #'flycheck-error-level)
-                             (-filter #'flycheck-error-level-p)
-                             (-filter (lambda (level) (eq level 'error)))))))
+                      (->> flycheck-current-errors
+                           (-map #'flycheck-error-level)
+                           (-filter #'flycheck-error-level-p)
+                           (-filter (lambda (level) (eq level 'error)))))))
       (if (zerop error-count)
           nil
         (format " %s %s "
@@ -353,15 +353,15 @@
 
 (defun moder-piece-shm-state ()
   "A piece for `structured-haskell-mode'."
-  (when (and (fboundp 'structured-haskell-mode)
-             (not (null structured-haskell-mode))
-             (boundp 'shm-lighter))
+  (when (and (boundp 'structured-haskell-mode)
+           (not (null structured-haskell-mode))
+           (boundp 'shm-lighter))
     (format " %s " shm-lighter)))
 
 (defun moder-between-time (lower-time upper-time time)
   "Check if between LOWER-TIME, UPPER-TIME and TIME."
   (and (or (string-greaterp time lower-time) (string-equal time lower-time))
-       (or (string-lessp time upper-time) (string-equal time upper-time))))
+     (or (string-lessp time upper-time) (string-equal time upper-time))))
 
 (defun moder-piece-cpu ()
   "A piece for the cpu."
@@ -384,12 +384,12 @@
 (defun moder-piece-time ()
   "A piece for the current time."
   (let* ((current-time    (format-time-string "%R" ))
-         (time-event
-          (cond
-           ((moder-between-time "13:15" "14:00" current-time) "Nap")
-           ((moder-between-time "15:30" "16:00" current-time) "Break")
-           ((moder-between-time "18:00" "19:00" current-time) "AFK")
-           (t nil))))
+      (time-event
+       (cond
+        ((moder-between-time "13:15" "14:00" current-time) "Nap")
+        ((moder-between-time "15:30" "16:00" current-time) "Break")
+        ((moder-between-time "18:00" "19:00" current-time) "AFK")
+        (t nil))))
     (format
      " %s%s "
      current-time
@@ -398,27 +398,27 @@
 (defun moder-piece-note ()
   "A piece for a random note."
   (lexical-let* ((note-index (random (length moder-note-notes)))
-      (note (nth note-index moder-note-notes)))
+                 (note (nth note-index moder-note-notes)))
     (format " %s " note)))
 
 (defun moder-piece-camcorder-state ()
   "A piece for camcording state."
   (when (and (boundp 'fn/camcorder-state)
-           (boundp 'camcorder-recording-frame)
-           (eq (selected-frame) camcorder-recording-frame)
-           (not (null fn/camcorder-state)))
+             (boundp 'camcorder-recording-frame)
+             (eq (selected-frame) camcorder-recording-frame)
+             (not (null fn/camcorder-state)))
     (let* ((state (symbol-name fn/camcorder-state))
-        (icon (if (eq fn/camcorder-state 'recording)
-                  (propertize
-                   (all-the-icons-faicon "play" :v-adjust -0.0)
-                   'face (list :family (all-the-icons-faicon-family))
-                   'help-echo (format "Camcording: `%s`" state))
-                (propertize
-                 (all-the-icons-faicon "stop-circle" :v-adjust -0.0)
-                 'face (list :family (all-the-icons-faicon-family))
-                 'help-echo (format "Camcording: `%s`" state))))
-        (elapsed-time (float-time
-                       (time-subtract (current-time) fn/camcorder-start-time))))
+           (icon (if (eq fn/camcorder-state 'recording)
+                     (propertize
+                      (all-the-icons-faicon "play" :v-adjust -0.0)
+                      'face (list :family (all-the-icons-faicon-family))
+                      'help-echo (format "Camcording: `%s`" state))
+                   (propertize
+                    (all-the-icons-faicon "stop-circle" :v-adjust -0.0)
+                    'face (list :family (all-the-icons-faicon-family))
+                    'help-echo (format "Camcording: `%s`" state))))
+           (elapsed-time (float-time
+                          (time-subtract (current-time) fn/camcorder-start-time))))
       (format " %s[%2.0ds] " (or icon state)  elapsed-time))))
 
 
