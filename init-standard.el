@@ -61,17 +61,26 @@
                             )
   "Required bootstrap packages.")
 
-(unless (package-installed-p 'use-package)
-  (package-install-file
-   (expand-file-name "use-package.tar" fn/bootstrap-dir)))
+(progn ;; Use Package & Dependencies
+  (unless (package-installed-p 'bind-key)
+    (package-install-file
+     (expand-file-name "bind-key.tar" fn/bootstrap-dir)))
 
-(unless (package-installed-p 'org)
+  (unless (package-installed-p 'diminish)
+    (package-install-file
+     (expand-file-name "diminish.tar" fn/bootstrap-dir)))
+
+  (unless (package-installed-p 'use-package)
+    (package-install-file
+     (expand-file-name "use-package.tar" fn/bootstrap-dir))))
+
+(unless (package-installed-p 'org) ;; org-mode
   (package-install-file
    (expand-file-name "org.tar" fn/bootstrap-dir))
   (package-install-file
    (expand-file-name "org-plus-contrib.tar" fn/bootstrap-dir)))
 
-(unless (package-installed-p 'benchmark-init)
+(unless (package-installed-p 'benchmark-init) ;; benchmarking
   (package-install-file
    (expand-file-name "benchmark-init.tar" fn/bootstrap-dir)))
 
@@ -81,6 +90,10 @@
   "File script to load before the main configuration loads, useful for setting options")
 
 (load (expand-file-name fn/pre-config-file user-emacs-directory) t)
+
+
+;; Structure Checking
+;; TODO
 
 
 ;; Block Tagging
@@ -114,10 +127,10 @@ Hacked on v9 since it is lexically binded.")
 (defun fn/org-babel-tangle-wrap-block-info ()
   "Wraps a code block with `fn/code-block-id-symbol'."
   (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
-      (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
+         (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
       (let ((block-start (format fn/code-block-start-format block-id))
-          (block-end (format fn/code-block-end-format block-id)))
+            (block-end (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)

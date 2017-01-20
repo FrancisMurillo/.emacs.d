@@ -52,6 +52,13 @@
    #+END_SRC
 
 * Bootstrap
+** No Byte Compile
+   Do not byte compile a file.
+
+   #+BEGIN_SRC emacs-lisp :block-id 516d1b9f-3fde-f2fc-754f-8135200d7251
+     (setq no-byte-compile t)
+   #+END_SRC
+
 ** Lexical Binding
    This makes it so that the file that is produced from tangling this
    file uses lexical scoping and all succeeding files
@@ -149,6 +156,16 @@
 
      (make-directory fn/cache-dir t)
 
+
+     (defconst fn/setting-dir-name ".setting"
+       "Just like `fn/cache-dir-name' but for my persistent setting.")
+
+     (defconst fn/setting-dir (expand-file-name fn/setting-dir-name user-emacs-directory)
+       "Just like `fn/cache-dir' but for persistent settings.")
+
+     (make-directory fn/setting-dir t)
+
+
      (defconst fn/lib-dir-name "lib"
        "External non-standard files directory")
 
@@ -224,7 +241,7 @@
      (defconst fn/personal-file (expand-file-name fn/personal-file-name user-emacs-directory)
        "Personal configuration file to be loaded. This is symlinked in another private repository")
 
-     (load fn/personal-file t)
+     (load fn/personal-file)
    #+END_SRC
 
 ** Customization
@@ -762,7 +779,7 @@
          (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
 
 
-         (use-feature log4e-mode--mode-icon
+         (fn/use-feature log4e-mode--mode-icon
            (all-the-icons)
            (fn/add-major-mode-icon
             'log4e-mode
@@ -792,7 +809,7 @@
        :load-path fn/promise-package-dir
        :demand t
        :config
-       (defmacro use-function (name function &rest body)
+       (defmacro fn/use-function (name function &rest body)
          (let ((function-name-var (make-symbol "function-name")))
            `(let ((,function-name-var ,(symbol-name name)))
               (message "Checking function %s" ,function-name-var)
@@ -802,7 +819,10 @@
                 ,@body
                 (message "Configured function %s" ,function-name-var)))))
 
-       (defmacro use-feature (name features &rest body)
+       (put 'fn/use-function 'lisp-indent-function 'defun)
+
+
+       (defmacro fn/use-feature (name features &rest body)
          "The equivalent for `use-package' but for combining features as promises."
          (let ((now-var (make-symbol "now"))
              (elapsed-var (make-symbol "elapsed"))
@@ -827,15 +847,14 @@
                       ,feature-name-var))
                    nil))))))
 
-       ;; Indent like =use-packagh=
-       (put 'use-feature 'lisp-indent-function 'defun)
-       (put 'use-function 'lisp-indent-function 'defun))
+       (put 'fn/use-feature 'lisp-indent-function 'defun)
+     )
    #+END_SRC
 
 ** all-the-icons
    Making Emacs more modern.
 
-   Sadly, this has to be placed here because =use-feature= cannot load
+   Sadly, this has to be placed here because =fn/use-feature= cannot load
    it properly.
 
    #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
@@ -930,6 +949,62 @@
        :defer t)
    #+END_SRC
 
+* Assumptions
+  These are assumptions I have of my setup externally. After this
+  section, everything is free.
+
+  Checking for missing executables.
+
+  #+BEGIN_SRC emacs-lisp :block-id cd0b6b61-3b2e-b28e-756a-f26b585d6309
+    (defvar fn/missing-executables (list)
+      "Executables that could not be found.")
+
+    (defun fn/record-executable (orig-fun executable)
+      "Record executable is missing."
+      (lexical-let ((result (funcall orig-fun executable)))
+        (prog1
+            result
+          (unless result
+            (add-to-list 'fn/missing-executables executable)))))
+
+    (advice-add 'executable-find :around #'fn/record-executable)
+
+    (defun fn/notify-missing-executables ()
+      "Notify executables that are missing through `fn/missing-executables'."
+      (when fn/missing-executables
+        (message "You're missing some executables: %s" fn/missing-executables)))
+
+    (add-hook 'after-init-hook #'fn/notify-missing-executables t)
+
+
+    (defmacro fn/use-executables (name executables &rest body)
+      "Like with `use-package' but used in checking for executables."
+      `(progn
+           (message "Checking executable set %s" ,(symbol-name name))
+           (if (not (and ,@(mapcar
+                        (lambda (executable)
+                          `(executable-find ,(symbol-name executable)) )
+                        executables)))
+               (message "Missing executable set %s" ,(symbol-name name))
+             ,@body)
+           (quote ,executables)))
+
+    (put 'fn/use-executables 'lisp-indent-function 'defun)
+
+
+    (fn/use-executables bootstrap-check
+      (emacs git tmux)
+      nil)
+
+    (fn/use-executables downloader-check
+      (wget curl)
+      nil)
+
+    (fn/use-executables browser-check
+      (w3m firefox chromium)
+      nil)
+  #+END_SRC
+
 * Terminator
   Shell related aspect
 
@@ -939,7 +1014,7 @@
    #+BEGIN_SRC emacs-lisp :block-id da6d7eb9-45f4-ee00-154d-11e39b59d7bf
      (setq async-shell-command-buffer 'new-buffer)
 
-     (use-feature shell-mode--mode-icon
+     (fn/use-feature shell-mode--mode-icon
        (all-the-icons)
        (fn/add-major-mode-icon
         'shell-mode
@@ -950,7 +1025,7 @@
    More things for sh-mode
 
    #+BEGIN_SRC emacs-lisp :block-id f5c18b8e-734c-f4e2-e191-f7ef929289fa
-     (use-feature company-shell
+     (fn/use-feature company-shell
        (shell)
        (use-package company-shell
          :ensure t
@@ -1015,7 +1090,8 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 114da1f2-d600-af5b-af05-f5097502456d
       (use-package pcomplete
-        :ensure t)
+        :ensure t
+        :after eshell)
 
       (use-package pcmpl-git
         :ensure t
@@ -1030,30 +1106,10 @@
         :after pcomplete)
     #+END_SRC
 
-*** Scripts
-    My scripts for eshell
-
-    #+BEGIN_SRC emacs-lisp :block-id 96e77612-2bfc-55d9-fe66-8e5d4e612c20
-
-    #+END_SRC
-
-*** Commands
-    My eshell commands for eshell
-
-    #+BEGIN_SRC emacs-lisp :block-id 630dc69a-0e85-f569-c06c-57e761d746d3
-      (defun eshell/x ()
-        (insert "exit")
-        (eshell-send-input)
-        (delete-window))
-    #+END_SRC
-
 ** prodigy
    Living in the shell requires some genius
 
    #+BEGIN_SRC emacs-lisp :block-id dc93746e-c346-c682-730d-a3d26b5e258a
-     (defconst fn/prodigy-dir (expand-file-name "prodigy/" fn/custom-module-dir)
-       "Prodigy dir")
-
      (defconst fn/prodigy-map (fn/make-prefixed-keymap (kbd "P") fn-standard-prefix-map)
        "My custom prodigy map.")
 
@@ -1076,37 +1132,6 @@
            (fn/prodigy-with-buffer
             (prodigy-refresh)
             (prodigy-goto-first-line))))
-
-       (defmacro fn/prodigy-with-default-filters (&rest body)
-         `(fn/prodigy-with-buffer
-           (fn/prodigy-clear-default-filter)
-           ,@body
-           (fn/prodigy-set-default-filter-hook)))
-
-
-       (defvar fn/prodigy-default-filters nil
-         "Default filters for prodigy.")
-
-       (defun fn/prodigy-clear-default-filter ()
-         "Clear default prodigy filters."
-         (setq fn/prodigy-default-filters nil))
-
-       (defun fn/prodigy-add-default-filter (type value)
-         "Add default filter for prodigy with TYPW and VALUE."
-         (push (list type value) fn/prodigy-default-filters))
-
-       (defun fn/prodigy-add-default-tag-filter (tag)
-         "Add a default TAG filter."
-         (fn/prodigy-add-default-filter :tag tag))
-
-       (defun fn/prodigy-set-default-filter-hook ()
-         "Add default filters when opening prodigy"
-         (fn/prodigy-with-buffer
-          (message "Applying default prodigy filters")
-          (setq prodigy-filters fn/prodigy-default-filters))
-         (fn/prodigy-refresh))
-
-       (add-hook 'prodigy-mode-hook #'fn/prodigy-set-default-filter-hook)
 
 
        (defun fn/prodigy-switch-to-process-buffer (service)
@@ -1165,14 +1190,16 @@
 
 
        ;; Prodigy recipes
-       (prodigy-define-tag
-         :name 'jekyll
-         :command "jekyll"
-         :args (list "serve")
-         :kill-signal 'sigkill)
+       (fn/use-executables prodigy-tags-check
+         (jekyll)
+         (prodigy-define-tag
+           :name 'jekyll
+           :command "jekyll"
+           :args (list "serve")
+           :kill-signal 'sigkill))
 
 
-       (use-feature prodigy-mode--mode-icon
+       (fn/use-feature prodigy-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
           'prodigy-mode
@@ -1197,9 +1224,11 @@
    Work better with tmux
 
    #+BEGIN_SRC emacs-lisp :block-id 13d23dc8-e0a7-3d2c-71b6-13cefdd9fb96
-     (use-package emamux
-       :ensure t
-       :defer t)
+     (fn/use-executables emamux-check
+       (tmux)
+       (use-package emamux
+         :ensure t
+         :defer t))
    #+END_SRC
 
 ** multi-term
@@ -1215,9 +1244,11 @@
    Containers eh?
 
    #+BEGIN_SRC emacs-lisp :block-id e9ab7472-6b2b-33b2-93e4-19113b3dff15
-     (use-package docker
-       :ensure t
-       :defer t)
+     (fn/use-executables docker-check
+       (docker)
+       (use-package docker
+         :ensure t
+         :defer t))
    #+END_SRC
 
    Something to edit =Dockerfile=
@@ -1242,25 +1273,12 @@
   Anything to do with editing in Emacs
 
 ** Environment
-*** guru
-    Remember the Emacs's way to do things, but I think I'm good now. I
-    only use it when I am one handed.
-
-    #+BEGIN_SRC emacs-lisp :block-id 58184164-573b-ce16-5e68-95cac5029252
-      (use-package guru-mode
-        :ensure t
-        :disabled t ;; Finally graduated from using the arrow keys
-        :diminish guru-mode
-        :config
-        (guru-global-mode t))
-    #+END_SRC
-
 *** visual-line
     Visual lines make more sense than the hard lines, what you see is
     what you get. Besides, I use syntax motions
 
     #+BEGIN_SRC emacs-lisp :block-id c1dad918-e45c-608c-f71c-66922e5aa4ec
-      (use-feature visual-line-mode
+      (fn/use-feature visual-line-mode
         nil
         (global-visual-line-mode t)
         (diminish 'visual-line-mode))
@@ -1270,7 +1288,7 @@
     Useful mode when writing, keeps things under 80 characters.
 
     #+BEGIN_SRC emacs-lisp :block-id 6be4492f-5e2a-4cbb-fcc4-31baf82851e1
-      (use-feature auto-fill-mode
+      (fn/use-feature auto-fill-mode
         nil
         (add-hook 'text-mode-hook 'turn-on-auto-fill)
         (diminish 'auto-fill-function)
@@ -1281,7 +1299,7 @@
     The more generic revert
 
     #+BEGIN_SRC emacs-lisp :block-id f2576d89-b810-5cf0-f398-7b530420997d
-      (use-feature auto-revert
+      (fn/use-feature auto-revert
         nil
         (global-auto-revert-mode t)
 
@@ -1365,7 +1383,7 @@
                 try-complete-lisp-symbol-partially
                 try-complete-lisp-symbol))
 
-        (use-feature hippie-ggtags
+        (fn/use-feature hippie-ggtags
           (ggtags)
           (add-to-list 'hippie-expand-try-functions-list 'ggtags-try-complete-tag)))
     #+END_SRC
@@ -1529,7 +1547,7 @@
 
         (desktop-save-mode)
 
-        (use-feature bookmarked-desktop
+        (fn/use-feature bookmarked-desktop
           (bookmark+)
           (define-key fn/desktop-map (kbd "s") 'bmkp-set-desktop-bookmark)
 
@@ -1714,7 +1732,7 @@
       (use-package window-layout
         :ensure t
         :config
-        (use-feature window-numbered-layout
+        (fn/use-feature window-numbered-layout
           (window-numbering)
           (require 'dash)
 
@@ -1762,13 +1780,13 @@
           (add-hook 'focus-out-hook #'golden-ratio)
 
 
-          (use-feature golden-workgroups
+          (fn/use-feature golden-workgroups
             (workgroups2)
             ;; When switching workgroups, make sure the screen is rationed correctly
             (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
 
 
-          (use-feature golden-window-numbering
+          (fn/use-feature golden-window-numbering
             (window-numbering)
             (defun fn/golden-ratio-after-select-window-by-number (&rest args)
               (golden-ratio))
@@ -1865,6 +1883,11 @@
 
           (defvar fn/loaded-projects (list)
             "Projects that have been loaded by `fn/load-project-file'.")
+
+          (unless (fboundp 'file-attribute-modification-time)
+            (defun file-attribute-modification-time (attributes)
+              "The last access time of ATTRIBUTES"
+              (nth 5 attributes)))
 
           (defun fn/safe-project-p (project-root)
             "Check if PROJECT-ROOT can be trusted."
@@ -2312,7 +2335,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id a98dab72-3b51-2570-059c-7b17519d0d00
       (unless noninteractive
-        (use-feature which-function
+        (fn/use-feature which-function
           nil
           (which-function-mode t)))
     #+END_SRC
@@ -2380,7 +2403,7 @@
         :config
         (setq paradox-github-token t)
 
-        (use-feature paradox-menu-mode--mode-icon
+        (fn/use-feature paradox-menu-mode--mode-icon
           (all-the-icons)
           (fn/add-major-mode-icon
            'paradox-menu-mode
@@ -2410,6 +2433,7 @@
 
       (defconst fn/local-elpa-mirror-dir (expand-file-name fn/mirror-elpa-repo fn/external-module-dir)
         "My local elpa mirror.")
+
 
 
       (defconst fn/mirror-github-elpa-id "elpa-github-mirror"
@@ -2491,7 +2515,7 @@
         (add-hook 'after-init-hook 'fn/update-local-elpa-mirror t)
 
 
-        (use-feature paradox-elpa-mirror
+        (fn/use-feature paradox-elpa-mirror
           (elpa-mirror paradox)
           (defun fn/paradox-update-local-elpa-mirror (&rest args)
             "Update elpa mirror when paradox is finished."
@@ -2594,7 +2618,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 8b11bd1d-9022-358b-e3d3-aaba6be1cc1e
       (unless noninteractive
-        (use-feature global-whitespace
+        (fn/use-feature global-whitespace
           nil
           (add-hook 'after-init-hook 'global-whitespace-mode)
           (diminish 'global-whitespace-mode)))
@@ -2618,8 +2642,15 @@
     #+BEGIN_SRC emacs-lisp :block-id 92ab3c0e-66f5-d2ec-37ed-53d2076254a0
       (use-package fireplace
         :bind (:map fn-standard-prefix-map
-                    ("f" . fireplace))
-        :ensure t)
+                    ("F" . fireplace))
+        :ensure t
+        :defer t
+        :config
+        (fn/use-feature fireplace-mode--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'fireplace-mode
+           (list 'all-the-icons-faicon "fire" :v-adjust -0.0))))
     #+END_SRC
 
 *** zone
@@ -2746,7 +2777,7 @@
     Make things more algebraic
 
     #+BEGIN_SRC emacs-lisp :block-id d6820a0e-ce89-788c-05e2-ceccda66bcb9
-      (use-feature prettify-symbols-mode
+      (fn/use-feature prettify-symbols-mode
         nil)
     #+END_SRC
 
@@ -2819,15 +2850,6 @@
        (use-package moder
          :load-path fn/custom-script-dir
          :demand t))
-   #+END_SRC
-
-** Candy Words
-   I like when some words are candied with color.
-
-   #+BEGIN_SRC emacs-lisp :block-id 7ac71aa0-fc7c-0271-3dbc-6de8ed7caa01
-     (use-package text-candy
-       :load-path fn/custom-script-dir
-       :demand t)
    #+END_SRC
 
 * Organizer
@@ -2905,7 +2927,7 @@
               ("C-c c" . org-capture))
        :config
        ;; org files
-       (defconst fn/org-dir (expand-file-name "~/Fakespace/nobody-library")
+       (defconst fn/org-dir (expand-file-name "~/Modules/nobody-library")
          "Main library for org files")
 
        (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-dir)
@@ -2960,7 +2982,7 @@
     Configuration for =org-src=
 
     #+BEGIN_SRC emacs-lisp :block-id 1763cf1c-2a1f-1dc3-f38a-d027209d7bab
-      (use-feature org-src
+      (fn/use-feature org-src
         (org)
         (setq org-src-window-setup 'current-window)
 
@@ -2971,21 +2993,21 @@
 
         (add-hook 'org-src-mode-hook #'fn/org-src-inhibit-save-window-configuration))
 
-      (use-feature org-src-alert
+      (fn/use-feature org-src-alert
         (org alert)
         nil)
-      (use-feature org-todo
+      (fn/use-feature org-todo
         (org)
         (setq org-todo-keywords
               '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
                 (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
 
-      (use-feature org-src-desktop
+      (fn/use-feature org-src-desktop
         (org desktop)
         (add-to-list 'desktop-modes-not-to-save 'org-src-mode))
 
 
-      (use-feature org-src-edit
+      (fn/use-feature org-src-edit
         (org)
         (require 'dash)
         (make-variable-buffer-local
@@ -3025,7 +3047,7 @@
     More configurations for the capture
 
     #+BEGIN_SRC emacs-lisp :block-id 42c9d746-9fe2-506f-2f27-a44df1f38666
-      (use-feature org-capture
+      (fn/use-feature org-capture
         (org)
         (setq org-capture-templates
            (list
@@ -3044,7 +3066,7 @@
     More configuration for org-agenda
 
     #+BEGIN_SRC emacs-lisp :block-id 9ef84ce7-49a3-4194-b3f1-4f7c0ac99aff
-      (use-feature org-agenda
+      (fn/use-feature org-agenda
         (org)
         (setq org-agenda-span 14 ;; Fortnight
 
@@ -3063,7 +3085,7 @@
     Some refiling actions perhaps?
 
     #+BEGIN_SRC emacs-lisp :block-id feb2e234-a068-32db-88fc-46455f786fa4
-      (use-feature org-archive
+      (fn/use-feature org-archive
         (org)
         (setq org-log-refile 'time
               org-refile-targets nil))
@@ -3073,7 +3095,7 @@
     Archiving is needed to avoid bloating.
 
     #+BEGIN_SRC emacs-lisp :block-id e28c5744-034d-3b02-dba6-908cb8af9bb9
-      (use-feature org-refile
+      (fn/use-feature org-refile
         (org)
         (defconst fn/org-archive-file (expand-file-name "archive.org" fn/org-dir)
           "My archiving file.  Handy in just one neat location.")
@@ -3179,7 +3201,7 @@
           (add-to-list 'auto-insert-alist '(".*\.private.org\\'" . fm/insert-private-file-headers))
           (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg\\'" . fmj/insert-org-journal-headers))
 
-          (use-feature org-journal-mode--mode-icon
+          (fn/use-feature org-journal-mode--mode-icon
             (all-the-icons)
             (fn/add-major-mode-icon
              'org-journal-mode
@@ -3234,7 +3256,7 @@
     Configuration for org-clock
 
     #+BEGIN_SRC emacs-lisp :block-id 1baf9871-3051-5af4-88be-83bbb6acd865
-      (use-feature org-clock
+      (fn/use-feature org-clock
         (org)
         (setq org-log-done 'time)
 
@@ -3253,7 +3275,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id ff080889-3108-6353-b008-70a78290ef1c
       (unless noninteractive
-        (use-feature org-drill
+        (fn/use-feature org-drill
           (org)
           (use-package org
             :after org
@@ -3290,7 +3312,7 @@
     Mobile org document
 
     #+BEGIN_SRC emacs-lisp :block-id 0a711e82-e427-fbe9-3af4-e0b075b6236d
-      (use-feature org-mobile
+      (fn/use-feature org-mobile
         (org)
         (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
           "My org mobile directory")
@@ -3316,56 +3338,73 @@
 
    #+BEGIN_SRC emacs-lisp :block-id d49639d7-14d6-68a0-5afa-25bae73f3762
      (unless noninteractive
-       (use-package flyspell
-         :ensure t
-         :if (not (eq system-type 'windows-nt))
-         :defer t
-         :diminish flyspell-mode
-         :init
-         (add-hook 'org-mode-hook 'flyspell-mode t)))
+       (fn/use-executables flyspell-check
+         (flyspell)
+         (use-package flyspell
+           :ensure t
+           :if (not (eq system-type 'windows-nt))
+           :defer t
+           :diminish flyspell-mode
+           :init
+           (add-hook 'org-mode-hook 'flyspell-mode t))))
    #+END_SRC
 
 ** langtool
    Also a good grammar checker.
 
    #+BEGIN_SRC emacs-lisp :block-id edb37fe1-f13c-60a5-6755-8fb7e6b5e2e6
-     (use-package langtool
-       :ensure t
-       :defer t
-       :bind
-       (:map fn-standard-prefix-map
-             ("C-l c" . langtool-check-buffer)
-             ("C-l n" . langtool-goto-next-error)
-             ("C-l p" . langtool-goto-previous-error))
-       :config
-       (setq langtool-language-tool-jar
-          (expand-file-name "languagetool-commandline.jar" "~/.local/lib/LanguageTool-3.6")
-          langtool-java-classpath nil
+     (fn/use-executables java-langtool
+       (java languagetool)
+       (defun fn/java-version ()
+         "Check java version."
+         (when (executable-find "java")
+           (lexical-let* ((result (shell-command-to-string "java -showversion"))
+               (start-index (string-match "\"" result))
+               (major-index (string-match "\\." result (1+ start-index)))
+               (minor-index (string-match "\\." result (1+ major-index))))
+             (substring-no-properties
+              result
+              (1+ start-index)
+              minor-index))))
 
-          langtool-default-language "en"
-          langtool-mother-tongue "en"
+       (use-package langtool
+         :ensure t
+         :defer t
+         :if (version<= "1.8" (fn/java-version))
+         :bind
+         (:map fn-standard-prefix-map
+               ("C-l c" . langtool-check-buffer)
+               ("C-l n" . langtool-goto-next-error)
+               ("C-l p" . langtool-goto-previous-error))
+         :config
+         (setq langtool-language-tool-jar
+            (expand-file-name "languagetool-commandline.jar" "/usr/share/java/languagetool")
+            langtool-java-classpath nil
 
-          langtool-disabled-rules (list))
+            langtool-default-language "en"
+            langtool-mother-tongue "en"
 
-       (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE")
-       (add-to-list 'langtool-disabled-rules "EN_QUOTES")
-       (add-to-list 'langtool-disabled-rules "EN_UNPAIRED_BRACKETS")
+            langtool-disabled-rules (list))
 
-       (defun fn/langtool-clear-mode-line ()
-         "Clear modeline for langtool."
-         (interactive)
-         (setq mode-line-process (remove '(t langtool-mode-line-message) mode-line-process))
-         (force-mode-line-update))
+         (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE")
+         (add-to-list 'langtool-disabled-rules "EN_QUOTES")
+         (add-to-list 'langtool-disabled-rules "EN_UNPAIRED_BRACKETS")
 
-       (defun fn/langtool-check-buffer ()
-         "Error handled `langtool-check-buffer'."
-         (interactive)
-         (condition-case ex
-             (langtool-check-buffer)
-           ('error (error-message-string ex))))
+         (defun fn/langtool-clear-mode-line ()
+           "Clear modeline for langtool."
+           (interactive)
+           (setq mode-line-process (remove '(t langtool-mode-line-message) mode-line-process))
+           (force-mode-line-update))
 
-       (add-hook 'langtool-noerror-hook #'fn/langtool-clear-mode-line)
-       (add-hook 'langtool-error-exists-hook #'fn/langtool-clear-mode-line))
+         (defun fn/langtool-check-buffer ()
+           "Error handled `langtool-check-buffer'."
+           (interactive)
+           (condition-case ex
+               (langtool-check-buffer)
+             ('error (error-message-string ex))))
+
+         (add-hook 'langtool-noerror-hook #'fn/langtool-clear-mode-line)
+         (add-hook 'langtool-error-exists-hook #'fn/langtool-clear-mode-line)))
    #+END_SRC
 
 ** dired
@@ -3389,7 +3428,7 @@
 
      (add-hook 'dired-mode-hook 'dired-hide-details-mode)
 
-     (use-feature wdired-mode--mode-icon
+     (fn/use-feature wdired-mode--mode-icon
        (all-the-icons)
        (fn/add-major-mode-icon
         'wdired-mode
@@ -3471,7 +3510,7 @@
    Something to keep track of my finances
 
    #+BEGIN_SRC emacs-lisp :block-id 4e3b93da-bda6-0881-7e81-3e23e833f1cc
-     (defconst fn/ledger-file (expand-file-name "ledger.dat.gpg" "~/Fakespace/nobody-library")
+     (defconst fn/ledger-file (expand-file-name "ledger.dat.gpg" "~/Modules/nobody-library")
        "My ledger file.")
 
      (defun fn/find-ledger-file ()
@@ -3479,41 +3518,42 @@
        (interactive)
        (find-file fn/ledger-file))
 
+     (fn/use-executables ledger-check
+       (ledger)
+       (use-package ledger-mode
+         :ensure t
+         :defer t
+         :config
+         (setq ledger-clear-whole-transactions t)
 
-     (use-package ledger-mode
-       :ensure t
-       :defer t
-       :config
-       (setq ledger-clear-whole-transactions t)
+         ;; Encrypting my ledger
+         ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
+         (setq ledger-reports
+            '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
+              ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
+              ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
+              ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
 
-       ;; Encrypting my ledger
-       ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
-       (setq ledger-reports
-          '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
-            ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
-            ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
-            ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
+         (fn/use-feature ledger-mode--mode-icon
+           (all-the-icons)
+           (fn/add-major-mode-icon
+            'ledger-mode
+            (list 'all-the-icons-faicon "money" :v-adjust -0.1)))
 
-       (use-feature ledger-mode--mode-icon
-         (all-the-icons)
-         (fn/add-major-mode-icon
-          'ledger-mode
-          (list 'all-the-icons-faicon "money" :v-adjust -0.1)))
+         (fn/use-feature ledger-report-mode--mode-icon
+           (all-the-icons)
+           (fn/add-major-mode-icon
+            'ledger-report-mode
+            (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1)))
 
-       (use-feature ledger-report-mode--mode-icon
-         (all-the-icons)
-         (fn/add-major-mode-icon
-          'ledger-report-mode
-          (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1)))
-
-       (use-feature ledger-capture
-         (org ledger-mode)
-         (when t ;; BUG: Emacs hangs with a GPG file for a capture
-           (add-to-list
-            'org-capture-templates
-            (list "l" "Ledger" 'plain
-               (list 'file fn/ledger-file)
-               "%(org-read-date) * %?  \n\n")))))
+         (fn/use-feature ledger-capture
+           (org ledger-mode)
+           (when t ;; BUG: Emacs hangs with a GPG file for a capture
+             (add-to-list
+              'org-capture-templates
+              (list "l" "Ledger" 'plain
+                 (list 'file fn/ledger-file)
+                 "%(org-read-date) * %?  \n\n"))))))
    #+END_SRC
 
 ** engine
@@ -3575,11 +3615,13 @@
    Man pages are nice
 
    #+BEGIN_SRC emacs-lisp :block-id 515a39e1-ca17-43ac-aea5-2de31b5005de
-     (use-package woman
-       :ensure t
-       :defer t
-       :bind (:map fn-standard-prefix-map
-                   ("C-w" . woman)))
+     (fn/use-executables man-check
+       (man)
+       (use-package woman
+         :ensure t
+         :defer t
+         :bind (:map fn-standard-prefix-map
+                     ("C-w" . woman))))
    #+END_SRC
 ** gnus
    The ultimate mail browser, majority of the configuration is in =~/.gnus=
@@ -3587,7 +3629,8 @@
    #+BEGIN_SRC emacs-lisp :block-id ee1ad1cc-2dcc-df04-b3d3-20a710a335ea
      (use-package gnus
        :bind (:map fn-standard-prefix-map
-                   ("g" . gnus)))
+                   ("g" . gnus))
+       :defer t)
    #+END_SRC
 
 ** sendmail
@@ -3616,6 +3659,7 @@
    #+BEGIN_SRC emacs-lisp :block-id 00293c55-daab-3649-b480-7b000eb0a216
      (use-package emacsshot
        :ensure t
+       :defer t
        :bind (:map fn-standard-prefix-map
                    ("C-c w" . emacsshot-snap-window)
                    ("C-c f" . emacsshot-snap-frame))
@@ -3635,90 +3679,94 @@
    Making demonstrations in Emacs is a must. My thanks to [[http://blog.yitang.uk/2015/09/24/how-to-create-a-screencast-gif-in-emacs/][this blog post.]]
 
    #+BEGIN_SRC emacs-lisp :block-id 1ecfd02f-87eb-6c8a-0e20-68780b2e1e7b
-     (use-package camcorder
-       :ensure t
-       :defer t
-       :bind (("<f10>" . camcorder-record))
-       :config
-       (defconst fn/camcorder-dir (expand-file-name "camcorder" fn/extra-dir)
-         "My camcorder directory.")
+     (fn/use-executables camcorder-check
+       (recordmydesktop)
+       (use-package camcorder
+         :ensure t
+         :defer t
+         :bind (("<f10>" . camcorder-record))
+         :config
+         (defconst fn/camcorder-dir (expand-file-name "camcorder" fn/extra-dir)
+           "My camcorder directory.")
 
-       (setq camcorder-output-directory fn/camcorder-dir
-          camcorder-gif-output-directory fn/camcorder-dir
-          camcorder-frame-parameters
-          (list (cons 'name "Screencast")
-             (cons 'height (max (/ (frame-height) 2) 40 ))
-             (cons 'width (max (/ (frame-width) 2) 80 ))
-             (cons 'top 20)
-             (cons 'left 20)))
+         (make-directory fn/camcorder-dir t)
 
-
-       (defvar fn/camcorder-state nil
-         "The state of the recording. Possible values are `nil', `recording' and `paused'.")
-
-       (defvar fn/camcorder-start-time nil
-         "The start time of a recording.")
+         (setq camcorder-output-directory fn/camcorder-dir
+            camcorder-gif-output-directory fn/camcorder-dir
+            camcorder-frame-parameters
+            (list (cons 'name "Screencast")
+               (cons 'height (max (/ (frame-height) 2) 40 ))
+               (cons 'width (max (/ (frame-width) 2) 80 ))
+               (cons 'top 20)
+               (cons 'left 20)))
 
 
-       (defun fn/camcorder-state-start ()
-         "Set the start state of the recording."
-         (setq fn/camcorder-state 'recording
-            fn/camcorder-start-time (current-time))
+         (defvar fn/camcorder-state nil
+           "The state of the recording. Possible values are `nil', `recording' and `paused'.")
 
-         (select-frame-set-input-focus camcorder-recording-frame))
+         (defvar fn/camcorder-start-time nil
+           "The start time of a recording.")
 
-       (defun fn/camcorder-state-pause ()
-         "Set the pause state of the recording."
-         (cond
-          ((null fn/camcorder-state)
-           nil)
-          ((eq fn/camcorder-state 'recording)
-           (setq fn/camcorder-state 'paused))
-          ((eq fn/camcorder-state 'paused)
-           (setq fn/camcorder-state 'recording))))
 
-       (defun fn/camcorder-state-stop ()
-         "Set the stop state of the recording."
-         (setq fn/camcorder-state nil
-            fn/camcorder-start-time nil))
+         (defun fn/camcorder-state-start ()
+           "Set the start state of the recording."
+           (setq fn/camcorder-state 'recording
+              fn/camcorder-start-time (current-time))
 
-       (advice-add 'camcorder-record :after  #'fn/camcorder-state-start)
-       (advice-add 'camcorder-pause :before  #'fn/camcorder-state-pause)
-       (advice-add 'camcorder-stop :before #'fn/camcorder-state-stop)
+           (select-frame-set-input-focus camcorder-recording-frame))
 
-       ;; Preload
-       (defconst fn/camcorder-demo-file (expand-file-name "camcorder-demo.txt" fn/custom-script-dir)
-         "Initial buffer when recording.")
+         (defun fn/camcorder-state-pause ()
+           "Set the pause state of the recording."
+           (cond
+            ((null fn/camcorder-state)
+             nil)
+            ((eq fn/camcorder-state 'recording)
+             (setq fn/camcorder-state 'paused))
+            ((eq fn/camcorder-state 'paused)
+             (setq fn/camcorder-state 'recording))))
 
-       (defconst fn/camcorder-demo-buffer-name "*Space Channel 5"
-         "The name of the demo buffer.")
+         (defun fn/camcorder-state-stop ()
+           "Set the stop state of the recording."
+           (setq fn/camcorder-state nil
+              fn/camcorder-start-time nil))
 
-       (defun fn/camcorder-demo-buffer ()
-         "Open a blank special buffer when recording."
-         (let ((demo-buffer (find-file fn/camcorder-demo-file)))
-           (with-current-buffer demo-buffer
-             (switch-to-buffer demo-buffer)
-             (rename-buffer fn/camcorder-demo-buffer-name)
-             (emacs-lisp-mode))))
+         (advice-add 'camcorder-record :after  #'fn/camcorder-state-start)
+         (advice-add 'camcorder-pause :before  #'fn/camcorder-state-pause)
+         (advice-add 'camcorder-stop :before #'fn/camcorder-state-stop)
 
-       (defconst fn/camcorder-init-file (expand-file-name "camcorder-init.el" fn/custom-script-dir)
-         "Init script when recording.")
+         ;; Preload
+         (defconst fn/camcorder-demo-file (expand-file-name "camcorder-demo.txt" fn/custom-script-dir)
+           "Initial buffer when recording.")
 
-       (defun fn/camcorder-load-init ()
-         "Load camcorder init for test."
-         (load fn/camcorder-init-file t))
+         (defconst fn/camcorder-demo-buffer-name "*Space Channel 5"
+           "The name of the demo buffer.")
 
-       (defun fn/camcorder-init ()
-         "Load an initial script when recording with a little delay."
-         (run-with-idle-timer 1 nil #'fn/camcorder-load-init))
+         (defun fn/camcorder-demo-buffer ()
+           "Open a blank special buffer when recording."
+           (let ((demo-buffer (find-file fn/camcorder-demo-file)))
+             (with-current-buffer demo-buffer
+               (switch-to-buffer demo-buffer)
+               (rename-buffer fn/camcorder-demo-buffer-name)
+               (emacs-lisp-mode))))
 
-       (defun fn/camcorder-ready-message ()
-         "Message when camcorder starts."
-         (message "Hey there, space cats! Ulala here, comin' at you from Spaceport 9."))
+         (defconst fn/camcorder-init-file (expand-file-name "camcorder-init.el" fn/custom-script-dir)
+           "Init script when recording.")
 
-       (add-hook 'camcorder-mode-hook #'fn/camcorder-demo-buffer t)
-       (add-hook 'camcorder-mode-hook #'fn/camcorder-load-init t)
-       (add-hook 'camcorder-mode-hook #'fn/camcorder-ready-message t))
+         (defun fn/camcorder-load-init ()
+           "Load camcorder init for test."
+           (load fn/camcorder-init-file t))
+
+         (defun fn/camcorder-init ()
+           "Load an initial script when recording with a little delay."
+           (run-with-idle-timer 1 nil #'fn/camcorder-load-init))
+
+         (defun fn/camcorder-ready-message ()
+           "Message when camcorder starts."
+           (message "Hey there, space cats! Ulala here, comin' at you from Spaceport 9."))
+
+         (add-hook 'camcorder-mode-hook #'fn/camcorder-demo-buffer t)
+         (add-hook 'camcorder-mode-hook #'fn/camcorder-load-init t)
+         (add-hook 'camcorder-mode-hook #'fn/camcorder-ready-message t)))
    #+END_SRC
 
 ** list-processes+
@@ -3844,41 +3892,43 @@
     Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
 
     #+BEGIN_SRC emacs-lisp :block-id 25b4c3c1-0062-54ae-4d23-b3070fdcb4a2
-      (use-package magit
-        :ensure t
-        :if (version<= "24.4.4" emacs-version)
-        :bind (("C-c g" . magit-status)
-               ("M-g b" . magit-blame))
-        :init
-        (setq magit-push-always-verify t)
-        :config
-        (defun fq/display-magit-on-same-buffer (buffer)
-          (if magit-display-buffer-noselect
-              (magit-display-buffer-traditional buffer)
-            (display-buffer-same-window buffer nil)))
+      (fn/use-executables git-check
+        (git)
+        (use-package magit
+          :ensure t
+          :if (version<= "24.4.4" emacs-version)
+          :bind (("C-c g" . magit-status)
+                 ("M-g b" . magit-blame))
+          :init
+          (setq magit-push-always-verify t)
+          :config
+          (defun fq/display-magit-on-same-buffer (buffer)
+            (if magit-display-buffer-noselect
+                (magit-display-buffer-traditional buffer)
+              (display-buffer-same-window buffer nil)))
 
-        (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
+          (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
 
-        (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
+          (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
 
-        ;; Commit message same buffer
-        (add-to-list
-         'display-buffer-alist
-         (cons
-          (rx bos "COMMIT_EDITMSG")
-          (cons 'display-buffer-same-window (list)))))
+          ;; Commit message same buffer
+          (add-to-list
+           'display-buffer-alist
+           (cons
+            (rx bos "COMMIT_EDITMSG")
+            (cons 'display-buffer-same-window (list)))))
 
-      (use-package git-timemachine
-        :ensure t
-        :defer t
-        :bind (("M-g t" . git-timemachine)))
+        (use-package git-timemachine
+          :ensure t
+          :defer t
+          :bind (("M-g t" . git-timemachine)))
 
-      (use-package git-gutter
-        :ensure t
-        :diminish git-gutter-mode
-        :defer t
-        :config
-        (global-git-gutter-mode t))
+        (use-package git-gutter
+          :ensure t
+          :diminish git-gutter-mode
+          :defer t
+          :config
+          (global-git-gutter-mode t)))
     #+END_SRC
 
 **** magithub
@@ -3930,21 +3980,23 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 8038dda0-39ce-19f3-21bd-7ab7acccfb25
       (unless noninteractive
-        (use-package ag
-          :ensure t
-          :defer t
-          :commands ag
-          :config
-          (setq ag-highlight-search t
+        (fn/use-executables ag-check
+          (ag)
+          (use-package ag
+            :ensure t
+            :defer t
+            :commands ag
+            :config
+            (setq ag-highlight-search t
 
-             ag-reuse-window t
-             ag-reuse-buffers t)))
+               ag-reuse-window t
+               ag-reuse-buffers t))))
     #+END_SRC
 
     With [[helm]]
 
     #+BEGIN_SRC emacs-lisp :block-id 7905e7f3-3641-4831-c407-209cf00ee1c4
-      (use-feature helm-ag
+      (fn/use-feature helm-ag
         (helm ag)
         (use-package helm-ag
           :ensure t))
@@ -3965,27 +4017,29 @@
     Jump and go is really a must needed feature
 
     #+BEGIN_SRC emacs-lisp :block-id 6fd3ec7a-1687-195e-c6d4-93cb1f00cb8c
-      (use-package ggtags
-        :ensure t
-        :defer t
-        :functions 'ggtags-eldoc-function
-        :init
-        (defun fn/ggtags-c-like-mode ()
-          "Turn on GGTAGS if it is a c like mode"
-          (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'javascript-mode)
-            (ggtags-mode t)))
-
-        (add-hook 'prog-mode-hook #'fn/ggtags-c-like-mode)
-        :config
-        (use-feature eldoc-ggtags
-          (eldoc)
-          (setq-local eldoc-documentation-function #'ggtags-eldoc-function))
-
-        (use-package helm-gtags
+      (fn/use-executables global-check
+        (ggtags global)
+        (use-package ggtags
           :ensure t
-          :after ggtags
+          :defer t
+          :functions 'ggtags-eldoc-function
+          :init
+          (defun fn/ggtags-c-like-mode ()
+            "Turn on GGTAGS if it is a c like mode"
+            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'javascript-mode)
+              (ggtags-mode t)))
+
+          (add-hook 'prog-mode-hook #'fn/ggtags-c-like-mode)
           :config
-          nil))
+          (fn/use-feature eldoc-ggtags
+            (eldoc)
+            (setq-local eldoc-documentation-function #'ggtags-eldoc-function))
+
+          (use-package helm-gtags
+            :ensure t
+            :after ggtags
+            :config
+            nil)))
     #+END_SRC
 
 *** helm-swoop
@@ -4047,19 +4101,19 @@
         (add-hook 'restclient-mode-hook 'fn/restclient-indent-function)
 
 
-        (use-feature restclient-mode--mode-icon
+        (fn/use-feature restclient-mode--mode-icon
           (restclient all-the-icons)
           (fn/add-major-mode-icon
            'restclient-mode
            (list 'all-the-icons-faicon "arrow-circle-o-up" :v-adjust -0.1)))
 
-        (use-feature restclient-smartpar
+        (fn/use-feature restclient-smartpar
           (restclient smartparens paredit)
           (add-hook 'restclient-mode-hook 'paredit-mode)
           (add-hook 'restclient-mode-hook 'smartparens-mode))
 
 
-        (use-feature restclient-company
+        (fn/use-feature restclient-company
           (restclient company)
           (use-package company-restclient
             :ensure t
@@ -4068,7 +4122,7 @@
             (add-hook 'restclient-mode-hook 'company-mode)
             (add-to-list 'company-backends 'company-restclient)))
 
-        (use-feature literate-restclient
+        (fn/use-feature literate-restclient
           (restclient org)
           (use-package ob-restclient
             :ensure t
@@ -4092,11 +4146,13 @@
 *** npm
     Call npm with Emacs
     #+BEGIN_SRC emacs-lisp :block-id d913e8d0-203e-b6cc-8415-5249a36691ba
-      (use-package npm-mode
-        :ensure t
-        :defer t
-        :bind (:map fn-standard-prefix-map
-                    ("n" . npm-mode)))
+      (fn/use-executables npm-check
+        (node npm)
+        (use-package npm-mode
+          :ensure t
+          :defer t
+          :bind (:map fn-standard-prefix-map
+                      ("n" . npm-mode))))
     #+END_SRC
 
 ** Elisp
@@ -4141,7 +4197,7 @@
         (add-hook 'lisp-mode-hook #'enable-paredit-mode)
         (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode))
 
-      (use-feature paredit-eldoc
+      (fn/use-feature paredit-eldoc
         (eldoc)
         (eldoc-add-command 'paredit-backward-delete
                            'paredit-close-round))
@@ -4186,7 +4242,7 @@
     Prettify some symbols to make it visible.
 
     #+BEGIN_SRC emacs-lisp :block-id cd91807f-6008-2cb5-5716-f6ee48077fc7
-      (use-function prettify-elisp
+      (fn/use-function prettify-elisp
         prettify-symbols-mode
         (defun fn/prettify-elisp ()
           "Prettify elisp."
@@ -4259,7 +4315,7 @@
         :ensure t
         :defer t)
 
-      (use-feature cask-mode--mode-icon
+      (fn/use-feature cask-mode--mode-icon
         (all-the-icons)
         (fn/add-major-mode-icon
          'cask-mode
@@ -4350,7 +4406,7 @@
               js2-include-node-externs t
               js2-include-browser-externs t)
 
-        (use-feature js2-jsx-mode--mode-icon
+        (fn/use-feature js2-jsx-mode--mode-icon
           (all-the-icons)
           (fn/add-major-mode-icon
            'js2-jsx-mode
@@ -4411,14 +4467,14 @@
             :config
             (add-to-list 'company-backends 'company-tern))
 
-          (use-feature tern-prodigy
+          (fn/use-feature tern-prodigy
             (tern)
             (prodigy-define-tag
               :name 'tern))))
 
 
       (unless noninteractive
-        (use-feature company-flow
+        (fn/use-feature company-flow
           (js2-mode company)
           (use-package company-flow
             :ensure t
@@ -4432,7 +4488,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id da802e8e-8302-f301-51f5-6042384a98a7
       (unless noninteractive
-        (use-feature flycheck-flow
+        (fn/use-feature flycheck-flow
           (flycheck js2-mode)
           (use-package flycheck-flow
             :demand t
@@ -4470,7 +4526,7 @@
     Snippet support
 
     #+BEGIN_SRC emacs-lisp :block-id 7142c005-0729-b76e-8998-a7291dc11104
-      (use-feature react-snippets
+      (fn/use-feature react-snippets
         (js2-mode yasnippet)
         (use-package react-snippets
           :ensure t))
@@ -4502,9 +4558,9 @@
     My symbols for JS
 
     #+BEGIN_SRC emacs-lisp :block-id acb3e63d-ea49-d850-22c1-9e094a73b74a
-      (use-function prettify-js2
+      (fn/use-function prettify-js2
         prettify-symbols-mode
-        (use-feature prettify-js2
+        (fn/use-feature prettify-js2
           (js2-mode)
           (defun fn/prettify-js2 ()
             "Prettify `js2-mode'."
@@ -4589,7 +4645,7 @@
     Let's support literate programming for JS
 
     #+BEGIN_SRC emacs-lisp :block-id 90e86021-a01f-7f97-2ca9-a076a0facb83
-      (use-feature org-js2-src
+      (fn/use-feature org-js2-src
         (org js2-mode)
         (add-to-list 'org-babel-load-languages '(js . t)))
     #+END_SRC
@@ -4643,9 +4699,11 @@
     My favorite programming language, unassuming like Marcy from Peanuts
 
     #+BEGIN_SRC emacs-lisp :block-id 80645685-5d34-4543-7d76-4012fe9fd8bd
-      (use-package python
-        :ensure t
-        :defer t)
+      (fn/use-executables python-check
+        (python pip)
+        (use-package python
+          :ensure t
+          :defer t))
     #+END_SRC
 
 *** Formatter
@@ -4741,7 +4799,7 @@
     Let's add a link to =org-babel=
 
     #+BEGIN_SRC emacs-lisp :block-id 1dd091f3-1060-774c-3435-7187c7bf15f9
-      (use-feature org-python-src
+      (fn/use-feature org-python-src
         (org python)
         (add-to-list 'org-babel-load-languages '(python .t)))
     #+END_SRC
@@ -4750,68 +4808,70 @@
     The defacto for Haskell development
 
     #+BEGIN_SRC emacs-lisp :block-id 7b20b3c8-e4d0-7bcc-2013-9f12a6bb4aba
-      (use-package haskell-mode
-        :ensure t
-        :defer t
-        :init
-        ;; (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-        (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
-        (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
-        :config
-        ;; (require 'haskell-interactive-mode)
-        (require 'haskell-process)
-        ;; Reset mapping as it does more damage than good
-        (setq haskell-cabal-mode-map (make-keymap)
-              interactive-haskell-mode-map (make-keymap))
+      (fn/use-executables haskell-check
+        (ghci stack cabal)
+        (use-package haskell-mode
+          :ensure t
+          :defer t
+          :init
+          ;; (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+          (add-hook 'haskell-mode-hook 'haskell-auto-insert-module-template)
+          (add-hook 'haskell-mode-hook 'haskell-decl-scan-mode)
+          :config
+          ;; (require 'haskell-interactive-mode)
+          (require 'haskell-process)
+          ;; Reset mapping as it does more damage than good
+          (setq haskell-cabal-mode-map (make-keymap)
+             interactive-haskell-mode-map (make-keymap))
 
-        (define-key haskell-mode-map (kbd "<f8>") 'haskell-navigate-imports)
+          (define-key haskell-mode-map (kbd "<f8>") 'haskell-navigate-imports)
 
-        (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-compile)
-        (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-compile)
+          (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-compile)
+          (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-compile)
 
-        ;; Haskell bindings
-        (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
-        (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
-        (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
-        (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
-        (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
-        (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
-        (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
+          ;; Haskell bindings
+          (define-key haskell-mode-map (kbd "C-c C-l") 'haskell-process-load-or-reload)
+          (define-key haskell-mode-map (kbd "C-`") 'haskell-interactive-bring)
+          (define-key haskell-mode-map (kbd "C-c C-t") 'haskell-process-do-type)
+          (define-key haskell-mode-map (kbd "C-c C-i") 'haskell-process-do-info)
+          (define-key haskell-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+          (define-key haskell-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+          (define-key haskell-mode-map (kbd "C-c c") 'haskell-process-cabal)
 
-        ;; Cabal bindings
-        ;; (define-key haskell-cabal-mode-map (kbd "C-`") 'haskell-interactive-bring)
-        ;; (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
-        ;; (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
-        ;; (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)
+          ;; Cabal bindings
+          ;; (define-key haskell-cabal-mode-map (kbd "C-`") 'haskell-interactive-bring)
+          ;; (define-key haskell-cabal-mode-map (kbd "C-c C-k") 'haskell-interactive-mode-clear)
+          ;; (define-key haskell-cabal-mode-map (kbd "C-c C-c") 'haskell-process-cabal-build)
+          ;; (define-key haskell-cabal-mode-map (kbd "C-c c") 'haskell-process-cabal)
 
-        ;; Interactive Haskell
-        ;; (define-key interactive-haskell-mode-map (kbd "C-c M-.") 'haskell-mode-goto-loc)
-        ;; (define-key interactive-haskell-mode-map (kbd "C-c M-t") 'haskell-mode-show-type-at)
+          ;; Interactive Haskell
+          ;; (define-key interactive-haskell-mode-map (kbd "C-c M-.") 'haskell-mode-goto-loc)
+          ;; (define-key interactive-haskell-mode-map (kbd "C-c M-t") 'haskell-mode-show-type-at)
 
-        ;; (setq haskell-stylish-on-save t)
+          ;; (setq haskell-stylish-on-save t)
 
-        ;; (setq interactive-haskell-mode t)
+          ;; (setq interactive-haskell-mode t)
 
-        (setq haskell-process-suggest-remove-import-lines t
-              haskell-process-auto-import-loaded-modules t
-              haskell-process-log t
-              haskell-process-suggest-hoogle-imports t
-              haskell-process-type 'stack-ghci
-              haskell-interactive-mode-eval-mode 'haskell-mode)
-
-
-        (add-hook 'haskell-interactive-mode-hook 'smartparens-mode)
-        (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
+          (setq haskell-process-suggest-remove-import-lines t
+             haskell-process-auto-import-loaded-modules t
+             haskell-process-log t
+             haskell-process-suggest-hoogle-imports t
+             haskell-process-type 'stack-ghci
+             haskell-interactive-mode-eval-mode 'haskell-mode)
 
 
-        (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
+          (add-hook 'haskell-interactive-mode-hook 'smartparens-mode)
+          (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
 
 
-        ;; Hoogle
-        (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
-        (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle))
+          (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
 
-      (use-feature helm-hoogle
+
+          ;; Hoogle
+          (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
+          (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle)))
+
+      (fn/use-feature helm-hoogle
         (helm haskell-mode)
         (use-package helm-hoogle
           :ensure t
@@ -4853,7 +4913,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id dba28809-a145-d57f-9414-702cd3759be1
       (unless noninteractive
-        (use-feature company-haskell
+        (fn/use-feature company-haskell
           (haskell-mode company)
           (use-package company-ghc
             :ensure t
@@ -4890,7 +4950,7 @@
     Syntax checker for Haskell
 
     #+BEGIN_SRC emacs-lisp :block-id 883aefd1-ca75-0635-3c06-d0a08e537f1f
-      (use-feature flycheck-haskell
+      (fn/use-feature flycheck-haskell
         (flycheck haskell-mode)
         (use-package flycheck-haskell
           :ensure t
@@ -4910,7 +4970,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 5f1b278b-5b7e-5d87-7f25-f5af49d9230d
       (unless noninteractive
-        (use-feature haskell-snippets
+        (fn/use-feature haskell-snippets
           (yasnippet haskell-mode)
           (use-package haskell-snippets
             :ensure t
@@ -4927,7 +4987,7 @@
         "My ob-haskell package dir.")
 
       (unless noninteractive
-        (use-feature org-haskell
+        (fn/use-feature org-haskell
           (haskell-mode org)
           (use-package ob-haskell
             :load-path fn/ob-haskell-package-dir
@@ -5014,7 +5074,7 @@
           (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
           (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
 
-          (use-feature literate-haskell-hindent
+          (fn/use-feature literate-haskell-hindent
             (haskell-mode hindent)
             (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save))))
     #+END_SRC
@@ -5030,7 +5090,7 @@
         :ensure t
         :mode (("\\.clj\\'" . clojure-mode))
         :config
-        (use-feature clojure-mode--mode-icon
+        (fn/use-feature clojure-mode--mode-icon
           (all-the-icons)
           (fn/add-major-mode-icon
            'clojure-mode
@@ -5103,7 +5163,7 @@
     Flycheck with irony works
 
     #+BEGIN_SRC emacs-lisp :block-id 36a98771-3bc7-bf93-9605-354cf09b41bf
-      (use-feature flycheck-irony
+      (fn/use-feature flycheck-irony
         (flycheck irony)
         (use-package flycheck-irony
           :ensure t
@@ -5121,14 +5181,14 @@
     A mode for Guile
 
     #+BEGIN_SRC emacs-lisp :block-id 88d8f879-32ea-41bf-75fc-e2771b3976d7
-      (use-feature scheme-mode
+      (fn/use-feature scheme-mode
         (scheme)
 
-        (use-feature par-scheme
+        (fn/use-feature par-scheme
           (scheme paredit)
           (add-hook 'scheme-mode #'paredit-mode))
 
-        (use-feature scheme-mode--mode-icon
+        (fn/use-feature scheme-mode--mode-icon
           (all-the-icons)
           (fn/add-major-mode-icon
            'scheme-mode
@@ -5146,7 +5206,7 @@
         (setq geiser-active-implementations (list 'guile)
               geiser-default-implementation 'guile)
 
-        (use-feature par-geiser
+        (fn/use-feature par-geiser
           (paredit)
           (add-hook 'geiser-repl-mode-hook #'paredit-mode)))
     #+END_SRC
@@ -5154,7 +5214,7 @@
     Company to the job.
 
     #+BEGIN_SRC emacs-lisp :block-id 83cc4af3-3d96-4034-29f7-020a80cfa603
-      (use-feature guile-company
+      (fn/use-feature guile-company
         (scheme company)
         "(It')s all goodman")
     #+END_SRC
@@ -5180,7 +5240,7 @@
     Linter for Elm
 
     #+BEGIN_SRC emacs-lisp :block-id a08741e2-92ba-25ef-5474-4e8a78116de8
-      (use-feature flycheck-elm
+      (fn/use-feature flycheck-elm
         (flycheck elm-mode)
         (use-package flycheck-elm
           :ensure t
@@ -5214,7 +5274,7 @@
     Snippets too
 
     #+BEGIN_SRC emacs-lisp :block-id 32323472-2919-f3d1-0ba9-627cbcb58a30
-      (use-feature elm-yasnippets
+      (fn/use-feature elm-yasnippets
         (elm yasnippets)
         (use-package elm-yasnippets
           :ensure t))
@@ -5236,7 +5296,7 @@
     A linter is always needed
 
     #+BEGIN_SRC emacs-lisp :block-id 06d9fdcc-6c8d-a6b2-83ea-45179f85ca51
-      (use-feature flycheck-elixir
+      (fn/use-feature flycheck-elixir
         (elixir-mode flycheck)
         (use-package flycheck-elixir
           :ensure t))
@@ -5245,7 +5305,7 @@
     Integration with =mix=
 
     #+BEGIN_SRC emacs-lisp :block-id d41f5eeb-1f8a-46e1-8581-bb66d2722118
-      (use-feature flycheck-mix
+      (fn/use-feature flycheck-mix
         (elixir-mode flycheck)
         (use-package flycheck-mix
           :ensure t))
@@ -5255,7 +5315,7 @@
     Snippets support via yasnippet
 
     #+BEGIN_SRC emacs-lisp :block-id c6da5fe6-e35e-6d0a-4cc0-efb35d46925f
-      (use-feature elixir-yasnippets
+      (fn/use-feature elixir-yasnippets
         (elixir-mode yasnippet)
         (use-package elixir-yasnippets
           :ensure t))
@@ -5286,7 +5346,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id bd7bd68d-d482-cc97-7f3c-291b81169358
       (unless noninteractive
-        (use-feature company-robe
+        (fn/use-feature company-robe
           (robe company)
           (add-to-list 'company-backends 'company-robe)))
     #+END_SRC
@@ -5365,7 +5425,7 @@
     Something similar but for spelling
 
     #+BEGIN_SRC emacs-lisp :block-id d38ac398-91d1-affa-263e-e204695a8689
-      (use-feature flyspell-auctex
+      (fn/use-feature flyspell-auctex
         (flyspell auctex)
         (add-hook 'latex-mode-hook #'flyspell-mode))
     #+END_SRC
@@ -5388,338 +5448,351 @@
    Web browsing is a must
 
    #+BEGIN_SRC emacs-lisp :block-id 4ef8aaa9-5b2f-30e3-c126-323935e0f9f6
-     (use-package w3m
-       :ensure t
-       :defer t
-       :bind (:map fn-standard-prefix-map
-                   ("w w" . w3m)
-                   ("w s" . w3m-search-new-session)
-                   ("w g" . w3m-goto-url))
-       :config
-       ;; Main
-       (setq w3m-home-page "https://duckduckgo.com"
+     (fn/use-executables w3m-check
+       (w3m)
+       (use-package w3m
+         :ensure t
+         :defer t
+         :bind (:map fn-standard-prefix-map
+                     ("w w" . w3m)
+                     ("w s" . w3m-search-new-session)
+                     ("w g" . w3m-goto-url))
+         :config
+         ;; Main
+         (setq w3m-home-page "https://duckduckgo.com"
 
-          w3m-use-cookies t
-          w3m-confirm-leaving-secure-page nil
-          w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
-
-
-       ;; Tabs
-       (setq w3m-add-tab-number t
-          w3m-make-new-session nil
-
-          w3m-use-header-line t
-          w3m-use-header-line-title t
-          w3m-show-graphic-icons-in-header-line nil
-
-          w3m-use-title-buffer-name t)
+            w3m-use-cookies nil
+            w3m-confirm-leaving-secure-page nil
+            w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
 
 
-       ;; Search Engine
-       (require 'w3m-search)
+         ;; Tabs
+         (setq w3m-add-tab-number t
+            w3m-make-new-session nil
 
-       (setq w3m-search-engine-alist (list)
-          w3m-search-default-engine "duckduckgo")
+            w3m-use-header-line t
+            w3m-use-header-line-title t
+            w3m-show-graphic-icons-in-header-line nil
 
-       (add-to-list 'w3m-search-engine-alist
-                    (list "duckduckgo" "https://duckduckgo.com?q=%s"))
-       (add-to-list 'w3m-search-engine-alist
-                    (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
-
-
-       ;; Bookmarking
-       (require 'w3m-bookmark)
-
-       (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/cache-dir)
-          w3m-bookmark-default-section "Misc")
+            w3m-use-title-buffer-name t)
 
 
-       ;; Conkeror / Lnum
-       (require 'w3m-lnum)
+         ;; Search Engine
+         (require 'w3m-search)
 
-       (add-hook 'w3m-mode-hook #'w3m-lnum-mode t)
+         (setq w3m-search-engine-alist (list)
+            w3m-search-default-engine "duckduckgo")
 
-
-       ;; History
-       (require 'w3m-hist)
-
-       (setq w3m-history-reuse-history-elements t)
-
-
-       ;; Persistent Session
-       (require 'w3m-session)
-
-       (setq w3m-session-file (expand-file-name "w3m-session" fn/cache-dir))
+         (add-to-list 'w3m-search-engine-alist
+                      (list "duckduckgo" "https://duckduckgo.com?q=%s"))
+         (add-to-list 'w3m-search-engine-alist
+                      (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
 
 
-       ;; Video Player
-       (require 'w3m-cookie) ;; Required by `w3m-parse-http-url'
+         ;; Bookmarking
+         (require 'w3m-bookmark)
 
-       (defcustom fn/w3m-video-executable "vlc"
-         "The executable that can run a network video stream.")
-
-       (defcustom fn/w3m-video-args
-         (list
-          ;; This skews how the process is managed for vlc
-          ;; "--one-instance"
-          ;; "--play-and-exit"
-          )
-         "Extra arguments to run `fn/w3m-video-executable'")
-
-       (defun fn/w3m-video (&optional url)
-         "Get image video url."
-         (or url (w3m-anchor) w3m-current-url))
-
-       (defun fn/w3m-view-video ()
-         "View the video url with `fn/w3m-video-executable'"
-         (interactive)
-         (let ((url (w3m-url-valid (fn/w3m-video))))
-           (if (null url)
-               (prog1
-                   (w3m-message "No video at point")
-                 nil)
-             (lexical-let ((video-process
-                  (apply #'start-process
-                     (append
-                      (list
-                       (format "%s-%s" "w3m" fn/w3m-video-executable)
-                       nil
-                       fn/w3m-video-executable)
-                      fn/w3m-video-args
-                      (list url)))))
-               (with-current-buffer (current-buffer)
-                 (fn/w3m-kill-page-process)
-
-                 (setq-local fn/w3m-page-process video-process))))))
-
-       (defun fn/w3m-video-url-p (url)
-         "Check if URL is a video."
-         (ignore-errors
-           (lexical-let* ((pieces (w3m-parse-http-url url))
-               (host (elt pieces 1))
-               (path (elt pieces 3)))
-             (if (or (and (string= host "www.youtube.com")
-                       (string-prefix-p "/watch" path)))
-                 url nil))))
-
-       (defun fn/w3m-view-this-video-external (url)
-         "View this video externally"
-         (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
-           (when
-               (and video-url
-                  (yes-or-no-p
-                   (format "%s is a video, view it with %s?"
-                           video-url fn/w3m-video-executable)))
-             (fn/w3m-view-video))))
-
-       (defun fn/w3m-kill-page-process ()
-         "Kill the `fn/w3m-page-process' of the current buffer."
-         (interactive)
-         (with-current-buffer (current-buffer)
-           (when (and (boundp 'fn/w3m-page-process)
-                    (process-live-p fn/w3m-page-process))
-             (kill-process fn/w3m-page-process))
-
-           (setq-local fn/w3m-page-process nil)))
-
-       (defun fn/w3m-auto-kill-page-process (url)
-         "If the page has a process, quit it."
-         (fn/w3m-kill-page-process))
-
-       (defun fn/w3m-single-page-process (result)
-         "If the page process is a singleton, adjust page container accordingly."
-         (when result
-           (lexical-let ((this-page (current-buffer))
-               (active-process nil))
-             (mapc
-              (lambda (page)
-                (with-current-buffer page
-                  (when (process-live-p fn/w3m-page-process)
-                    (setq active-process fn/w3m-page-process))
-
-                  (setq-local fn/w3m-page-process nil)))
-              (w3m-list-buffers))
-             (with-current-buffer this-page
-               (setq-local fn/w3m-page-process active-process))))
-         result)
+         (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/setting-dir)
+            w3m-bookmark-default-section "Misc")
 
 
-       (add-hook 'w3m-display-hook #'fn/w3m-auto-kill-page-process t)
-       (add-hook 'w3m-display-hook #'fn/w3m-view-this-video-external t)
-       (add-hook 'kill-buffer-hook #'fn/w3m-kill-page-process t)
+         ;; Conkeror / Lnum
+         (require 'w3m-lnum)
 
-       (advice-add 'fn/w3m-view-video :filter-return  #'fn/w3m-single-page-process)
+         (add-hook 'w3m-mode-hook #'w3m-lnum-mode t)
 
 
-       ;; Summarization
-       (require 'deferred)
+         ;; History
+         (require 'w3m-hist)
 
-       (defcustom fn/w3m-sumy-executable "sumy"
-         "The executable that can run a summarize articles.")
+         (setq w3m-history-reuse-history-elements t)
 
-       (defvar fn/w3m-sumy--cache (make-hash-table :test 'equal)
-         "A cache to store the results.")
 
-       (defcustom fn/w3m-sumy-args
-         (list
-          "lex-rank"
-          "--length" "5"
-          "--url"
-          )
-         "Extra arguments to run `fn/w3m-sumy-executable'")
+         ;; Persistent Session
+         (require 'w3m-session)
 
-       (defface fn/w3m-summary '((t (:weight bold :height 1.1 :box (:line-width 2 :color "grey75" :style released-button))))
-         "Summary face.")
+         (setq w3m-session-file (expand-file-name "w3m-session" fn/cache-dir))
 
-       (defun fn/w3m-summarize-url (url)
-         "Summarize URL for easier comprehension"
-         (lexical-let ((url url))
-           (deferred:nextc
-             (apply
-              #'deferred:process-shell
-              (append
-               (list fn/w3m-sumy-executable)
-               fn/w3m-sumy-args
-               (list (concat "\"" url "\""))))
-             (lambda (summary-output)
-               (lexical-let ((processed-text (string-trim-right summary-output)))
-                 (if (string-empty-p processed-text)
-                     nil
-                   (mapcar
-                    (lambda (text) (replace-regexp-in-string "\n" " " text))
-                    (split-string processed-text "\\\.\n"))))))))
 
-       (defun fn/w3m-fontify-summary ()
-         "Fontify summary points."
-         (interactive)
-         (lexical-let ((fontifier
-              (lambda (text)
-                (let ((inhibit-read-only t)
-                    (new-text
-                     (string-join
-                      (split-string (regexp-quote text) " ") "\n*\s*")))
-                  (goto-char (point-min))
-                  (while (re-search-forward new-text nil t)
-                    (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
-           (setq-local fn/w3m-fontify-summary (fn/w3m-summarize-url w3m-current-url))
+         ;; Video Player
+         (require 'w3m-cookie) ;; Required by `w3m-parse-http-url'
 
+         (defcustom fn/w3m-video-executable "vlc"
+           "The executable that can run a network video stream.")
+
+         (defcustom fn/w3m-video-args
+           (list
+            ;; This skews how the process is managed for vlc
+            ;; "--one-instance"
+            ;; "--play-and-exit"
+            )
+           "Extra arguments to run `fn/w3m-video-executable'")
+
+         (defun fn/w3m-video (&optional url)
+           "Get image video url."
+           (or url (w3m-anchor) w3m-current-url))
+
+         (defun fn/w3m-view-video ()
+           "View the video url with `fn/w3m-video-executable'"
+           (interactive)
+           (let ((url (w3m-url-valid (fn/w3m-video))))
+             (if (null url)
+                 (prog1
+                     (w3m-message "No video at point")
+                   nil)
+               (lexical-let ((video-process
+                              (apply #'start-process
+                                     (append
+                                      (list
+                                       (format "%s-%s" "w3m" fn/w3m-video-executable)
+                                       nil
+                                       fn/w3m-video-executable)
+                                      fn/w3m-video-args
+                                      (list url)))))
+                 (with-current-buffer (current-buffer)
+                   (fn/w3m-kill-page-process)
+
+                   (setq-local fn/w3m-page-process video-process))))))
+
+         (defun fn/w3m-video-url-p (url)
+           "Check if URL is a video."
+           (ignore-errors
+             (lexical-let* ((pieces (w3m-parse-http-url url))
+                            (host (elt pieces 1))
+                            (path (elt pieces 3)))
+               (if (or (and (string= host "www.youtube.com")
+                            (string-prefix-p "/watch" path)))
+                   url nil))))
+
+         (defun fn/w3m-view-this-video-external (url)
+           "View this video externally"
+           (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
+             (when
+                 (and video-url
+                      (yes-or-no-p
+                       (format "%s is a video, view it with %s?"
+                               video-url fn/w3m-video-executable)))
+               (fn/w3m-view-video))))
+
+         (defun fn/w3m-kill-page-process ()
+           "Kill the `fn/w3m-page-process' of the current buffer."
+           (interactive)
            (with-current-buffer (current-buffer)
-             (message "Summarizing %s" w3m-current-url)
+             (when (and (boundp 'fn/w3m-page-process)
+                        (process-live-p fn/w3m-page-process))
+               (kill-process fn/w3m-page-process))
+
+             (setq-local fn/w3m-page-process nil)))
+
+         (defun fn/w3m-auto-kill-page-process (url)
+           "If the page has a process, quit it."
+           (fn/w3m-kill-page-process))
+
+         (defun fn/w3m-single-page-process (result)
+           "If the page process is a singleton, adjust page container accordingly."
+           (when result
+             (lexical-let ((this-page (current-buffer))
+                           (active-process nil))
+               (mapc
+                (lambda (page)
+                  (with-current-buffer page
+                    (when (process-live-p fn/w3m-page-process)
+                      (setq active-process fn/w3m-page-process))
+
+                    (setq-local fn/w3m-page-process nil)))
+                (w3m-list-buffers))
+               (with-current-buffer this-page
+                 (setq-local fn/w3m-page-process active-process))))
+           result)
+
+
+         (add-hook 'w3m-display-hook #'fn/w3m-auto-kill-page-process t)
+         (add-hook 'w3m-display-hook #'fn/w3m-view-this-video-external t)
+         (add-hook 'kill-buffer-hook #'fn/w3m-kill-page-process t)
+
+         (advice-add 'fn/w3m-view-video :filter-return  #'fn/w3m-single-page-process)
+
+
+         ;; Summarization
+         (require 'deferred)
+
+         (defcustom fn/w3m-sumy-executable "sumy"
+           "The executable that can run a summarize articles.")
+
+         (defcustom fn/w3m-sumy-args
+           (list
+            "lex-rank"
+            "--length" "5")
+           "Extra arguments to run `fn/w3m-sumy-executable'")
+
+         (defface fn/w3m-summary '((t (:weight bold :height 1.1 :box (:line-width 2 :color "grey75" :style released-button))))
+           "Summary face.")
+
+         (defun fn/w3m-summarize-url (url)
+           "Summarize URL for easier comprehension"
+           (lexical-let ((url url))
              (deferred:nextc
-               fn/w3m-fontify-summary
-               (lambda (text-points)
-                 (setq-local fn/w3m-fontify-summary nil)
-                 (if (null text-points)
-                     (message "No summary for %s" (w3m-current-title))
-                   (message "Summarizing points on %s" w3m-current-url)
-                   (save-excursion
-                     (mapc fontifier text-points))
-                   (message "Summary on %s:\n%s"
-                            (w3m-current-title)
-                            (string-join
-                             (mapcar
-                              (lambda (text-point)
-                                (format "* %s" text-point))
-                              text-points)
-                             "\n"))))))))
+               (apply
+                #'deferred:process-shell
+                (append
+                 (list fn/w3m-sumy-executable)
+                 fn/w3m-sumy-args
+                 (if (string-prefix-p "file://" url)
+                     (list "--file"
+                        (concat "\"" (substring-no-properties url (length "file://"))  "\""))
+                   (list "--url"
+                    (concat "\"" url "\"")))))
+               (lambda (summary-output)
+                 (lexical-let ((processed-text (string-trim-right summary-output)))
+                   (if (string-empty-p processed-text)
+                       nil
+                     (mapcar
+                      (lambda (text) (replace-regexp-in-string "\n" " " text))
+                      (split-string processed-text "\\\.\n"))))))))
 
-       (defun fn/w3m-kill-page-summarizer ()
-         "Kill page summarizer."
-         (when (and (boundp 'fn/w3m-page-summarizer)
-                  fn/w3m-page-summarizer
-                  (deferred-p fn/w3m-page-summarizer))
-           (deferred:cancel fn/w3m-page-summarizer))
+         (defun fn/w3m-fontify-summary ()
+           "Fontify summary points."
+           (interactive)
+           (when (executable-find fn/w3m-sumy-executable)
+             (lexical-let ((fontifier
+                            (lambda (text)
+                              (let ((inhibit-read-only t)
+                                    (new-text
+                                     (string-join
+                                      (split-string (regexp-quote text) " ") "\n*\s*")))
+                                (goto-char (point-min))
+                                (while (re-search-forward new-text nil t)
+                                  (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
+               (setq-local fn/w3m-fontify-summary (fn/w3m-summarize-url w3m-current-url))
 
-         (setq-local fn/w3m-page-summarizer nil))
+               (with-current-buffer (current-buffer)
+                 (message "Summarizing %s" w3m-current-url)
+                 (deferred:nextc
+                   fn/w3m-fontify-summary
+                   (lambda (text-points)
+                     (setq-local fn/w3m-fontify-summary nil)
+                     (if (null text-points)
+                         (message "No summary for %s" (w3m-current-title))
+                       (message "Summarizing points on %s" w3m-current-url)
+                       (save-excursion
+                         (mapc fontifier text-points))
+                       (message "Summary on %s:\n%s"
+                                (w3m-current-title)
+                                (string-join
+                                 (mapcar
+                                  (lambda (text-point)
+                                    (format "* %s" text-point))
+                                  text-points)
+                                 "\n")))))))))
 
-       (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
-       (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
+         (defun fn/w3m-kill-page-summarizer ()
+           "Kill page summarizer."
+           (when (and (boundp 'fn/w3m-page-summarizer)
+                      fn/w3m-page-summarizer
+                      (deferred-p fn/w3m-page-summarizer))
+             (deferred:cancel fn/w3m-page-summarizer))
 
+           (setq-local fn/w3m-page-summarizer nil))
 
-       ;; Zone
-       (defun fn/w3m-zone-retrieve (&rest args)
-         (with-current-buffer (current-buffer)
-           (let ((inhibit-read-only t))
-             (erase-buffer)
-             (goto-char (point-min)))
-           (setq-local fn/w3m-zone-timer
-                       (run-at-time
-                        (/ 10.0)
-                        (/ 30.0)
-                        (lambda ()
-                          (let ((inhibit-read-only t)
-                              (increment (- 6 (random 12))))
-                            (unless (boundp 'fn/w3m-zone-counter)
-                              (setq-local fn/w3m-zone-counter (+ 20 (random 20))))
-                            (setq-local fn/w3m-zone-counter
-                                        (+ fn/w3m-zone-counter increment))
-
-                            (setq-local fn/w3m-zone-counter (max fn/w3m-zone-counter 1))
-
-                            (insert
-                             (string-join
-                              (mapcar
-                               (lambda (ch)
-                                 (cond
-                                  ((< 0 increment) "\\")
-                                  ((> 0 increment) "/")
-                                  (t "-")))
-                               (number-sequence 1 fn/w3m-zone-counter))
-                              ""))
-                            (insert "\n")))))))
-
-       ;; (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
-
-       (defun fn/w3m-cancel-zone-render (&rest args)
-         (when (and (boundp 'fn/w3m-zone-timer)
-                  (timerp fn/w3m-zone-timer))
-           (cancel-timer fn/w3m-zone-timer))
-         (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
-         (setq-local fn/w3m-zone-timer nil))
-
-       ;; (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
+         (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
+         (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
 
 
-       ;; Util
-       (defun fn/w3m-new-buffer ()
-         "Opens a new, empty w3m buffer.
+         ;; Zone
+         (defun fn/w3m-zone-retrieve (&rest args)
+           (with-current-buffer (current-buffer)
+             (let ((inhibit-read-only t))
+               (erase-buffer)
+               (goto-char (point-min)))
+             (setq-local fn/w3m-zone-timer
+                         (run-at-time
+                          (/ 10.0)
+                          (/ 30.0)
+                          (lambda ()
+                            (let ((inhibit-read-only t)
+                                  (increment (- 6 (random 12))))
+                              (unless (boundp 'fn/w3m-zone-counter)
+                                (setq-local fn/w3m-zone-counter (+ 20 (random 20))))
+                              (setq-local fn/w3m-zone-counter
+                                          (+ fn/w3m-zone-counter increment))
+
+                              (setq-local fn/w3m-zone-counter (max fn/w3m-zone-counter 1))
+
+                              (insert
+                               (string-join
+                                (mapcar
+                                 (lambda (ch)
+                                   (cond
+                                    ((< 0 increment) "\\")
+                                    ((> 0 increment) "/")
+                                    (t "-")))
+                                 (number-sequence 1 fn/w3m-zone-counter))
+                                ""))
+                              (insert "\n")))))))
+
+         ;; (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
+
+         (defun fn/w3m-cancel-zone-render (&rest args)
+           (when (and (boundp 'fn/w3m-zone-timer)
+                      (timerp fn/w3m-zone-timer))
+             (cancel-timer fn/w3m-zone-timer))
+           (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
+           (setq-local fn/w3m-zone-timer nil))
+
+         ;; (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
+
+
+         ;; Util
+         (defun fn/w3m-new-buffer ()
+           "Opens a new, empty w3m buffer.
      Thanks to https://www.emacswiki.org/emacs/WThreeMTabs"
-         (interactive)
-         (w3m-goto-url-new-session "about://"))
+           (interactive)
+           (w3m-goto-url-new-session "about://"))
 
 
-       ;; Key (re)binding
-       (define-key w3m-mode-map (kbd "q") 'w3m-delete-buffer)
-       (define-key w3m-mode-map (kbd "Q") 'w3m-quit)
+         ;; Key (re)binding
+         (define-key w3m-mode-map (kbd "q") 'w3m-delete-buffer)
+         (define-key w3m-mode-map (kbd "Q") 'w3m-quit)
 
-       (define-key w3m-mode-map (kbd "c") 'w3m-lnum-print-this-url)
-       (define-key w3m-mode-map (kbd "f") 'w3m-lnum-follow)
+         (define-key w3m-mode-map (kbd "c") 'w3m-lnum-print-this-url)
+         (define-key w3m-mode-map (kbd "f") 'w3m-lnum-follow)
 
-       (define-key w3m-mode-map (kbd "h") 'w3m-history)
-       (define-key w3m-mode-map (kbd "H") 'w3m-db-history)
+         (define-key w3m-mode-map (kbd "h") 'w3m-history)
+         (define-key w3m-mode-map (kbd "H") 'w3m-db-history)
 
-       (define-key w3m-mode-map (kbd "M-p") 'w3m-previous-buffer)
-       (define-key w3m-mode-map (kbd "M-n") 'w3m-next-buffer)
+         (define-key w3m-mode-map (kbd "M-p") 'w3m-previous-buffer)
+         (define-key w3m-mode-map (kbd "M-n") 'w3m-next-buffer)
 
-       (define-key w3m-mode-map (kbd "i") 'w3m-toggle-inline-image)
-       (define-key w3m-mode-map (kbd "I") 'w3m-toggle-inline-images)
+         (define-key w3m-mode-map (kbd "i") 'w3m-toggle-inline-image)
+         (define-key w3m-mode-map (kbd "I") 'w3m-toggle-inline-images)
 
-       (define-key w3m-mode-map (kbd "t") 'fn/w3m-new-buffer)
-       (unbind-key (kbd "t") w3m-lnum-mode-map)
+         (define-key w3m-mode-map (kbd "t") 'fn/w3m-new-buffer)
+         (unbind-key (kbd "t") w3m-lnum-mode-map)
 
-       (define-key w3m-mode-map (kbd "V") 'w3m-bookmark-view)
-       (define-key w3m-mode-map (kbd "v") 'w3m-bookmark-add-current-url)
+         (define-key w3m-mode-map (kbd "V") 'w3m-bookmark-view)
+         (define-key w3m-mode-map (kbd "v") 'w3m-bookmark-add-current-url)
 
-       (define-key w3m-mode-map (kbd "S") 'w3m-search-new-session)
-       (define-key w3m-mode-map (kbd "s") 'w3m-search)
-       (define-key w3m-mode-map (kbd "RET") 'w3m-view-this-url-new-session)
+         (define-key w3m-mode-map (kbd "{") 'w3m-previous-buffer)
+         (define-key w3m-mode-map (kbd "}") 'w3m-next-buffer)
+
+         (unbind-key "<right>" w3m-mode-map)
+         (unbind-key "<left>" w3m-mode-map)
+
+         (unbind-key "<up>" w3m-mode-map)
+         (unbind-key "<down>" w3m-mode-map)
 
 
-       (use-feature w3m-mode--mode-icon
-         (all-the-icons)
-         (fn/add-major-mode-icon
-          'w3m-mode
-          (list 'all-the-icons-faicon "globe" :v-adjust -0.1))))
+         (define-key w3m-mode-map (kbd "S") 'w3m-search-new-session)
+         (define-key w3m-mode-map (kbd "s") 'w3m-search)
+         (define-key w3m-mode-map (kbd "RET") 'w3m-view-this-url)
+         (define-key w3m-mode-map (kbd "M-RET") 'w3m-view-this-url-new-session)
+
+
+         (fn/use-feature w3m-mode--mode-icon
+           (all-the-icons)
+           (fn/add-major-mode-icon
+            'w3m-mode
+            (list 'all-the-icons-faicon "globe" :v-adjust -0.1)))))
    #+END_SRC
 
 ** twittering
@@ -5765,7 +5838,7 @@
 
           erc-quit-reason (lambda (&rest args) "I took with me... their lightning and their prayers"))
 
-       (use-feature erc-message-alert
+       (fn/use-feature erc-message-alert
          (alert)
          (require 's)
 
@@ -5814,7 +5887,7 @@
 
          (add-hook 'erc-insert-pre-hook #'fn/erc-message-alert))
 
-       (use-feature erc-mode--mode-icon
+       (fn/use-feature erc-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
           'erc-mode
@@ -5886,7 +5959,7 @@
        ;; alerts
        (setq jabber-alert-message-hooks nil)
 
-       (use-feature jabber-alert-custom
+       (fn/use-feature jabber-alert-custom
          (alert)
          (defconst fn/jabber-notify-severity 'jabber
            "My jabber notify severity.")
@@ -5916,13 +5989,13 @@
 
          (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
-       (use-feature jabber-roster-mode--mode-icon
+       (fn/use-feature jabber-roster-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
           'jabber-roster-mode
           (list 'all-the-icons-octicon "radio-tower" :v-adjust -0.1)))
 
-       (use-feature jabber-chat-mode--mode-icon
+       (fn/use-feature jabber-chat-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
           'jabber-chat-mode
@@ -5955,7 +6028,7 @@
              slack-typing-visibility 'buffer
              slack-prefer-current-team t)
 
-       (use-feature slack-custom-alert
+       (fn/use-feature slack-custom-alert
          (alert)
          (defconst fn/slack-notify-severity 'slack
            "My slack notify severity.")
@@ -5980,13 +6053,13 @@
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
 
-       (use-feature slack-mode--mode-icon
+       (fn/use-feature slack-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
           'slack-mode
           (list 'all-the-icons-faicon "commenting-o" :v-adjust 0.0)))
 
-       (use-feature phackers-candy
+       (fn/use-feature phackers-candy
          (text-candy)
          (text-candy-add-candy-word
           (propertize ;; phackers
@@ -6107,7 +6180,9 @@
      (defconst fn/user-emacs-home-files
        (list
         "bootstrap"
+        "bootstrapper.el"
         ".cache"
+        ".setting"
         "config.el"
         "config.org"
         "extra"
@@ -6150,7 +6225,8 @@
        "Setup your personal view"
        (interactive)
        (message "Setting up initial view")
-       (fn/find-main-org-file)
+       (when (fboundp 'fn/find-main-org-file)
+         (fn/find-main-org-file))
 
        (select-frame-set-input-focus (selected-frame)))
 
@@ -6499,7 +6575,7 @@
    configuration when opened.
 
    #+BEGIN_SRC emacs-lisp :block-id b8e02d73-638d-d7b5-2520-32fe159fdffb
-     (use-feature workgroup-configuration
+     (fn/use-feature workgroup-configuration
        (workgroups2)
        (require 'dash)
 
@@ -6796,7 +6872,7 @@
                (message "Done auto configuring workgroups."))
            (message "Workgroup mode is not active.")))
 
-       (use-feature workspace-prodigy
+       (fn/use-feature workspace-prodigy
          (prodigy)
          (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-clear-default-filter)
          (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-set-default-filter-hook))
@@ -7043,10 +7119,10 @@
    Check if Emacs is running fast.
 
    #+BEGIN_SRC emacs-lisp :block-id 1c95aa79-5f9f-abcf-7d28-a9110a32d753
-     (require 'deferred)
-
-     (use-feature frame-delay
+     (fn/use-feature frame-delay
        nil
+       (require 'deferred)
+
        (defvar fn/-previous-time (current-time)
          "Previous time recording.  Not to be used directly.")
 
@@ -7072,52 +7148,84 @@
        (add-hook 'pre-command-hook #'fn/-mark-time))
 
      (unless (eq system-type 'windows-nt) ;; Windows requires powershell just to poll it. WTF!?
-       (use-feature cpu-usage
-         (deferred)
-         (defvar fn/current-cpu-usage 0.0
-           "Cpu recording.")
+       (require 'deferred)
 
-         (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
+       (fn/use-executables cpu-check
+         (grep awk)
+         (fn/use-feature cpu-usage
+           (deferred)
+           (defvar fn/current-cpu-usage 0.0
+             "Cpu recording.")
 
-         (defun fn/record-cpu-usage ()
-           "Record cpu usage."
-           (deferred:error
-             (deferred:nextc
-               (deferred:process-shell
-                 fn/cpu-usage-command)
-               (lambda (value)
-                 (setq fn/current-cpu-usage (string-to-number value))))
-             (lambda ()
-               (cancel-timer fn/cpu-timer)
-               (unintern 'fn/current-cpu-usage)
-               (message "Error with CPU monitor, shutting it down"))))
+           (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
 
-         (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
-           "A cpu timer if you ever want to quit it."))
+           (defun fn/record-cpu-usage ()
+             "Record cpu usage."
+             (deferred:error
+               (deferred:nextc
+                 (deferred:process-shell
+                   fn/cpu-usage-command)
+                 (lambda (value)
+                   (setq fn/current-cpu-usage (string-to-number value))))
+               (lambda ()
+                 (cancel-timer fn/cpu-timer)
+                 (makunbound 'fn/current-cpu-usage)
+                 (message "Error with CPU monitor, shutting it down"))))
 
-       (use-feature memory-usage
-         (deferred)
-         (defvar fn/current-memory-usage 0.0
-           "Memory recording.")
+           (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
+             "A cpu timer if you ever want to quit it.")))
 
-         (defconst fn/memory-usage-command
-           "free | grep Mem | awk '{print $3/$2 * 100.0}'")
+       (fn/use-executables memory-check
+         (free grep awk)
+         (fn/use-feature memory-usage
+           (deferred)
+           (defvar fn/current-memory-usage 0.0
+             "Memory recording.")
 
-         (defun fn/record-memory-usage ()
-           "Record memory usage."
-           (deferred:error
-             (deferred:nextc
-               (deferred:process-shell
-                 fn/memory-usage-command)
-               (lambda (value)
-                 (setq fn/current-memory-usage (string-to-number value))))
-             (lambda ()
-               (cancel-timer fn/memory-timer)
-               (unintern 'fn/current-memory-usage)
-               (message "Error with RAM monitor, shutting it down"))))
+           (defconst fn/memory-usage-command
+             "free | grep Mem | awk '{print $3/$2 * 100.0}'")
 
-         (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
-           "A memory timer.")))
+           (defun fn/record-memory-usage ()
+             "Record memory usage."
+             (deferred:error
+               (deferred:nextc
+                 (deferred:process-shell
+                   fn/memory-usage-command)
+                 (lambda (value)
+                   (setq fn/current-memory-usage (string-to-number value))))
+               (lambda ()
+                 (cancel-timer fn/memory-timer)
+                 (makunbound 'fn/current-memory-usage)
+                 (message "Error with RAM monitor, shutting it down"))))
+
+           (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
+             "A memory timer.")))
+
+       (fn/use-executables battery-check
+         (acpi awk)
+         (fn/use-feature battery-usage
+           (deferred)
+           (defvar fn/current-battery-usage 0.0
+             "Battery usage.")
+
+           (defconst fn/battery-usage-command "acpi -b | awk -F , '{print substr( $2, 1 , length($2) - 1) / 100}'"
+             "Battery usage command.")
+
+           (defun fn/record-battery-usage ()
+             "Record battery usage."
+             (deferred:error
+               (deferred:nextc
+                 (deferred:process-shell
+                   fn/battery-usage-command)
+                 (lambda (value)
+                   (setq fn/current-battery-usage (string-to-number value))))
+               (lambda ()
+                 (cancel-timer fn/battery-timer)
+                 (makunbound 'fn/current-battery-usage)
+                 (message "Error with Battery monitor, shutting it down"))))
+
+           (defvar fn/battery-timer (run-with-idle-timer 1 t #'fn/record-battery-usage)
+             "A battery timer."))))
    #+END_SRC
 
 ** starup and shutdown hook
@@ -7126,11 +7234,11 @@
    #+BEGIN_SRC emacs-lisp :block-id b1fd9c85-3b45-96b6-3659-ce907e106fba
      (defun fn/startup ()
        (interactive)
-       (shell-command "cd ~/Fakespace/nobody-library && git pull origin master"))
+       (shell-command "cd ~/Modules/nobody-library && git pull origin master"))
 
      (defun fn/cleanup ()
        (interactive)
-       (shell-command "cd ~/Fakespace/nobody-library\
+       (shell-command "cd ~/Modules/nobody-library\
       && git add diary/*\
       && git commit -a -m \"Home Update\"\
       && git push origin master"))
@@ -7536,7 +7644,6 @@
           (context
            (comment "Base files")
            (file ,(format "%s.el" (file-name-base fn/config-file)))
-           (file ,(format "%s.el" (file-name-base fn/personal-file)))
            (file ,(format "%s.el" (file-name-base fn/personal-file))))
 
           (context
@@ -7546,7 +7653,6 @@
 
           (context
            (comment "Project specific")
-           (file ".project-locals.el")
            (file "working-config.org")
 
            (file  ,(format "%s.el" (file-name-base fmk/macro-file))))
@@ -7566,7 +7672,6 @@
           (block gtags)
           (block emacs))
         user-emacs-directory)
-
        nil)
    #+END_SRC
 
@@ -7680,26 +7785,28 @@
    Some contrivances
 
    #+BEGIN_SRC emacs-lisp :block-id 2fa9e396-3cb3-4b55-356b-c5c688147cc5
-     (defcustom fn/espeak-executable "espeak"
-       "The speech voicer.")
+     (fn/use-executables espeak-check
+       (espeak)
+       (defcustom fn/espeak-executable "espeak"
+         "The speech voicer.")
 
-     (defcustom fn/espeak-args (list)
-       "The speech voicer args.")
+       (defcustom fn/espeak-args (list "-s" "140")
+         "The speech voicer args.")
 
-     (defun fn/espeak (text)
-       "Speak up."
-       (interactive "sWhat do you want to say? ")
-       (apply #'start-process
-          (append
-           (list fn/espeak-executable nil fn/espeak-executable)
-           fn/espeak-args
-           (list text))))
+       (defun fn/espeak (text)
+         "Speak up."
+         (interactive "sWhat do you want to say? ")
+         (apply #'start-process
+            (append
+             (list fn/espeak-executable nil fn/espeak-executable)
+             fn/espeak-args
+             (list text))))
 
-     (defun fn/espeak-region ()
-       "Speak up in the region."
-       (interactive)
-       (fn/espeak
-        (buffer-substring-no-properties (region-beginning) (region-end))))
+       (defun fn/espeak-region ()
+         "Speak up in the region."
+         (interactive)
+         (fn/espeak
+          (buffer-substring-no-properties (region-beginning) (region-end)))))
    #+END_SRC
 * Key Bindings
   Here is where all the key binding I mapped to
