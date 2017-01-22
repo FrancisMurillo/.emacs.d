@@ -69,11 +69,11 @@
   "Main compiler DSL with an ENV."
   (pcase-let ((`(,rule . ,_) dsl))
     (lexical-let* ((rule-name (symbol-name rule))
-                   (rule-handler
-                    (intern-soft
-                     (format "%s%s"
-                             magin-dsl-prefix
-                             rule-name))))
+        (rule-handler
+         (intern-soft
+          (format "%s%s"
+                  magin-dsl-prefix
+                  rule-name))))
       (if (null rule-handler)
           (error "No rule to handle %s at dsl: %s" rule-name dsl)
         (funcall rule-handler dsl env)))))
@@ -118,7 +118,7 @@
   "DSL and ENV for file."
   (pcase-let ((`(file ,file) dsl))
     (lexical-let* ((parent (cdr (assoc :parent env)))
-                   (include (if (cdr (assoc :include env))"!" nil)))
+        (include (if (cdr (assoc :include env))"!" nil)))
       (concat include parent file))))
 
 (defalias 'magin--dsl-dir 'magin--dsl-file
@@ -135,19 +135,19 @@
   (pcase-let ((`(path ,path . ,subdsls) dsl))
     (message "%s" subdsls)
     (lexical-let* ((parent (cdr (assoc :parent env)))
-                   (new-env (append
-                             (list (cons :parent (concat parent path (magin--path-separator))))
-                             env)))
+        (new-env (append
+                  (list (cons :parent (concat parent path (magin--path-separator))))
+                  env)))
       (magin--dsl-context `(context ,@subdsls) new-env))))
 
 (defun magin--dsl-block (dsl env)
   "DSL and ENV for block."
   (pcase-let ((`(block ,block-symbol) dsl))
     (lexical-let* ((block-name (symbol-name block-symbol))
-                   (block-value (intern-soft
-                                 (format "%s%s"
-                                         magin-block-prefix
-                                         block-name))))
+        (block-value (intern-soft
+                      (format "%s%s"
+                              magin-block-prefix
+                              block-name))))
       (if (null block-value)
           (error "No rule to block %s at dsl: %s" block-name dsl)
         (magin--compiler (symbol-value block-value) env)))))
@@ -156,10 +156,10 @@
   "DSL and ENV for defblock."
   (pcase-let ((`(defblock ,block-symbol . ,block-def) dsl))
     (lexical-let* ((block-name (symbol-name block-symbol))
-                   (block-def-name (intern
-                                    (format "%s%s"
-                                            magin-block-prefix
-                                            block-name))))
+        (block-def-name (intern
+                         (format "%s%s"
+                                 magin-block-prefix
+                                 block-name))))
       (makunbound block-def-name)
       (eval `(defvar ,block-def-name '(context ,@block-def)
                ,(format "Block definition for %s" block-name)))
@@ -214,3 +214,4 @@
 (provide 'magin)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; magin.el ends here
+3

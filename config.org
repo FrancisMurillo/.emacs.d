@@ -3377,14 +3377,21 @@
                ("C-l n" . langtool-goto-next-error)
                ("C-l p" . langtool-goto-previous-error))
          :config
-         (setq langtool-language-tool-jar
-            (expand-file-name "languagetool-commandline.jar" "/usr/share/java/languagetool")
-            langtool-java-classpath nil
+         (setq ;; Taken from `languagetool' script to execute command
+          langtool-language-tool-jar
+          nil
+          langtool-java-classpath
+          (string-join
+           (cons
+            "/usr/share/languagetool"
+            (directory-files "/usr/share/java/languagetool" t "\\.*jar"))
+           ":")
 
-            langtool-default-language "en"
-            langtool-mother-tongue "en"
+          langtool-default-language "en"
+          langtool-mother-tongue "en"
 
-            langtool-disabled-rules (list))
+          langtool-disabled-rules (list))
+
 
          (add-to-list 'langtool-disabled-rules "WHITESPACE_RULE")
          (add-to-list 'langtool-disabled-rules "EN_QUOTES")
@@ -3500,9 +3507,9 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 842e3219-547e-cef9-5564-15541c881dc4
      (use-package tramp
+       :after eshell
        :config
        (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)
-
           tramp-default-user (getenv "USER")))
    #+END_SRC
 

@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t; -*-
 (pcase (buffer-name)
   ("config.org"
-   (use-feature org-src-alert
+   (fn/use-feature org-src-alert
      (org alert)
      (defun fn/org-src-notify-raw-block-editing (start end length)
        "Notify me when I am editing an raw org-src block given START, END and LENGTH"
