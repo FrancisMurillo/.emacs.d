@@ -997,7 +997,7 @@
       nil)
 
     (fn/use-executables downloader-check
-      (wget curl)
+      (wget curl rsync)
       nil)
 
     (fn/use-executables browser-check
@@ -5463,7 +5463,17 @@
          :bind (:map fn-standard-prefix-map
                      ("w w" . w3m)
                      ("w s" . w3m-search-new-session)
+                     ("w e" . w3m-external-view-current-url)
                      ("w g" . w3m-goto-url))
+         :init
+         (setq w3m-search-engine-alist (list))
+
+         (defcustom fn/w3m-ignore-arrived-url-functions ()
+           "Functions that check if the url is saved for privacy."
+           :type 'hook)
+
+         (defconst fn/w3m-ignore-arrived-hosts (list)
+           "Ignore the urls of the arrived hosts.")
          :config
          ;; Main
          (setq w3m-home-page "https://duckduckgo.com"
@@ -5487,8 +5497,22 @@
          ;; Search Engine
          (require 'w3m-search)
 
-         (setq w3m-search-engine-alist (list)
-            w3m-search-default-engine "duckduckgo")
+         (setq w3m-search-default-engine "duckduckgo")
+
+         (defun fn/w3m-ignore-arrived-add-url (orig-fun &rest args)
+           "Check whether to save the url using `fn/w3m-ignore-arrived-url-functions' as basis.
+     Each function predicate takes is the same arguments as `w3m-arrived-add'
+     Good for privacy and cleanliness."
+           (if (not (apply #'run-hook-with-args-until-success
+                     (append
+                      (list 'fn/w3m-ignore-arrived-url-functions)
+                      args)))
+               (apply orig-fun args)
+             (message "Not saving arrived url %s" (car args))
+             nil))
+
+         (advice-add 'w3m-arrived-add :around #'fn/w3m-ignore-arrived-add-url)
+
 
          (add-to-list 'w3m-search-engine-alist
                       (list "duckduckgo" "https://duckduckgo.com?q=%s"))
@@ -5512,7 +5536,38 @@
          ;; History
          (require 'w3m-hist)
 
-         (setq w3m-history-reuse-history-elements t)
+         (setq w3m-history-reuse-history-elements t
+            w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir))
+
+         (define-minor-mode fn/w3m-private-mode
+           "A simple minor mode to indicate private browsing in `w3m'."
+           :lighter " w3m-private"
+           :init-value nil
+           :global t
+           :keymap (make-sparse-keymap)
+           (defun fn/w3m-ignore-all-arrived-url (&rest)
+             "Ignore all urls when `fn/w3m-private-mode' is active"
+             (and (boundp 'fn/w3m-private-mode)
+                fn/w3m-private-mode))
+
+           (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-all-arrived-url))
+
+         (defun fn/w3m-ignore-arrived-host (url &rest args)
+           "Ignore if url host matches and `fn/w3m-ignore-arrived-hosts'.
+     Primary check comes from `w3m-parse-http-url' by direct string match."
+           (condition-case ex
+               (lexical-let* ((parts (w3m-parse-http-url url))
+                   (host (elt parts 1)))
+                 (not (cl-notany
+                     (lambda (check-host)
+                       (string= check-host host))
+                     fn/w3m-ignore-arrived-hosts)))
+             ('error
+              (message
+               "There was an error parsing with fn/w3m-ignore-arrived-host: %s"
+               (error-message-string error)))))
+
+         (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-arrived-host)
 
 
          ;; Persistent Session
@@ -5617,8 +5672,6 @@
          (add-hook 'w3m-display-hook #'fn/w3m-view-this-video-external t)
          (add-hook 'kill-buffer-hook #'fn/w3m-kill-page-process t)
 
-         (advice-add 'fn/w3m-view-video :filter-return  #'fn/w3m-single-page-process)
-
 
          ;; Summarization
          (require 'deferred)
@@ -5646,9 +5699,9 @@
                  fn/w3m-sumy-args
                  (if (string-prefix-p "file://" url)
                      (list "--file"
-                        (concat "\"" (substring-no-properties url (length "file://"))  "\""))
+                           (concat "\"" (substring-no-properties url (length "file://"))  "\""))
                    (list "--url"
-                    (concat "\"" url "\"")))))
+                         (concat "\"" url "\"")))))
                (lambda (summary-output)
                  (lexical-let ((processed-text (string-trim-right summary-output)))
                    (if (string-empty-p processed-text)
@@ -6124,46 +6177,75 @@
    This controls the music player.
 
    #+BEGIN_SRC emacs-lisp :block-id 0ebc0aed-f749-2d71-297a-692d5ab3b0a6
-     (use-package emms
-       :ensure t
-       :defer t
-       :init
-       (setq emms-directory (expand-file-name "emms" fn/cache-dir))
-       :config
-       (emms-standard)
-       (emms-default-players)
+     (fn/use-executables emms-player-check
+       (vlc mpd)
+       (use-package emms
+         :ensure t
+         :defer t
+         :init
+         (setq emms-directory (expand-file-name "emms" fn/cache-dir))
+         :config
+         (emms-standard)
+         (require 'emms-player-simple)
+         (require 'emms-player-vlc)
+         (require 'emms-player-mpd)
 
-       (setq emms-source-file-default-directory "~/Musicbox/")
+         (setq emms-player-list nil)
 
-       (setq emms-info-asynchronously nil
-             emms-playlist-buffer-name "*Music*")
 
-       (setq emms-playlist-default-major-mode 'emms-playlist-mode)
+         (setq emms-source-file-default-directory (expand-file-name "~/Musicbox/"))
 
-       ;; emms-mark
-       (require 'emms-mark)
 
-       ;; emms-history
-       (require 'emms-history)
-       (emms-history-load)
+         (with-eval-after-load 'emms-player-vlc
+           (add-to-list 'emms-player-list 'emms-player-vlc)
+           (add-to-list 'emms-player-list 'emms-player-vlc-playlist)
 
-       ;; emms-mode-line
-       (require 'emms-mode-line)
-       (emms-mode-line 1)
+           ;; Remove default advice for vlc which does not work
+           (advice-remove 'emms-player-vlc-start #'ad-Advice-emms-player-vlc-start))
 
-       (require 'emms-playing-time)
-       (emms-playing-time 1)
+         (with-eval-after-load 'emms-player-mpd
+           (setq emms-player-mpd-server-name "localhost"
+              emms-player-mpd-server-port 18600
+              emms-player-mpd-music-directory emms-source-file-default-directory)
 
-       ;; emms-browser
-       (require 'emms-browser)
+           (add-to-list 'emms-info-functions 'emms-info-mpd)
+           (add-to-list 'emms-player-list 'emms-player-mpd))
 
-       ;; emms-volume
-       (emms-volume-minor-mode t)
 
-       (setq emms-volume-mode-timeout 1)
 
-       (define-key emms-volume-minor-mode-map (kbd "C-c -") 'emms-volume-minus)
-       (define-key emms-volume-minor-mode-map (kbd "C-c +") 'emms-volume-plus))
+
+         (setq emms-info-asynchronously nil
+            emms-playlist-buffer-name "*Music*")
+
+         (setq emms-playlist-default-major-mode 'emms-playlist-mode)
+
+         ;; emms-mark
+         (require 'emms-mark)
+
+         ;; emms-history
+         (require 'emms-history)
+         (emms-history-load)
+
+         ;; emms-browser
+         (require 'emms-browser)
+
+         ;; emms-volume
+         (require 'emms-volume)
+
+         (emms-volume-minor-mode t)
+
+         (setq emms-volume-mode-timeout 1)
+
+         (fn/add-major-mode-icon
+          'emms-playlist-mode
+          (list 'all-the-icons-faicon "music" :v-adjust -0.1))
+
+
+         (global-set-key (kbd "C-c -") 'emms-volume-mode-plus)
+         (global-set-key (kbd "C-c +") 'emms-volume-mode-minus)
+
+         (global-set-key (kbd "C-c n C-e s") 'emms-start)
+         (global-set-key (kbd "C-c n C-e S") 'emms-stop)))
    #+END_SRC
 
 ** figlet
@@ -7175,12 +7257,24 @@
                  (lambda (value)
                    (setq fn/current-cpu-usage (string-to-number value))))
                (lambda ()
-                 (cancel-timer fn/cpu-timer)
+                 (setq fn/cpu-timer
+                    (cancel-timer fn/cpu-timer))
+
                  (makunbound 'fn/current-cpu-usage)
                  (message "Error with CPU monitor, shutting it down"))))
 
-           (defvar fn/cpu-timer (run-with-idle-timer 1 t #'fn/record-cpu-usage)
-             "A cpu timer if you ever want to quit it.")))
+           (defvar fn/cpu-timer nil
+             "A cpu timer if you ever want to quit it.")
+
+           (defun fn/start-cpu-monitor ()
+             "Start cpu monitor"
+             (interactive)
+
+             (when (timerp fn/cpu-timer)
+               (cancel-timer fn/cpu-timer))
+
+             (setq fn/cpu-timer
+                (run-with-idle-timer 1 t #'fn/record-cpu-usage)))))
 
        (fn/use-executables memory-check
          (free grep awk)
@@ -7201,12 +7295,25 @@
                  (lambda (value)
                    (setq fn/current-memory-usage (string-to-number value))))
                (lambda ()
-                 (cancel-timer fn/memory-timer)
+                 (setq fn/memory-timer
+                    (cancel-timer fn/memory-timer))
+
                  (makunbound 'fn/current-memory-usage)
                  (message "Error with RAM monitor, shutting it down"))))
 
-           (defvar fn/memory-timer (run-with-idle-timer 1 t #'fn/record-memory-usage)
-             "A memory timer.")))
+           (defvar fn/memory-timer nil
+             "A memory timer.")
+
+           (defun fn/start-memory-monitor ()
+             "Start memory monitor."
+             (interactive)
+             (when (timerp fn/memory-timer)
+               (cancel-timer fn/memory-timer))
+
+             (setq fn/memory-timer
+                (run-with-idle-timer 1 t #'fn/record-memory-usage)))
+
+           (fn/start-memory-monitor)))
 
        (fn/use-executables battery-check
          (acpi awk)
@@ -7227,12 +7334,25 @@
                  (lambda (value)
                    (setq fn/current-battery-usage (string-to-number value))))
                (lambda ()
-                 (cancel-timer fn/battery-timer)
+                 (setq fn/battery-timer
+                    (cancel-timer fn/battery-timer))
+
                  (makunbound 'fn/current-battery-usage)
                  (message "Error with Battery monitor, shutting it down"))))
 
-           (defvar fn/battery-timer (run-with-idle-timer 1 t #'fn/record-battery-usage)
-             "A battery timer."))))
+           (defvar fn/battery-timer nil
+             "A battery timer.")
+
+           (defun fn/start-battery-monitor ()
+             "Start the battery monitor."
+             (interactive)
+             (when (timerp fn/battery-timer)
+               (cancel-timer fn/battery-timer))
+
+             (setq fn/battery-timer
+                (run-with-idle-timer 1 t #'fn/record-battery-usage)))
+
+           (fn/start-battery-monitor))))
    #+END_SRC
 
 ** starup and shutdown hook
