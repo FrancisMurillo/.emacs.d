@@ -4147,6 +4147,22 @@
         :defer t)
     #+END_SRC
 
+*** evalator
+    Expression building.
+
+    #+BEGIN_SRC emacs-lisp :block-id d7cad15b-578c-ac0c-b468-060442a5550a
+      (use-package evalator
+        :ensure t
+        :defer t
+        :bind (:map fn-standard-prefix-map
+                    ("C-e e" . evalator)
+                    ("C-e x" . evalator-explicit)
+                    ("C-e r" . evalator-resume)
+                    ("C-e i" . evalator-insert-equiv-expr))
+        :config
+        nil)
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -5093,19 +5109,33 @@
     The major mode
 
     #+BEGIN_SRC emacs-lisp :block-id 8bfb19ba-f64b-82e3-f65f-a4a152320f8a
-      (use-package clojure-mode
-        :ensure t
-        :mode (("\\.clj\\'" . clojure-mode))
-        :config
-        (fn/use-feature clojure-mode--mode-icon
-          (all-the-icons)
-          (fn/add-major-mode-icon
-           'clojure-mode
-           (list 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
+      (fn/use-executables clojure-check
+        (clojure lein)
+        (use-package clojure-mode
+          :ensure t
+          :mode (("\\.clj\\'" . clojure-mode))
+          :config
+
+          (fn/use-feature clojure-mode--mode-icon
+            (all-the-icons)
+            (fn/add-major-mode-icon
+             'clojure-mode
+             (list 'all-the-icons-fileicon "scheme" :v-adjust 0.0)))))
 
       (use-package clojure-mode-extra-font-locking
         :ensure t
         :after clojure-mode)
+    #+END_SRC
+
+*** Linter
+    Linter for clojure
+
+    #+BEGIN_SRC emacs-lisp :block-id 210b464a-e318-1597-a81a-8269f9e10187
+      (use-package flycheck-clojure
+        :ensure t
+        :after clojure-mode
+        :config
+        (flycheck-clojure-setup))
     #+END_SRC
 
 *** REPL
@@ -5114,7 +5144,16 @@
     #+BEGIN_SRC emacs-lisp :block-id d3120ff7-28c7-215f-f0bc-d6ac6fa94a1a
       (use-package cider
         :ensure t
-        :after clojure-mode)
+        :defer t
+        :after clojure-mode
+        :config
+        (fn/use-feature cider-repl-paredit
+          (cider paredit)
+          (add-hook 'cider-repl-mode-hook 'paredit-mode))
+
+        (fn/use-feature cider-repl-eldoc
+          (cider eldoc)
+          (add-hook 'cider-repl-mode-hook #'cider-eldoc-setup)))
     #+END_SRC
 
 *** Integration
@@ -5123,7 +5162,61 @@
     #+BEGIN_SRC emacs-lisp :block-id 0afcc21c-7f56-fca5-0eba-fc5d4272e54f
       (use-package clomacs
         :ensure t
+        :defer t
         :after clojure-mode)
+    #+END_SRC
+
+*** Literate
+    Literacy for Clojure
+
+    #+BEGIN_SRC emacs-lisp :block-id 1df9ed0f-b6a9-bbf7-cd14-c0d8c2685669
+      (unless noninteractive
+        (fn/use-feature org-haskell
+          (clojure-mode cider org)
+
+          (defcustom fn/org-clojure-mode-hook nil
+            "Hook when org babel clojure block is opened."
+            :type 'hook)
+
+          (defun fn/org-clojure-buffer-p ()
+            "Check if buffer is an org  buffer predicate."
+            (and (org-src-edit-buffer-p)
+                     (eq major-mode 'clojure-mode)))
+
+          (defun fn/org-clojure-buffer ()
+            "Run hooks when the buffer is an org clojure buffer."
+            (when (fn/org-clojure-buffer-p)
+              (run-hooks 'fn/org-clojure-mode-hook)))
+
+
+          (defun fn/org-clojure-repl-start ()
+            "Start a REPL with no questions asked."
+            (unless (cider-connected-p)
+              "Starting REPL"
+              (cider-jack-in)))
+
+          (defun fn/org-clojure-repl-eval-buffer (&rest args)
+            "Eval buffer with the REPL."
+            (when (and (fn/org-clojure-buffer-p)
+                     (cider-connected-p))
+              (save-window-excursion
+                (switch-to-buffer (cider-current-repl-buffer))
+
+                (with-current-buffer (cider-current-repl-buffer)
+                  (cider-repl-clear-buffer)))
+              (cider-eval-buffer)
+
+              (message "REPL updated.")))
+
+          (defun fn/org-clojure-send-buffer-on-save ()
+            "On save, send the current buffer to the REPL it has."
+            (add-hook 'after-save-hook #'fn/org-clojure-repl-eval-buffer t t))
+
+          (add-hook 'org-src-mode-hook #'fn/org-clojure-buffer t)
+
+          (add-hook 'fn/org-clojure-mode-hook #'fn/org-clojure-repl-start t)
+
+          (advice-add 'org-edit-src-save :after #'fn/org-clojure-repl-eval-buffer)))
     #+END_SRC
 
 ** C
