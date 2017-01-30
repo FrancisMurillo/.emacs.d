@@ -5616,26 +5616,30 @@
 
          (setq w3m-command-arguments (list))
 
-         ;; HTTP Proxy
+         ;; Polipo Tor Secure Browsing
          (fn/use-executables w3m-polipo-tor
-           (tor polipo w3m)
-           (defcustom fn/w3m-use-polipo-proxy 'nothing
+           (w3m tor polipo)
+           (defcustom fn/w3m-use-polipo-tor-proxy 'nothing
              "Check if a polipo proxy should be used.")
 
-           (when (eq fn/w3m-use-polipo-proxy
-                     (default-value 'fn/w3m-use-polipo-proxy))
-             (setq fn/w3m-use-polipo-proxy (yes-or-no-p "Use polipo in browsing? "))
+           (when (eq fn/w3m-use-polipo-tor-proxy
+                     (default-value 'fn/w3m-use-polipo-tor-proxy))
+             (setq fn/w3m-use-polipo-tor-proxy (yes-or-no-p "Use polipo and tor in browsing? ")))
 
-             (with-eval-after-load 'savehist
-               (add-to-list 'savehist-additional-variables 'fn/w3m-use-polipo-proxy)))
-
-           (when fn/w3m-use-polipo-proxy
+           (when fn/w3m-use-polipo-tor-proxy
              (defconst fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
                "Polipo cache directory.")
 
+             (defconst fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
+               "Tor cache directory.")
+
+
              (make-directory fn/w3m-polipo-cache-dir t)
 
-             (defcustom fn/w3m-tor-port 9050
+             (make-directory fn/w3m-tor-cache-dir t)
+
+
+             (defcustom fn/w3m-tor-port 18050
                "Tor port")
 
              (defcustom fn/w3m-polipo-port 18123
@@ -5644,8 +5648,13 @@
              (defvar fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
                "Polipo configuration.")
 
-             (defun fn/w3m-polipo-update-conf ()
-               "Create/update `fn/w3m-polipo-conf-file' with new configurations."
+             (defvar fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
+               "Tor configuration.")
+
+
+             (defun fn/w3m-polipo-tor-update-conf ()
+               "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
+               (interactive)
                (with-temp-file fn/w3m-polipo-conf-file
                  (insert
                   (string-join
@@ -5669,6 +5678,26 @@
                       ("socksProxyType" . socks5)))
                    "\n")))
 
+               (with-temp-file fn/w3m-tor-conf-file
+                 (insert
+                  (string-join
+                   (mapcar
+                    (lambda (pair)
+                      (pcase-let ((`(,key . ,value) pair))
+                        (format
+                         "%s %s"
+                         key
+                         (typecase value
+                           (symbolp (symbol-name value))
+                           (numberp (number-to-string value))
+                           (stringp value)))))
+                    `(("SocksPort" . 18050)
+                      ("DataDirectory" . ,fn/w3m-tor-cache-dir)
+                      ("ControlPort" . ,(1+ fn/w3m-tor-port))
+                      ("DisableDebuggerAttachment" . 0)))
+                   "\n")))
+
+
                (setq w3m-command-arguments
                   (cl-remove-if (lambda (value)
                                   (or
@@ -5676,41 +5705,51 @@
                                    (string= "-o" value)))
                                 w3m-command-arguments))
 
+               (setq w3m-command-arguments
+                  (append w3m-command-arguments
+                          (list "-o"
+                             (format
+                              "http_proxy=https://127.0.0.1:%s/"
+                              (number-to-string fn/w3m-polipo-port))))))
 
-               (add-to-list 'w3m-command-arguments
-                            "-o" t)
+             (fn/w3m-polipo-tor-update-conf)
 
-               (add-to-list 'w3m-command-arguments
-                            (format
-                             "http_proxy=https://127.0.0.1:%s/"
-                             (number-to-string fn/w3m-polipo-port))
-                            t))
-
-             (fn/w3m-polipo-update-conf)
 
              (defvar fn/w3m-polipo-process nil
                "Polipo process.")
 
-             (setq fn/w3m-polipo-process nil)
+             (defvar fn/w3m-tor-process nil
+               "Tor process.")
 
-             (defun fn/w3m-polipo-start-process (&rest args)
+
+             (defun fn/w3m-polipo-tor-start-process (&rest args)
                "Start `fn/w3m-polipo-process'."
-               (fn/w3m-polipo-kill-process)
+               (interactive)
+               (unless (process-live-p fn/w3m-tor-process)
+                 (message "Starting tor process.")
+                 (setq fn/w3m-tor-process
+                    (start-process "w3m-tor" "*w3m-tor*" "tor" "-f" fn/w3m-tor-conf-file)))
 
-               (message "Starting polipo process.")
-               (setq fn/w3m-polipo-process
-                  (start-process "w3m-polipo-tor" "*w3m-polipo-tor*" "polipo" "-c" fn/w3m-polipo-conf-file)))
+               (unless (process-live-p fn/w3m-polipo-process)
+                 (message "Starting polipo process.")
+                 (setq fn/w3m-polipo-process
+                    (start-process "w3m-polipo" "*w3m-polipo*" "polipo" "-c" fn/w3m-polipo-conf-file))))
 
-             (defun fn/w3m-polipo-kill-process (&rest args)
+             (defun fn/w3m-polipo-tor-kill-process (&rest args)
                "Kill `fn/w3m-polipo-process'."
+               (interactive)
                (when (process-live-p fn/w3m-polipo-process)
+                 (message "Killing polipo process")
                  (kill-process fn/w3m-polipo-process))
 
-               (setq fn/w3m-polipo-process nil))
+               (when (process-live-p fn/w3m-tor-process)
+                 (message "Killing tor process")
+                 (kill-process fn/w3m-tor-process))
 
-             (add-hook 'w3m-mode-hook #'fn/w3m-polipo-start-process)
-             (advice-add 'w3m-quit :after #'fn/w3m-polipo-kill-process)
+               (setq fn/w3m-polipo-process nil
+                  fn/w3m-tor-process nil))
 
+             (fn/w3m-polipo-tor-start-process)
 
              (add-to-list 'w3m-no-proxy-domains "127.0.0.1")))
 
