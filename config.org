@@ -5712,7 +5712,6 @@
              (advice-add 'w3m-quit :after #'fn/w3m-polipo-kill-process)
 
 
-             (add-to-list 'w3m-no-proxy-domains "localhost")
              (add-to-list 'w3m-no-proxy-domains "127.0.0.1")))
 
 
