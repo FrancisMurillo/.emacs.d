@@ -9,4 +9,3 @@
 # Block for emacs
 -.#*
 -*.elc
--/target

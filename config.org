@@ -193,6 +193,16 @@
      (make-directory fn/font-dir t)
 
 
+     (defconst fn/conf-dir-name "conf"
+       "Config dependencies directory")
+
+     (defconst fn/conf-dir (expand-file-name fn/conf-dir-name fn/system-dir)
+       "External conf directory.")
+
+     (make-directory fn/conf-dir t)
+
+
+
      (defconst fn/extra-dir-name "extra"
        "Anything under the sun you can put here")
 
@@ -658,7 +668,7 @@
    #+BEGIN_SRC emacs-lisp :block-id ad0dfafc-912b-1abc-12bb-fa6c5bbea607
      (defconst fn/exec-path-from-shell-package-dir
        (expand-file-name "exec-path-from-shell/" fn/custom-module-dir)
-       "Htmlize package dir")
+       "Exec package dir")
 
      (use-package exec-path-from-shell
        :ensure t
@@ -676,6 +686,19 @@
            "-l" "-i"))
 
        (exec-path-from-shell-initialize))
+   #+END_SRC
+
+** htmlize
+   My custom library for exporting.
+
+   #+BEGIN_SRC emacs-lisp :block-id b05ead3c-6bc6-be20-949f-da7437b935b4
+     (defconst fn/htmlize-package-dir
+       (expand-file-name "htmlize/" fn/custom-module-dir)
+       "Htmlize package dir")
+
+     (use-package htmlize
+       :load-path fn/htmlize-package-dir
+       :defer t)
    #+END_SRC
 
 ** log4e
@@ -998,6 +1021,10 @@
 
     (fn/use-executables downloader-check
       (wget curl rsync)
+      nil)
+
+    (fn/use-executables secure-check
+      (tor polipo)
       nil)
 
     (fn/use-executables browser-check
@@ -5151,9 +5178,20 @@
           (cider paredit)
           (add-hook 'cider-repl-mode-hook 'paredit-mode))
 
+        (fn/use-feature cider-repl-mode--mode-icon
+          (cider all-the-icons)
+          (fn/add-major-mode-icon
+           'cider-repl-mode
+           (list 'all-the-icons-fileicon "clisp" :v-adjust 0.0)))
+
         (fn/use-feature cider-repl-eldoc
           (cider eldoc)
-          (add-hook 'cider-repl-mode-hook #'cider-eldoc-setup)))
+          (add-hook 'cider-repl-mode-hook #'cider-eldoc-setup))
+
+
+        (setq cider-cljs-lein-repl
+           "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))")
+        (define-key cider-repl-mode-map (kbd "C-j") #'cider-repl-newline-and-indent))
     #+END_SRC
 
 *** Integration
@@ -5576,6 +5614,108 @@
             w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
 
 
+         (setq w3m-command-arguments (list))
+
+         ;; HTTP Proxy
+         (fn/use-executables w3m-polipo-tor
+           (tor polipo w3m)
+           (defcustom fn/w3m-use-polipo-proxy 'nothing
+             "Check if a polipo proxy should be used.")
+
+           (when (eq fn/w3m-use-polipo-proxy
+                     (default-value 'fn/w3m-use-polipo-proxy))
+             (setq fn/w3m-use-polipo-proxy (yes-or-no-p "Use polipo in browsing? "))
+
+             (with-eval-after-load 'savehist
+               (add-to-list 'savehist-additional-variables 'fn/w3m-use-polipo-proxy)))
+
+           (when fn/w3m-use-polipo-proxy
+             (defconst fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
+               "Polipo cache directory.")
+
+             (make-directory fn/w3m-polipo-cache-dir t)
+
+             (defcustom fn/w3m-tor-port 9050
+               "Tor port")
+
+             (defcustom fn/w3m-polipo-port 18123
+               "Polipo port")
+
+             (defvar fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
+               "Polipo configuration.")
+
+             (defun fn/w3m-polipo-update-conf ()
+               "Create/update `fn/w3m-polipo-conf-file' with new configurations."
+               (with-temp-file fn/w3m-polipo-conf-file
+                 (insert
+                  (string-join
+                   (mapcar
+                    (lambda (pair)
+                      (pcase-let ((`(,key . ,value) pair))
+                        (format
+                         "%s = %s"
+                         key
+                         (typecase value
+                           (symbolp (symbol-name value))
+                           (numberp (number-to-string value))
+                           (stringp (format "\"%s\"" value))))))
+                    `(("proxyAddress" . "0.0.0.0")
+                      ("allowedClients" . "127.0.0.1")
+                      ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
+                      ("proxyPort" . ,fn/w3m-polipo-port)
+                      ("cacheIsShared" . false)
+                      ("socksParentProxy" .
+                       ,(format "%s:%s" "localhost" (number-to-string fn/w3m-tor-port)))
+                      ("socksProxyType" . socks5)))
+                   "\n")))
+
+               (setq w3m-command-arguments
+                  (cl-remove-if (lambda (value)
+                                  (or
+                                   (string-prefix-p "http_proxy=https://127.0.0.1:" value)
+                                   (string= "-o" value)))
+                                w3m-command-arguments))
+
+
+               (add-to-list 'w3m-command-arguments
+                            "-o" t)
+
+               (add-to-list 'w3m-command-arguments
+                            (format
+                             "http_proxy=https://127.0.0.1:%s/"
+                             (number-to-string fn/w3m-polipo-port))
+                            t))
+
+             (fn/w3m-polipo-update-conf)
+
+             (defvar fn/w3m-polipo-process nil
+               "Polipo process.")
+
+             (setq fn/w3m-polipo-process nil)
+
+             (defun fn/w3m-polipo-start-process (&rest args)
+               "Start `fn/w3m-polipo-process'."
+               (fn/w3m-polipo-kill-process)
+
+               (message "Starting polipo process.")
+               (setq fn/w3m-polipo-process
+                  (start-process "w3m-polipo-tor" "*w3m-polipo-tor*" "polipo" "-c" fn/w3m-polipo-conf-file)))
+
+             (defun fn/w3m-polipo-kill-process (&rest args)
+               "Kill `fn/w3m-polipo-process'."
+               (when (process-live-p fn/w3m-polipo-process)
+                 (kill-process fn/w3m-polipo-process))
+
+               (setq fn/w3m-polipo-process nil))
+
+             (add-hook 'w3m-mode-hook #'fn/w3m-polipo-start-process)
+             (advice-add 'w3m-quit :after #'fn/w3m-polipo-kill-process)
+
+
+             (add-to-list 'w3m-no-proxy-domains "localhost")
+             (add-to-list 'w3m-no-proxy-domains "127.0.0.1")))
+
+
          ;; Tabs
          (setq w3m-add-tab-number t
             w3m-make-new-session nil
@@ -5620,6 +5760,10 @@
             w3m-bookmark-default-section "Misc")
 
 
+         ;; Proxy
+         (require 'w3m-proc)
+
+
          ;; Conkeror / Lnum
          (require 'w3m-lnum)
 
@@ -5638,7 +5782,7 @@
            :init-value nil
            :global t
            :keymap (make-sparse-keymap)
-           (defun fn/w3m-ignore-all-arrived-url (&rest)
+           (defun fn/w3m-ignore-all-arrived-url (&rest args)
              "Ignore all urls when `fn/w3m-private-mode' is active"
              (and (boundp 'fn/w3m-private-mode)
                 fn/w3m-private-mode))
@@ -5696,14 +5840,14 @@
                      (w3m-message "No video at point")
                    nil)
                (lexical-let ((video-process
-                              (apply #'start-process
-                                     (append
-                                      (list
-                                       (format "%s-%s" "w3m" fn/w3m-video-executable)
-                                       nil
-                                       fn/w3m-video-executable)
-                                      fn/w3m-video-args
-                                      (list url)))))
+                    (apply #'start-process
+                       (append
+                        (list
+                         (format "%s-%s" "w3m" fn/w3m-video-executable)
+                         nil
+                         fn/w3m-video-executable)
+                        fn/w3m-video-args
+                        (list url)))))
                  (with-current-buffer (current-buffer)
                    (fn/w3m-kill-page-process)
 
@@ -5713,10 +5857,10 @@
            "Check if URL is a video."
            (ignore-errors
              (lexical-let* ((pieces (w3m-parse-http-url url))
-                            (host (elt pieces 1))
-                            (path (elt pieces 3)))
+                 (host (elt pieces 1))
+                 (path (elt pieces 3)))
                (if (or (and (string= host "www.youtube.com")
-                            (string-prefix-p "/watch" path)))
+                         (string-prefix-p "/watch" path)))
                    url nil))))
 
          (defun fn/w3m-view-this-video-external (url)
@@ -5724,9 +5868,9 @@
            (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
              (when
                  (and video-url
-                      (yes-or-no-p
-                       (format "%s is a video, view it with %s?"
-                               video-url fn/w3m-video-executable)))
+                    (yes-or-no-p
+                     (format "%s is a video, view it with %s?"
+                             video-url fn/w3m-video-executable)))
                (fn/w3m-view-video))))
 
          (defun fn/w3m-kill-page-process ()
@@ -5734,7 +5878,7 @@
            (interactive)
            (with-current-buffer (current-buffer)
              (when (and (boundp 'fn/w3m-page-process)
-                        (process-live-p fn/w3m-page-process))
+                      (process-live-p fn/w3m-page-process))
                (kill-process fn/w3m-page-process))
 
              (setq-local fn/w3m-page-process nil)))
@@ -5747,7 +5891,7 @@
            "If the page process is a singleton, adjust page container accordingly."
            (when result
              (lexical-let ((this-page (current-buffer))
-                           (active-process nil))
+                 (active-process nil))
                (mapc
                 (lambda (page)
                   (with-current-buffer page
@@ -5792,9 +5936,9 @@
                  fn/w3m-sumy-args
                  (if (string-prefix-p "file://" url)
                      (list "--file"
-                           (concat "\"" (substring-no-properties url (length "file://"))  "\""))
+                        (concat "\"" (substring-no-properties url (length "file://"))  "\""))
                    (list "--url"
-                         (concat "\"" url "\"")))))
+                      (concat "\"" url "\"")))))
                (lambda (summary-output)
                  (lexical-let ((processed-text (string-trim-right summary-output)))
                    (if (string-empty-p processed-text)
@@ -5808,14 +5952,14 @@
            (interactive)
            (when (executable-find fn/w3m-sumy-executable)
              (lexical-let ((fontifier
-                            (lambda (text)
-                              (let ((inhibit-read-only t)
-                                    (new-text
-                                     (string-join
-                                      (split-string (regexp-quote text) " ") "\n*\s*")))
-                                (goto-char (point-min))
-                                (while (re-search-forward new-text nil t)
-                                  (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
+                  (lambda (text)
+                    (let ((inhibit-read-only t)
+                        (new-text
+                         (string-join
+                          (split-string (regexp-quote text) " ") "\n*\s*")))
+                      (goto-char (point-min))
+                      (while (re-search-forward new-text nil t)
+                        (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
                (setq-local fn/w3m-fontify-summary (fn/w3m-summarize-url w3m-current-url))
 
                (with-current-buffer (current-buffer)
@@ -5841,8 +5985,8 @@
          (defun fn/w3m-kill-page-summarizer ()
            "Kill page summarizer."
            (when (and (boundp 'fn/w3m-page-summarizer)
-                      fn/w3m-page-summarizer
-                      (deferred-p fn/w3m-page-summarizer))
+                    fn/w3m-page-summarizer
+                    (deferred-p fn/w3m-page-summarizer))
              (deferred:cancel fn/w3m-page-summarizer))
 
            (setq-local fn/w3m-page-summarizer nil))
@@ -5863,7 +6007,7 @@
                           (/ 30.0)
                           (lambda ()
                             (let ((inhibit-read-only t)
-                                  (increment (- 6 (random 12))))
+                                (increment (- 6 (random 12))))
                               (unless (boundp 'fn/w3m-zone-counter)
                                 (setq-local fn/w3m-zone-counter (+ 20 (random 20))))
                               (setq-local fn/w3m-zone-counter
@@ -5887,7 +6031,7 @@
 
          (defun fn/w3m-cancel-zone-render (&rest args)
            (when (and (boundp 'fn/w3m-zone-timer)
-                      (timerp fn/w3m-zone-timer))
+                    (timerp fn/w3m-zone-timer))
              (cancel-timer fn/w3m-zone-timer))
            (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
            (setq-local fn/w3m-zone-timer nil))

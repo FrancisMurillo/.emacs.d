@@ -193,7 +193,7 @@
 (defun projin-write-to-project (dsl project)
   "Write compiled DSL to PROJECT."
   (lexical-let* ((compiled-file (expand-file-name projin-compiled-file-name project))
-      (compiled-text (projin-compile dsl)))
+                 (compiled-text (projin-compile dsl)))
     (with-temp-file compiled-file
       (insert compiled-text))
     (message "%s of %s updated" projin-compiled-file-name project)))
@@ -214,10 +214,15 @@
  `(defblock emacs
     (comment "Block for emacs")
     (file ".#*")
-    (file "*.elc")
+    (file "*.elc"))
+ (list))
 
+(projin--dsl-defblock
+ `(defblock lein
+    (comment "Block for lein")
     (root
-     (file "target")))
+     (dir ".cljs*")
+     (dir "target")))
  (list))
 
 
