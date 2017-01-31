@@ -604,6 +604,58 @@
      (use-package f
        :ensure t)
    #+END_SRC
+** promise
+   Something to help with package configuration
+
+   #+BEGIN_SRC emacs-lisp :block-id e0719481-70d9-9187-00c6-a424983cef0e
+     (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-module-dir)
+       "Promise package location")
+
+     (use-package promise
+       :load-path fn/promise-package-dir
+       :demand t
+       :config
+       (defmacro fn/use-function (name function &rest body)
+         (let ((function-name-var (make-symbol "function-name")))
+           `(let ((,function-name-var ,(symbol-name name)))
+              (message "Checking function %s" ,function-name-var)
+              (if (not (fboundp (quote ,function)))
+                  (message "Function does not exist")
+                (message "Loading function %s" ,function-name-var)
+                ,@body
+                (message "Configured function %s" ,function-name-var)))))
+
+       (put 'fn/use-function 'lisp-indent-function 'defun)
+
+
+       (defmacro fn/use-feature (name features &rest body)
+         "The equivalent for `use-package' but for combining features as promises."
+         (let ((now-var (make-symbol "now"))
+             (elapsed-var (make-symbol "elapsed"))
+             (feature-name-var (make-symbol "feature-name")))
+           `(promise-then
+             (apply #'promise-all-features (list ,@(if features
+                                                (mapcar (lambda (feature) (list 'quote feature)) features)
+                                              (list (list 'quote 'use-package)))))
+             (lambda (loaded-features)
+               (let ((,feature-name-var ,(symbol-name name))
+                   (,now-var (current-time)))
+                 (message "Loading feature package %s" ,feature-name-var)
+                 ,@body
+                 (let ((,elapsed-var (float-time (time-subtract (current-time) ,now-var))))
+                   (if (> ,elapsed-var ,use-package-minimum-reported-time)
+                       (message
+                        "Configuring feature package %s ... done (%.3fs)"
+                        ,feature-name-var
+                        ,elapsed-var)
+                     (message
+                      "Configuring feature package %s... done"
+                      ,feature-name-var))
+                   nil))))))
+
+       (put 'fn/use-feature 'lisp-indent-function 'defun)
+     )
+   #+END_SRC
 
 ** unicode-fonts
    Unicode is an required aesthetic
@@ -708,6 +760,7 @@
      (unless noninteractive
        (use-package log4e
          :ensure t
+         :demand t
          :config
          (log4e:deflogger
            "chat"
@@ -820,58 +873,6 @@
        :config
        (auto-compile-on-load-mode)
        (auto-compile-on-save-mode))
-   #+END_SRC
-** promise
-   Something to help with package configuration
-
-   #+BEGIN_SRC emacs-lisp :block-id e0719481-70d9-9187-00c6-a424983cef0e
-     (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-module-dir)
-       "Promise package location")
-
-     (use-package promise
-       :load-path fn/promise-package-dir
-       :demand t
-       :config
-       (defmacro fn/use-function (name function &rest body)
-         (let ((function-name-var (make-symbol "function-name")))
-           `(let ((,function-name-var ,(symbol-name name)))
-              (message "Checking function %s" ,function-name-var)
-              (if (not (fboundp (quote ,function)))
-                  (message "Function does not exist")
-                (message "Loading function %s" ,function-name-var)
-                ,@body
-                (message "Configured function %s" ,function-name-var)))))
-
-       (put 'fn/use-function 'lisp-indent-function 'defun)
-
-
-       (defmacro fn/use-feature (name features &rest body)
-         "The equivalent for `use-package' but for combining features as promises."
-         (let ((now-var (make-symbol "now"))
-             (elapsed-var (make-symbol "elapsed"))
-             (feature-name-var (make-symbol "feature-name")))
-           `(promise-then
-             (apply #'promise-all-features (list ,@(if features
-                                                (mapcar (lambda (feature) (list 'quote feature)) features)
-                                              (list (list 'quote 'use-package)))))
-             (lambda (loaded-features)
-               (let ((,feature-name-var ,(symbol-name name))
-                   (,now-var (current-time)))
-                 (message "Loading feature package %s" ,feature-name-var)
-                 ,@body
-                 (let ((,elapsed-var (float-time (time-subtract (current-time) ,now-var))))
-                   (if (> ,elapsed-var ,use-package-minimum-reported-time)
-                       (message
-                        "Configuring feature package %s ... done (%.3fs)"
-                        ,feature-name-var
-                        ,elapsed-var)
-                     (message
-                      "Configuring feature package %s... done"
-                      ,feature-name-var))
-                   nil))))))
-
-       (put 'fn/use-feature 'lisp-indent-function 'defun)
-     )
    #+END_SRC
 
 ** all-the-icons
@@ -2893,7 +2894,7 @@
        (use-package alert
          :load-path fn/alert-package-dir
          :defer t
-         :commands alert
+         :commands (alert fn/alert-color)
          :config
          (setq alert-default-style 'libnotify
             alert-log-messages t)
@@ -2906,7 +2907,32 @@
              (error "No alert logs yet")))
 
          ;; HACK: Bug #30 in alert to allow default style override
-         (alert-add-rule)))
+         (alert-add-rule)
+
+         (defun* fn/alert-color (message &rest args &key color)
+           "A custom alert that focuses on defining a fringe with COLOR key
+     with a hex value."
+           (lexical-let* ((hex-color (replace-regexp-in-string "#" "" color))
+               (hex-symbol-name (format "alert-color--%s" hex-color))
+               (hex-symbol (or (intern-soft hex-symbol-name)
+                              (intern hex-symbol-name))))
+
+             (unless (cdr (assoc hex-symbol alert-log-severity-functions))
+               (add-to-list 'alert-log-severity-functions
+                            (cons hex-symbol #'alert--log-trace)))
+
+             (unless (cdr (assoc hex-symbol alert-severity-colors))
+               (add-to-list 'alert-severity-colors (cons hex-symbol color)))
+
+             (lexical-let ((color-properties
+                  (list
+                   :style 'fringe
+                   :severity hex-symbol)))
+               (apply #'alert
+                  (append
+                   (list message)
+                   color-properties
+                   (org-plist-delete args :color))))))))
    #+END_SRC
 
 ** epa
@@ -5801,6 +5827,8 @@
          (add-to-list 'w3m-search-engine-alist
                       (list "duckduckgo" "https://duckduckgo.com?q=%s"))
          (add-to-list 'w3m-search-engine-alist
+                      (list "youtube" "https://www.youtube.com/results?search_query=%s"))
+         (add-to-list 'w3m-search-engine-alist
                       (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
 
 
@@ -6173,6 +6201,7 @@
            :type 'list)
 
          (add-to-list 'fn/w3m-exclude-ignore-search-engine "wikipedia")
+         (add-to-list 'fn/w3m-exclude-ignore-search-engine "youtube")
 
 
          (defun fn/w3m-ignore-search-engine-pages (url &rest args)
@@ -6356,15 +6385,6 @@
        (fn/use-feature erc-message-alert
          (alert)
          (require 's)
-
-         (defconst fn/erc-notify-severity 'erc
-           "My erc notify severity.")
-
-         (add-to-list 'alert-log-severity-functions
-                      (cons fn/erc-notify-severity #'alert--log-trace))
-         (add-to-list 'alert-severity-colors
-                      (cons fn/erc-notify-severity "#3d57b1"))
-
          (defun fn/erc-notice-p (message)
            "Check if MESSAGE is a notice."
            (s-starts-with-p erc-notice-prefix message))
@@ -6395,10 +6415,9 @@
                      (channel (substring-no-properties (erc-default-target) 1))
                      (chatter (fn/erc-get-sender-name raw-message))
                      (base-message (fn/erc-get-message raw-message)))
-                   (alert (fn/chat-log server channel chatter base-message)
-                          :category 'erc
-                          :style 'fringe
-                          :severity fn/erc-notify-severity))))))
+                   (fn/alert-color (fn/chat-log server channel chatter base-message)
+                                   :color  "#3d57b1"
+                                   :category 'erc))))))
 
          (add-hook 'erc-insert-pre-hook #'fn/erc-message-alert))
 
@@ -6476,14 +6495,6 @@
 
        (fn/use-feature jabber-alert-custom
          (alert)
-         (defconst fn/jabber-notify-severity 'jabber
-           "My jabber notify severity.")
-
-         (add-to-list 'alert-log-severity-functions
-                      (cons fn/jabber-notify-severity #'alert--log-trace))
-         (add-to-list 'alert-severity-colors
-                      (cons fn/jabber-notify-severity "#abb2e1"))
-
          (defconst fn/jabber-google
            (format "%s%s%s%s%s%s"
                    (propertize "g" 'face '(:foreground "#4285f4"))
@@ -6497,10 +6508,10 @@
          (defun fn/jabber-message-notify (from buffer text title)
            "Just a small unobtrusive notifcation"
            (let ((chatter (cdr (assoc from jabber-activity-name-alist))))
-             (alert (fn/chat-log fn/jabber-google user-mail-address chatter text)
-                    :category 'jabber
-                    :style 'fringe
-                    :severity fn/jabber-notify-severity)))
+             (fn/alert-color
+              (fn/chat-log fn/jabber-google user-mail-address chatter text)
+              :color "#abb2e1"
+              :category 'jabber)))
 
          (add-hook 'jabber-alert-message-hooks #'fn/jabber-message-notify))
 
@@ -6545,14 +6556,6 @@
 
        (fn/use-feature slack-custom-alert
          (alert)
-         (defconst fn/slack-notify-severity 'slack
-           "My slack notify severity.")
-
-         (add-to-list 'alert-log-severity-functions
-                      (cons fn/slack-notify-severity #'alert--log-trace))
-         (add-to-list 'alert-severity-colors
-                      (cons fn/slack-notify-severity "#3a417a"))
-
          (defun fn/slack-message-custom-notifier (message room team)
            "My custom notication for slack given MESSAGE, ROOM and TEAM.
      What I do is use the fringe to notify me instead of `libnotify'."
@@ -6561,10 +6564,9 @@
                (text (slack-message-to-alert message team))
                (user-name (slack-message-sender-name message team))
                (out (fn/chat-log team-name room-name user-name text)))
-             (alert out
+             (fn/alert-color out
                     :category 'phackers
-                    :style 'fringe
-                    :severity fn/slack-notify-severity)))
+                    :color "#3a417a")))
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
 
