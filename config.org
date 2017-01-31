@@ -5672,8 +5672,23 @@
                     ("proxyPort" . ,fn/w3m-polipo-port)
                     ("cacheIsShared" . false)
                     ("socksParentProxy" .
-                     ,(format "%s:%s" "localhost" (number-to-string fn/w3m-tor-port)))
-                    ("socksProxyType" . socks5)))
+                     ,(format "%s:%s" "localhost" fn/w3m-tor-port))
+                    ("socksProxyType" . socks5)
+
+                    ("relaxTransparency" . true)
+
+                    ;; Optional Security Setting
+                    ("localDocumentRoot" . "")
+                    ("disableLocalInterface" . true)
+                    ("disableConfiguration" . true)
+                    ("dnsUseGethostbyname" . yes)
+                    ("disableVia" . true)
+                    ("censorReferer" . maybe)
+                    ("maxConnectionAge" . 5m)
+                    ("maxConnectionRequests" . 120)
+                    ("serverMaxSlots" . 8)
+                    ("serverSlots" . 2)
+                    ))
                  "\n")))
 
              (with-temp-file fn/w3m-tor-conf-file
@@ -5690,25 +5705,8 @@
                          (numberp (number-to-string value))
                          (stringp value)))))
                   `(("SocksPort" . ,fn/w3m-tor-port)
-                    ("DataDirectory" . ,fn/w3m-tor-cache-dir)
-                    ("ControlPort" . ,(1+ fn/w3m-tor-port))
-                    ("DisableDebuggerAttachment" . 0)))
-                 "\n")))
-
-
-             (setq w3m-command-arguments
-                   (cl-remove-if (lambda (value)
-                                   (or
-                                    (string-prefix-p "http_proxy=https://127.0.0.1:" value)
-                                    (string= "-o" value)))
-                                 w3m-command-arguments))
-
-             (setq w3m-command-arguments
-                   (append w3m-command-arguments
-                           (list "-o"
-                                 (format
-                                  "http_proxy=https://127.0.0.1:%s/"
-                                  (number-to-string fn/w3m-polipo-port))))))
+                    ("DataDirectory" . ,fn/w3m-tor-cache-dir)))
+                 "\n"))))
 
 
            (defvar fn/w3m-polipo-process nil
@@ -5725,12 +5723,19 @@
                (message "Starting tor process.")
                (fn/w3m-polipo-tor-update-conf)
                (setq fn/w3m-tor-process
-                     (start-process "w3m-tor" "*w3m-tor*" "tor" "-f" fn/w3m-tor-conf-file)))
+                  (start-process "w3m-tor" "*w3m-tor*" "tor" "-f" fn/w3m-tor-conf-file)))
 
              (unless (process-live-p fn/w3m-polipo-process)
                (message "Starting polipo process.")
                (setq fn/w3m-polipo-process
-                     (start-process "w3m-polipo" "*w3m-polipo*" "polipo" "-c" fn/w3m-polipo-conf-file))))
+                  (start-process "w3m-polipo" "*w3m-polipo*" "polipo" "-c" fn/w3m-polipo-conf-file)))
+
+             (setq w3m-command-arguments
+                (append w3m-command-arguments
+                        (list "-o"
+                           (format
+                            "http_proxy=https://127.0.0.1:%s/"
+                            fn/w3m-polipo-port)))))
 
            (defun fn/w3m-polipo-tor-kill-process (&rest args)
              "Kill `fn/w3m-polipo-process'."
@@ -5744,7 +5749,19 @@
                (kill-process fn/w3m-tor-process))
 
              (setq fn/w3m-polipo-process nil
-                fn/w3m-tor-process nil))
+                fn/w3m-tor-process nil)
+
+             (setq w3m-command-arguments ;; Remove added http_proxy arguments
+                (cl-reduce  ;; I wish this could be easier
+                 (lambda (val xs)
+                   (if (and (string= "-o" val)
+                          (string-prefix-p "http_proxy=https://127.0.0.1:"
+                                           (or (car xs) "")))
+                       (cdr xs)
+                     (cons val xs)))
+                 w3m-command-arguments
+                 :from-end t
+                 :initial-value (list))))
 
            (add-hook 'kill-emacs-hook #'fn/w3m-polipo-tor-kill-process)
 
@@ -5780,32 +5797,11 @@
 
          (setq w3m-search-default-engine "duckduckgo")
 
-         (defun fn/w3m-ignore-arrived-add-url (orig-fun &rest args)
-           "Check whether to save the url using `fn/w3m-ignore-arrived-url-functions' as basis.
-     Each function predicate takes is the same arguments as `w3m-arrived-add'
-     Good for privacy and cleanliness."
-           (if (not (apply #'run-hook-with-args-until-success
-                           (append
-                            (list 'fn/w3m-ignore-arrived-url-functions)
-                            args)))
-               (apply orig-fun args)
-             (message "Not saving arrived url %s" (car args))
-             nil))
-
-         (advice-add 'w3m-arrived-add :around #'fn/w3m-ignore-arrived-add-url)
-
 
          (add-to-list 'w3m-search-engine-alist
                       (list "duckduckgo" "https://duckduckgo.com?q=%s"))
          (add-to-list 'w3m-search-engine-alist
                       (list "wikipedia" "http://en.wikipedia.org/wiki/Special:Search?search=%s"))
-
-
-         ;; Bookmarking
-         (require 'w3m-bookmark)
-
-         (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/setting-dir)
-               w3m-bookmark-default-section "Misc")
 
 
          ;; Proxy
@@ -5822,7 +5818,25 @@
          (require 'w3m-hist)
 
          (setq w3m-history-reuse-history-elements t
-               w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir))
+            w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir)
+            w3m-arrived-db-size 2000
+            w3m-keep-cache-size 1500)
+
+
+         (defun fn/w3m-ignore-arrived-add-url (orig-fun &rest args)
+           "Check whether to save the url using `fn/w3m-ignore-arrived-url-functions' as basis.
+     Each function predicate takes is the same arguments as `w3m-arrived-add'
+     Good for privacy and cleanliness."
+           (if (not (apply #'run-hook-with-args-until-success
+                           (append
+                            (list 'fn/w3m-ignore-arrived-url-functions)
+                            args)))
+               (apply orig-fun args)
+             (message "Not saving arrived url %s" (car args))
+             nil))
+
+         (advice-add 'w3m-arrived-add :around #'fn/w3m-ignore-arrived-add-url)
+
 
          (define-minor-mode fn/w3m-private-mode
            "A simple minor mode to indicate private browsing in `w3m'."
@@ -5852,7 +5866,115 @@
                "There was an error parsing with fn/w3m-ignore-arrived-host: %s"
                (error-message-string error)))))
 
+         (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-search-engine-pages)
          (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-arrived-host)
+
+
+         ;; Bookmarking
+         (require 'w3m-bookmark)
+
+         (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/setting-dir)
+            w3m-bookmark-default-section "Misc")
+
+
+         (defcustom fn/w3m-auto-bookmark-check-functions (list)
+           "Functions that check if a function should be auto-bookmarked.
+     Each function takes the same arguments as `w3m-arrived-add' and
+     returns non-nil when the url is bookmarked."
+           :type 'hook)
+
+         (defcustom fn/w3m-auto-bookmark-handler-functions (list)
+           "Functions that handle how a url should be bookmarked.
+     Each function takes the same arguments as `w3m-arrived-add' and
+     returns a cons pair where the car is the section and cdr the title
+     if it handles it. "
+           :type 'hook)
+
+
+         (defvar fn/w3m-url-visit-table (make-hash-table :test 'equal)
+           "Record the number of times an url is visited.")
+
+         (defcustom fn/w3m-auto-bookmark-frequent-visit-count 3
+           "Number of times a site should be visited before being bookmarked.")
+
+         (defun fn/w3m-auto-bookmark-frequently-visited (url title)
+           "Check if url is visited frequently enough."
+           (when (eq (gethash url fn/w3m-url-visit-table 'nothing) 'nothing)
+             (puthash url 0 fn/w3m-url-visit-table))
+
+           (lexical-let ((counter (gethash url fn/w3m-url-visit-table)))
+             (unless (/= -1 counter)
+               (puthash url (1+ ) fn/w3m-url-visit-table)))
+
+           (lexical-let ((result (>= (gethash url fn/w3m-url-visit-table) fn/w3m-auto-bookmark-frequent-visit-count)))
+             (prog1
+                 result
+               (when result
+                 (puthash url -1 fn/w3m-url-visit-table)))))
+
+         (add-hook 'fn/w3m-auto-bookmark-check-functions #'fn/w3m-auto-bookmark-frequently-visited)
+
+
+         (defcustom fn/w3m-auto-bookmark-host-handlers (list)
+           "Handle bookmarking by its host.
+     This is a list of cons where the car is the host of the url and
+     cdr a function that takes a url and title argument and returns a
+     cons pair as specified by
+     `fn/w3m-auto-bookmark-handler-functions'."
+           :type 'list)
+
+         (defun fn/w3m-auto-bookmark-host-handler (url title)
+           "Handle bookmarking by host as specified `fn/w3m-auto-bookmark-handler'."
+           (lexical-let* ((pieces (w3m-parse-http-url url))
+               (host (elt pieces 1))
+               (host-handler (cdr (assoc host fn/w3m-auto-bookmark-host-handlers))))
+             (if host-handler
+                 (funcall host-handler url title)
+               nil)))
+
+
+         (progn
+           (require 's)
+           (add-to-list 'fn/w3m-auto-bookmark-host-handlers
+                        (cons "github.com"
+                           (lambda (url title)
+                             (cons "Github"
+                                (cadr
+                                 (s-match "GitHub - \\(.*\\): .*"
+                                          title)))))))
+
+         (add-hook 'fn/w3m-auto-bookmark-handler-functions 'fn/w3m-auto-bookmark-host-handler)
+
+         (defun fn/w3m-bookmarked-p (url)
+           "Check if URL is already bookmarked."
+           (with-current-buffer (find-file-noselect w3m-bookmark-file)
+             (goto-char (point-min))
+             (search-forward url nil t)))
+
+         (defun fn/w3m-auto-bookmark-arrived-url ()
+           "Check whether to auto bookmark a page."
+           (when (w3m-arrived-get url 'title) ;; Check if url is not private
+             (lexical-let* ((url w3m-current-url)
+                 (title w3m-current-title))
+               (when (and (not (fn/w3m-bookmarked-p url))
+                        (run-hook-with-args-until-success
+                         'fn/w3m-auto-bookmark-check-functions
+                         url title))
+                 (lexical-let ((pair (run-hook-with-args-until-success
+                            'fn/w3m-auto-bookmark-handler-functions
+                            url title)))
+                   (when (and pair (consp pair))
+                     (pcase-let ((`(,section . ,title) pair))
+                       (when (yes-or-no-p
+                              (format "Bookmark %s on %s as %s? " url section title ))
+                         (w3m-bookmark-write-file
+                          url
+                          (w3m-encode-specials-string title)
+                          (w3m-encode-specials-string section))))))))))
+
+
+         (add-hook 'w3m-fontify-after-hook #'fn/w3m-auto-bookmark-arrived-url)
+
 
 
          ;; Persistent Session
@@ -6046,20 +6168,37 @@
      when the page should not be summarized."
            :type 'hook)
 
-         (defun fn/w3m-ignore-search-engine-pages (url)
+         (defcustom fn/w3m-exclude-ignore-search-engine (list)
+           "Exclude search engine from being ignored."
+           :type 'list)
+
+         (add-to-list 'fn/w3m-exclude-ignore-search-engine "wikipedia")
+
+
+         (defun fn/w3m-ignore-search-engine-pages (url &rest args)
            "Ignore search engine pages as defined by `w3m-search-engine-alist'."
            (ignore-errors ;; Ignore special urls such as //:about or whatnot
              (lexical-let* ((url-parts (w3m-parse-http-url url))
                  (url-host (elt url-parts 1)))
                (cl-some
                 (lambda (pair)
-                  (pcase-let ((`(,_ ,search-url) pair))
+                  (pcase-let ((`(,name ,search-url) pair))
                     (lexical-let* ((search-parts (w3m-parse-http-url search-url))
                         (search-host (elt search-parts 1)))
-                      (string= search-host url-host))))
+                      (and (not (member name fn/w3m-exclude-ignore-search-engine))
+                         (string= search-host url-host)))))
                 w3m-search-engine-alist))))
 
-         (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
+         (defun fn/w3m-ignore-special-pages (url)
+           "Ignore special pages such like `about://'."
+           (pcase url
+             ((pred (string-prefix-p "about://")) t)
+             (_ nil)))
+
+
+         ;; (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
+         (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-special-pages)
+
 
          (defun fn/w3m-summarize-page ()
            "Summarize page using `sumy' by checking `fn/w3m-summarize-ignore-page-functions'."
@@ -6147,6 +6286,7 @@
          (define-key w3m-mode-map (kbd "{") 'w3m-previous-buffer)
          (define-key w3m-mode-map (kbd "}") 'w3m-next-buffer)
 
+
          (unbind-key "<right>" w3m-mode-map)
          (unbind-key "<left>" w3m-mode-map)
 
@@ -6158,6 +6298,9 @@
          (define-key w3m-mode-map (kbd "s") 'w3m-search)
          (define-key w3m-mode-map (kbd "RET") 'w3m-view-this-url)
          (define-key w3m-mode-map (kbd "M-RET") 'w3m-view-this-url-new-session)
+
+
+         (define-key w3m-mode-map (kbd ";") #'fn/w3m-fontify-summary)
 
 
          (fn/use-feature w3m-mode--mode-icon
