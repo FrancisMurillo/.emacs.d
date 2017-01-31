@@ -2641,6 +2641,16 @@
 ** Aesthetic
    Somewhat more aesthetic than functional
 
+*** rainbow-mode
+    Just to view hex quicker.
+
+    #+BEGIN_SRC emacs-lisp :block-id c9b2ccf5-a84f-2315-50f9-9f3b6e6f216a
+      (use-package rainbow-mode
+        :ensure t
+        :defer t
+        :commands (rainbow-mode))
+    #+END_SRC
+
 *** whitespace
     Got to love that whitespace display
 
@@ -2899,6 +2909,7 @@
          (setq alert-default-style 'libnotify
             alert-log-messages t)
 
+
          (defun fn/alert-log-open ()
            "Open alert log."
            (interactive)
@@ -2932,7 +2943,15 @@
                   (append
                    (list message)
                    color-properties
-                   (org-plist-delete args :color))))))))
+                   (org-plist-delete args :color))))))
+
+         (defun* fn/alert-fringe-notify-message (info)
+           "Log `fringe' style with `message'.
+     This is to support `fn/alert-color' if the color flash needs a
+     reminder."
+           (message (plist-get info :message)))
+
+         (advice-add 'alert-fringe-notify :after #'fn/alert-fringe-notify-message)))
    #+END_SRC
 
 ** epa

@@ -520,7 +520,7 @@ fringe gets colored whenever people chat on BitlBee:
       (if append
           (nconc alert-internal-configuration (list rule))
         (setq alert-internal-configuration
-              (cons rule alert-internal-configuration))))
+           (cons rule alert-internal-configuration))))
 
     rule))
 
@@ -528,9 +528,9 @@ fringe gets colored whenever people chat on BitlBee:
 
 (defun alert-log-notify (info)
   (let* ((mes (plist-get info :message))
-         (sev (plist-get info :severity))
-         (len (length mes))
-         (func (cdr (assoc sev alert-log-severity-functions))))
+      (sev (plist-get info :severity))
+      (len (length mes))
+      (func (cdr (assoc sev alert-log-severity-functions))))
     (if (not (featurep 'log4e))
         (alert-legacy-log-notify mes sev len)
       ;; when we get here you better be using log4e or have your logging
@@ -555,8 +555,8 @@ fringe gets colored whenever people chat on BitlBee:
     (insert (format-time-string "%H:%M %p - "))
     (insert mes)
     (set-text-properties (- (point) len) (point)
-                       (list 'face (cdr (assq sev
-                                              alert-severity-faces))))
+                         (list 'face (cdr (assq sev
+                                             alert-severity-faces))))
     (insert ?\n)))
 
 (defun alert-log-clear (info)
@@ -731,21 +731,21 @@ strings."
   :group 'alert)
 
 (when (featurep 'gntp)
-(defun alert-gntp-notify (info)
-  (gntp-notify 'alert
-               (alert-encode-string (plist-get info :title))
-               (alert-encode-string (plist-get info :message))
-                                    gntp-server nil
-                                    (number-to-string
-                                 (cdr (assq (plist-get info :severity)
-                                            alert-growl-priorities)))
-                                    (if (eq (plist-get info :icon) nil)
-                                        alert-gntp-icon
-                                      (plist-get info :icon)))
-               (alert-message-notify info))
+  (defun alert-gntp-notify (info)
+    (gntp-notify 'alert
+                 (alert-encode-string (plist-get info :title))
+                 (alert-encode-string (plist-get info :message))
+                 gntp-server nil
+                 (number-to-string
+                  (cdr (assq (plist-get info :severity)
+                             alert-growl-priorities)))
+                 (if (eq (plist-get info :icon) nil)
+                     alert-gntp-icon
+                   (plist-get info :icon)))
+    (alert-message-notify info))
 
-(alert-define-style 'gntp :title "Notify using gntp"
-                    :notifier #'alert-gntp-notify))
+  (alert-define-style 'gntp :title "Notify using gntp"
+                      :notifier #'alert-gntp-notify))
 
 
 (defcustom alert-notifications-priorities
@@ -760,17 +760,17 @@ strings."
   :group 'alert)
 
 (when (featurep 'notifications)
-(defun alert-notifications-notify (info)
-  (notifications-notify :title (plist-get info :title)
-                      :body  (plist-get info :message)
-                      :app-icon (plist-get info :icon)
-                      :urgency (cdr (assq (plist-get info :severity)
-                                            alert-notifications-priorities))
-)
-               (alert-message-notify info))
+  (defun alert-notifications-notify (info)
+    (notifications-notify :title (plist-get info :title)
+                          :body  (plist-get info :message)
+                          :app-icon (plist-get info :icon)
+                          :urgency (cdr (assq (plist-get info :severity)
+                                              alert-notifications-priorities))
+                          )
+    (alert-message-notify info))
 
-(alert-define-style 'notifications :title "Notify using notifications"
-                    :notifier #'alert-notifications-notify))
+  (alert-define-style 'notifications :title "Notify using notifications"
+                      :notifier #'alert-notifications-notify))
 
 
 (defcustom alert-notifier-command (executable-find "terminal-notifier")
@@ -845,9 +845,9 @@ This is found at https://github.com/nels-o/toaster."
 (defun alert-toaster-notify (info)
   (if alert-toaster-command
       (let ((args (list
-                    "-t" (alert-encode-string (plist-get info :title))
-                    "-m" (alert-encode-string (plist-get info :message))
-                    "-p" (expand-file-name (or (plist-get info :icon) alert-toaster-default-icon))
+                   "-t" (alert-encode-string (plist-get info :title))
+                   "-m" (alert-encode-string (plist-get info :message))
+                   "-p" (expand-file-name (or (plist-get info :icon) alert-toaster-default-icon))
                    )))
         (apply #'call-process alert-toaster-command nil nil nil args))
     (alert-message-notify info)))
@@ -912,7 +912,7 @@ This is found at https://github.com/nels-o/toaster."
 
 ;;;###autoload
 (defun* alert (message &key (severity 'normal) title icon category
-                       buffer mode data style persistent never-persist)
+                  buffer mode data style persistent never-persist)
   "Alert the user that something has happened.
 MESSAGE is what the user will see.  You may also use keyword
 arguments to specify additional details.  Here is a full example:
@@ -960,43 +960,43 @@ Here are some more typical examples of usage:
                     current-buffer-name)
       (with-current-buffer (or buffer (current-buffer))
         (list (current-buffer)
-              (or mode major-mode)
-              (alert-buffer-status)
-              (buffer-name)))
+           (or mode major-mode)
+           (alert-buffer-status)
+           (buffer-name)))
 
     (let ((base-info (list :message message
-                           :title (or title current-buffer-name)
-                           :icon icon
-                           :severity severity
-                           :category category
-                           :buffer alert-buffer
-                           :mode current-major-mode
-                           :data data))
-          matched)
+                      :title (or title current-buffer-name)
+                      :icon icon
+                      :severity severity
+                      :category category
+                      :buffer alert-buffer
+                      :mode current-major-mode
+                      :data data))
+        matched)
 
-      (if alert-log-messages
-          (alert-log-notify base-info))
+      (when alert-log-messages
+        (alert-log-notify base-info))
 
       (unless alert-hide-all-notifications
         (catch 'finish
           (dolist (config (append alert-user-configuration
                                   alert-internal-configuration))
             (let* ((style-def (cdr (assq (or style (nth 1 config))
-                                         alert-styles)))
-                   (options (nth 2 config))
-                   (persist-p (or persistent
-                                  (cdr (assq :persistent options))))
-                   (persist (if (functionp persist-p)
-                                (funcall persist-p base-info)
-                              persist-p))
-                   (never-persist-p
-                    (or never-persist
-                        (cdr (assq :never-persist options))))
-                   (never-per (if (functionp never-persist-p)
-                                  (funcall never-persist-p base-info)
-                                never-persist-p))
-                   (continue (cdr (assq :continue options)))
-                   info)
+                                      alert-styles)))
+                (options (nth 2 config))
+                (persist-p (or persistent
+                              (cdr (assq :persistent options))))
+                (persist (if (functionp persist-p)
+                             (funcall persist-p base-info)
+                           persist-p))
+                (never-persist-p
+                 (or never-persist
+                    (cdr (assq :never-persist options))))
+                (never-per (if (functionp never-persist-p)
+                               (funcall never-persist-p base-info)
+                             never-persist-p))
+                (continue (cdr (assq :continue options)))
+                info)
               (setq info (if (not (memq :persistent base-info))
                              (append base-info (list :persistent persist))
                            base-info)
