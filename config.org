@@ -5599,7 +5599,7 @@
          :init
          (setq w3m-search-engine-alist (list))
 
-         (defcustom fn/w3m-ignore-arrived-url-functions ()
+         (defcustom fn/w3m-ignore-arrived-url-functions (list)
            "Functions that check if the url is saved for privacy."
            :type 'hook)
 
@@ -5619,139 +5619,149 @@
          ;; Polipo Tor Secure Browsing
          (fn/use-executables w3m-polipo-tor
            (w3m tor polipo)
-           (defcustom fn/w3m-use-polipo-tor-proxy 'nothing
-             "Check if a polipo proxy should be used.")
+           (defcustom fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
+             "Polipo cache directory."
+             :type 'directory)
 
-           (when (eq fn/w3m-use-polipo-tor-proxy
-                     (default-value 'fn/w3m-use-polipo-tor-proxy))
-             (setq fn/w3m-use-polipo-tor-proxy (yes-or-no-p "Use polipo and tor in browsing? ")))
-
-           (when fn/w3m-use-polipo-tor-proxy
-             (defconst fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
-               "Polipo cache directory.")
-
-             (defconst fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
-               "Tor cache directory.")
+           (defcustom fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
+             "Tor cache directory."
+             :type 'directory)
 
 
-             (make-directory fn/w3m-polipo-cache-dir t)
+           (make-directory fn/w3m-polipo-cache-dir t)
 
-             (make-directory fn/w3m-tor-cache-dir t)
-
-
-             (defcustom fn/w3m-tor-port 18050
-               "Tor port")
-
-             (defcustom fn/w3m-polipo-port 18123
-               "Polipo port")
-
-             (defvar fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
-               "Polipo configuration.")
-
-             (defvar fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
-               "Tor configuration.")
+           (make-directory fn/w3m-tor-cache-dir t)
 
 
-             (defun fn/w3m-polipo-tor-update-conf ()
-               "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
-               (interactive)
-               (with-temp-file fn/w3m-polipo-conf-file
-                 (insert
-                  (string-join
-                   (mapcar
-                    (lambda (pair)
-                      (pcase-let ((`(,key . ,value) pair))
-                        (format
-                         "%s = %s"
-                         key
-                         (typecase value
-                           (symbolp (symbol-name value))
-                           (numberp (number-to-string value))
-                           (stringp (format "\"%s\"" value))))))
-                    `(("proxyAddress" . "0.0.0.0")
-                      ("allowedClients" . "127.0.0.1")
-                      ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
-                      ("proxyPort" . ,fn/w3m-polipo-port)
-                      ("cacheIsShared" . false)
-                      ("socksParentProxy" .
-                       ,(format "%s:%s" "localhost" (number-to-string fn/w3m-tor-port)))
-                      ("socksProxyType" . socks5)))
-                   "\n")))
+           (defcustom fn/w3m-tor-port 18050
+             "Tor port"
+             :type 'number)
 
-               (with-temp-file fn/w3m-tor-conf-file
-                 (insert
-                  (string-join
-                   (mapcar
-                    (lambda (pair)
-                      (pcase-let ((`(,key . ,value) pair))
-                        (format
-                         "%s %s"
-                         key
-                         (typecase value
-                           (symbolp (symbol-name value))
-                           (numberp (number-to-string value))
-                           (stringp value)))))
-                    `(("SocksPort" . 18050)
-                      ("DataDirectory" . ,fn/w3m-tor-cache-dir)
-                      ("ControlPort" . ,(1+ fn/w3m-tor-port))
-                      ("DisableDebuggerAttachment" . 0)))
-                   "\n")))
+           (defcustom fn/w3m-polipo-port 18123
+             "Polipo port"
+             :type 'number)
+
+           (defcustom fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
+             "Polipo configuration."
+             :type 'file)
+
+           (defcustom fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
+             "Tor configuration."
+             :type 'file)
 
 
-               (setq w3m-command-arguments
-                  (cl-remove-if (lambda (value)
-                                  (or
-                                   (string-prefix-p "http_proxy=https://127.0.0.1:" value)
-                                   (string= "-o" value)))
-                                w3m-command-arguments))
+           (defun fn/w3m-polipo-tor-update-conf ()
+             "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
+             (interactive)
+             (with-temp-file fn/w3m-polipo-conf-file
+               (insert
+                (string-join
+                 (mapcar
+                  (lambda (pair)
+                    (pcase-let ((`(,key . ,value) pair))
+                      (format
+                       "%s = %s"
+                       key
+                       (typecase value
+                         (symbolp (symbol-name value))
+                         (numberp (number-to-string value))
+                         (stringp (format "\"%s\"" value))))))
+                  `(("proxyAddress" . "0.0.0.0")
+                    ("allowedClients" . "127.0.0.1")
+                    ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
+                    ("proxyPort" . ,fn/w3m-polipo-port)
+                    ("cacheIsShared" . false)
+                    ("socksParentProxy" .
+                     ,(format "%s:%s" "localhost" (number-to-string fn/w3m-tor-port)))
+                    ("socksProxyType" . socks5)))
+                 "\n")))
 
-               (setq w3m-command-arguments
-                  (append w3m-command-arguments
-                          (list "-o"
-                             (format
-                              "http_proxy=https://127.0.0.1:%s/"
-                              (number-to-string fn/w3m-polipo-port))))))
+             (with-temp-file fn/w3m-tor-conf-file
+               (insert
+                (string-join
+                 (mapcar
+                  (lambda (pair)
+                    (pcase-let ((`(,key . ,value) pair))
+                      (format
+                       "%s %s"
+                       key
+                       (typecase value
+                         (symbolp (symbol-name value))
+                         (numberp (number-to-string value))
+                         (stringp value)))))
+                  `(("SocksPort" . ,fn/w3m-tor-port)
+                    ("DataDirectory" . ,fn/w3m-tor-cache-dir)
+                    ("ControlPort" . ,(1+ fn/w3m-tor-port))
+                    ("DisableDebuggerAttachment" . 0)))
+                 "\n")))
 
-             (fn/w3m-polipo-tor-update-conf)
+
+             (setq w3m-command-arguments
+                   (cl-remove-if (lambda (value)
+                                   (or
+                                    (string-prefix-p "http_proxy=https://127.0.0.1:" value)
+                                    (string= "-o" value)))
+                                 w3m-command-arguments))
+
+             (setq w3m-command-arguments
+                   (append w3m-command-arguments
+                           (list "-o"
+                                 (format
+                                  "http_proxy=https://127.0.0.1:%s/"
+                                  (number-to-string fn/w3m-polipo-port))))))
 
 
-             (defvar fn/w3m-polipo-process nil
-               "Polipo process.")
+           (defvar fn/w3m-polipo-process nil
+             "Polipo process.")
 
-             (defvar fn/w3m-tor-process nil
-               "Tor process.")
+           (defvar fn/w3m-tor-process nil
+             "Tor process.")
 
 
-             (defun fn/w3m-polipo-tor-start-process (&rest args)
-               "Start `fn/w3m-polipo-process'."
-               (interactive)
-               (unless (process-live-p fn/w3m-tor-process)
-                 (message "Starting tor process.")
-                 (setq fn/w3m-tor-process
-                    (start-process "w3m-tor" "*w3m-tor*" "tor" "-f" fn/w3m-tor-conf-file)))
+           (defun fn/w3m-polipo-tor-start-process (&rest args)
+             "Start `fn/w3m-polipo-process'."
+             (interactive)
+             (unless (process-live-p fn/w3m-tor-process)
+               (message "Starting tor process.")
+               (fn/w3m-polipo-tor-update-conf)
+               (setq fn/w3m-tor-process
+                     (start-process "w3m-tor" "*w3m-tor*" "tor" "-f" fn/w3m-tor-conf-file)))
 
-               (unless (process-live-p fn/w3m-polipo-process)
-                 (message "Starting polipo process.")
-                 (setq fn/w3m-polipo-process
-                    (start-process "w3m-polipo" "*w3m-polipo*" "polipo" "-c" fn/w3m-polipo-conf-file))))
+             (unless (process-live-p fn/w3m-polipo-process)
+               (message "Starting polipo process.")
+               (setq fn/w3m-polipo-process
+                     (start-process "w3m-polipo" "*w3m-polipo*" "polipo" "-c" fn/w3m-polipo-conf-file))))
 
-             (defun fn/w3m-polipo-tor-kill-process (&rest args)
-               "Kill `fn/w3m-polipo-process'."
-               (interactive)
-               (when (process-live-p fn/w3m-polipo-process)
-                 (message "Killing polipo process")
-                 (kill-process fn/w3m-polipo-process))
+           (defun fn/w3m-polipo-tor-kill-process (&rest args)
+             "Kill `fn/w3m-polipo-process'."
+             (interactive)
+             (when (process-live-p fn/w3m-polipo-process)
+               (message "Killing polipo process")
+               (kill-process fn/w3m-polipo-process))
 
-               (when (process-live-p fn/w3m-tor-process)
-                 (message "Killing tor process")
-                 (kill-process fn/w3m-tor-process))
+             (when (process-live-p fn/w3m-tor-process)
+               (message "Killing tor process")
+               (kill-process fn/w3m-tor-process))
 
-               (setq fn/w3m-polipo-process nil
-                  fn/w3m-tor-process nil))
+             (setq fn/w3m-polipo-process nil
+                fn/w3m-tor-process nil))
 
-             (fn/w3m-polipo-tor-start-process)
+           (add-hook 'kill-emacs-hook #'fn/w3m-polipo-tor-kill-process)
 
-             (add-to-list 'w3m-no-proxy-domains "127.0.0.1")))
+           (add-to-list 'w3m-no-proxy-domains "127.0.0.1")
+           (add-to-list 'w3m-no-proxy-domains "localhost")
+
+           (defun fn/w3m-add-current-host-to-no-proxy-domains ()
+             "Add current host to `w3m-no-proxy-domains'"
+             (interactive)
+             (when (eq major-mode 'w3m-mode)
+               (lexical-let* ((parts (w3m-parse-http-url w3m-current-url))
+                   (host (elt parts 1)))
+                 (add-to-list 'w3m-no-proxy-domains host t)
+                 (w3m-reload-this-page))))
+
+           (when (yes-or-no-p "Start polipo and tor for w3m? ")
+             (fn/w3m-polipo-tor-start-process)))
 
 
          ;; Tabs
@@ -5775,9 +5785,9 @@
      Each function predicate takes is the same arguments as `w3m-arrived-add'
      Good for privacy and cleanliness."
            (if (not (apply #'run-hook-with-args-until-success
-                     (append
-                      (list 'fn/w3m-ignore-arrived-url-functions)
-                      args)))
+                           (append
+                            (list 'fn/w3m-ignore-arrived-url-functions)
+                            args)))
                (apply orig-fun args)
              (message "Not saving arrived url %s" (car args))
              nil))
@@ -5795,7 +5805,7 @@
          (require 'w3m-bookmark)
 
          (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/setting-dir)
-            w3m-bookmark-default-section "Misc")
+               w3m-bookmark-default-section "Misc")
 
 
          ;; Proxy
@@ -5812,7 +5822,7 @@
          (require 'w3m-hist)
 
          (setq w3m-history-reuse-history-elements t
-            w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir))
+               w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir))
 
          (define-minor-mode fn/w3m-private-mode
            "A simple minor mode to indicate private browsing in `w3m'."
@@ -5823,7 +5833,7 @@
            (defun fn/w3m-ignore-all-arrived-url (&rest args)
              "Ignore all urls when `fn/w3m-private-mode' is active"
              (and (boundp 'fn/w3m-private-mode)
-                fn/w3m-private-mode))
+                  fn/w3m-private-mode))
 
            (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-all-arrived-url))
 
@@ -5832,11 +5842,11 @@
      Primary check comes from `w3m-parse-http-url' by direct string match."
            (condition-case ex
                (lexical-let* ((parts (w3m-parse-http-url url))
-                   (host (elt parts 1)))
+                              (host (elt parts 1)))
                  (not (cl-notany
-                     (lambda (check-host)
-                       (string= check-host host))
-                     fn/w3m-ignore-arrived-hosts)))
+                       (lambda (check-host)
+                         (string= check-host host))
+                       fn/w3m-ignore-arrived-hosts)))
              ('error
               (message
                "There was an error parsing with fn/w3m-ignore-arrived-host: %s"
@@ -5878,14 +5888,14 @@
                      (w3m-message "No video at point")
                    nil)
                (lexical-let ((video-process
-                    (apply #'start-process
-                       (append
-                        (list
-                         (format "%s-%s" "w3m" fn/w3m-video-executable)
-                         nil
-                         fn/w3m-video-executable)
-                        fn/w3m-video-args
-                        (list url)))))
+                              (apply #'start-process
+                                     (append
+                                      (list
+                                       (format "%s-%s" "w3m" fn/w3m-video-executable)
+                                       nil
+                                       fn/w3m-video-executable)
+                                      fn/w3m-video-args
+                                      (list url)))))
                  (with-current-buffer (current-buffer)
                    (fn/w3m-kill-page-process)
 
@@ -5895,10 +5905,10 @@
            "Check if URL is a video."
            (ignore-errors
              (lexical-let* ((pieces (w3m-parse-http-url url))
-                 (host (elt pieces 1))
-                 (path (elt pieces 3)))
+                            (host (elt pieces 1))
+                            (path (elt pieces 3)))
                (if (or (and (string= host "www.youtube.com")
-                         (string-prefix-p "/watch" path)))
+                            (string-prefix-p "/watch" path)))
                    url nil))))
 
          (defun fn/w3m-view-this-video-external (url)
@@ -5906,9 +5916,9 @@
            (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
              (when
                  (and video-url
-                    (yes-or-no-p
-                     (format "%s is a video, view it with %s?"
-                             video-url fn/w3m-video-executable)))
+                      (yes-or-no-p
+                       (format "%s is a video, view it with %s?"
+                               video-url fn/w3m-video-executable)))
                (fn/w3m-view-video))))
 
          (defun fn/w3m-kill-page-process ()
@@ -5916,7 +5926,7 @@
            (interactive)
            (with-current-buffer (current-buffer)
              (when (and (boundp 'fn/w3m-page-process)
-                      (process-live-p fn/w3m-page-process))
+                        (process-live-p fn/w3m-page-process))
                (kill-process fn/w3m-page-process))
 
              (setq-local fn/w3m-page-process nil)))
@@ -5929,7 +5939,7 @@
            "If the page process is a singleton, adjust page container accordingly."
            (when result
              (lexical-let ((this-page (current-buffer))
-                 (active-process nil))
+                           (active-process nil))
                (mapc
                 (lambda (page)
                   (with-current-buffer page
@@ -6029,8 +6039,35 @@
 
            (setq-local fn/w3m-page-summarizer nil))
 
+
+         (defcustom fn/w3m-summarize-ignore-page-functions (list)
+           "Functions that check if the url should be summarized.
+     Each function takes an current URL argument and returns non-nil
+     when the page should not be summarized."
+           :type 'hook)
+
+         (defun fn/w3m-ignore-search-engine-pages (url)
+           "Ignore search engine pages as defined by `w3m-search-engine-alist'."
+           (ignore-errors ;; Ignore special urls such as //:about or whatnot
+             (lexical-let* ((url-parts (w3m-parse-http-url url))
+                 (url-host (elt url-parts 1)))
+               (cl-some
+                (lambda (pair)
+                  (pcase-let ((`(,_ ,search-url) pair))
+                    (lexical-let* ((search-parts (w3m-parse-http-url search-url))
+                        (search-host (elt search-parts 1)))
+                      (string= search-host url-host))))
+                w3m-search-engine-alist))))
+
+         (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
+
+         (defun fn/w3m-summarize-page ()
+           "Summarize page using `sumy' by checking `fn/w3m-summarize-ignore-page-functions'."
+           (unless (run-hook-with-args-until-success 'fn/w3m-summarize-ignore-page-functions w3m-current-url)
+             (fn/w3m-fontify-summary)))
+
          (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
-         (add-hook 'w3m-fontify-after-hook #'fn/w3m-fontify-summary)
+         (add-hook 'w3m-fontify-after-hook #'fn/w3m-summarize-page)
 
 
          ;; Zone
@@ -7549,7 +7586,9 @@
                (cancel-timer fn/cpu-timer))
 
              (setq fn/cpu-timer
-                (run-with-idle-timer 1 t #'fn/record-cpu-usage)))))
+                (run-with-idle-timer 1 t #'fn/record-cpu-usage)))
+
+           (fn/start-cpu-monitor)))
 
        (fn/use-executables memory-check
          (free grep awk)
