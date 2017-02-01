@@ -2920,7 +2920,7 @@
          ;; HACK: Bug #30 in alert to allow default style override
          (alert-add-rule)
 
-         (defun* fn/alert-color (message &rest args &key color)
+         (defun* fn/alert-color (message &rest args &key color &allow-other-keys)
            "A custom alert that focuses on defining a fringe with COLOR key
      with a hex value."
            (lexical-let* ((hex-color (replace-regexp-in-string "#" "" color))
@@ -2938,12 +2938,21 @@
              (lexical-let ((color-properties
                   (list
                    :style 'fringe
-                   :severity hex-symbol)))
+                   :severity hex-symbol))
+                 (colorless-properties
+                  (cl-reduce
+                   (lambda (val props)
+                     (if (equal :color val)
+                         (cdr props)
+                       (cons val props)))
+                   args
+                   :from-end t
+                   :initial-value (list))))
                (apply #'alert
                   (append
                    (list message)
                    color-properties
-                   (org-plist-delete args :color))))))
+                   colorless-properties)))))
 
          (defun* fn/alert-fringe-notify-message (info)
            "Log `fringe' style with `message'.
@@ -6244,7 +6253,7 @@
              (_ nil)))
 
 
-         ;; (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
+         (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
          (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-special-pages)
 
 
