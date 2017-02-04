@@ -9,3 +9,4 @@
 # Block for emacs
 -.#*
 -*.elc
+-/.cask

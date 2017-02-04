@@ -214,7 +214,10 @@
  `(defblock emacs
     (comment "Block for emacs")
     (file ".#*")
-    (file "*.elc"))
+    (file "*.elc")
+
+    (root
+     (dir ".cask")))
  (list))
 
 (projin--dsl-defblock
