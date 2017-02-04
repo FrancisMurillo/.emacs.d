@@ -7970,7 +7970,7 @@
        (fmd/get-document-block-property "SUMMARY" selected-buffer))
 
 
-     (defconst fmd/md-root "/mnt/veracrypt1/media-diary/compile/"
+     (defconst fmd/md-root "~/Mountain/diary/media-diary/compile/"
        "The media diary directory")
 
      (defconst fmd/md-compile-date-filter (expand-file-name ".date" fmd/md-root)
