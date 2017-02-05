@@ -6963,6 +6963,7 @@
         "config.el"
         "config.org"
         "extra"
+        "system"
         ".git"
         ".gitignore"
         "init.el"
