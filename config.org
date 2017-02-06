@@ -966,7 +966,7 @@
 
      (use-package text-candy-words
        :load-path fn/custom-script-dir
-       :defer t)
+       :defer 5)
 
      (use-package xpm
        :load-path fn/custom-script-dir
