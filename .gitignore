@@ -3,8 +3,8 @@ config.el
 personal.el
 
 # Base directory
-.cache
-extra
+.cache/
+extra/
 
 # Project specific
 working-config.org
@@ -12,10 +12,10 @@ working-config.el
 my-macros.el
 
 # Library
-lib/sandbox
-lib/packages
-!lib/modules
-!lib/scripts
+lib/sandbox/
+lib/packages/
+!lib/modules/
+!lib/scripts/
 
 # Block for gtags
 GPATH

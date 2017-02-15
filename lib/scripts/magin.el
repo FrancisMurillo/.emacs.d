@@ -57,6 +57,14 @@
 (defconst magin-comment-beginning "#"
   "The start of a comment line.")
 
+(defconst magin--path-separator
+  (lexical-let* ((base-dir (expand-file-name user-emacs-directory))
+      (new-dir (expand-file-name "a" base-dir)))
+    (substring-no-properties
+     new-dir
+     (1- (length base-dir))
+     (length base-dir))))
+
 
 ;;;###autoload
 (defun magin-compile (dsl)
@@ -69,11 +77,11 @@
   "Main compiler DSL with an ENV."
   (pcase-let ((`(,rule . ,_) dsl))
     (lexical-let* ((rule-name (symbol-name rule))
-                   (rule-handler
-                    (intern-soft
-                     (format "%s%s"
-                             magin-dsl-prefix
-                             rule-name))))
+        (rule-handler
+         (intern-soft
+          (format "%s%s"
+                  magin-dsl-prefix
+                  rule-name))))
       (if (null rule-handler)
           (error "No rule to handle %s at dsl: %s" rule-name dsl)
         (funcall rule-handler dsl env)))))
@@ -101,7 +109,7 @@
 (defun magin--dsl-root (dsl env)
   "DSL and ENV for root."
   (pcase-let ((`(root . ,_) dsl))
-    (lexical-let ((new-env (append (list (cons :parent "/")) env)))
+    (lexical-let ((new-env (append (list (cons :parent magin--path-separator)) env)))
       (magin--dsl-context dsl new-env))))
 
 (defun magin--dsl-comment (dsl _)
@@ -118,11 +126,16 @@
   "DSL and ENV for file."
   (pcase-let ((`(file ,file) dsl))
     (lexical-let* ((parent (cdr (assoc :parent env)))
-                   (include (if (cdr (assoc :include env))"!" nil)))
+        (include (if (cdr (assoc :include env))"!" nil)))
       (concat include parent file))))
 
-(defalias 'magin--dsl-dir 'magin--dsl-file
-  "DSL and ENV for dir. The same as `-file', but with a contextual nuance.'")
+(defun magin--dsl-dir (dsl env)
+  "DSL and ENV for dir.
+Like `-file', but adds a path separator at the end."
+  (pcase-let ((`(dir ,dir) dsl))
+    (magin--dsl-file
+     `(file ,(concat dir magin--path-separator) )
+     env)))
 
 (defun magin--dsl-include (dsl env)
   "DSL and ENV for include."
@@ -135,19 +148,19 @@
   (pcase-let ((`(path ,path . ,subdsls) dsl))
     (message "%s" subdsls)
     (lexical-let* ((parent (cdr (assoc :parent env)))
-                   (new-env (append
-                             (list (cons :parent (concat parent path (magin--path-separator))))
-                             env)))
+        (new-env (append
+                  (list (cons :parent (concat parent path (magin--path-separator))))
+                  env)))
       (magin--dsl-context `(context ,@subdsls) new-env))))
 
 (defun magin--dsl-block (dsl env)
   "DSL and ENV for block."
   (pcase-let ((`(block ,block-symbol) dsl))
     (lexical-let* ((block-name (symbol-name block-symbol))
-                   (block-value (intern-soft
-                                 (format "%s%s"
-                                         magin-block-prefix
-                                         block-name))))
+        (block-value (intern-soft
+                      (format "%s%s"
+                              magin-block-prefix
+                              block-name))))
       (if (null block-value)
           (error "No rule to block %s at dsl: %s" block-name dsl)
         (magin--compiler (symbol-value block-value) env)))))
@@ -156,10 +169,10 @@
   "DSL and ENV for defblock."
   (pcase-let ((`(defblock ,block-symbol . ,block-def) dsl))
     (lexical-let* ((block-name (symbol-name block-symbol))
-                   (block-def-name (intern
-                                    (format "%s%s"
-                                            magin-block-prefix
-                                            block-name))))
+        (block-def-name (intern
+                         (format "%s%s"
+                                 magin-block-prefix
+                                 block-name))))
       (makunbound block-def-name)
       (eval `(defvar ,block-def-name '(context ,@block-def)
                ,(format "Block definition for %s" block-name)))
@@ -170,12 +183,12 @@
   "DSL and ENV for delimited."
   (pcase-let ((`(delimited  . ,subdsls) dsl))
     (lexical-let ((delimited-dsls
-                   (cdr
-                    (apply #'append
-                           (mapcar
-                            (lambda (dsl)
-                              (list '(newline) dsl))
-                            subdsls)))))
+         (cdr
+          (apply #'append
+             (mapcar
+              (lambda (dsl)
+                (list '(newline) dsl))
+              subdsls)))))
       (magin--compiler
        `(context
          ,@delimited-dsls)
@@ -186,7 +199,7 @@
 (defun magin-write-to-project (dsl project)
   "Write compiled DSL to PROJECT."
   (lexical-let* ((compiled-file (expand-file-name magin-compiled-file-name project))
-                 (compiled-text (magin-compile dsl)))
+      (compiled-text (magin-compile dsl)))
     (with-temp-file compiled-file
       (insert compiled-text))
     (message "%s of %s updated" magin-compiled-file-name project)))

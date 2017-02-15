@@ -964,7 +964,7 @@
        :load-path fn/custom-script-dir
        :defer t)
 
-     (use-package text-candy-words
+     (use-package text-candy
        :load-path fn/custom-script-dir
        :defer 5)
 
@@ -1146,90 +1146,10 @@
        :bind (:map fn/prodigy-map
                    ("P" . prodigy))
        :defer t
+       :commands (fn/prodigy-define-service)
        :config
-       (defmacro fn/prodigy-with-buffer (&rest body)
-         "Execute BODY within an exisiting prodigy buffer."
-         `(progn
-            (when (prodigy-buffer)
-              (with-current-buffer (prodigy-buffer)
-                ,@body))))
-
-       (defun fn/prodigy-refresh ()
-         "Refresh prodigy buffer."
-         (ignore-errors
-           (fn/prodigy-with-buffer
-            (prodigy-refresh)
-            (prodigy-goto-first-line))))
-
-
-       (defun fn/prodigy-switch-to-process-buffer (service)
-         "Just an wrapper for said function with SERVICE. If there is a prefix argument, it will stop it instead."
-         (if current-prefix-arg
-             (if (prodigy-service-stopping-p service)
-                 (message "Service already stopping")
-               (message "Stopping %s service." (plist-get service :name))
-               (prodigy-stop-service service t))
-           (if (prodigy-service-started-p service)
-               (prodigy-switch-to-process-buffer service)
-             (message "Starting %s service." (plist-get service :name))
-             (prodigy-start-service service (apply-partially prodigy-switch-to-process-buffer service)))))
-
-       (defun fn/prodigy-prepared-switch-to-process-buffer (service)
-         "Another wrapper to make specific functions for viewing SERVICE."
-         (lexical-let* ((service-name (plist-get service :name))
-                        (command-name (or (plist-get service :bind-command-name)
-                                          (symbol-name (gensym "prodigy-view-"))))
-                        (prefix "fmpv/")
-                        (function-symbol (intern (format "%s%s" prefix command-name)))
-                        (service service))
-           (fset function-symbol
-                 `(lambda ()
-                    ,(format "A prodigy view function for %s" service-name)
-                    (interactive)
-                    (fn/prodigy-switch-to-process-buffer (quote ,service))))
-           function-symbol))
-
-       (defun fn/prodigy-define-service (&rest args)
-         "When creating a service, check for a `:bind' keyword to create an automatic keybinding for it.
-     Also, check and persist `:on-stop' and `:on-start' property"
-         (let ((result (apply #'prodigy-define-service args)))
-           (prog1
-               result
-             (lexical-let* ((service (car result))
-                            (name (plist-get service :name))
-                            (bind (plist-get service :bind))
-                            (bind-map (or (plist-get service :bind-map) global-map)))
-               (when bind
-                 (message "Creating binding for %s" name)
-                 (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service))))
-             (lexical-let* ((service (car result))
-                            (on-stop (plist-get args :on-stop))
-                            (on-start (plist-get args :on-start)))
-               (when (functionp on-stop)
-                 (nconc service (list :on-stop on-stop)))
-               (when (functionp on-start)
-                 (nconc service (list :on-start on-start)))))))
-
-
-       ;; :on-stop and :on-start property
-       (defun fn/prodigy-stop-service (service &rest args)
-         "Like `prodigy-stop-service' but also checks for
-     `:on-stop' which runs before it."
-         (lexical-let ((on-stop (prodigy-service-or-first-tag-with service :on-stop)))
-           (when (functionp on-stop)
-             (apply on-stop (list :service service)))))
-
-       (defun fn/prodigy-start-service (service &rest args)
-         "Like `prodigy-start-service' but also checks for
-     `:on-start' which runs after it."
-         (lexical-let ((on-start (prodigy-service-or-first-tag-with service :on-start)))
-           (when (functionp on-start)
-             (apply on-start (list :service service)))))
-
-       (advice-add 'prodigy-stop-service :after #'fn/prodigy-stop-service)
-       (advice-add 'prodigy-start-service :after #'fn/prodigy-start-service)
-
-
+       ;; Alias this command so that it can be adviced
+       (fset 'fn/prodigy-define-service 'prodigy-define-service)
 
        ;; Display prodigy buffers on the same windowx
        (add-to-list
@@ -1244,17 +1164,6 @@
          (rx bos "*prodigy-" (* anything))
          (cons 'display-buffer-same-window (list))))
 
-
-       ;; Prodigy recipes
-       (fn/use-executables prodigy-tags-check
-         (jekyll)
-         (prodigy-define-tag
-           :name 'jekyll
-           :command "jekyll"
-           :args (list "serve")
-           :kill-signal 'sigkill))
-
-
        (fn/use-feature prodigy-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
@@ -1263,94 +1172,245 @@
 
          (fn/add-major-mode-icon
           'prodigy-view-mode
-          (list 'all-the-icons-faicon "cog" :v-adjust -0.1)))
-
-       (fn/use-feature prodigy-command-tags
-         (prodigy)
-         (fn/use-executables prodigy-polipo
-           (polipo)
-           (prodigy-define-tag
-             :name 'polipo
-             :cwd user-emacs-directory
-             :command "polipo"
-             :kill-signal 'sigkill
-             :kill-process-buffer-on-stop t
-             :ready-message "\\.*Established listening socket on \\.*")
-
-           (defun fn/prodigy-create-polipo-conf (file options)
-             "Update FILE with polipo OPTIONS."
-             (with-temp-file fn/w3m-polipo-conf-file
-               (insert
-                (string-join
-                 (mapcar
-                  (lambda (pair)
-                    (pcase-let ((`(,key . ,value) pair))
-                      (format
-                       "%s = %s"
-                       key
-                       (typecase value
-                         (symbolp (symbol-name value))
-                         (numberp (number-to-string value))
-                         (stringp (format "\"%s\"" value))))))
-                  options)
-                 "\n")))))
-
-         (fn/use-executables prodigy-tor
-           (tor)
-           (prodigy-define-tag
-             :name 'tor
-             :cwd user-emacs-directory
-             :command "tor"
-             :kill-signal 'sigkill
-             :kill-process-buffer-on-stop t
-             :ready-message "\\.*Bootstapped 100\\.*")
-
-           (defun fn/prodigy-create-tor-conf (file options)
-             "Update FILE with tor OPTIONS."
-             (with-temp-file file
-               (insert
-                (string-join
-                 (mapcar
-                  (lambda (pair)
-                    (pcase-let ((`(,key . ,value) pair))
-                      (format
-                       "%s %s"
-                       key
-                       (typecase value
-                         (symbolp (symbol-name value))
-                         (numberp (number-to-string value))
-                         (stringp value)))))
-                  options)
-                 "\n")))))
-
-         (fn/use-executables prodigy-privoxy
-           (privoxy)
-           (prodigy-define-tag
-             :name 'privoxy
-             :cwd user-emacs-directory
-             :command "privoxy"
-             :kill-signal 'sigkill
-             :kill-process-buffer-on-stop t
-             :ready-message "\\.*Listening on port \\.*")
-
-           (defun fn/prodigy-create-privoxy-conf (file options)
-             "Update FILE with privoxy OPTIONS."
-             (with-temp-file file
-               (insert
-                (string-join
-                 (mapcar
-                  (lambda (pair)
-                    (pcase-let ((`(,key . ,value) pair))
-                      (format
-                       "%s %s"
-                       key
-                       (typecase value
-                         (symbolp (symbol-name value))
-                         (numberp (number-to-string value))
-                         (stringp value)))))
-                  options)
-                 "\n")))))))
+          (list 'all-the-icons-faicon "cog" :v-adjust -0.1))))
    #+END_SRC
+
+*** Customized Prodigy
+    A dependency to customize prodigy, giving the command =fn/prodigy-define-service=.
+
+    #+BEGIN_SRC emacs-lisp :block-id 8943bce9-9886-c9c1-7c4e-cba4f7a62a6f
+      (fn/use-feature prodigy-custom
+        (prodigy)
+        (defmacro fn/prodigy-with-buffer (&rest body)
+          "Execute BODY within an exisiting prodigy buffer."
+          `(progn
+             (when (prodigy-buffer)
+               (with-current-buffer (prodigy-buffer)
+                 ,@body))))
+
+        (defun fn/prodigy-refresh ()
+          "Refresh prodigy buffer."
+          (ignore-errors
+            (fn/prodigy-with-buffer
+             (prodigy-refresh)
+             (prodigy-goto-first-line))))
+
+
+        (defun fn/prodigy-switch-to-process-buffer (service)
+          "Just an wrapper for said function with SERVICE. If there is a prefix argument, it will stop it instead."
+          (if current-prefix-arg
+              (if (prodigy-service-stopping-p service)
+                  (message "Service already stopping")
+                (message "Stopping %s service." (plist-get service :name))
+                (prodigy-stop-service service t))
+            (if (prodigy-service-started-p service)
+                (prodigy-switch-to-process-buffer service)
+              (message "Starting %s service." (plist-get service :name))
+              (prodigy-start-service service (apply-partially prodigy-switch-to-process-buffer service)))))
+
+
+        (defun fn/prodigy-prepared-switch-to-process-buffer (service)
+          "Another wrapper to make specific functions for viewing SERVICE."
+          (lexical-let* ((service-name (plist-get service :name))
+              (command-name (or (plist-get service :bind-command-name)
+                               (symbol-name (gensym "prodigy-view-"))))
+              (prefix "fmpv/")
+              (function-symbol (intern (format "%s%s" prefix command-name)))
+              (service service))
+            (fset function-symbol
+                  `(lambda ()
+                     ,(format "A prodigy view function for %s" service-name)
+                     (interactive)
+                     (fn/prodigy-switch-to-process-buffer (quote ,service))))
+            function-symbol))
+
+        (defun fn/prodigy-define-service-binder (orig-fun &rest args)
+          "When creating a service, check for a `:bind' keyword to
+      create an automatic keybinding for it."
+          (let ((result (apply orig-fun args)))
+            (prog1
+                result
+              (lexical-let* ((service (car result))
+                  (name (plist-get service :name))
+                  (bind (plist-get service :bind))
+                  (bind-map (or (plist-get service :bind-map) global-map)))
+                (when bind
+                  (message "Creating binding for %s" name)
+                  (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service)))))))
+
+        (advice-add 'fn/prodigy-define-service :around #'fn/prodigy-define-service-binder)
+
+
+        ;; :on-stop and :on-start property
+        (defun fn/prodigy-stop-service (service &rest args)
+          "Like `prodigy-stop-service' but also checks for
+           `:on-stop' which runs before it."
+          (lexical-let ((on-stop (prodigy-service-or-first-tag-with service :on-stop)))
+            (when (functionp on-stop)
+              (apply on-stop (list :service service)))))
+
+        (defun fn/prodigy-start-service (service &rest args)
+          "Like `prodigy-start-service' but also checks for
+           `:on-start' which runs after it."
+          (lexical-let ((on-start (prodigy-service-or-first-tag-with service :on-start)))
+            (when (functionp on-start)
+              (apply on-start (list :service service)))))
+
+        (defun fn/prodigy-define-service-on-start-and-stopper (orig-fun &rest args)
+          "When creating a service, check and persist `:on-stop' and
+          `:on-start' property."
+          (let ((result (apply orig-fun args)))
+            (prog1
+                result
+              (lexical-let* ((service (car result))
+                  (on-stop (plist-get args :on-stop))
+                  (on-start (plist-get args :on-start)))
+                (when (functionp on-stop)
+                  (nconc service (list :on-stop on-stop)))
+                (when (functionp on-start)
+                  (nconc service (list :on-start on-start)))))))
+
+        (advice-add 'prodigy-stop-service :after #'fn/prodigy-stop-service)
+        (advice-add 'prodigy-start-service :after #'fn/prodigy-start-service))
+    #+END_SRC
+
+*** Service Tags
+    Some commands that can be refactored out
+
+    #+BEGIN_SRC emacs-lisp :block-id 365a7524-2f54-39ed-ebdf-dabf38392152
+      (fn/use-feature prodigy-command-tags
+        (prodigy)
+        (fn/use-executables prodigy-polipo
+          (polipo)
+          (prodigy-define-tag
+            :name 'polipo
+            :cwd user-emacs-directory
+            :command "polipo"
+            :kill-signal 'sigkill
+            :kill-process-buffer-on-stop t
+            :ready-message "\\.*Established listening socket on \\.*")
+
+          (defun fn/prodigy-create-polipo-conf (file options)
+            "Update FILE with polipo OPTIONS."
+            (with-temp-file fn/w3m-polipo-conf-file
+              (insert
+               (string-join
+                (mapcar
+                 (lambda (pair)
+                   (pcase-let ((`(,key . ,value) pair))
+                     (format
+                      "%s = %s"
+                      key
+                      (typecase value
+                        (symbolp (symbol-name value))
+                        (numberp (number-to-string value))
+                        (stringp (format "\"%s\"" value))))))
+                 options)
+                "\n")))))
+
+        (fn/use-executables prodigy-tor
+          (tor)
+          (prodigy-define-tag
+            :name 'tor
+            :cwd user-emacs-directory
+            :command "tor"
+            :kill-signal 'sigkill
+            :kill-process-buffer-on-stop t
+            :ready-message "\\.*Bootstapped 100\\.*")
+
+          (defun fn/prodigy-create-tor-conf (file options)
+            "Update FILE with tor OPTIONS."
+            (with-temp-file file
+              (insert
+               (string-join
+                (mapcar
+                 (lambda (pair)
+                   (pcase-let ((`(,key . ,value) pair))
+                     (format
+                      "%s %s"
+                      key
+                      (typecase value
+                        (symbolp (symbol-name value))
+                        (numberp (number-to-string value))
+                        (stringp value)))))
+                 options)
+                "\n")))))
+
+        (fn/use-executables prodigy-privoxy
+          (privoxy)
+          (prodigy-define-tag
+            :name 'privoxy
+            :cwd user-emacs-directory
+            :command "privoxy"
+            :kill-signal 'sigkill
+            :kill-process-buffer-on-stop t
+            :ready-message "\\.*Listening on port \\.*")
+
+          (defun fn/prodigy-create-privoxy-conf (file options)
+            "Update FILE with privoxy OPTIONS."
+            (with-temp-file file
+              (insert
+               (string-join
+                (mapcar
+                 (lambda (pair)
+                   (pcase-let ((`(,key . ,value) pair))
+                     (format
+                      "%s %s"
+                      key
+                      (typecase value
+                        (symbolp (symbol-name value))
+                        (numberp (number-to-string value))
+                        (stringp value)))))
+                 options)
+                "\n")))))
+
+        (fn/use-executables prodigy-jekyll
+          (jekyll)
+          (prodigy-define-tag
+            :name 'jekyll
+            :command "jekyll"
+            :args (list "serve")
+            :kill-signal 'sigkill)))
+    #+END_SRC
+
+*** Grouped Services
+    Services are grouped together, starting and stopping together or in
+    sequence.
+
+    #+BEGIN_SRC emacs-lisp :block-id 1b36d539-6882-8a58-5206-512adfd9118e
+      (fn/use-feature prodigy-set
+        (prodigy)
+        (require 'cl)
+
+        (defvar fn/prodigy-service-sets nil
+          "An alist of service sets.")
+
+        (defun* fn/prodigy-define-service-set (&rest args)
+          "Define a service set that will start and stop services."
+          )
+
+        (defun fn/prodigy-start-service-set (service-set)
+          "Start a service set."
+          )
+
+        (defun fn/prodigy-stop-service-set (service-set)
+          "Stop a service set."
+          )
+
+        (defun fn/prodigy-service-set-of-service (service)
+          "Given a SERVICE, return the set it is in.")
+
+
+        (advice-add 'prodigy-start-service :after 'ignore)
+        (advice-add 'prodigy-stop-service :after 'ignore)
+        (advice-add 'prodigy-set-status :after 'ignore)
+
+        (fn/prodigy-define-service-set
+         :name "w3m-privacy"
+         :services '(("a" . ready)))
+       )
+    #+END_SRC
+
 ** procred
    Similarly, manage processes.
 
@@ -2003,9 +2063,9 @@
             (interactive)
             (when (projectile-project-p)
               (let* ((current-project-root (projectile-project-root))
-                     (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+                  (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
                 (when (and (file-exists-p project-local-init-file)
-                           (not (member (buffer-file-name) fn/project-init-files)))
+                         (not (member (buffer-file-name) fn/project-init-files)))
                   (message
                    "Loading project local file for %s on %s"
                    (projectile-project-name)
@@ -2034,18 +2094,18 @@
           (defun fn/safe-project-p (project-root)
             "Check if PROJECT-ROOT can be trusted."
             (lexical-let* ((last-modification-time
-                            (file-attribute-modification-time (file-attributes project-root)))
-                           (safe-project-properties
-                            (or (cdr (assoc project-root fn/checked-projects))
-                                (lexical-let* ((base-properties
-                                                (list :last-modification-time last-modification-time
-                                                      :project-root project-root))
-                                               (trusted
-                                                (yes-or-no-p
-                                                 (format "Do you ultimately trust the project at %s?" project-root)))
-                                               (new-properties
-                                                (plist-put base-properties :trusted trusted)))
-                                  new-properties))))
+                 (file-attribute-modification-time (file-attributes project-root)))
+                (safe-project-properties
+                 (or (cdr (assoc project-root fn/checked-projects))
+                    (lexical-let* ((base-properties
+                         (list :last-modification-time last-modification-time
+                            :project-root project-root))
+                        (trusted
+                         (yes-or-no-p
+                          (format "Do you ultimately trust the project at %s?" project-root)))
+                        (new-properties
+                         (plist-put base-properties :trusted trusted)))
+                      new-properties))))
               (prog1
                   (plist-get safe-project-properties :trusted)
                 (add-to-list 'fn/checked-projects
@@ -2055,7 +2115,7 @@
             "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
             (when (projectile-project-p)
               (lexical-let ((project-root (projectile-project-root))
-                            (project-name (projectile-project-name)))
+                  (project-name (projectile-project-name)))
                 (when (not (member project-root fn/loaded-projects))
                   (if (not (fn/safe-project-p project-root))
                       (message "Project script for %s is not trusted." project-name)
@@ -2066,7 +2126,7 @@
             "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
             (when (projectile-project-p)
               (lexical-let ((project-root (projectile-project-root))
-                            (project-name (projectile-project-name)))
+                  (project-name (projectile-project-name)))
                 (if (not (fn/safe-project-p project-root))
                     (message "Project local script for %s is not trusted." project-name)
                   (fn/load-project-local-file)))))
@@ -3528,20 +3588,50 @@
         (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
     #+END_SRC
 
+** wcheck-mode
+   A more generic form of checking specially with GNU Diction.
+
+   #+BEGIN_SRC emacs-lisp :block-id 8ce26088-9d9c-dca5-d616-b2c52a8867dd
+     (use-package wcheck-mode
+       :ensure t
+       :defer t
+       :config
+       (setq wcheck-language "english"
+          wcheck-language-data (list))
+
+       (fn/use-executables wcheck-diction
+         (diction)
+         (defun fn/wcheck-diction-parser (&rest _ignore)
+           "Parser for diction."
+           (message "Calling parser "))
+
+         (add-to-list
+          'wcheck-language-data
+          `("english"
+            (program . "diction")
+            (args "-s" "-b")
+            (parser . fn/wcheck-diction-parser)))))
+   #+END_SRC
+
 ** flyspell
    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
    #+BEGIN_SRC emacs-lisp :block-id d49639d7-14d6-68a0-5afa-25bae73f3762
      (unless noninteractive
        (fn/use-executables flyspell-check
-         (flyspell)
+         (aspell)
          (use-package flyspell
            :ensure t
            :if (not (eq system-type 'windows-nt))
            :defer t
            :diminish flyspell-mode
            :init
-           (add-hook 'org-mode-hook 'flyspell-mode t))))
+           (add-hook 'org-mode-hook 'flyspell-mode t)
+           :config
+           (setq flyspell-default-dictionary "en_US"
+
+              ispell-program-name "aspell"
+              ispell-cmd-args  '("--sug-mode=ultra")))))
    #+END_SRC
 
 ** langtool
@@ -3602,7 +3692,9 @@
            "Error handled `langtool-check-buffer'."
            (interactive)
            (condition-case ex
-               (langtool-check-buffer)
+               (progn
+                 (langtool--cleanup-process)
+                 (langtool-check-buffer))
              ('error (error-message-string ex))))
 
          (add-hook 'langtool-noerror-hook #'fn/langtool-clear-mode-line)
@@ -5784,254 +5876,16 @@
 
          (setq w3m-command-arguments (list))
 
-         ;; Privoxy-Polipo-Tor Secure Browsing
-         (fn/use-executables w3m-privoxy-polipo-tor
-           (w3m tor polipo privoxy)
-           (defcustom fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
-             "Polipo cache directory."
-             :type 'directory)
-
-           (defcustom fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
-             "Tor cache directory."
-             :type 'directory)
-
-           (defcustom fn/w3m-privoxy-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
-             "Privoxy cache directory."
-             :type 'directory)
-
-           (defcustom fn/w3m-privoxy-conf-dir (expand-file-name "privoxy" fn/system-dir)
-             "Privoxy conf directory."
-             :type 'directory)
-
-
-
-           (defcustom fn/w3m-tor-port 18050
-             "Tor port"
-             :type 'number)
-
-           (defcustom fn/w3m-polipo-port 18123
-             "Polipo port"
-             :type 'number)
-
-           (defcustom fn/w3m-privoxy-port 18118
-             "Polipo port"
-             :type 'number)
-
-
-           (defcustom fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
-             "Polipo configuration."
-             :type 'file)
-
-           (defcustom fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
-             "Tor configuration."
-             :type 'file)
-
-           (defcustom fn/w3m-privoxy-conf-file (expand-file-name "privoxy-w3m-conf" fn/cache-dir)
-             "Privoxy configuration."
-             :type 'file)
-
-
-           (defun fn/w3m-privoxy-polipo-tor-update-conf ()
-             "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
-             (interactive)
-             (make-directory fn/w3m-polipo-cache-dir t)
-             (make-directory fn/w3m-tor-cache-dir t)
-
-             (make-directory fn/w3m-privoxy-cache-dir t)
-             (make-directory fn/w3m-privoxy-conf-dir t)
-
-             (fn/prodigy-create-polipo-conf
-              fn/w3m-polipo-conf-file
-              `(("proxyAddress" . "127.0.0.1")
-                ("allowedClients" . "127.0.0.1")
-                ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
-                ("proxyPort" . ,fn/w3m-polipo-port)
-                ("cacheIsShared" . false)
-                ("socksParentProxy" .
-                 ,(format "%s:%s" "127.0.0.1" fn/w3m-tor-port))
-                ("socksProxyType" . socks5)
-                ("relaxTransparency" . true)
-                ("logSyslog" . false)
-                ("logLevel" . 0xFF)
-                ("logFile" . "")
-
-                ;; Optional Security Setting
-                ("localDocumentRoot" . "")
-                ("disableLocalInterface" . true)
-                ("disableConfiguration" . true)
-                ("dnsUseGethostbyname" . yes)
-                ("disableVia" . true)
-                ("censorReferer" . maybe)
-                ("maxConnectionAge" . 5m)
-                ("maxConnectionRequests" . 120)
-                ("serverMaxSlots" . 8)
-                ("serverSlots" . 2)))
-
-             (fn/prodigy-create-tor-conf
-              fn/w3m-tor-conf-file
-              `(("SocksPort" . ,fn/w3m-tor-port)
-                ("DataDirectory" . ,fn/w3m-tor-cache-dir)
-                ("ControlPort" . ,(1+ fn/w3m-tor-port))
-                ("DisableDebuggerAttachment" . 0)))
-
-             (fn/prodigy-create-privoxy-conf
-              fn/w3m-privoxy-conf-file
-              `(("confdir" . ,fn/w3m-privoxy-conf-dir)
-                ("logdir" . ,fn/w3m-privoxy-cache-dir)
-
-                ("actionsfile" . "match-all.action")
-                ("actionsfile" . "default.action")
-                ("actionsfile" . "user.action")
-                ("filterfile" . "default.filter")
-
-                ("debug" . 13313)
-                ("logfile" . "logfile")
-                ("listen-address" .
-                 ,(format "%s:%s" "127.0.0.1" fn/w3m-privoxy-port))
-                ("forward" .
-                 ,(format "/ %s:%s" "127.0.0.1" fn/w3m-polipo-port))
-
-                ("toggle" . 1)
-                ("enable-remote-toggle" . 0)
-                ("enable-edit-actions" . 0)
-                ("enforce-blocks" . 0)
-                ("buffer-limit" . 4096)
-                ("enable-proxy-authentication-forwarding" . 0)
-                ("forwarded-connect-retries" .  0)
-                ("accept-intercepted-requests" . 0)
-                ("allow-cgi-request-crunching" . 0)
-                ("split-large-forms" . 0)
-                ("keep-alive-timeout" . 5)
-                ("tolerate-pipelining" . 1)
-                ("socket-timeout" . 300))))
-
-           (defun fn/w3m-remove-http-proxy-arguments ()
-             "Remove http_proxy= from `w3m-command-arguments'."
-             (setq w3m-command-arguments ;; Remove added http_proxy arguments
-                (cl-reduce  ;; I wish this could be easier
-                 (lambda (val xs)
-                   (if (and (string= "-o" val)
-                          (string-prefix-p "http_proxy=http://127.0.0.1:"
-                                           (or (car xs) "")))
-                       (cdr xs)
-                     (cons val xs)))
-                 w3m-command-arguments
-                 :from-end t
-                 :initial-value (list))))
-
-           (defun fn/w3m-append-http-proxy-arguments ()
-             "Add http_proxy= to `w3m-command-arguments' while removing previous ones."
-             (fn/w3m-remove-http-proxy-arguments)
-             (setq w3m-command-arguments
-                (append w3m-command-arguments
-                        (list "-o"
-                           (format
-                            "http_proxy=http://127.0.0.1:%s/"
-                            fn/w3m-privoxy-port)))))
-
-
-           (require 'prodigy)
-
-
-           (defun fn/w3m-service-start (&rest args)
-             "Add http-proxy from `w3m-command-arguments'."
-             (when (and (prodigy-service-started-p fn/w3m-polipo-service)
-                      (prodigy-service-started-p fn/w3m-tor-service)
-                      (prodigy-service-started-p fn/w3m-privoxy-service))
-               (fn/w3m-append-http-proxy-arguments)))
-
-           (defun fn/w3m-service-stop (&rest args)
-             "Add http-proxy from `w3m-command-arguments'."
-             (fn/w3m-remove-http-proxy-arguments))
-
-           (defun fn/w3m-service-init (&rest args)
-             "If both service are stopped, update config before starting."
-             (unless (and (prodigy-service-started-p fn/w3m-polipo-service)
-                        (prodigy-service-started-p fn/w3m-tor-service)
-                        (prodigy-service-started-p fn/w3m-privoxy-service))
-               (fn/w3m-privoxy-polipo-tor-update-conf)))
-
-           (prodigy-define-tag
-             :name 'w3m
-             :init #'fn/w3m-service-init
-             :on-start #'fn/w3m-service-start
-             :on-stop #'fn/w3m-service-stop)
-
-
-           (defconst fn/w3m-polipo-service-name "w3m-polipo"
-             "Polipo prodigy service name.")
-
-           (defconst fn/w3m-tor-service-name "w3m-tor"
-             "Tor prodigy service name.")
-
-           (defconst fn/w3m-privoxy-service-name "w3m-privoxy"
-             "Privoxy prodigy service name.")
-
-
-           (fn/prodigy-define-service
-            :name fn/w3m-polipo-service-name
-            :tags '(w3m polipo)
-            :port fn/w3m-polipo-port
-            :args (list "-c" fn/w3m-polipo-conf-file))
-
-           (fn/prodigy-define-service
-            :name fn/w3m-tor-service-name
-            :tags '(w3m tor)
-            :port fn/w3m-tor-port
-            :args (list "-f" fn/w3m-tor-conf-file))
-
-           (fn/prodigy-define-service
-            :name fn/w3m-privoxy-service-name
-            :tags '(w3m privoxy)
-            :port fn/w3m-privoxy-port
-            :args (list "--no-daemon" fn/w3m-privoxy-conf-file))
-
-           (setq fn/w3m-polipo-service (prodigy-find-service "w3m-polipo")
-              fn/w3m-tor-service (prodigy-find-service "w3m-tor")
-              fn/w3m-privoxy-service (prodigy-find-service "w3m-privoxy"))
-
-
-           (defun fn/w3m-privoxy-polipo-tor-start-process (&rest args)
-             "Start services"
-             (interactive)
-             (prodigy-start-service fn/w3m-polipo-service)
-             (prodigy-start-service fn/w3m-tor-service)
-             (prodigy-start-service fn/w3m-privoxy-service))
-
-           (defun fn/w3m-privoxy-polipo-tor-kill-process (&rest args)
-             "Stop special services."
-             (interactive)
-             (prodigy-stop-service fn/w3m-polipo-service)
-             (prodigy-stop-service fn/w3m-tor-service)
-             (prodigy-stop-service fn/w3m-privoxy-service))
-
-           (add-hook 'kill-emacs-hook #'fn/w3m-privoxy-polipo-tor-kill-process)
-
-           (add-to-list 'w3m-no-proxy-domains "127.0.0.1")
-           (add-to-list 'w3m-no-proxy-domains "localhost")
-
-           (defun fn/w3m-add-current-host-to-no-proxy-domains ()
-             "Add current host to `w3m-no-proxy-domains'"
-             (interactive)
-             (when (eq major-mode 'w3m-mode)
-               (lexical-let* ((parts (w3m-parse-http-url w3m-current-url))
-                              (host (elt parts 1)))
-                 (add-to-list 'w3m-no-proxy-domains host t)
-                 (w3m-reload-this-page))))
-
-           (when (yes-or-no-p "Start privoxy, polipo and tor for w3m? ")
-             (fn/w3m-privoxy-polipo-tor-start-process)))
-
 
          ;; Tabs
          (setq w3m-add-tab-number t
-               w3m-make-new-session nil
+            w3m-make-new-session nil
 
-               w3m-use-header-line t
-               w3m-use-header-line-title t
-               w3m-show-graphic-icons-in-header-line nil
+            w3m-use-header-line t
+            w3m-use-header-line-title t
+            w3m-show-graphic-icons-in-header-line nil
 
-               w3m-use-title-buffer-name t)
+            w3m-use-title-buffer-name t)
 
 
          ;; Search Engine
@@ -6121,381 +5975,10 @@
                w3m-bookmark-default-section "Misc")
 
 
-         (defcustom fn/w3m-auto-bookmark-check-functions (list)
-           "Functions that check if a function should be auto-bookmarked.
-     Each function takes the same arguments as `w3m-arrived-add' and
-     returns non-nil when the url is bookmarked."
-           :type 'hook)
-
-         (defcustom fn/w3m-auto-bookmark-handler-functions (list)
-           "Functions that handle how a url should be bookmarked.
-     Each function takes the same arguments as `w3m-arrived-add' and
-     returns a cons pair where the car is the section and cdr the title
-     if it handles it. "
-           :type 'hook)
-
-
-         (defvar fn/w3m-url-visit-table (make-hash-table :test 'equal)
-           "Record the number of times an url is visited.")
-
-         (defcustom fn/w3m-auto-bookmark-frequent-visit-count 3
-           "Number of times a site should be visited before being bookmarked.")
-
-         (defun fn/w3m-auto-bookmark-frequently-visited (url title)
-           "Check if url is visited frequently enough."
-           (when (eq (gethash url fn/w3m-url-visit-table 'nothing) 'nothing)
-             (puthash url 0 fn/w3m-url-visit-table))
-
-           (lexical-let ((counter (gethash url fn/w3m-url-visit-table)))
-             (unless (/= -1 counter)
-               (puthash url (1+ ) fn/w3m-url-visit-table)))
-
-           (lexical-let ((result (>= (gethash url fn/w3m-url-visit-table) fn/w3m-auto-bookmark-frequent-visit-count)))
-             (prog1
-                 result
-               (when result
-                 (puthash url -1 fn/w3m-url-visit-table)))))
-
-         (add-hook 'fn/w3m-auto-bookmark-check-functions #'fn/w3m-auto-bookmark-frequently-visited)
-
-
-         (defcustom fn/w3m-auto-bookmark-host-handlers (list)
-           "Handle bookmarking by its host.
-     This is a list of cons where the car is the host of the url and
-     cdr a function that takes a url and title argument and returns a
-     cons pair as specified by
-     `fn/w3m-auto-bookmark-handler-functions'."
-           :type 'list)
-
-         (defun fn/w3m-auto-bookmark-host-handler (url title)
-           "Handle bookmarking by host as specified `fn/w3m-auto-bookmark-handler'."
-           (lexical-let* ((pieces (w3m-parse-http-url url))
-                          (host (elt pieces 1))
-                          (host-handler (cdr (assoc host fn/w3m-auto-bookmark-host-handlers))))
-             (if host-handler
-                 (funcall host-handler url title)
-               nil)))
-
-
-         (progn
-           (require 's)
-           (add-to-list 'fn/w3m-auto-bookmark-host-handlers
-                        (cons "github.com"
-                              (lambda (url title)
-                                (cons "Github"
-                                      (cadr
-                                       (s-match "GitHub - \\(.*\\): .*"
-                                                title)))))))
-
-         (add-hook 'fn/w3m-auto-bookmark-handler-functions 'fn/w3m-auto-bookmark-host-handler)
-
-         (defun fn/w3m-bookmarked-p (url)
-           "Check if URL is already bookmarked."
-           (with-current-buffer (find-file-noselect w3m-bookmark-file)
-             (goto-char (point-min))
-             (search-forward url nil t)))
-
-         (defun fn/w3m-auto-bookmark-arrived-url ()
-           "Check whether to auto bookmark a page."
-           (when (w3m-arrived-get url 'title) ;; Check if url is not private
-             (lexical-let* ((url w3m-current-url)
-                            (title w3m-current-title))
-               (when (and (not (fn/w3m-bookmarked-p url))
-                          (run-hook-with-args-until-success
-                           'fn/w3m-auto-bookmark-check-functions
-                           url title))
-                 (lexical-let ((pair (run-hook-with-args-until-success
-                                      'fn/w3m-auto-bookmark-handler-functions
-                                      url title)))
-                   (when (and pair (consp pair))
-                     (pcase-let ((`(,section . ,title) pair))
-                       (when (yes-or-no-p
-                              (format "Bookmark %s on %s as %s? " url section title ))
-                         (w3m-bookmark-write-file
-                          url
-                          (w3m-encode-specials-string title)
-                          (w3m-encode-specials-string section))))))))))
-
-
-         (add-hook 'w3m-fontify-after-hook #'fn/w3m-auto-bookmark-arrived-url)
-
-
-
          ;; Persistent Session
          (require 'w3m-session)
 
          (setq w3m-session-file (expand-file-name "w3m-session" fn/cache-dir))
-
-
-         ;; Video Player
-         (require 'w3m-cookie) ;; Required by `w3m-parse-http-url'
-
-         (defcustom fn/w3m-video-executable "vlc"
-           "The executable that can run a network video stream.")
-
-         (defcustom fn/w3m-video-args
-           (list
-            ;; This skews how the process is managed for vlc
-            ;; "--one-instance"
-            ;; "--play-and-exit"
-            )
-           "Extra arguments to run `fn/w3m-video-executable'")
-
-         (defun fn/w3m-video (&optional url)
-           "Get image video url."
-           (or url (w3m-anchor) w3m-current-url))
-
-         (defun fn/w3m-view-video ()
-           "View the video url with `fn/w3m-video-executable'"
-           (interactive)
-           (let ((url (w3m-url-valid (fn/w3m-video))))
-             (if (null url)
-                 (prog1
-                     (w3m-message "No video at point")
-                   nil)
-               (lexical-let ((video-process
-                              (apply #'start-process
-                                     (append
-                                      (list
-                                       (format "%s-%s" "w3m" fn/w3m-video-executable)
-                                       nil
-                                       fn/w3m-video-executable)
-                                      fn/w3m-video-args
-                                      (list url)))))
-                 (with-current-buffer (current-buffer)
-                   (fn/w3m-kill-page-process)
-
-                   (setq-local fn/w3m-page-process video-process))))))
-
-         (defun fn/w3m-video-url-p (url)
-           "Check if URL is a video."
-           (ignore-errors
-             (lexical-let* ((pieces (w3m-parse-http-url url))
-                            (host (elt pieces 1))
-                            (path (elt pieces 3)))
-               (if (or (and (string= host "www.youtube.com")
-                            (string-prefix-p "/watch" path)))
-                   url nil))))
-
-         (defun fn/w3m-view-this-video-external (url)
-           "View this video externally"
-           (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
-             (when
-                 (and video-url
-                      (yes-or-no-p
-                       (format "%s is a video, view it with %s?"
-                               video-url fn/w3m-video-executable)))
-               (fn/w3m-view-video))))
-
-         (defun fn/w3m-kill-page-process ()
-           "Kill the `fn/w3m-page-process' of the current buffer."
-           (interactive)
-           (with-current-buffer (current-buffer)
-             (when (and (boundp 'fn/w3m-page-process)
-                        (process-live-p fn/w3m-page-process))
-               (kill-process fn/w3m-page-process))
-
-             (setq-local fn/w3m-page-process nil)))
-
-         (defun fn/w3m-auto-kill-page-process (url)
-           "If the page has a process, quit it."
-           (fn/w3m-kill-page-process))
-
-         (defun fn/w3m-single-page-process (result)
-           "If the page process is a singleton, adjust page container accordingly."
-           (when result
-             (lexical-let ((this-page (current-buffer))
-                           (active-process nil))
-               (mapc
-                (lambda (page)
-                  (with-current-buffer page
-                    (when (process-live-p fn/w3m-page-process)
-                      (setq active-process fn/w3m-page-process))
-
-                    (setq-local fn/w3m-page-process nil)))
-                (w3m-list-buffers))
-               (with-current-buffer this-page
-                 (setq-local fn/w3m-page-process active-process))))
-           result)
-
-
-         (add-hook 'w3m-display-hook #'fn/w3m-auto-kill-page-process t)
-         (add-hook 'w3m-display-hook #'fn/w3m-view-this-video-external t)
-         (add-hook 'kill-buffer-hook #'fn/w3m-kill-page-process t)
-
-
-         ;; Summarization
-         (require 'deferred)
-
-         (defcustom fn/w3m-sumy-executable "sumy"
-           "The executable that can run a summarize articles.")
-
-         (defcustom fn/w3m-sumy-args
-           (list
-            "lex-rank"
-            "--length" "5")
-           "Extra arguments to run `fn/w3m-sumy-executable'")
-
-         (defface fn/w3m-summary '((t (:weight bold :height 1.1 :box (:line-width 2 :color "grey75" :style released-button))))
-           "Summary face.")
-
-         (defun fn/w3m-summarize-url (url)
-           "Summarize URL for easier comprehension"
-           (lexical-let ((url url))
-             (deferred:nextc
-               (apply
-                #'deferred:process-shell
-                (append
-                 (list fn/w3m-sumy-executable)
-                 fn/w3m-sumy-args
-                 (if (string-prefix-p "file://" url)
-                     (list "--file"
-                           (concat "\"" (substring-no-properties url (length "file://"))  "\""))
-                   (list "--url"
-                         (concat "\"" url "\"")))))
-               (lambda (summary-output)
-                 (lexical-let ((processed-text (string-trim-right summary-output)))
-                   (if (string-empty-p processed-text)
-                       nil
-                     (mapcar
-                      (lambda (text) (replace-regexp-in-string "\n" " " text))
-                      (split-string processed-text "\\\.\n"))))))))
-
-         (defun fn/w3m-fontify-summary ()
-           "Fontify summary points."
-           (interactive)
-           (when (executable-find fn/w3m-sumy-executable)
-             (lexical-let ((fontifier
-                            (lambda (text)
-                              (let ((inhibit-read-only t)
-                                    (new-text
-                                     (string-join
-                                      (split-string (regexp-quote text) " ") "\n*\s*")))
-                                (goto-char (point-min))
-                                (while (re-search-forward new-text nil t)
-                                  (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
-               (setq-local fn/w3m-fontify-summary (fn/w3m-summarize-url w3m-current-url))
-
-               (with-current-buffer (current-buffer)
-                 (message "Summarizing %s" w3m-current-url)
-                 (deferred:nextc
-                   fn/w3m-fontify-summary
-                   (lambda (text-points)
-                     (setq-local fn/w3m-fontify-summary nil)
-                     (if (null text-points)
-                         (message "No summary for %s" (w3m-current-title))
-                       (message "Summarizing points on %s" w3m-current-url)
-                       (save-excursion
-                         (mapc fontifier text-points))
-                       (message "Summary on %s:\n%s"
-                                (w3m-current-title)
-                                (string-join
-                                 (mapcar
-                                  (lambda (text-point)
-                                    (format "* %s" text-point))
-                                  text-points)
-                                 "\n")))))))))
-
-         (defun fn/w3m-kill-page-summarizer ()
-           "Kill page summarizer."
-           (when (and (boundp 'fn/w3m-page-summarizer)
-                      fn/w3m-page-summarizer
-                      (deferred-p fn/w3m-page-summarizer))
-             (deferred:cancel fn/w3m-page-summarizer))
-
-           (setq-local fn/w3m-page-summarizer nil))
-
-
-         (defcustom fn/w3m-summarize-ignore-page-functions (list)
-           "Functions that check if the url should be summarized.
-     Each function takes an current URL argument and returns non-nil
-     when the page should not be summarized."
-           :type 'hook)
-
-         (defcustom fn/w3m-exclude-ignore-search-engine (list)
-           "Exclude search engine from being ignored."
-           :type 'list)
-
-         (add-to-list 'fn/w3m-exclude-ignore-search-engine "wikipedia")
-         (add-to-list 'fn/w3m-exclude-ignore-search-engine "youtube")
-
-
-         (defun fn/w3m-ignore-search-engine-pages (url &rest args)
-           "Ignore search engine pages as defined by `w3m-search-engine-alist'."
-           (ignore-errors ;; Ignore special urls such as //:about or whatnot
-             (lexical-let* ((url-parts (w3m-parse-http-url url))
-                            (url-host (elt url-parts 1)))
-               (cl-some
-                (lambda (pair)
-                  (pcase-let ((`(,name ,search-url) pair))
-                    (lexical-let* ((search-parts (w3m-parse-http-url search-url))
-                                   (search-host (elt search-parts 1)))
-                      (and (not (member name fn/w3m-exclude-ignore-search-engine))
-                           (string= search-host url-host)))))
-                w3m-search-engine-alist))))
-
-         (defun fn/w3m-ignore-special-pages (url)
-           "Ignore special pages such like `about://'."
-           (pcase url
-             ((pred (string-prefix-p "about://")) t)
-             (_ nil)))
-
-
-         (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
-         (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-special-pages)
-
-
-         (defun fn/w3m-summarize-page ()
-           "Summarize page using `sumy' by checking `fn/w3m-summarize-ignore-page-functions'."
-           (unless (run-hook-with-args-until-success 'fn/w3m-summarize-ignore-page-functions w3m-current-url)
-             (fn/w3m-fontify-summary)))
-
-         (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
-         (add-hook 'w3m-fontify-after-hook #'fn/w3m-summarize-page)
-
-
-         ;; Zone
-         (defun fn/w3m-zone-retrieve (&rest args)
-           (with-current-buffer (current-buffer)
-             (let ((inhibit-read-only t))
-               (erase-buffer)
-               (goto-char (point-min)))
-             (setq-local fn/w3m-zone-timer
-                         (run-at-time
-                          (/ 10.0)
-                          (/ 30.0)
-                          (lambda ()
-                            (let ((inhibit-read-only t)
-                                  (increment (- 6 (random 12))))
-                              (unless (boundp 'fn/w3m-zone-counter)
-                                (setq-local fn/w3m-zone-counter (+ 20 (random 20))))
-                              (setq-local fn/w3m-zone-counter
-                                          (+ fn/w3m-zone-counter increment))
-
-                              (setq-local fn/w3m-zone-counter (max fn/w3m-zone-counter 1))
-
-                              (insert
-                               (string-join
-                                (mapcar
-                                 (lambda (ch)
-                                   (cond
-                                    ((< 0 increment) "\\")
-                                    ((> 0 increment) "/")
-                                    (t "-")))
-                                 (number-sequence 1 fn/w3m-zone-counter))
-                                ""))
-                              (insert "\n")))))))
-
-         ;; (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
-
-         (defun fn/w3m-cancel-zone-render (&rest args)
-           (when (and (boundp 'fn/w3m-zone-timer)
-                      (timerp fn/w3m-zone-timer))
-             (cancel-timer fn/w3m-zone-timer))
-           (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
-           (setq-local fn/w3m-zone-timer nil))
-
-         ;; (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
 
 
          ;; Util
@@ -6554,6 +6037,649 @@
             'w3m-mode
             (list 'all-the-icons-faicon "globe" :v-adjust -0.1)))))
    #+END_SRC
+
+*** Privacy Proxy
+    I want w3m to use tor at least.
+
+    #+BEGIN_SRC emacs-lisp :block-id 024bb8e1-c51e-c67b-b36b-77e031e445e5
+      (fn/use-feature w3m-privacy-proxy
+        (w3m)
+        (fn/use-executables w3m-privoxy-polipo-tor
+          (w3m tor polipo privoxy)
+          (defcustom fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
+            "Polipo cache directory."
+            :type 'directory)
+
+          (defcustom fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
+            "Tor cache directory."
+            :type 'directory)
+
+          (defcustom fn/w3m-privoxy-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
+            "Privoxy cache directory."
+            :type 'directory)
+
+          (defcustom fn/w3m-privoxy-conf-dir (expand-file-name "privoxy" fn/system-dir)
+            "Privoxy conf directory."
+            :type 'directory)
+
+
+
+          (defcustom fn/w3m-tor-port 18050
+            "Tor port"
+            :type 'number)
+
+          (defcustom fn/w3m-polipo-port 18123
+            "Polipo port"
+            :type 'number)
+
+          (defcustom fn/w3m-privoxy-port 18118
+            "Polipo port"
+            :type 'number)
+
+
+          (defcustom fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
+            "Polipo configuration."
+            :type 'file)
+
+          (defcustom fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
+            "Tor configuration."
+            :type 'file)
+
+          (defcustom fn/w3m-privoxy-conf-file (expand-file-name "privoxy-w3m-conf" fn/cache-dir)
+            "Privoxy configuration."
+            :type 'file)
+
+
+          (defun fn/w3m-privoxy-polipo-tor-update-conf ()
+            "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
+            (interactive)
+            (make-directory fn/w3m-polipo-cache-dir t)
+            (make-directory fn/w3m-tor-cache-dir t)
+
+            (make-directory fn/w3m-privoxy-cache-dir t)
+            (make-directory fn/w3m-privoxy-conf-dir t)
+
+            (fn/prodigy-create-polipo-conf
+             fn/w3m-polipo-conf-file
+             `(("proxyAddress" . "127.0.0.1")
+               ("allowedClients" . "127.0.0.1")
+               ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
+               ("proxyPort" . ,fn/w3m-polipo-port)
+               ("cacheIsShared" . false)
+               ("socksParentProxy" .
+                ,(format "%s:%s" "127.0.0.1" fn/w3m-tor-port))
+               ("socksProxyType" . socks5)
+               ("relaxTransparency" . true)
+               ("logSyslog" . false)
+               ("logLevel" . 0xFF)
+               ("logFile" . "")
+
+               ;; Optional Security Setting
+               ("localDocumentRoot" . "")
+               ("disableLocalInterface" . true)
+               ("disableConfiguration" . true)
+               ("dnsUseGethostbyname" . yes)
+               ("disableVia" . true)
+               ("censorReferer" . maybe)
+               ("maxConnectionAge" . 5m)
+               ("maxConnectionRequests" . 120)
+               ("serverMaxSlots" . 8)
+               ("serverSlots" . 2)))
+
+            (fn/prodigy-create-tor-conf
+             fn/w3m-tor-conf-file
+             `(("SocksPort" . ,fn/w3m-tor-port)
+               ("DataDirectory" . ,fn/w3m-tor-cache-dir)
+               ("ControlPort" . ,(1+ fn/w3m-tor-port))
+               ("DisableDebuggerAttachment" . 0)))
+
+            (fn/prodigy-create-privoxy-conf
+             fn/w3m-privoxy-conf-file
+             `(("confdir" . ,fn/w3m-privoxy-conf-dir)
+               ("logdir" . ,fn/w3m-privoxy-cache-dir)
+
+               ("actionsfile" . "match-all.action")
+               ("actionsfile" . "default.action")
+               ("actionsfile" . "user.action")
+               ("filterfile" . "default.filter")
+
+               ("debug" . 13313)
+               ("logfile" . "logfile")
+               ("listen-address" .
+                ,(format "%s:%s" "127.0.0.1" fn/w3m-privoxy-port))
+               ("forward" .
+                ,(format "/ %s:%s" "127.0.0.1" fn/w3m-polipo-port))
+
+               ("toggle" . 1)
+               ("enable-remote-toggle" . 0)
+               ("enable-edit-actions" . 0)
+               ("enforce-blocks" . 0)
+               ("buffer-limit" . 4096)
+               ("enable-proxy-authentication-forwarding" . 0)
+               ("forwarded-connect-retries" .  0)
+               ("accept-intercepted-requests" . 0)
+               ("allow-cgi-request-crunching" . 0)
+               ("split-large-forms" . 0)
+               ("keep-alive-timeout" . 5)
+               ("tolerate-pipelining" . 1)
+               ("socket-timeout" . 300))))
+
+          (defun fn/w3m-remove-http-proxy-arguments ()
+            "Remove http_proxy= from `w3m-command-arguments'."
+            (setq w3m-command-arguments ;; Remove added http_proxy arguments
+               (cl-reduce  ;; I wish this could be easier
+                (lambda (val xs)
+                  (if (and (string= "-o" val)
+                         (string-prefix-p "http_proxy=http://127.0.0.1:"
+                                          (or (car xs) "")))
+                      (cdr xs)
+                    (cons val xs)))
+                w3m-command-arguments
+                :from-end t
+                :initial-value (list))))
+
+          (defun fn/w3m-append-http-proxy-arguments ()
+            "Add http_proxy= to `w3m-command-arguments' while removing previous ones."
+            (fn/w3m-remove-http-proxy-arguments)
+            (setq w3m-command-arguments
+               (append w3m-command-arguments
+                       (list "-o"
+                          (format
+                           "http_proxy=http://127.0.0.1:%s/"
+                           fn/w3m-privoxy-port)))))
+
+
+          (require 'prodigy)
+
+          (defun fn/w3m-service-started-p ()
+            "Check if the three main services are running."
+            (and (prodigy-service-started-p fn/w3m-polipo-service)
+               (prodigy-service-started-p fn/w3m-tor-service)
+               (prodigy-service-started-p fn/w3m-privoxy-service)))
+
+
+          (defun fn/w3m-service-start (&rest args)
+            "Add http-proxy from `w3m-command-arguments'."
+            (when (fn/w3m-service-started-p)
+              (fn/w3m-append-http-proxy-arguments)))
+
+          (defun fn/w3m-service-stop (&rest args)
+            "Add http-proxy from `w3m-command-arguments'."
+            (fn/w3m-remove-http-proxy-arguments))
+
+          (defun fn/w3m-service-init (&rest args)
+            "If both service are stopped, update config before starting."
+            (unless (fn/w3m-service-started-p)
+              (fn/w3m-privoxy-polipo-tor-update-conf)))
+
+          (prodigy-define-tag
+            :name 'w3m
+            :init #'fn/w3m-service-init
+            :on-start #'fn/w3m-service-start
+            :on-stop #'fn/w3m-service-stop)
+
+
+          (defconst fn/w3m-polipo-service-name "w3m-polipo"
+            "Polipo prodigy service name.")
+
+          (defconst fn/w3m-tor-service-name "w3m-tor"
+            "Tor prodigy service name.")
+
+          (defconst fn/w3m-privoxy-service-name "w3m-privoxy"
+            "Privoxy prodigy service name.")
+
+
+          (fn/prodigy-define-service
+           :name fn/w3m-polipo-service-name
+           :tags '(w3m polipo)
+           :port fn/w3m-polipo-port
+           :args (list "-c" fn/w3m-polipo-conf-file))
+
+          (fn/prodigy-define-service
+           :name fn/w3m-tor-service-name
+           :tags '(w3m tor)
+           :port fn/w3m-tor-port
+           :args (list "-f" fn/w3m-tor-conf-file))
+
+          (fn/prodigy-define-service
+           :name fn/w3m-privoxy-service-name
+           :tags '(w3m privoxy)
+           :port fn/w3m-privoxy-port
+           :args (list "--no-daemon" fn/w3m-privoxy-conf-file))
+
+          (setq fn/w3m-polipo-service (prodigy-find-service "w3m-polipo")
+             fn/w3m-tor-service (prodigy-find-service "w3m-tor")
+             fn/w3m-privoxy-service (prodigy-find-service "w3m-privoxy"))
+
+
+          (defun fn/w3m-start-privacy-services (&rest args)
+            "Start services"
+            (interactive)
+            (prodigy-start-service fn/w3m-polipo-service)
+            (prodigy-start-service fn/w3m-tor-service)
+            (prodigy-start-service fn/w3m-privoxy-service))
+
+          (defun fn/w3m-kill-privacy-services (&rest args)
+            "Stop special services."
+            (interactive)
+            (prodigy-stop-service fn/w3m-polipo-service t)
+            (prodigy-stop-service fn/w3m-tor-service t)
+            (prodigy-stop-service fn/w3m-privoxy-service t))
+
+          (add-hook 'kill-emacs-hook #'fn/w3m-kill-privacy-services)
+
+          (add-to-list 'w3m-no-proxy-domains "127.0.0.1")
+          (add-to-list 'w3m-no-proxy-domains "localhost")
+
+          (defun fn/w3m-add-current-host-to-no-proxy-domains ()
+            "Add current host to `w3m-no-proxy-domains'"
+            (interactive)
+            (when (eq major-mode 'w3m-mode)
+              (lexical-let* ((parts (w3m-parse-http-url w3m-current-url))
+                  (host (elt parts 1)))
+                (add-to-list 'w3m-no-proxy-domains host t)
+                (w3m-reload-this-page))))
+
+          (when (yes-or-no-p "Start privacy services for w3m? ")
+            (fn/w3m-start-privacy-services))))
+    #+END_SRC
+
+*** External Video Player
+    Hook up =vlc= and =w3m= when visiting certain sites
+
+    #+BEGIN_SRC emacs-lisp :block-id df45cf24-5006-946a-eac3-a2a4f934a9b7
+      (fn/use-feature w3m-vlc
+        (w3m)
+        (fn/use-executables w3m-vlc-check
+          (vlc)
+          (require 'w3m-cookie) ;; Required by `w3m-parse-http-url'
+
+          (defcustom fn/w3m-video-executable "vlc"
+            "The executable that can run a network video stream.")
+
+          (defcustom fn/w3m-video-args
+            (list
+             ;; This skews how the process is managed for vlc
+             ;; "--one-instance"
+             ;; "--play-and-exit"
+             )
+            "Extra arguments to run `fn/w3m-video-executable'")
+
+          (defun fn/w3m-video (&optional url)
+            "Get image video url."
+            (or url (w3m-anchor) w3m-current-url))
+
+          (defun fn/w3m-view-video ()
+            "View the video url with `fn/w3m-video-executable'"
+            (interactive)
+            (let ((url (w3m-url-valid (fn/w3m-video))))
+              (if (null url)
+                  (prog1
+                      (w3m-message "No video at point")
+                    nil)
+                (lexical-let ((video-process
+                     (apply #'start-process
+                        (append
+                         (list
+                          (format "%s-%s" "w3m" fn/w3m-video-executable)
+                          nil
+                          fn/w3m-video-executable)
+                         fn/w3m-video-args
+                         (list url)))))
+                  (with-current-buffer (current-buffer)
+                    (fn/w3m-kill-page-process)
+
+                    (setq-local fn/w3m-page-process video-process))))))
+
+          (defun fn/w3m-video-url-p (url)
+            "Check if URL is a video."
+            (ignore-errors
+              (lexical-let* ((pieces (w3m-parse-http-url url))
+                  (host (elt pieces 1))
+                  (path (elt pieces 3)))
+                (if (or (and (string= host "www.youtube.com")
+                          (string-prefix-p "/watch" path)))
+                    url nil))))
+
+          (defun fn/w3m-view-this-video-external (url)
+            "View this video externally"
+            (lexical-let ((video-url (fn/w3m-video-url-p (fn/w3m-video))))
+              (when
+                  (and video-url
+                     (yes-or-no-p
+                      (format "%s is a video, view it with %s?"
+                              video-url fn/w3m-video-executable)))
+                (fn/w3m-view-video))))
+
+          (defun fn/w3m-kill-page-process ()
+            "Kill the `fn/w3m-page-process' of the current buffer."
+            (interactive)
+            (with-current-buffer (current-buffer)
+              (when (and (boundp 'fn/w3m-page-process)
+                       (process-live-p fn/w3m-page-process))
+                (kill-process fn/w3m-page-process))
+
+              (setq-local fn/w3m-page-process nil)))
+
+          (defun fn/w3m-auto-kill-page-process (url)
+            "If the page has a process, quit it."
+            (fn/w3m-kill-page-process))
+
+          (defun fn/w3m-single-page-process (result)
+            "If the page process is a singleton, adjust page container accordingly."
+            (when result
+              (lexical-let ((this-page (current-buffer))
+                  (active-process nil))
+                (mapc
+                 (lambda (page)
+                   (with-current-buffer page
+                     (when (process-live-p fn/w3m-page-process)
+                       (setq active-process fn/w3m-page-process))
+
+                     (setq-local fn/w3m-page-process nil)))
+                 (w3m-list-buffers))
+                (with-current-buffer this-page
+                  (setq-local fn/w3m-page-process active-process))))
+            result)
+
+
+          (add-hook 'w3m-display-hook #'fn/w3m-auto-kill-page-process t)
+          (add-hook 'w3m-display-hook #'fn/w3m-view-this-video-external t)
+          (add-hook 'kill-buffer-hook #'fn/w3m-kill-page-process t)
+          ))
+    #+END_SRC
+
+*** Page Summarizer
+    Hooking up =vlc= and =sumy= to aid in reading web pages.
+
+    #+BEGIN_SRC emacs-lisp :block-id a04713ce-840b-7a81-2152-2bad7626e089
+      (fn/use-feature w3m-sumy
+        (w3m)
+        (fn/use-executables w3m-sumy-check
+          (sumy)
+          (require 'deferred)
+
+          (defcustom fn/w3m-sumy-executable "sumy"
+            "The executable that can run a summarize articles.")
+
+          (defcustom fn/w3m-sumy-args
+            (list
+             "lex-rank"
+             "--length" "5")
+            "Extra arguments to run `fn/w3m-sumy-executable'")
+
+          (defface fn/w3m-summary '((t (:weight bold :height 1.1 :box (:line-width 2 :color "grey75" :style released-button))))
+            "Summary face.")
+
+          (defun fn/w3m-summarize-url (url)
+            "Summarize URL for easier comprehension"
+            (lexical-let ((url url))
+              (deferred:nextc
+                (apply
+                 #'deferred:process-shell
+                 (append
+                  (list fn/w3m-sumy-executable)
+                  fn/w3m-sumy-args
+                  (if (string-prefix-p "file://" url)
+                      (list "--file"
+                         (concat "\"" (substring-no-properties url (length "file://"))  "\""))
+                    (list "--url"
+                       (concat "\"" url "\"")))))
+                (lambda (summary-output)
+                  (lexical-let ((processed-text (string-trim-right summary-output)))
+                    (if (string-empty-p processed-text)
+                        nil
+                      (mapcar
+                       (lambda (text) (replace-regexp-in-string "\n" " " text))
+                       (split-string processed-text "\\\.\n"))))))))
+
+          (defun fn/w3m-fontify-summary ()
+            "Fontify summary points."
+            (interactive)
+            (when (executable-find fn/w3m-sumy-executable)
+              (lexical-let ((fontifier
+                   (lambda (text)
+                     (let ((inhibit-read-only t)
+                         (new-text
+                          (string-join
+                           (split-string (regexp-quote text) " ") "\n*\s*")))
+                       (goto-char (point-min))
+                       (while (re-search-forward new-text nil t)
+                         (w3m-add-face-property (match-beginning 0) (match-end 0) 'fn/w3m-summary))))))
+                (setq-local fn/w3m-fontify-summary (fn/w3m-summarize-url w3m-current-url))
+
+                (with-current-buffer (current-buffer)
+                  (message "Summarizing %s" w3m-current-url)
+                  (deferred:nextc
+                    fn/w3m-fontify-summary
+                    (lambda (text-points)
+                      (setq-local fn/w3m-fontify-summary nil)
+                      (if (null text-points)
+                          (message "No summary for %s" (w3m-current-title))
+                        (message "Summarizing points on %s" w3m-current-url)
+                        (save-excursion
+                          (mapc fontifier text-points))
+                        (message "Summary on %s:\n%s"
+                                 (w3m-current-title)
+                                 (string-join
+                                  (mapcar
+                                   (lambda (text-point)
+                                     (format "* %s" text-point))
+                                   text-points)
+                                  "\n")))))))))
+
+          (defun fn/w3m-kill-page-summarizer ()
+            "Kill page summarizer."
+            (when (and (boundp 'fn/w3m-page-summarizer)
+                     fn/w3m-page-summarizer
+                     (deferred-p fn/w3m-page-summarizer))
+              (deferred:cancel fn/w3m-page-summarizer))
+
+            (setq-local fn/w3m-page-summarizer nil))
+
+
+          (defcustom fn/w3m-summarize-ignore-page-functions (list)
+            "Functions that check if the url should be summarized.
+      Each function takes an current URL argument and returns non-nil
+      when the page should not be summarized."
+            :type 'hook)
+
+          (defcustom fn/w3m-exclude-ignore-search-engine (list)
+            "Exclude search engine from being ignored."
+            :type 'list)
+
+          (add-to-list 'fn/w3m-exclude-ignore-search-engine "wikipedia")
+          (add-to-list 'fn/w3m-exclude-ignore-search-engine "youtube")
+
+
+          (defun fn/w3m-ignore-search-engine-pages (url &rest args)
+            "Ignore search engine pages as defined by `w3m-search-engine-alist'."
+            (ignore-errors ;; Ignore special urls such as //:about or whatnot
+              (lexical-let* ((url-parts (w3m-parse-http-url url))
+                  (url-host (elt url-parts 1)))
+                (cl-some
+                 (lambda (pair)
+                   (pcase-let ((`(,name ,search-url) pair))
+                     (lexical-let* ((search-parts (w3m-parse-http-url search-url))
+                         (search-host (elt search-parts 1)))
+                       (and (not (member name fn/w3m-exclude-ignore-search-engine))
+                          (string= search-host url-host)))))
+                 w3m-search-engine-alist))))
+
+          (defun fn/w3m-ignore-special-pages (url)
+            "Ignore special pages such like `about://'."
+            (pcase url
+              ((pred (string-prefix-p "about://")) t)
+              (_ nil)))
+
+
+          (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
+          (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-special-pages)
+
+
+          (defun fn/w3m-summarize-page ()
+            "Summarize page using `sumy' by checking `fn/w3m-summarize-ignore-page-functions'."
+            (unless (run-hook-with-args-until-success 'fn/w3m-summarize-ignore-page-functions w3m-current-url)
+              (fn/w3m-fontify-summary)))
+
+          (add-hook 'w3m-fontify-before-hook #'fn/w3m-kill-page-summarizer)
+          (add-hook 'w3m-fontify-after-hook #'fn/w3m-summarize-page)))
+    #+END_SRC
+
+*** Loading Screen
+    At attempt to zone out while waiting to render
+
+    #+BEGIN_SRC emacs-lisp :block-id 9c509261-9bfe-3ef2-eea2-ea41e0fed74b
+      (fn/use-feature w3m-zone
+        (w3m)
+        (defun fn/w3m-zone-retrieve (&rest args)
+          (with-current-buffer (current-buffer)
+            (let ((inhibit-read-only t))
+              (erase-buffer)
+              (goto-char (point-min)))
+            (setq-local fn/w3m-zone-timer
+                        (run-at-time
+                         (/ 10.0)
+                         (/ 30.0)
+                         (lambda ()
+                           (let ((inhibit-read-only t)
+                               (increment (- 6 (random 12))))
+                             (unless (boundp 'fn/w3m-zone-counter)
+                               (setq-local fn/w3m-zone-counter (+ 20 (random 20))))
+                             (setq-local fn/w3m-zone-counter
+                                         (+ fn/w3m-zone-counter increment))
+
+                             (setq-local fn/w3m-zone-counter (max fn/w3m-zone-counter 1))
+
+                             (insert
+                              (string-join
+                               (mapcar
+                                (lambda (ch)
+                                  (cond
+                                   ((< 0 increment) "\\")
+                                   ((> 0 increment) "/")
+                                   (t "-")))
+                                (number-sequence 1 fn/w3m-zone-counter))
+                               ""))
+                             (insert "\n")))))))
+
+        ;; (advice-add 'w3m-retrieve :after #'fn/w3m-zone-retrieve)
+
+        (defun fn/w3m-cancel-zone-render (&rest args)
+          (when (and (boundp 'fn/w3m-zone-timer)
+                   (timerp fn/w3m-zone-timer))
+            (cancel-timer fn/w3m-zone-timer))
+          (setq-local fn/w3m-zone-counter (+ 20 (random 20)))
+          (setq-local fn/w3m-zone-timer nil))
+
+        ;; (advice-add 'w3m-rendering-buffer :before #'fn/w3m-cancel-zone-render)
+        )
+    #+END_SRC
+
+*** Auto Bookmarking
+    Auto bookmark pages when I seem to visit it frequently
+
+    #+BEGIN_SRC emacs-lisp :block-id 100731bb-4369-0570-8042-cf21a37b049c
+      (fn/use-feature w3m-auto-bookmarking
+        (w3m)
+        (defcustom fn/w3m-auto-bookmark-check-functions (list)
+          "Functions that check if a function should be auto-bookmarked.
+      Each function takes the same arguments as `w3m-arrived-add' and
+      returns non-nil when the url is bookmarked."
+          :type 'hook)
+
+        (defcustom fn/w3m-auto-bookmark-handler-functions (list)
+          "Functions that handle how a url should be bookmarked.
+      Each function takes the same arguments as `w3m-arrived-add' and
+      returns a cons pair where the car is the section and cdr the title
+      if it handles it. "
+          :type 'hook)
+
+
+        (defvar fn/w3m-url-visit-table (make-hash-table :test 'equal)
+          "Record the number of times an url is visited.")
+
+        (defcustom fn/w3m-auto-bookmark-frequent-visit-count 3
+          "Number of times a site should be visited before being bookmarked.")
+
+        (defun fn/w3m-auto-bookmark-frequently-visited (url title)
+          "Check if url is visited frequently enough."
+          (when (eq (gethash url fn/w3m-url-visit-table 'nothing) 'nothing)
+            (puthash url 0 fn/w3m-url-visit-table))
+
+          (lexical-let ((counter (gethash url fn/w3m-url-visit-table)))
+            (unless (/= -1 counter)
+              (puthash url (1+ ) fn/w3m-url-visit-table)))
+
+          (lexical-let ((result (>= (gethash url fn/w3m-url-visit-table) fn/w3m-auto-bookmark-frequent-visit-count)))
+            (prog1
+                result
+              (when result
+                (puthash url -1 fn/w3m-url-visit-table)))))
+
+        (add-hook 'fn/w3m-auto-bookmark-check-functions #'fn/w3m-auto-bookmark-frequently-visited)
+
+
+        (defcustom fn/w3m-auto-bookmark-host-handlers (list)
+          "Handle bookmarking by its host.
+      This is a list of cons where the car is the host of the url and
+      cdr a function that takes a url and title argument and returns a
+      cons pair as specified by
+      `fn/w3m-auto-bookmark-handler-functions'."
+          :type 'list)
+
+        (defun fn/w3m-auto-bookmark-host-handler (url title)
+          "Handle bookmarking by host as specified `fn/w3m-auto-bookmark-handler'."
+          (lexical-let* ((pieces (w3m-parse-http-url url))
+              (host (elt pieces 1))
+              (host-handler (cdr (assoc host fn/w3m-auto-bookmark-host-handlers))))
+            (if host-handler
+                (funcall host-handler url title)
+              nil)))
+
+
+        (progn
+          (require 's)
+          (add-to-list 'fn/w3m-auto-bookmark-host-handlers
+                       (cons "github.com"
+                          (lambda (url title)
+                            (cons "Github"
+                               (cadr
+                                (s-match "GitHub - \\(.*\\): .*"
+                                         title)))))))
+
+        (add-hook 'fn/w3m-auto-bookmark-handler-functions 'fn/w3m-auto-bookmark-host-handler)
+
+        (defun fn/w3m-bookmarked-p (url)
+          "Check if URL is already bookmarked."
+          (with-current-buffer (find-file-noselect w3m-bookmark-file)
+            (goto-char (point-min))
+            (search-forward url nil t)))
+
+        (defun fn/w3m-auto-bookmark-arrived-url ()
+          "Check whether to auto bookmark a page."
+          (when (w3m-arrived-get url 'title) ;; Check if url is not private
+            (lexical-let* ((url w3m-current-url)
+                (title w3m-current-title))
+              (when (and (not (fn/w3m-bookmarked-p url))
+                       (run-hook-with-args-until-success
+                        'fn/w3m-auto-bookmark-check-functions
+                        url title))
+                (lexical-let ((pair (run-hook-with-args-until-success
+                           'fn/w3m-auto-bookmark-handler-functions
+                           url title)))
+                  (when (and pair (consp pair))
+                    (pcase-let ((`(,section . ,title) pair))
+                      (when (yes-or-no-p
+                             (format "Bookmark %s on %s as %s? " url section title ))
+                        (w3m-bookmark-write-file
+                         url
+                         (w3m-encode-specials-string title)
+                         (w3m-encode-specials-string section))))))))))
+
+
+        (add-hook 'w3m-fontify-after-hook #'fn/w3m-auto-bookmark-arrived-url))
+    #+END_SRC
 
 ** twittering
    Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
@@ -6716,7 +6842,15 @@
 
            (setq fn/erc-tor-service (prodigy-find-service "erc-tor"))
 
-           (prodigy-start-service fn/erc-tor-service))))
+           (defun fn/erc-tor-kill-service ()
+             "Kill `fn/erc-tor-service' service safely."
+             (when (prodigy-service-started-p fn/erc-tor-service)
+               (prodigy-stop-service fn/erc-tor-service t)))
+
+           (when (yes-or-no-p "Start tor for erc? ")
+             (prodigy-start-service fn/erc-tor-service))
+
+           (add-hook 'kill-emacs-hook #'fn/erc-tor-kill-service))))
    #+END_SRC
 
 ** jabber
@@ -8687,6 +8821,77 @@
          (fn/espeak
           (buffer-substring-no-properties (region-beginning) (region-end)))))
    #+END_SRC
+** GNU Diction Flycheck
+   A quick definition for diction checking.
+
+   #+BEGIN_SRC emacs-lisp :block-id 8cb1da0c-628a-211f-f009-ea0827f592d8
+     (fn/use-executables diction-check
+       (diction)
+       (fn/use-feature flycheck-diction
+         (flycheck)
+         (defun fn/flycheck-diction--error-line-parser (raw-line)
+           "Parse a line into relevant parts."
+           (lexical-let ((file
+                (prog2
+                    (string-match "\\(.*\\):\\([0123456789]+\\):\\(.*\\)" raw-line)
+                    (match-string-no-properties 1 raw-line)))
+               (line
+                (prog2
+                    (string-match "\\(.*\\):\\([0123456789]+\\):\\(.*\\)" raw-line)
+                    (match-string-no-properties 2 raw-line)))
+               (errors
+                (lexical-let ((processed-line
+                     (replace-regexp-in-string "\\[\\[.+\\]\\[.+\\]\\]" "" raw-line))
+                    (index 0)
+                    (matches (list)))
+                  (while (not (null index))
+                    (setq index (string-match "\\\[\\(.+?\\)\s->\s\\(.+?\\)\\\]" processed-line
+                                           (1+ index)))
+                    (push
+                     (cons (match-string-no-properties 1 processed-line)
+                        (match-string-no-properties 2 processed-line))
+                     matches))
+                  matches)))
+             (list file (string-to-number line) errors)))
+
+         (defun fn/flycheck-diction--error-parser (output checker buffer)
+           "Parser for diction"
+           (lexical-let ((result
+                (cl-reduce
+                 (lambda (acc raw-line)
+                   (if (string-empty-p raw-line)
+                       acc
+                     (pcase-let ((`(,file ,line ,errors)
+                                  (fn/flycheck-diction--error-line-parser
+                                   (string-trim raw-line))))
+                       (append
+                        acc
+                        (mapcar
+                         (lambda (this-error)
+                           (flycheck-error-new
+                            :buffer buffer
+                            :checker checker
+                            :filename file
+                            :line line
+                            :message (concat (car this-error) " -> " (cdr this-error))
+                            :level 'warning))
+                         errors)))))
+                 (split-string (string-trim output) "\n")
+                 :initial-value (list)
+                 :end -1 ;; Exclude ending line
+                 )))
+             result))
+
+         (flycheck-define-command-checker 'fn/diction-checker
+           "Checking with diction."
+           :command `("diction" "-s" "-b" "-d" source)
+           :error-parser 'fn/flycheck-diction--error-parser
+           :standard-input nil
+           :modes 'org-mode)
+
+         (add-to-list 'flycheck-checkers 'fn/diction-checker)))
+   #+END_SRC
+
 * Key Bindings
   Here is where all the key binding I mapped to
 
