@@ -1,2 +1,13 @@
-;; Going to open a project that will load a script which will trigger `(delete-other-windows)'
-;; The project is projectile-project-loader
+;; Demo config for fn/prodigy-set-mode
+(fn/prodigy-set-define-set
+ :name "w3m-privacy"
+ :executor 'sequential
+ :services '(("w3m-privoxy" . ready)
+             ("w3m-polipo" .ready)
+             ("w3m-tor" .ready)))
+
+(fn/prodigy-set-define-set
+ :name "tor-all"
+ :executor 'parallel
+ :services '(("w3m-tor")
+             ("erc-tor")))

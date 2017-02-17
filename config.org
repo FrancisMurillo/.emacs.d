@@ -964,6 +964,10 @@
        :load-path fn/custom-script-dir
        :defer t)
 
+     (use-package prodigy-set
+       :load-path fn/custom-script-dir
+       :defer t)
+
      (use-package text-candy
        :load-path fn/custom-script-dir
        :defer 5)
@@ -1175,6 +1179,39 @@
           (list 'all-the-icons-faicon "cog" :v-adjust -0.1))))
    #+END_SRC
 
+*** Prodigy Cleanup
+    Auto-kill prodigy processes on close
+
+    #+BEGIN_SRC emacs-lisp :block-id 9fd74263-24d5-5341-6be7-f94ff27a0be4
+      (fn/use-feature prodigy-auto-kill
+        (prodigy)
+        (defvar fn/prodigy-processes (list)
+          "List of processes to kill when closing.")
+
+        (defun fn/prodigy-kill-processes ()
+          "Kill all processes started by `prodigy'"
+          (interactive)
+          (mapc
+           (lambda (process)
+             (when (process-live-p process)
+               (kill-process process)))
+           fn/prodigy-processes)
+          (prog1
+              fn/prodigy-processes
+            (setq fn/prodigy-processes nil)))
+
+        (defun fn/prodigy-add-to-processes (service &rest _args)
+          "Add SERVICE process to `fn/prodigy-processes'."
+          (setq fn/prodigy-processes (cl-remove-if-not #'process-live-p fn/prodigy-processes))
+          (lexical-let ((process (plist-get service :process)))
+            (when (process-live-p process)
+              (add-to-list 'fn/prodigy-processes process))))
+
+        (advice-add 'prodigy-start-service :after #'fn/prodigy-add-to-processes)
+
+        (add-hook 'kill-emacs-hook #'fn/prodigy-kill-processes))
+    #+END_SRC
+
 *** Customized Prodigy
     A dependency to customize prodigy, giving the command =fn/prodigy-define-service=.
 
@@ -1316,7 +1353,9 @@
             :command "tor"
             :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
-            :ready-message "\\.*Bootstapped 100\\.*")
+            :ready-message ".*Bootstapped 100.*")
+
+
 
           (defun fn/prodigy-create-tor-conf (file options)
             "Update FILE with tor OPTIONS."
@@ -1373,42 +1412,16 @@
             :kill-signal 'sigkill)))
     #+END_SRC
 
-*** Grouped Services
+*** Service Sets
     Services are grouped together, starting and stopping together or in
     sequence.
 
     #+BEGIN_SRC emacs-lisp :block-id 1b36d539-6882-8a58-5206-512adfd9118e
-      (fn/use-feature prodigy-set
-        (prodigy)
-        (require 'cl)
-
-        (defvar fn/prodigy-service-sets nil
-          "An alist of service sets.")
-
-        (defun* fn/prodigy-define-service-set (&rest args)
-          "Define a service set that will start and stop services."
-          )
-
-        (defun fn/prodigy-start-service-set (service-set)
-          "Start a service set."
-          )
-
-        (defun fn/prodigy-stop-service-set (service-set)
-          "Stop a service set."
-          )
-
-        (defun fn/prodigy-service-set-of-service (service)
-          "Given a SERVICE, return the set it is in.")
-
-
-        (advice-add 'prodigy-start-service :after 'ignore)
-        (advice-add 'prodigy-stop-service :after 'ignore)
-        (advice-add 'prodigy-set-status :after 'ignore)
-
-        (fn/prodigy-define-service-set
-         :name "w3m-privacy"
-         :services '(("a" . ready)))
-       )
+      (use-package prodigy-set
+        :load-path fn/custom-script-dir
+        :after prodigy
+        :config
+        nil)
     #+END_SRC
 
 ** procred
@@ -6043,8 +6056,8 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 024bb8e1-c51e-c67b-b36b-77e031e445e5
       (fn/use-feature w3m-privacy-proxy
-        (w3m)
-        (fn/use-executables w3m-privoxy-polipo-tor
+        (w3m )
+        (fn/use-executables w3m-privacy-proxy
           (w3m tor polipo privoxy)
           (defcustom fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
             "Polipo cache directory."
@@ -6090,7 +6103,7 @@
             :type 'file)
 
 
-          (defun fn/w3m-privoxy-polipo-tor-update-conf ()
+          (defun fn/w3m-privacy-update-conf ()
             "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
             (interactive)
             (make-directory fn/w3m-polipo-cache-dir t)
@@ -6190,17 +6203,11 @@
 
 
           (require 'prodigy)
-
-          (defun fn/w3m-service-started-p ()
-            "Check if the three main services are running."
-            (and (prodigy-service-started-p fn/w3m-polipo-service)
-               (prodigy-service-started-p fn/w3m-tor-service)
-               (prodigy-service-started-p fn/w3m-privoxy-service)))
-
+          (require 'prodigy-set)
 
           (defun fn/w3m-service-start (&rest args)
             "Add http-proxy from `w3m-command-arguments'."
-            (when (fn/w3m-service-started-p)
+            (when (prodigy-set-started-p fn/w3m-privacy-set)
               (fn/w3m-append-http-proxy-arguments)))
 
           (defun fn/w3m-service-stop (&rest args)
@@ -6209,8 +6216,9 @@
 
           (defun fn/w3m-service-init (&rest args)
             "If both service are stopped, update config before starting."
-            (unless (fn/w3m-service-started-p)
-              (fn/w3m-privoxy-polipo-tor-update-conf)))
+            (unless (prodigy-set-started-p fn/w3m-privacy-set)
+              (fn/w3m-privacy-update-conf)))
+
 
           (prodigy-define-tag
             :name 'w3m
@@ -6247,26 +6255,30 @@
            :port fn/w3m-privoxy-port
            :args (list "--no-daemon" fn/w3m-privoxy-conf-file))
 
-          (setq fn/w3m-polipo-service (prodigy-find-service "w3m-polipo")
-             fn/w3m-tor-service (prodigy-find-service "w3m-tor")
-             fn/w3m-privoxy-service (prodigy-find-service "w3m-privoxy"))
+          (defconst fn/w3m-privacy-set
+            (prodigy-set-define-set
+             :name "w3m-privacy"
+             :strategy 'sequential
+             :services `(("w3m-privoxy" . ready)
+                         ("w3m-polipo" . ready)
+                         ("w3m-tor" . ready)))
+            "My privacy set.")
+
+          (prodigy-set-mode t)
 
 
-          (defun fn/w3m-start-privacy-services (&rest args)
+          (defun fn/w3m-start-privacy-proxies (&rest args)
             "Start services"
             (interactive)
-            (prodigy-start-service fn/w3m-polipo-service)
-            (prodigy-start-service fn/w3m-tor-service)
-            (prodigy-start-service fn/w3m-privoxy-service))
+            (prodigy-set-mode t)
+            (prodigy-set-start-set fn/w3m-privacy-set))
 
-          (defun fn/w3m-kill-privacy-services (&rest args)
+          (defun fn/w3m-kill-privacy-proxies (&rest args)
             "Stop special services."
             (interactive)
-            (prodigy-stop-service fn/w3m-polipo-service t)
-            (prodigy-stop-service fn/w3m-tor-service t)
-            (prodigy-stop-service fn/w3m-privoxy-service t))
+            (prodigy-set-mode t)
+            (prodigy-set-stop-set fn/w3m-privacy-set))
 
-          (add-hook 'kill-emacs-hook #'fn/w3m-kill-privacy-services)
 
           (add-to-list 'w3m-no-proxy-domains "127.0.0.1")
           (add-to-list 'w3m-no-proxy-domains "localhost")
@@ -6280,8 +6292,10 @@
                 (add-to-list 'w3m-no-proxy-domains host t)
                 (w3m-reload-this-page))))
 
-          (when (yes-or-no-p "Start privacy services for w3m? ")
-            (fn/w3m-start-privacy-services))))
+          (when (yes-or-no-p "Start privacy proxies for w3m? ")
+            (fn/w3m-start-privacy-proxies)
+            (message "Delaying a little bit after starting the proxies.")
+            (sleep-for 1))))
     #+END_SRC
 
 *** External Video Player
@@ -6812,7 +6826,7 @@
              (make-directory fn/erc-tor-cache-dir t)
 
              (setq socks-password ""
-                socks-noproxy (list "localhost" "127.0.0.1" "irc.freenode.net"))
+                   socks-noproxy (list "localhost" "127.0.0.1" "irc.freenode.net"))
 
              (require 'socks)
              (require 'tls)
@@ -6842,15 +6856,8 @@
 
            (setq fn/erc-tor-service (prodigy-find-service "erc-tor"))
 
-           (defun fn/erc-tor-kill-service ()
-             "Kill `fn/erc-tor-service' service safely."
-             (when (prodigy-service-started-p fn/erc-tor-service)
-               (prodigy-stop-service fn/erc-tor-service t)))
-
            (when (yes-or-no-p "Start tor for erc? ")
-             (prodigy-start-service fn/erc-tor-service))
-
-           (add-hook 'kill-emacs-hook #'fn/erc-tor-kill-service))))
+             (prodigy-start-service fn/erc-tor-service)))))
    #+END_SRC
 
 ** jabber
@@ -8829,6 +8836,16 @@
        (diction)
        (fn/use-feature flycheck-diction
          (flycheck)
+
+         (defconst fn/diction-dir (expand-file-name "diction" fn/system-dir)
+           "My diction directory.")
+
+         (make-directory fn/diction-dir t)
+
+
+         (defconst fn/flycheck-diction-file (expand-file-name "en-conf" fn/diction-dir)
+           "Diction conf file.")
+
          (defun fn/flycheck-diction--error-line-parser (raw-line)
            "Parse a line into relevant parts."
            (lexical-let ((file
@@ -8884,7 +8901,7 @@
 
          (flycheck-define-command-checker 'fn/diction-checker
            "Checking with diction."
-           :command `("diction" "-s" "-b" "-d" source)
+           :command `("diction" "-f" ,fn/flycheck-diction-file "-s" "-b" "-d" source)
            :error-parser 'fn/flycheck-diction--error-parser
            :standard-input nil
            :modes 'org-mode)
