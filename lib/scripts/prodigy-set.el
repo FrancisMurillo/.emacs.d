@@ -244,6 +244,7 @@ This needs to be a global function to work with prodigy callbacks"
           (if (functionp callback)
               (funcall callback)
             nil)
+        (puthash (plist-get :name set) (list) prodigy-set--sequential-state)
         (prodigy-refresh))
     (pcase-let ((`(,service . ,target-status) (car this-service-entries)))
       (if (prodigy-service-started-p service)
@@ -252,21 +253,27 @@ This needs to be a global function to work with prodigy callbacks"
                                                     callback)
         (prodigy-start-service service)
         (lexical-let* ((set set)
+            (service service)
             (this-service-entries this-service-entries)
             (callback callback)
             (set-name (plist-get set :name))
             (target-status (or target-status 'ready)))
-          (puthash set-name
-                   (plist-put (plist-put
-                               (gethash set-name prodigy-set--sequential-state)
-                               :step-callback
-                               (lambda ()
-                                 (prodigy-set-strategy--sequential-starter
-                                  set
-                                  (cdr this-service-entries)
-                                  callback)))
-                              :target-status target-status)
-                   prodigy-set--sequential-state))))))
+          (if (null (cdr this-service-entries))
+              (prodigy-set-strategy--sequential-starter set
+                                                        nil
+                                                        callback)
+            (puthash set-name
+                     (plist-put (plist-put (plist-put
+                                            (gethash set-name prodigy-set--sequential-state)
+                                            :step-callback
+                                            (lambda ()
+                                              (prodigy-set-strategy--sequential-starter
+                                               set
+                                               (cdr this-service-entries)
+                                               callback)))
+                                           :target-status target-status)
+                                :target-service service)
+                     prodigy-set--sequential-state)))))))
 
 (defun prodigy-set-strategy--sequential (set service action status callback)
   "Sequential service start strategy."
@@ -289,8 +296,10 @@ This needs to be a global function to work with prodigy callbacks"
                                        callback))
       ('status
        (lexical-let ((target-status (plist-get this-state :target-status))
+           (target-service (plist-get this-state :target-service))
            (step-callback (plist-get this-state :step-callback)))
-         (when (equal target-status status)
+         (when (and (equal (plist-get service :name) (plist-get target-service :name))
+                  (equal target-status status))
            (funcall step-callback)))))
     nil))
 

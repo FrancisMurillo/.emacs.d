@@ -1,13 +1,13 @@
-;; Demo config for fn/prodigy-set-mode
-(fn/prodigy-set-define-set
+;; Demo config for prodigy-set-mode
+(prodigy-set-define-set
  :name "w3m-privacy"
- :executor 'sequential
+ :strategy 'sequential
  :services '(("w3m-privoxy" . ready)
              ("w3m-polipo" .ready)
              ("w3m-tor" .ready)))
 
-(fn/prodigy-set-define-set
+(prodigy-set-define-set
  :name "tor-all"
- :executor 'parallel
+ :strategy 'parallel
  :services '(("w3m-tor")
              ("erc-tor")))

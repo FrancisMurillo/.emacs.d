@@ -1180,7 +1180,7 @@
    #+END_SRC
 
 *** Prodigy Cleanup
-    Auto-kill prodigy processes on close
+    Ensure when Emacs closes, kill all processes
 
     #+BEGIN_SRC emacs-lisp :block-id 9fd74263-24d5-5341-6be7-f94ff27a0be4
       (fn/use-feature prodigy-auto-kill
@@ -1323,6 +1323,7 @@
             :name 'polipo
             :cwd user-emacs-directory
             :command "polipo"
+            :stop-signal 'kill
             :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
             :ready-message "\\.*Established listening socket on \\.*")
@@ -1351,10 +1352,10 @@
             :name 'tor
             :cwd user-emacs-directory
             :command "tor"
+            :stop-signal 'kill
             :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
             :ready-message ".*Bootstapped 100.*")
-
 
 
           (defun fn/prodigy-create-tor-conf (file options)
@@ -1381,6 +1382,7 @@
             :name 'privoxy
             :cwd user-emacs-directory
             :command "privoxy"
+            :stop-signal 'kill
             :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
             :ready-message "\\.*Listening on port \\.*")
@@ -5928,7 +5930,7 @@
          ;; History
          (require 'w3m-hist)
 
-         (setq w3m-history-reuse-history-elements t
+         (setq w3m-y-reuse-history-elements t
                w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir)
                w3m-arrived-db-size 2000
                w3m-keep-cache-size 1500)
@@ -6144,7 +6146,8 @@
              `(("SocksPort" . ,fn/w3m-tor-port)
                ("DataDirectory" . ,fn/w3m-tor-cache-dir)
                ("ControlPort" . ,(1+ fn/w3m-tor-port))
-               ("DisableDebuggerAttachment" . 0)))
+               ("DisableDebuggerAttachment" . 0)
+               ("Log" . "info")))
 
             (fn/prodigy-create-privoxy-conf
              fn/w3m-privoxy-conf-file
@@ -6714,6 +6717,8 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 7cf5dadb-eb6b-a004-1566-eb12464e2e44
      (use-package erc
+       :ensure t
+       :defer t
        :bind (:map fn-standard-prefix-map
                    ("e q" . erc-quit-server)
                    ("e e" . erc))
@@ -6734,6 +6739,8 @@
           erc-interpret-mirc-color t
 
           erc-quit-reason (lambda (&rest args) "I took with me... their lightning and their prayers"))
+
+
 
        (fn/use-feature erc-message-alert
          (alert)

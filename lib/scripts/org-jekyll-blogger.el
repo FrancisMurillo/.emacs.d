@@ -52,7 +52,9 @@
 (require 'subr-x)
 
 (require 'org)
+
 (require 'ox-publish)
+(require 'ox-rss)
 
 
 ;; Header
