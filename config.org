@@ -6705,6 +6705,7 @@
      (use-package twittering-mode
        :ensure t
        :defer t
+       :commands (twittering-mode)
        :init
        (setq twittering-auth-method 'oauth)
        (setq twittering-use-master-password t)
@@ -6728,13 +6729,6 @@
           ;; Setup for server and such is in personal.el
           erc-prompt-for-password nil
 
-          erc-autojoin-channels-alist
-          (list
-           (list "freenode.net"
-              "#emacs"
-              "#conkeror"
-              "#flowtype"
-              "#rethinkdb"))
           erc-rename-buffers t
           erc-interpret-mirc-color t
 

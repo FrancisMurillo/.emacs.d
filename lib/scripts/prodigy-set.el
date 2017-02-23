@@ -59,17 +59,17 @@
 (defun* prodigy-set-define-set (&key name strategy services &allow-other-keys)
   "Define a service set that will start and stop services."
   (lexical-let ((object
-       (list
-        :name name
-        :strategy strategy
-        :services services)))
+                 (list
+                  :name name
+                  :strategy strategy
+                  :services services)))
     (setq prodigy-set-sets
-       (append
-        (list object)
-        (cl-remove-if ;; Remove same set first
-         (lambda (element)
-           (equal (plist-get element :name) name))
-         prodigy-set-sets)))
+          (append
+           (list object)
+           (cl-remove-if ;; Remove same set first
+            (lambda (element)
+              (equal (plist-get element :name) name))
+            prodigy-set-sets)))
     object))
 
 (defun prodigy-set-subservices (set)
@@ -84,7 +84,7 @@
    (lambda (service-pair)
      (pcase-let ((`(,service-name . ,service-properties) service-pair))
        (cons (prodigy-find-service service-name)
-          service-properties)))
+             service-properties)))
    (plist-get set :services)))
 
 (defun prodigy-set-subservice-exist-p (set)
@@ -132,51 +132,51 @@
 (defun prodigy-set-find-dependent-sets (service)
   "Given a SERVICE, return the set(s) it is in as well as sets related to it."
   (letrec ((name-test
-       (lambda (left right)
-         (equal (plist-get left :name)
-                (plist-get right :name))))
-      (recurser
-       (lambda (service initial-sets)
-         (lexical-let ((base-sets
-              (prodigy-set-find-containing-sets service)))
-           (if (null base-sets)
-               initial-sets
-             (lexical-let* ((base-set-services
-                  (apply #'append
-                     (mapcar #'prodigy-set-subservices
-                             base-sets)))
-                 (new-sets
-                  (cl-remove-duplicates
-                   (apply #'append
-                      (mapcar #'prodigy-set-find-containing-sets
-                              base-set-services))
-                   :test name-test))
-                 (unique-sets
-                  (cl-set-difference new-sets
-                                     initial-sets
-                                     :test name-test))
-                 (unique-services
-                  (cl-remove-duplicates
-                   (apply #'append
-                      (mapcar #'prodigy-set-subservices
-                              unique-sets))
-                   :test name-test)))
-               (cl-remove-duplicates
-                (cl-reduce
-                 (lambda (acc service)
-                   (funcall recurser service acc))
-                 unique-services
-                 :initial-value new-sets)
-                :test name-test)))))))
+            (lambda (left right)
+              (equal (plist-get left :name)
+                     (plist-get right :name))))
+           (recurser
+            (lambda (service initial-sets)
+              (lexical-let ((base-sets
+                             (prodigy-set-find-containing-sets service)))
+                (if (null base-sets)
+                    initial-sets
+                  (lexical-let* ((base-set-services
+                                  (apply #'append
+                                         (mapcar #'prodigy-set-subservices
+                                                 base-sets)))
+                                 (new-sets
+                                  (cl-remove-duplicates
+                                   (apply #'append
+                                          (mapcar #'prodigy-set-find-containing-sets
+                                                  base-set-services))
+                                   :test name-test))
+                                 (unique-sets
+                                  (cl-set-difference new-sets
+                                                     initial-sets
+                                                     :test name-test))
+                                 (unique-services
+                                  (cl-remove-duplicates
+                                   (apply #'append
+                                          (mapcar #'prodigy-set-subservices
+                                                  unique-sets))
+                                   :test name-test)))
+                    (cl-remove-duplicates
+                     (cl-reduce
+                      (lambda (acc service)
+                        (funcall recurser service acc))
+                      unique-services
+                      :initial-value new-sets)
+                     :test name-test)))))))
     (funcall recurser service (list))))
 
 (defun prodigy-set-strategy (set)
   "Find strategy for SET."
   (lexical-let* ((strategy-symbol (plist-get set :strategy))
-      (strategy-stop-name
-       (format "%s--%s"
-               prodigy-set-strategy-prefix
-               (symbol-name strategy-symbol))))
+                 (strategy-stop-name
+                  (format "%s--%s"
+                          prodigy-set-strategy-prefix
+                          (symbol-name strategy-symbol))))
     (intern strategy-stop-name)))
 
 
@@ -195,7 +195,7 @@ This needs to be a global function to work with prodigy callbacks"
          callback)
       (prodigy-start-service (car this-subservices)
         (lexical-let ((this-subservices this-subservices)
-            (callback callback))
+                      (callback callback))
           (lambda ()
             (prodigy-set-strategy--parallel-starter
              (cdr this-subservices)
@@ -215,7 +215,7 @@ This needs to be a global function to work with prodigy callbacks"
          callback)
       (prodigy-stop-service (car this-subservices) t
         (lexical-let ((this-subservices this-subservices)
-            (callback callback))
+                      (callback callback))
           (lambda ()
             (prodigy-set-strategy--parallel-stopper
              (cdr this-subservices)
@@ -253,11 +253,11 @@ This needs to be a global function to work with prodigy callbacks"
                                                     callback)
         (prodigy-start-service service)
         (lexical-let* ((set set)
-            (service service)
-            (this-service-entries this-service-entries)
-            (callback callback)
-            (set-name (plist-get set :name))
-            (target-status (or target-status 'ready)))
+                       (service service)
+                       (this-service-entries this-service-entries)
+                       (callback callback)
+                       (set-name (plist-get set :name))
+                       (target-status (or target-status 'ready)))
           (if (null (cdr this-service-entries))
               (prodigy-set-strategy--sequential-starter set
                                                         nil
@@ -281,7 +281,7 @@ This needs to be a global function to work with prodigy callbacks"
     (when (equal (gethash set-name prodigy-set--sequential-state 'nothing) 'nothing)
       (puthash set-name (list) prodigy-set--sequential-state)))
   (lexical-let* ((set-name (plist-get set :name))
-      (this-state (gethash set-name prodigy-set--sequential-state)))
+                 (this-state (gethash set-name prodigy-set--sequential-state)))
     (pcase action
       ('start
        (puthash set-name (list) prodigy-set--sequential-state)
@@ -296,10 +296,10 @@ This needs to be a global function to work with prodigy callbacks"
                                        callback))
       ('status
        (lexical-let ((target-status (plist-get this-state :target-status))
-           (target-service (plist-get this-state :target-service))
-           (step-callback (plist-get this-state :step-callback)))
+                     (target-service (plist-get this-state :target-service))
+                     (step-callback (plist-get this-state :step-callback)))
          (when (and (equal (plist-get service :name) (plist-get target-service :name))
-                  (equal target-status status))
+                    (equal target-status status))
            (funcall step-callback)))))
     nil))
 
@@ -309,23 +309,23 @@ This needs to be a global function to work with prodigy callbacks"
 (defun prodigy-set-start-service (orig-fun service &optional callback)
   "If a service is started, start it with the rest of them."
   (lexical-let* ((sets (prodigy-set-find-dependent-sets service))
-      (callback-counter 0)
-      (callback-length (length sets))
-      (callback callback)
-      (all-callback
-       (lambda ()
-         (setq callback-counter (1+ callback-counter))
-         (if (< callback-counter callback-length)
-             nil
-           (when (functionp callback)
-             (let ((prodigy-set--disable-advice nil))
-               (funcall callback)))))))
+                 (callback-counter 0)
+                 (callback-length (length sets))
+                 (callback callback)
+                 (all-callback
+                  (lambda ()
+                    (setq callback-counter (1+ callback-counter))
+                    (if (< callback-counter callback-length)
+                        nil
+                      (when (functionp callback)
+                        (let ((prodigy-set--disable-advice nil))
+                          (funcall callback)))))))
     (if (null sets)
         (funcall orig-fun service callback)
       (mapc
        (lambda (set)
          (if (or prodigy-set--disable-advice
-                (not (prodigy-set-subservice-exist-p set)))
+                 (not (prodigy-set-subservice-exist-p set)))
              (funcall orig-fun service callback)
            (lexical-let ((set-strategy (prodigy-set-strategy set)))
              (let ((prodigy-set--disable-advice t))
@@ -335,23 +335,23 @@ This needs to be a global function to work with prodigy callbacks"
 (defun prodigy-set-stop-service (orig-fun service &optional force callback)
   "If a service is stop, stop the rest of them."
   (lexical-let* ((sets (prodigy-set-find-dependent-sets service))
-      (callback-counter 0)
-      (callback-length (length sets))
-      (callback callback)
-      (all-callback
-       (lambda ()
-         (setq callback-counter (1+ callback-counter))
-         (if (< callback-counter callback-length)
-             nil
-           (when (functionp callback)
-             (let ((prodigy-set--disable-advice nil))
-               (funcall callback)))))))
+                 (callback-counter 0)
+                 (callback-length (length sets))
+                 (callback callback)
+                 (all-callback
+                  (lambda ()
+                    (setq callback-counter (1+ callback-counter))
+                    (if (< callback-counter callback-length)
+                        nil
+                      (when (functionp callback)
+                        (let ((prodigy-set--disable-advice nil))
+                          (funcall callback)))))))
     (if (null sets)
         (funcall orig-fun service force callback)
       (mapc
        (lambda (set)
          (if (or prodigy-set--disable-advice
-                (not (prodigy-set-subservice-exist-p set)))
+                 (not (prodigy-set-subservice-exist-p set)))
              (funcall orig-fun service force callback)
            (lexical-let ((set-strategy (prodigy-set-strategy set)))
              (let ((prodigy-set--disable-advice t))
