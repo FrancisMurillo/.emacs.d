@@ -1426,6 +1426,7 @@
         nil)
     #+END_SRC
 
+
 ** procred
    Similarly, manage processes.
 
@@ -1753,7 +1754,8 @@
 
         (make-directory fn/desktop-dir t)
 
-        (setq desktop-path (list)
+        (setq desktop-path (list fn/desktop-dir)
+           desktop-dirname fn/desktop-dir
            desktop-base-file-name "blank"
            desktop-base-lock-name ".desk-lock"
            desktop-save 'if-exists
@@ -5883,7 +5885,7 @@
          :config
          ;; Main
          (setq w3m-home-page "https://duckduckgo.com"
-
+            w3m-init-file (expand-file-name "emacs-w3m.config" fn/cache-dir)
             w3m-use-cookies nil
             w3m-confirm-leaving-secure-page nil
             w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
@@ -6186,8 +6188,11 @@
                (cl-reduce  ;; I wish this could be easier
                 (lambda (val xs)
                   (if (and (string= "-o" val)
-                         (string-prefix-p "http_proxy=http://127.0.0.1:"
-                                          (or (car xs) "")))
+                         (or
+                          (string-prefix-p "http_proxy="
+                                           (or (car xs) ""))
+                          (string-prefix-p "https_proxy="
+                                           (or (car xs) ""))))
                       (cdr xs)
                     (cons val xs)))
                 w3m-command-arguments
@@ -6202,6 +6207,10 @@
                        (list "-o"
                           (format
                            "http_proxy=http://127.0.0.1:%s/"
+                           fn/w3m-privoxy-port))
+                       (list "-o"
+                          (format
+                           "https_proxy=https://127.0.0.1:%s/"
                            fn/w3m-privoxy-port)))))
 
 
@@ -6779,86 +6788,7 @@
          (all-the-icons)
          (fn/add-major-mode-icon
           'erc-mode
-          (list 'all-the-icons-faicon "exchange" :v-adjust 0.0)))
-
-       (fn/use-feature erc-proxy-prodigy
-         (prodigy)
-         (fn/use-executables erc-tor-proxy
-           (tor)
-
-           (defcustom fn/erc-tor-port 18060
-             "Tor proxy port to work use."
-             :type 'number)
-
-           (defcustom fn/erc-tor-cache-dir (expand-file-name "tor-erc-cache" fn/cache-dir)
-             "Tor cache directory."
-             :type 'directory)
-
-           (defcustom fn/erc-tor-conf-file (expand-file-name "tor-erc-conf" fn/cache-dir)
-             "My tor configuration location."
-             :type 'file)
-
-
-           (defun fn/erc-tor-update-conf ()
-             "Create/update `fn/erc-tor-conf-file'' with new
-     configurations."
-             (interactive)
-             (with-temp-file fn/erc-tor-conf-file
-               (insert
-                (string-join
-                 (mapcar
-                  (lambda (pair)
-                    (pcase-let ((`(,key . ,value) pair))
-                      (format
-                       "%s %s"
-                       key
-                       (typecase value
-                         (symbolp (symbol-name value))
-                         (numberp (number-to-string value))
-                         (stringp value)))))
-                  `(("SocksPort" . ,fn/erc-tor-port)
-                    ("DataDirectory" . ,fn/erc-tor-cache-dir)))
-                 "\n"))))
-
-
-           (defun fn/erc-tor-service-init (&rest _args)
-             "Setup erc-tor service"
-             (fn/erc-tor-update-conf)
-             (make-directory fn/erc-tor-cache-dir t)
-
-             (setq socks-password ""
-                   socks-noproxy (list "localhost" "127.0.0.1" "irc.freenode.net"))
-
-             (require 'socks)
-             (require 'tls)
-
-             (setq socks-server (list "erc-tor" "127.0.0.1" fn/erc-tor-port 5)
-                url-gateway-method 'socks))
-
-           (defun fn/erc-tor-service-on-start (&rest _args)
-             "Erc Tor service on start"
-             (setq erc-server-connect-function 'socks-open-network-stream))
-
-           (defun fn/erc-tor-service-on-stop (&rest _args)
-             "Erc Tor service on stop"
-             (setq erc-server-connect-function 'erc-open-network-stream))
-
-           (prodigy-define-tag
-             :name 'erc
-             :init #'fn/erc-tor-service-init
-             :on-start #'fn/erc-tor-service-on-start
-             :on-stop #'fn/erc-tor-service-on-stop)
-
-           (fn/prodigy-define-service
-            :name "erc-tor"
-            :tags '(erc tor)
-            :port fn/erc-tor-port
-            :args (list "-f" fn/erc-tor-conf-file))
-
-           (setq fn/erc-tor-service (prodigy-find-service "erc-tor"))
-
-           (when (yes-or-no-p "Start tor for erc? ")
-             (prodigy-start-service fn/erc-tor-service)))))
+          (list 'all-the-icons-faicon "exchange" :v-adjust 0.0))))
    #+END_SRC
 
 ** jabber
@@ -6982,6 +6912,9 @@
                    ("s s" . slack-start)
                    ("s q" . slack-ws-close))
        :config
+       ;; If the timeout is too low, it will fail.
+       (setq slack-request-timeout 60)
+
        (setq slack-enable-emoji nil
              slack-buffer-emojify nil
              slack-typing-visibility 'buffer
@@ -6993,13 +6926,13 @@
            "My custom notication for slack given MESSAGE, ROOM and TEAM.
      What I do is use the fringe to notify me instead of `libnotify'."
            (let* ((team-name (oref team name))
-               (room-name (slack-room-name room))
-               (text (slack-message-to-alert message team))
-               (user-name (slack-message-sender-name message team))
-               (out (fn/chat-log team-name room-name user-name text)))
+                  (room-name (slack-room-name room))
+                  (text (slack-message-to-alert message team))
+                  (user-name (slack-message-sender-name message team))
+                  (out (fn/chat-log team-name room-name user-name text)))
              (fn/alert-color out
-                    :category 'phackers
-                    :color "#3a417a")))
+                             :category 'phackers
+                             :color "#3a417a")))
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
 
