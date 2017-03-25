@@ -2246,14 +2246,15 @@
        (use-package helm-projectile
          :ensure t
          :defer t
-         :after (projectile helm)
          :bind (("C-c p h" . helm-projectile)
                 ("C-c p p" . helm-projectile-switch-project))
+         :after (projectile)
          :config
          (require 'helm)
          (require 'projectile)
 
          (require 'dash)
+         (require 'dash-functional)
          (require 's)
          (require 'f)
 
@@ -5704,7 +5705,13 @@
     #+BEGIN_SRC emacs-lisp :block-id a0fed229-124a-f2fd-78fb-bcc8e91f05ce
       (use-package elixir-mode
         :ensure t
-        :defer t)
+        :defer t
+        :config
+        (fn/use-feature elixir-mode--mode-icon
+          (elixir-mode all-the-icons)
+          (fn/add-major-mode-icon
+           'elixir-mode
+           (list 'all-the-icons-faicon "flask" :v-adjust -0.1))))
     #+END_SRC
 
 *** Linter
@@ -5736,7 +5743,7 @@
           :ensure t))
     #+END_SRC
 
-*** Build Tools
+*** Tooling
     Build tool for Elixir
 
     #+BEGIN_SRC emacs-lisp :block-id ce3e7a1d-a1c7-f983-a3a8-db499704136f
