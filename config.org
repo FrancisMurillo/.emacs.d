@@ -7976,29 +7976,60 @@
      (defun fmv/map-head-tail (header tailer xs)
        "Map the head and tail separately"
        (pcase xs
-         (`nil nil)
+         (`nil nil)'
          (`(,head . ,tail) (append
                             (list (funcall header head))
                             (mapcar tailer tail)))))
+
+     (defun fn/naming-format--camel-case (pieces)
+       "Convert a list of PIECES into camelCase."
+       (string-join
+        (append (list (downcase (car pieces)))
+                (mapcar #'capitalize (cdr pieces)))
+        ""))
+
+     (defun fn/naming-parser--camel-case (var)
+       "Parse the pieces of VAR for camelCase."
+
+       (rx (char lower) (*? (char upper))))
+
+
+     (defun fn/naming-format--hyphenated (pieces)
+       "Convert a list of PIECES into hyphen-ated"
+       (string-join
+        (mapcar #'downcase pieces)
+        "-"))
+
+     (defun fn/naming-format--underscored (pieces)
+       "Convert a list of PIECES into under_scored"
+       (string-join
+        (mapcar #'downcase pieces)
+        "_"))
+
+
+
 
      (defun fmv/insert-camel-case (name)
        "At point, insert a given name as camelCase"
        (interactive "sCamel Case a variable name(varName):")
        (lexical-let* ((separator "")
-                      (var-tokens (split-string name " " t))
-                      (var-pieces (fmn/map-head-tail #'downcase
-                                                     #'upcase-initials
-                                                     var-tokens)))
+           (var-tokens (split-string name " " t))
+           (var-pieces (fmn/map-head-tail #'downcase
+                                          #'upcase-initials
+                                          var-tokens)))
          (insert (string-join var-pieces separator))))
 
      (defun fmv/insert-hyphenated (name)
        "At point, insert a given name as hyphen-ated"
        (interactive "sHyphenate variable name(var-name):")
        (lexical-let* ((separator "-")
-                      (var-tokens (split-string name " " t))
-                      (var-pieces (mapcar #'downcase var-tokens)))
+           (var-tokens (split-string name " " t))
+           (var-pieces (mapcar #'downcase var-tokens)))
          (insert (string-join var-pieces separator))))
    #+END_SRC
+
+   #+RESULTS:
+   : fmv/insert-hyphenated
 
 ** Dired Shortcuts
    Some shortcuts with the common folder
@@ -8850,6 +8881,41 @@
          (add-to-list 'flycheck-checkers 'fn/diction-checker)))
    #+END_SRC
 
+** Checksum Directory
+   Use =sha1dee= to hash a directory quickly.
+
+   #+BEGIN_SRC emacs-lisp :block-id 0aea2570-3e23-2d41-9788-7f6fbebaca44
+     (fn/use-executables checksum-check
+       (sha1deep)
+       (defcustom fn/checksum-file-name "sha1sums.txt"
+         "Checksum file name.")
+
+       (defcustom fn/checksum-command "sha1deep"
+         "Checksum command.")
+
+       (defcustom fn/checksum-command-args (list "-lr" "*")
+         "Checksum command arguments")
+
+       (defun fn/checksum-current-directory ()
+         "Checksum the current directory using `fn/checksum-command'."
+         (interactive)
+         (let ((checksum-file
+              (expand-file-name fn/checksum-file-name default-directory))
+             (dir
+              (expand-file-name default-directory)))
+           (when (file-exists-p checksum-file)
+             (delete-file checksum-file t))
+           (prog1
+               (start-process-shell-command
+                (concat dir "->" fn/checksum-command)
+                (concat dir "->" fn/checksum-command)
+                fn/checksum-command
+                (string-join
+                 (append fn/checksum-command-args
+                         (list ">" (concat "\"" fn/checksum-file-name "\"")))
+                 " "))
+             (message "Computing the checksum of \"%s\"" default-directory)))))
+   #+END_SRC
 * Key Bindings
   Here is where all the key binding I mapped to
 
@@ -8930,7 +8996,8 @@
     (define-key fn-custom-prefix-map (kbd "d l") #'fn/dired-lib-dir)
     (define-key fn-custom-prefix-map (kbd "d m") #'fn/dired-module-dir)
 
-    (define-key fn-custom-prefix-map (kbd "^") #'fn/dired-parent)
+    (define-key fn-custom-prefix-map (kbd "d ^") #'fn/dired-parent)
+    (define-key fn-custom-prefix-map (kbd "d c") #'fn/checksum-current-directory)
 
 
     ;; Special
