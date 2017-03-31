@@ -98,7 +98,8 @@
      (setq use-package-verbose t
         use-package-check-before-init t
         use-package-minimum-reported-time 0.025
-        use-package-always-defer t)
+        use-package-always-defer t
+        use-package-always-defer-install t)
 
      (progn ;; :fn-hook keyword
        (add-to-list 'use-package-keywords :fn-hook t)
@@ -4214,6 +4215,9 @@
           :init
           (setq magit-push-always-verify t)
           :config
+          (setq magit-repository-directories (list "~/Fakespace/" "~/Modules/")
+             magit-repository-directories-depth 1)
+
           (defun fq/display-magit-on-same-buffer (buffer)
             (if magit-display-buffer-noselect
                 (magit-display-buffer-traditional buffer)
@@ -5020,6 +5024,30 @@
       (use-package android-mode
         :ensure t
         :after java)
+    #+END_SRC
+
+** Scala
+   The functional JVM
+
+*** Mode
+    Must have a Scala mode
+
+    #+BEGIN_SRC emacs-lisp :block-id 93e592de-c08e-e6e1-c41f-8081dd6491f2
+      (use-package scala-mode
+        :ensure t
+        :defer t
+        :config
+        nil)
+    #+END_SRC
+
+*** IDE
+    Java really needs a IDE
+
+    #+BEGIN_SRC emacs-lisp :block-id f36cf09e-4f13-b2a5-049a-7945288157b3
+      (use-package ensime
+        :ensure t
+        :defer t
+        :after (scala-mode))
     #+END_SRC
 
 ** Python
@@ -7087,6 +7115,24 @@
        :defer t
        :config
        (setq figlet-default-font "slant"))
+   #+END_SRC
+
+** calibre
+
+   Something to manage my ebooks.
+
+   #+BEGIN_SRC emacs-lisp :block-id 0a8ea321-5fe8-376c-cca3-ad5851cbef14
+     (defconst fn/calibre-mode-package-dir (expand-file-name "calibre-mode/" fn/custom-module-dir)
+       "Calibre-mode package location.")
+
+     (use-package calibre
+       :load-path fn/calibre-mode-package-dir
+       :defer t
+       :config
+       (setq sql-sqlite-program "sqlite3")
+
+       (setq calibre-root-dir "~/Books"
+          calibre-db (expand-file-name "metadata.db" calibre-root-dir)))
    #+END_SRC
 
 * Scripts

@@ -1,13 +1,3 @@
-;; Demo config for prodigy-set-mode
-(prodigy-set-define-set
- :name "w3m-privacy"
- :strategy 'sequential
- :services '(("w3m-privoxy" . ready)
-             ("w3m-polipo" .ready)
-             ("w3m-tor" .ready)))
-
-(prodigy-set-define-set
- :name "tor-all"
- :strategy 'parallel
- :services '(("w3m-tor")
-             ("erc-tor")))
+The quick brown fox jumps over the head of the lazy dog
+dog The quick brown fox jumps over the head of the lazy
+lazy dog The quick brown fox jumps over the head of the
