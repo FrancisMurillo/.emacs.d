@@ -166,20 +166,28 @@
          (all-fulfilled
           (lambda (value index)
             (setq fulfilled-promises (1+ fulfilled-promises)
-               values (-replace-at index value values))
+               values (cl-replace values (list value) :start1 index))
             (when (= fulfilled-promises (length promises))
               (funcall fulfiller values))))
          (any-rejected
           (lambda (reason)
-            (funcall rejector reason))))
-       (-map-indexed (lambda (index promise)
-                       (lexical-let ((index index))
-                         (promise-then promise
-                                       (lambda (value)
-                                         (funcall all-fulfilled value index))
-                                       (lambda (reason)
-                                         (funcall any-rejected reason)))))
-                     promises)))))
+            (funcall rejector reason)))
+         (map-indexed
+          (lambda (f xs)
+            (lexical-let* ((index 0))
+              (mapcar (lambda (x)
+                        (prog1
+                            (funcall f index xs)
+                          (setq index (1+ index))))
+                      xs)))))
+       (funcall map-indexed (lambda (index promise)
+                        (lexical-let ((index index))
+                          (promise-then promise
+                                        (lambda (value)
+                                          (funcall all-fulfilled value index))
+                                        (lambda (reason)
+                                          (funcall any-rejected reason)))))
+          promises)))))
 
 (defun promise-idle-delay (delay promise)
   "Wrap a promise with a delay so that it would not block the interface
