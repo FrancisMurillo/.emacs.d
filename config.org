@@ -2657,103 +2657,105 @@
     Just in case things are down.
 
     #+BEGIN_SRC emacs-lisp :block-id d9ff5d65-9c4a-24ee-d9e8-81459f7851d3
-      (defconst fn/mirror-elpa-repo "mirror-elpa"
-        "The name of the elpa mirror repo.")
+      (when (and (boundp 'fn/user-github-name))
+        (defconst fn/mirror-elpa-repo "mirror-elpa"
+          "The name of the elpa mirror repo.")
 
-      (defconst fn/mirror-elpa-id "elpa-mirror"
-        "My mirror repo id.")
+        (defconst fn/mirror-elpa-id "elpa-mirror"
+          "My mirror repo id.")
 
-      (defconst fn/local-elpa-mirror-dir (expand-file-name fn/mirror-elpa-repo fn/external-module-dir)
-        "My local elpa mirror.")
-
-
-
-      (defconst fn/mirror-github-elpa-id "elpa-github-mirror"
-        "Elpa github mirror id")
-
-      (defconst fn/mirror-github-elpa-repo
-        (format "https://raw.githubusercontent.com/%s/%s/master/"
-                fn/user-github-name
-                fn/mirror-elpa-repo)
-        "Url of github elpa mirror")
-
-      (use-package elpa-mirror
-        :ensure t
-        :demand t
-        :config
-        (require 'deferred)
-
-        (make-directory fn/local-elpa-mirror-dir t)
-        (setq elpamr-default-output-directory fn/local-elpa-mirror-dir)
+        (defconst fn/local-elpa-mirror-dir (expand-file-name fn/mirror-elpa-repo fn/external-module-dir)
+          "My local elpa mirror.")
 
 
-        ;; Local Mirror
-        (add-to-list 'package-archives (cons fn/mirror-elpa-id fn/local-elpa-mirror-dir))
-        (add-to-list 'package-archive-priorities (cons fn/mirror-elpa-id -1))
 
-        ;; Github Mirror
-        (add-to-list 'package-archives (cons fn/mirror-github-elpa-id fn/mirror-github-elpa-repo))
-        (add-to-list 'package-archive-priorities (cons fn/mirror-github-elpa-id 0))
+        (defconst fn/mirror-github-elpa-id "elpa-github-mirror"
+          "Elpa github mirror id")
 
+        (defconst fn/mirror-github-elpa-repo
+          (format "https://raw.githubusercontent.com/%s/%s/master/"
+                  fn/user-github-name
+                  fn/mirror-elpa-repo)
+          "Url of github elpa mirror")
 
-        (defun fn/only-local-mirror-elpa-package-archive ()
-          "Make `package-archives' be the `fn/local-elpa-mirror-dir'."
-          (interactive)
-          (setq package-archives
-                (list
-                 (cons fn/mirror-elpa-repo fn/local-elpa-mirror-dir))))
+        (use-package elpa-mirror
+          :ensure t
+          :demand t
+          :config
+          (require 'deferred)
 
-        (defun fn/push-local-elpa-mirror-to-github ()
-          "Push local elpa mirror to github repo."
-          (interactive)
-          (async-shell-command
-           (string-join
-            (list
-             (format "cd %s" fn/local-elpa-mirror-dir)
-             (format "git add --all")
-             (format "git commit -a -m \"%s\""
-                     (format "%s Update" (format-time-string "%F %R")))
-             (format "git push origin master"))
-            " && ")))
+          (make-directory fn/local-elpa-mirror-dir t)
+          (setq elpamr-default-output-directory fn/local-elpa-mirror-dir)
 
 
-        (defun fn/update-local-elpa-mirror ()
-          "Update local elpa mirror when it is older than `package-user-dir'."
-          (interactive)
-          (when (file-newer-than-file-p package-user-dir fn/local-elpa-mirror-dir)
-            (message "Package mirror is older than current package repo. Will update.")
-            (fn/batch-update-local-elpa-mirror)
-            nil))
+          ;; Local Mirror
+          (add-to-list 'package-archives (cons fn/mirror-elpa-id fn/local-elpa-mirror-dir))
+          (add-to-list 'package-archive-priorities (cons fn/mirror-elpa-id -1))
 
-        (defun fn/batch-update-local-elpa-mirror ()
-          "Updat local elpa mirror using batch invokation."
-          (interactive)
-          (deferred:$
-            (deferred:next
-              (lambda () (message "Starting to update... Cleaning up old packages.")))
-            (deferred:process-shell-bufferc it
-              "rm" "-rf"
-              (expand-file-name "*" fn/local-elpa-mirror-dir))
-            (deferred:nextc it
-              (lambda (&rest args) (message "Updating elpa mirror.")))
-            (deferred:process-shell-bufferc it
-              "emacs"
-              "--batch"
-              "-l" user-init-file
-              "--eval='(elpamr-create-mirror-for-installed)'")
-            (deferred:nextc it
-              (lambda (&rest args) (message "Done updating local elpa mirror.")))))
-
-        (add-hook 'after-init-hook 'fn/update-local-elpa-mirror t)
+          ;; Github Mirror
+          (add-to-list 'package-archives (cons fn/mirror-github-elpa-id fn/mirror-github-elpa-repo))
+          (add-to-list 'package-archive-priorities (cons fn/mirror-github-elpa-id 0))
 
 
-        (fn/use-feature paradox-elpa-mirror
-          (elpa-mirror paradox)
-          (defun fn/paradox-update-local-elpa-mirror (&rest args)
-            "Update elpa mirror when paradox is finished."
-            (fn/update-local-elpa-mirror))
+          (defun fn/only-local-mirror-elpa-package-archive ()
+            "Make `package-archives' be the `fn/local-elpa-mirror-dir'."
+            (interactive)
+            (setq package-archives
+               (list
+                (cons fn/mirror-elpa-repo fn/local-elpa-mirror-dir))))
 
-          (add-hook 'paradox-after-execute-functions 'fn/paradox-update-local-elpa-mirror)))
+          (defun fn/push-local-elpa-mirror-to-github ()
+            "Push local elpa mirror to github repo."
+            (interactive)
+            (async-shell-command
+             (string-join
+              (list
+               (format "cd %s" fn/local-elpa-mirror-dir)
+               (format "git add --all")
+               (format "git commit -a -m \"%s\""
+                       (format "%s Update" (format-time-string "%F %R")))
+               (format "git push origin master"))
+              " && ")))
+
+
+          (defun fn/update-local-elpa-mirror ()
+            "Update local elpa mirror when it is older than `package-user-dir'."
+            (interactive)
+            (when (file-newer-than-file-p package-user-dir fn/local-elpa-mirror-dir)
+              (message "Package mirror is older than current package repo. Will update.")
+              (fn/batch-update-local-elpa-mirror)
+              nil))
+
+          (defun fn/batch-update-local-elpa-mirror ()
+            "Updat local elpa mirror using batch invokation."
+            (interactive)
+            (deferred:$
+              (deferred:next
+                (lambda () (message "Starting to update... Cleaning up old packages.")))
+              (deferred:process-shell-bufferc it
+                "rm" "-rf"
+                (expand-file-name "*" fn/local-elpa-mirror-dir))
+              (deferred:nextc it
+                (lambda (&rest args) (message "Updating elpa mirror.")))
+              (deferred:process-shell-bufferc it
+                "emacs"
+                "--batch"
+                "-l" user-init-file
+                "--eval='(elpamr-create-mirror-for-installed)'")
+              (deferred:nextc it
+                (lambda (&rest args) (message "Done updating local elpa mirror.")))))
+
+          (add-hook 'after-init-hook 'fn/update-local-elpa-mirror t)
+
+
+          (fn/use-feature paradox-elpa-mirror
+            (elpa-mirror paradox)
+            (defun fn/paradox-update-local-elpa-mirror (&rest args)
+              "Update elpa mirror when paradox is finished."
+              (fn/update-local-elpa-mirror))
+
+            (add-hook 'paradox-after-execute-functions 'fn/paradox-update-local-elpa-mirror)))
+        )
     #+END_SRC
 
 * Artist
