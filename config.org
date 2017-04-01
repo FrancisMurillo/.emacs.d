@@ -252,7 +252,7 @@
      (defconst fn/personal-file (expand-file-name fn/personal-file-name user-emacs-directory)
        "Personal configuration file to be loaded. This is symlinked in another private repository")
 
-     (load fn/personal-file)
+     (load fn/personal-file t)
    #+END_SRC
 
 ** Customization

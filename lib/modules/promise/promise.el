@@ -159,18 +159,19 @@
   (promise
    (lambda (fulfiller rejector)
      (lexical-let* ((fulfiller fulfiller)
-                    (rejector rejector)
-                    (fulfilled-promises 0)
-                    (values (-repeat (length promises) nil ))
-                    (all-fulfilled
-                     (lambda (value index)
-                       (setq fulfilled-promises (1+ fulfilled-promises)
-                             values (-replace-at index value values))
-                       (when (= fulfilled-promises (length promises))
-                         (funcall fulfiller values))))
-                    (any-rejected
-                     (lambda (reason)
-                       (funcall rejector reason))))
+         (rejector rejector)
+         (fulfilled-promises 0)
+         (values (cl-loop repeat (length promises)
+                          collect nil))
+         (all-fulfilled
+          (lambda (value index)
+            (setq fulfilled-promises (1+ fulfilled-promises)
+               values (-replace-at index value values))
+            (when (= fulfilled-promises (length promises))
+              (funcall fulfiller values))))
+         (any-rejected
+          (lambda (reason)
+            (funcall rejector reason))))
        (-map-indexed (lambda (index promise)
                        (lexical-let ((index index))
                          (promise-then promise
