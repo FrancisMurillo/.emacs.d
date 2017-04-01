@@ -3993,7 +3993,7 @@
        (defconst fn/emacsshot-dir (expand-file-name "emacsshot" fn/extra-dir)
          "My screenshot directory")
 
-       (unless (f-exists? fn/emacsshot-dir)
+       (unless (f-exists-p fn/emacsshot-dir)
          (make-directory fn/emacsshot-dir))
 
        (setq emacsshot-with-timestamp t
