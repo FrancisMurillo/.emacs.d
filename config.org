@@ -99,7 +99,7 @@
         use-package-check-before-init t
         use-package-minimum-reported-time 0.025
         use-package-always-defer t
-        use-package-always-defer-install t)
+        use-package-always-defer-install nil)
 
      (progn ;; :fn-hook keyword
        (add-to-list 'use-package-keywords :fn-hook t)
@@ -1476,6 +1476,17 @@
      (use-package dockerfile-mode
        :ensure t
        :mode (("Dockerfile\\'" . dockerfile-mode)))
+   #+END_SRC
+
+** vagrant
+   Vagrant tools
+
+   #+BEGIN_SRC emacs-lisp :block-id 19f81a53-b4c7-06cf-69f9-ab751d92f377
+     (use-package vagrant
+       :ensure t
+       :defer t
+       :config
+       nil)
    #+END_SRC
 
 ** memory-usage
@@ -4472,6 +4483,18 @@
         nil)
     #+END_SRC
 
+*** quick-run
+    Quickly evaluate regions
+
+    #+BEGIN_SRC emacs-lisp :block-id 1c2e55d3-532d-3320-664d-aa9a09a0f24f
+      (unless noninteractive
+        (use-package quickrun
+          :ensure t
+          :defer t
+          :config
+          nil))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -5779,6 +5802,40 @@
         :ensure t
         :after elixir-mode
         :defer t)
+    #+END_SRC
+
+** PHP
+*** Mode
+    The major mode for PHP
+
+    #+BEGIN_SRC emacs-lisp :block-id a890aa5f-d3bb-c125-8744-7505b075f354
+      (use-package php-mode
+        :ensure t
+        :defer t
+        :config
+        nil)
+    #+END_SRC
+
+*** Completion
+    The usual completion
+
+    #+BEGIN_SRC emacs-lisp :block-id 15ea6c5c-ad5a-c50f-d37e-f2ffa78c0539
+      (use-package company-php
+        :ensure t
+        :defer t
+        :after (company)
+        :init
+        (add-hook 'php-mode-hook 'company-mode)
+        :config
+        (ac-php-core-eldoc-setup)
+        (add-to-list 'company-backends 'company-ac-php-backend))
+    #+END_SRC
+
+*** Linter
+    Flycheck to the rescue
+
+    #+BEGIN_SRC emacs-lisp :block-id 1767707b-bdba-a830-9dec-8131d1fb23cc
+
     #+END_SRC
 
 ** Ruby
