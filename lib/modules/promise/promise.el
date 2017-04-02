@@ -177,7 +177,7 @@
             (lexical-let* ((index 0))
               (mapcar (lambda (x)
                         (prog1
-                            (funcall f index xs)
+                            (funcall f index x)
                           (setq index (1+ index))))
                       xs)))))
        (funcall map-indexed (lambda (index promise)
