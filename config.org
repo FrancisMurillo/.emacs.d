@@ -235,8 +235,6 @@
 
      (defconst fn/external-module-dir (expand-file-name "Modules" "~")
        "My external module directory name.")
-
-     (make-directory fn/external-module-dir t)
    #+END_SRC
 
 * Basic Setup
@@ -2657,7 +2655,8 @@
     Just in case things are down.
 
     #+BEGIN_SRC emacs-lisp :block-id d9ff5d65-9c4a-24ee-d9e8-81459f7851d3
-      (when (and (boundp 'fn/user-github-name))
+      (when (and (boundp 'fn/user-github-name)
+               (file-exists-p fn/external-module-dir))
         (defconst fn/mirror-elpa-repo "mirror-elpa"
           "The name of the elpa mirror repo.")
 
@@ -3208,30 +3207,31 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 4f5f3d2b-61ae-d33b-8316-4c20b3e9c8c0
      (use-package org
+       :defer t
        :bind (("C-c l" . org-store-link)
               ("C-c a" . org-agenda)
               ("C-c h" . helm-org-in-buffer-headings)
               ("C-c c" . org-capture))
        :config
-       ;; org files
-       (defconst fn/org-dir (expand-file-name "~/Modules/nobody-library")
-         "Main library for org files")
+       (when (file-exists-p fn/external-module-dir)
+         (defconst fn/org-dir (expand-file-name "nobody-library" fn/external-module-dir)
+           "Main library for org files")
 
-       (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-dir)
-         "Main capture org file")
+         (defconst fn/org-default-capture-file (expand-file-name "capture.org" fn/org-dir)
+           "Main capture org file")
 
-       (defconst fn/org-main-file (expand-file-name "main.org" fn/org-dir)
-         "Main org planning file")
+         (defconst fn/org-main-file (expand-file-name "main.org" fn/org-dir)
+           "Main org planning file")
 
-       (defconst fn/org-todo-file (expand-file-name "todo.org" fn/org-dir)
-         "Main org todo file")
+         (defconst fn/org-todo-file (expand-file-name "todo.org" fn/org-dir)
+           "Main org todo file")
 
-       (defconst fn/org-event-file (expand-file-name "event.org" fn/org-dir)
-         "My event planning file")
+         (defconst fn/org-event-file (expand-file-name "event.org" fn/org-dir)
+           "My event planning file")
 
-       (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir)
-          org-directory (concat fn/org-dir "/"))
+         (setq org-directory (concat fn/org-dir "/")))
 
+       (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir))
 
        (add-to-list 'savehist-additional-variables 'org-insert-link-history)
 
@@ -3384,18 +3384,19 @@
     #+BEGIN_SRC emacs-lisp :block-id e28c5744-034d-3b02-dba6-908cb8af9bb9
       (fn/use-feature org-refile
         (org)
-        (defconst fn/org-archive-file (expand-file-name "archive.org" fn/org-dir)
-          "My archiving file.  Handy in just one neat location.")
+        (when (boundp 'fn/org-dir)
+          (defconst fn/org-archive-file (expand-file-name "archive.org" fn/org-dir)
+            "My archiving file.  Handy in just one neat location.")
 
-        (defconst fn/org-archive-format "* %s"
-          "Just archive under the file header.")
+          (defconst fn/org-archive-format "* %s"
+            "Just archive under the file header.")
 
 
-        (setq org-archive-location
-              (format
-               "%s::%s"
-               fn/org-archive-file
-               fn/org-archive-format))
+          (setq org-archive-location
+             (format
+              "%s::%s"
+              fn/org-archive-file
+              fn/org-archive-format)))
 
 
         (defun fn/org-archive-done-agenda-tasks ()
@@ -3419,80 +3420,81 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 8001477c-95ea-ea34-54a7-094ad6f5ff4c
       (unless noninteractive
-        (use-package org-journal
-          :ensure t
-          :after org
-          :bind (:map fn-standard-prefix-map
-                      ("j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
-          :config
-          (setq org-journal-dir
-             (expand-file-name "diary/" fn/org-dir))
+        (when (boundp 'fn/org-dir)
+          (use-package org-journal
+            :ensure t
+            :after org
+            :bind (:map fn-standard-prefix-map
+                        ("j" . org-journal-new-entry)) ;; C-c j conflicts with normal org-mode
+            :config
+            (setq org-journal-dir
+               (expand-file-name "diary/" fn/org-dir))
 
-          (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
-             org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
+            (setq org-journal-date-format "%Y-%b-%d %a" ;; YYYY-MMM-DD DAY
+               org-journal-time-format "%T ") ;; HH:MM:SS and the space is required
 
-          (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
-          (setq org-journal-find-file 'find-file)
+            (setq org-journal-file-format "%Y-%m-%d.journal.org.gpg") ;; Encryption via epa
+            (setq org-journal-find-file 'find-file)
 
-          (defun fm/insert-private-file-headers ()
-            (interactive)
-            (add-file-local-variable-prop-line 'backup-inhibited t)
-            (add-file-local-variable-prop-line 'auto-save-default nil))
+            (defun fm/insert-private-file-headers ()
+              (interactive)
+              (add-file-local-variable-prop-line 'backup-inhibited t)
+              (add-file-local-variable-prop-line 'auto-save-default nil))
 
-          (defun fm/insert-org-gpg-headers ()
-            (interactive)
-            (add-file-local-variable-prop-line
-             'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
-            (fm/insert-private-file-headers))
+            (defun fm/insert-org-gpg-headers ()
+              (interactive)
+              (add-file-local-variable-prop-line
+               'epa-file-encrypt-to (list "fnmurillo@yandex.com"))
+              (fm/insert-private-file-headers))
 
-          (defun fmj/insert-summary-block ()
-            "Insert summary block at point, this is pretty much #+BEGIN_SRC except summary"
-            (interactive)
-            (let ((summary-block
-                 (string-join (list "#+BEGIN_SUMMARY"
-                                 "Something happened but I was too lazy to write it down"
-                                 "#+END_SUMMARY")
-                              "\n")))
-              (insert (concat summary-block "\n"))))
+            (defun fmj/insert-summary-block ()
+              "Insert summary block at point, this is pretty much #+BEGIN_SRC except summary"
+              (interactive)
+              (let ((summary-block
+                     (string-join (list "#+BEGIN_SUMMARY"
+                                        "Something happened but I was too lazy to write it down"
+                                        "#+END_SUMMARY")
+                                  "\n")))
+                (insert (concat summary-block "\n"))))
 
-          (defun fmj/insert-org-journal-headers ()
-            (interactive)
-            (fm/insert-org-gpg-headers)
+            (defun fmj/insert-org-journal-headers ()
+              (interactive)
+              (fm/insert-org-gpg-headers)
 
-            (end-of-visual-line)
-            (newline-and-indent)
+              (end-of-visual-line)
+              (newline-and-indent)
 
-            (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
-                                (buffer-name))
-              (let ((year  (string-to-number (match-string 1 (buffer-name))))
-                  (month (string-to-number (match-string 2 (buffer-name))))
-                  (day (string-to-number (match-string 3 (buffer-name))))
-                  (datim nil))
-                (setq datim (encode-time 0 0 0 day month year))
+              (when (string-match "\\(20[0-9][0-9]\\)-\\([0-9][0-9]\\)-\\([0-9][0-9]\\)"
+                                  (buffer-name))
+                (let ((year  (string-to-number (match-string 1 (buffer-name))))
+                      (month (string-to-number (match-string 2 (buffer-name))))
+                      (day (string-to-number (match-string 3 (buffer-name))))
+                      (datim nil))
+                  (setq datim (encode-time 0 0 0 day month year))
 
-                (insert "#+STARTUP: content\n")
-                (insert (format-time-string
-                         "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
+                  (insert "#+STARTUP: content\n")
+                  (insert (format-time-string
+                           "#+TITLE: Journal Entry - %Y-%b-%d %a\n" datim))
 
-                (fmj/insert-summary-block)
+                  (fmj/insert-summary-block)
 
 
-                (insert (format-time-string
-                         "* %Y-%b-%d %a" datim)))))
+                  (insert (format-time-string
+                           "* %Y-%b-%d %a" datim)))))
 
-          (auto-insert-mode t)
-          (setq auto-insert-query t) ;; Don't ask, just put it in there
-          (add-hook 'find-file-hook 'auto-insert)
+            (auto-insert-mode t)
+            (setq auto-insert-query t) ;; Don't ask, just put it in there
+            (add-hook 'find-file-hook 'auto-insert)
 
-          (add-to-list 'auto-insert-alist '(".*\.org\.gpg\\'" . fm/insert-org-gpg-headers))
-          (add-to-list 'auto-insert-alist '(".*\.private.org\\'" . fm/insert-private-file-headers))
-          (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg\\'" . fmj/insert-org-journal-headers))
+            (add-to-list 'auto-insert-alist '(".*\.org\.gpg\\'" . fm/insert-org-gpg-headers))
+            (add-to-list 'auto-insert-alist '(".*\.private.org\\'" . fm/insert-private-file-headers))
+            (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg\\'" . fmj/insert-org-journal-headers))
 
-          (fn/use-feature org-journal-mode--mode-icon
-            (all-the-icons)
-            (fn/add-major-mode-icon
-             'org-journal-mode
-             (list 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0)))))
+            (fn/use-feature org-journal-mode--mode-icon
+              (all-the-icons)
+              (fn/add-major-mode-icon
+               'org-journal-mode
+               (list 'all-the-icons-faicon "pencil-square-o" :v-adjust 0.0))))))
     #+END_SRC
 
 *** org-reveal
@@ -3562,62 +3564,65 @@
 
     #+BEGIN_SRC emacs-lisp :block-id ff080889-3108-6353-b008-70a78290ef1c
       (unless noninteractive
-        (fn/use-feature org-drill
-          (org)
-          (use-package org
-            :after org
-            :bind (:map fn-standard-prefix-map
-                        ("D" . org-drill))
-            :demand t
-            :config
-            (add-to-list 'org-modules 'org-drill)
+        (when (boundp 'fn/org-dir)
+          (fn/use-feature org-drill
+            (org)
+            (use-package org
+              :after org
+              :bind (:map fn-standard-prefix-map
+                          ("D" . org-drill))
+              :demand t
+              :config
+              (add-to-list 'org-modules 'org-drill)
 
-            (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
-              "Main org drill files")
+              (defconst fn/org-review-file (expand-file-name "learning.org" fn/org-dir)
+                "Main org drill files")
 
-            (add-to-list 'org-capture-templates
-                         (list "r" "Review/Remember" 'entry
-                            (list 'file+headline fn/org-review-file "Learning Notes")
-                            "* %? :drill:\n  CREATED_ON: %T"))
+              (add-to-list 'org-capture-templates
+                           (list "r" "Review/Remember" 'entry
+                              (list 'file+headline fn/org-review-file "Learning Notes")
+                              "* %? :drill:\n  CREATED_ON: %T"))
 
-            (add-to-list 'org-capture-templates
-                         (list "m" "Music Piece" 'entry
-                            (list 'file+headline fn/org-review-file "Music Pieces")
-                            "* %? :drill:music:\n  CREATED_ON: %T"))
+              (add-to-list 'org-capture-templates
+                           (list "m" "Music Piece" 'entry
+                              (list 'file+headline fn/org-review-file "Music Pieces")
+                              "* %? :drill:music:\n  CREATED_ON: %T"))
 
-            (add-to-list 'org-capture-templates
-                         (list "v" "Technical Video" 'entry
-                            (list 'file+headline fn/org-review-file "Technical Video")
-                            "* %? :drill:video:\n  CREATED_ON: %T"))
+              (add-to-list 'org-capture-templates
+                           (list "v" "Technical Video" 'entry
+                              (list 'file+headline fn/org-review-file "Technical Video")
+                              "* %? :drill:video:\n  CREATED_ON: %T"))
 
-            (add-to-list 'org-agenda-files fn/org-review-file)
+              (add-to-list 'org-agenda-files fn/org-review-file)
 
-            (setq org-drill-scope
-               (list fn/org-review-file)))))
+              (setq org-drill-scope
+                    (list fn/org-review-file))))))
     #+END_SRC
 *** org-mobile
     Mobile org document
 
     #+BEGIN_SRC emacs-lisp :block-id 0a711e82-e427-fbe9-3af4-e0b075b6236d
-      (fn/use-feature org-mobile
-        (org)
-        (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
-          "My org mobile directory")
+      (unless noninteractive
+        (when (boundp 'fn/org-dir)
+          (fn/use-feature org-mobile
+            (org)
+            (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
+              "My org mobile directory")
 
-        (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
-          "My org mobile directory")
+            (defconst fn/org-mobile-inbox-directory (expand-file-name "mobile-pull" fn/org-dir)
+              "My org mobile directory")
 
 
-        (setq org-mobile-directory  fn/org-mobile-directory
-              org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
+            (setq org-mobile-directory  fn/org-mobile-directory
+               org-mobile-inbox-for-pull fn/org-mobile-inbox-directory
 
-              org-mobile-files (list
-                                fn/org-todo-file
-                                fn/org-event-file
-                                ))
+               org-mobile-files (list
+                                 fn/org-todo-file
+                                 fn/org-event-file
+                                 ))
 
-        (global-set-key (kbd "C-c n o p") #'org-mobile-push)
-        (global-set-key (kbd "C-c n o l") #'org-mobile-pull))
+            (global-set-key (kbd "C-c n o p") #'org-mobile-push)
+            (global-set-key (kbd "C-c n o l") #'org-mobile-pull))))
     #+END_SRC
 
 ** wcheck-mode
@@ -3836,7 +3841,9 @@
    Something to keep track of my finances
 
    #+BEGIN_SRC emacs-lisp :block-id 4e3b93da-bda6-0881-7e81-3e23e833f1cc
-     (defconst fn/ledger-file (expand-file-name "ledger.dat.gpg" "~/Modules/nobody-library")
+     (defconst fn/ledger-file (expand-file-name "ledger.dat.gpg"
+                                         (expand-file-name "nobody-library"
+                                                           fn/external-module-dir))
        "My ledger file.")
 
      (defun fn/find-ledger-file ()
@@ -3844,42 +3851,44 @@
        (interactive)
        (find-file fn/ledger-file))
 
-     (fn/use-executables ledger-check
-       (ledger)
-       (use-package ledger-mode
-         :ensure t
-         :defer t
-         :config
-         (setq ledger-clear-whole-transactions t)
+     (unless noninteractive
+       (when (boundp 'fn/external-module-dir)
+         (fn/use-executables ledger-check
+           (ledger)
+           (use-package ledger-mode
+             :ensure t
+             :defer t
+             :config
+             (setq ledger-clear-whole-transactions t)
 
-         ;; Encrypting my ledger
-         ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
-         (setq ledger-reports
-            '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
-              ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
-              ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
-              ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
+             ;; Encrypting my ledger
+             ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
+             (setq ledger-reports
+                '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
+                  ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
+                  ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
+                  ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
 
-         (fn/use-feature ledger-mode--mode-icon
-           (all-the-icons)
-           (fn/add-major-mode-icon
-            'ledger-mode
-            (list 'all-the-icons-faicon "money" :v-adjust -0.1)))
+             (fn/use-feature ledger-mode--mode-icon
+               (all-the-icons)
+               (fn/add-major-mode-icon
+                'ledger-mode
+                (list 'all-the-icons-faicon "money" :v-adjust -0.1)))
 
-         (fn/use-feature ledger-report-mode--mode-icon
-           (all-the-icons)
-           (fn/add-major-mode-icon
-            'ledger-report-mode
-            (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1)))
+             (fn/use-feature ledger-report-mode--mode-icon
+               (all-the-icons)
+               (fn/add-major-mode-icon
+                'ledger-report-mode
+                (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1)))
 
-         (fn/use-feature ledger-capture
-           (org ledger-mode)
-           (when t ;; BUG: Emacs hangs with a GPG file for a capture
-             (add-to-list
-              'org-capture-templates
-              (list "l" "Ledger" 'plain
-                 (list 'file fn/ledger-file)
-                 "%(org-read-date) * %?  \n\n"))))))
+             (fn/use-feature ledger-capture
+               (org ledger-mode)
+               (when t ;; BUG: Emacs hangs with a GPG file for a capture
+                 (add-to-list
+                  'org-capture-templates
+                  (list "l" "Ledger" 'plain
+                     (list 'file fn/ledger-file)
+                     "%(org-read-date) * %?  \n\n"))))))))
    #+END_SRC
 
 ** engine
@@ -4228,8 +4237,14 @@
           :init
           (setq magit-push-always-verify t)
           :config
-          (setq magit-repository-directories (list "~/Fakespace/" "~/Modules/")
+          (setq magit-repository-directories (list)
              magit-repository-directories-depth 1)
+
+          (when (file-exists-p (expand-file-name "Fakespace"))
+            (add-to-list 'magit-repository-directories (expand-file-name "Fakespace")))
+
+          (when (file-exists-p (expand-file-name "Modules"))
+            (add-to-list 'magit-repository-directories (expand-file-name "Modules")))
 
           (defun fq/display-magit-on-same-buffer (buffer)
             (if magit-display-buffer-noselect
@@ -5825,11 +5840,11 @@
       (use-package company-php
         :ensure t
         :defer t
-        :after (company)
+        :disabled t
+        :after company
         :init
         (add-hook 'php-mode-hook 'company-mode)
         :config
-        (ac-php-core-eldoc-setup)
         (add-to-list 'company-backends 'company-ac-php-backend))
     #+END_SRC
 
@@ -7255,7 +7270,8 @@
 
        (select-frame-set-input-focus (selected-frame)))
 
-     (add-hook 'after-init-hook #'fn/setup-initial-view t)
+     (when (file-exists-p fn/org-main-file)
+       (add-hook 'after-init-hook #'fn/setup-initial-view t))
    #+END_SRC
 
 ** Custom Emacs
