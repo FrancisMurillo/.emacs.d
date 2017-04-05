@@ -4716,6 +4716,7 @@
     #+BEGIN_SRC emacs-lisp :block-id bd6a4ce6-0ec8-7977-cec4-2a9e0c66e2e9
       (use-package web-mode
         :ensure t
+        :defer t
         :mode (("\\.tt\\'" . web-mode)
                ("\\.erb\\'" . web-mode)
                ("\\.html\\.ep\\'" . web-mode)
@@ -4732,7 +4733,7 @@
 
       (use-package company-web
         :ensure t
-        :after web)
+        :after web-mode)
     #+END_SRC
 
 *** Editing
@@ -7328,7 +7329,7 @@
     The love child of Emacs and Vim, what does it hold?
 
     #+BEGIN_SRC emacs-lisp :block-id 063f9764-edfd-d3ff-af43-1dabb6e0aacc
-      (setq fn/spacemacs-home "~/Fakespace/.spacemacs.d/")
+      (setq fn/spacemacs-home "~/Modules/.spacemacs.d/")
 
       (defun fn/bootstrap-spacemacs ()
         (interactive)
