@@ -3962,10 +3962,12 @@
    The ultimate mail browser, majority of the configuration is in =~/.gnus=
 
    #+BEGIN_SRC emacs-lisp :block-id ee1ad1cc-2dcc-df04-b3d3-20a710a335ea
-     (use-package gnus
-       :bind (:map fn-standard-prefix-map
-                   ("g" . gnus))
-       :defer t)
+     (unless noninteractive
+       (when (file-exists-p fn/external-module-dir)
+         (use-package gnus
+           :bind (:map fn-standard-prefix-map
+                       ("g" . gnus))
+           :defer t)))
    #+END_SRC
 
 ** sendmail
@@ -7200,7 +7202,7 @@
      (defconst fn/calibre-mode-package-dir (expand-file-name "calibre-mode/" fn/custom-module-dir)
        "Calibre-mode package location.")
 
-     (use-package calibre
+     (use-package calibre-mode
        :load-path fn/calibre-mode-package-dir
        :defer t
        :config
