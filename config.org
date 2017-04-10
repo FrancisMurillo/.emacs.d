@@ -3439,7 +3439,8 @@
             (defun fm/insert-private-file-headers ()
               (interactive)
               (add-file-local-variable-prop-line 'backup-inhibited t)
-              (add-file-local-variable-prop-line 'auto-save-default nil))
+              (add-file-local-variable-prop-line 'auto-save-default nil)
+              (goto-char (point-max)))
 
             (defun fm/insert-org-gpg-headers ()
               (interactive)
