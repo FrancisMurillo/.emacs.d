@@ -1886,8 +1886,17 @@
 
 
         ;; Performance
-        ;; Avoid doing things with `post-command-hook'
-        (advice-add 'wg-undoify-window-configuration-change :override 'ignore))
+        ;; Limit tracked buffers
+        (defcustom fn/wg-buf-list-limit 200
+          "The maximal number of buffers that should tracked if `fn/wg-limit-add-buffer-to-buf-list' is enabled.")
+
+        (defun fn/wg-limit-add-buffer-to-buf-list (&rest args)
+          "Limit the buffers tracked by `wg-add-buffer-to-buf-list' based on `fn/wg-buf-list-limit'."
+          (when (fboundp 'wg-buf-list)
+            (when (>= (length (wg-buf-list)) fn/wg-buf-list-limit)
+              (nbutlast (wg-buf-list)))))
+
+        (advice-add 'wg-add-buffer-to-buf-list :after #'fn/wg-limit-add-buffer-to-buf-list))
     #+END_SRC
 
 *** winner
@@ -7734,10 +7743,7 @@
           (when (fboundp 'slack-start)
             (slack-start)))
         (progn
-          (delete-other-windows)
-          (when (fboundp 'fn/prodigy-with-default-filters)
-            (fn/prodigy-with-default-filters
-             (fn/prodigy-add-default-tag-filter 'gnus))))
+          (delete-other-windows))
         nil)
 
        (fmwc/define-workgroup-configs
@@ -7748,10 +7754,7 @@
            'all-the-icons-faicon
            "code"
            :v-adjust -0.1))
-        (progn
-          (when (fboundp 'fn/prodigy-with-default-filters)
-            (fn/prodigy-with-default-filters
-             (fn/prodigy-add-default-tag-filter 'komunidad))))
+        nil
         nil)
 
        (fmwc/define-workgroup-configs
@@ -7773,10 +7776,7 @@
            'all-the-icons-faicon
            "comment"
            :v-adjust -0.1))
-        (progn
-          (when (fboundp 'fn/prodigy-with-default-filters)
-            (fn/prodigy-with-default-filters
-             (fn/prodigy-add-default-tag-filter 'fn-log))))
+        nil
         nil)
 
        (fmwc/define-workgroup-configs
@@ -7787,10 +7787,7 @@
            'all-the-icons-faicon
            "pencil"
            :v-adjust -0.1))
-        (progn
-          (when (fboundp 'fn/prodigy-with-default-filters)
-            (fn/prodigy-with-default-filters
-             (fn/prodigy-add-default-tag-filter 'frontend-functions))))
+        nil
         nil)
 
 
@@ -7916,11 +7913,6 @@
                   fmwc/workgroup-configs)
                (message "Done auto configuring workgroups."))
            (message "Workgroup mode is not active.")))
-
-       (fn/use-feature workspace-prodigy
-         (prodigy)
-         (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-clear-default-filter)
-         (add-hook 'wg-before-switch-to-workgroup-hook #'fn/prodigy-set-default-filter-hook))
 
 
        (setq wg-open-this-wg (fmwc/workgroup-config-name (car fmwc/workgroup-configs)))

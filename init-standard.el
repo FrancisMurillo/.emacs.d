@@ -47,7 +47,7 @@
   "A library for my Emacs packages.")
 
 (setq package-user-dir fn/package-dir
-   package-enable-at-startup nil)
+      package-enable-at-startup nil)
 
 (package-initialize nil)
 
@@ -57,8 +57,8 @@
   "Bootstrap directory.")
 
 (defconst fn/bootstrap-packages (list 'use-package 'org
-                            ;; 'org-plus-contrib
-                            )
+                                      ;; 'org-plus-contrib
+                                      )
   "Required bootstrap packages.")
 
 (progn ;; Use Package & Dependencies
@@ -170,7 +170,8 @@ Hacked on v9 since it is lexically binded.")
 
 
 ;; Post Config
-(defconst fn/post-config-file (expand-file-name ".init-extension.el")
+(defconst fn/post-config-file (expand-file-name ".init-extension.el" "~")
   "Post script to load after the main configuration loads.")
 
-(load (expand-file-name fn/post-config-file "~") t)
+
+(load fn/post-config-file t)
