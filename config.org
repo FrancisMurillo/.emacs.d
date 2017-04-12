@@ -3345,14 +3345,15 @@
     #+BEGIN_SRC emacs-lisp :block-id 42c9d746-9fe2-506f-2f27-a44df1f38666
       (fn/use-feature org-capture
         (org)
-        (setq org-capture-templates
-           (list
-            (list "t" "Todo" 'entry
-               (list 'file+headline fn/org-todo-file "Todo")
-               "* TODO %?\n   %i")
-            (list "e" "Event" 'entry
-               (list 'file+headline  fn/org-event-file "Events")
-               "* %? :event:")))
+        (when (file-exists-p fn/external-module-dir)
+          (setq org-capture-templates
+                (list
+                 (list "t" "Todo" 'entry
+                       (list 'file+headline fn/org-todo-file "Todo")
+                       "* TODO %?\n   %i")
+                 (list "e" "Event" 'entry
+                       (list 'file+headline  fn/org-event-file "Events")
+                       "* %? :event:"))))
 
         ;; Same window
         (advice-add 'org-capture-place-template :around #'fn/org-ignore-delete-other-windows))
@@ -3365,13 +3366,13 @@
       (fn/use-feature org-agenda
         (org)
         (setq org-agenda-span 14 ;; Fortnight
+              org-agenda-window-setup 'current-window)
 
-              org-agenda-window-setup 'current-window
-
-              org-agenda-files (list
-                                fn/org-main-file
-                                fn/org-todo-file
-                                fn/org-event-file))
+        (when (file-exists-p fn/external-module-dir)
+          (setq org-agenda-files (list
+                                  fn/org-main-file
+                                  fn/org-todo-file
+                                  fn/org-event-file)))
 
 
         (advice-add 'org-agenda-get-restriction-and-command :around #'fn/org-ignore-delete-other-windows))
@@ -7283,7 +7284,7 @@
 
        (select-frame-set-input-focus (selected-frame)))
 
-     (when (file-exists-p fn/org-main-file)
+     (when (file-exists-p fn/external-module-dir)
        (add-hook 'after-init-hook #'fn/setup-initial-view t))
    #+END_SRC
 
