@@ -6102,7 +6102,7 @@
              ('error
               (message
                "There was an error parsing with fn/w3m-ignore-arrived-host: %s"
-               (error-message-string error)))))
+               (error-message-string ex)))))
 
          (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-search-engine-pages)
          (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-arrived-host)
