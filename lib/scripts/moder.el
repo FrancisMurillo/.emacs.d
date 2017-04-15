@@ -181,7 +181,7 @@
   "Check if the window is sleeping."
   (not
    (and (boundp 'fn/zoning-out-p)
-      (not (null fn/zoning-out-p)))))
+        (not (null fn/zoning-out-p)))))
 
 
 ;;* Piece
@@ -189,12 +189,12 @@
   "A piece for window numbering."
   (cond
    ((and (fboundp 'window-numbering-get-number)
-       (boundp 'window-numbering-mode)
-       (not (null window-numbering-mode)))
+         (boundp 'window-numbering-mode)
+         (not (null window-numbering-mode)))
     (format " %s " (window-numbering-get-number)))
    ((and (fboundp 'winum-get-number)
-       (boundp 'winum-mode)
-       (not (null winum-mode)))
+         (boundp 'winum-mode)
+         (not (null winum-mode)))
     (format " %s " (winum-get-number)))
    (t nil)))
 
@@ -202,25 +202,25 @@
 (defun moder-piece-modified ()
   "Indicates if the buffer is modified."
   (let* ((config-alist
-       '(("*"
-          all-the-icons-faicon-family
-          all-the-icons-faicon
-          "chain-broken"
-          :v-adjust 0.0)
-         ("-"
-          all-the-icons-faicon-family
-          all-the-icons-faicon
-          "link"
-          :v-adjust 0.0)
-         ("%"
-          all-the-icons-octicon-family
-          all-the-icons-octicon
-          "lock"
-          :v-adjust 0.0)))
-      (result (cdr (assoc (format-mode-line "%*") config-alist)))
-      (icon-font-function (car result))
-      (icon-function (cadr result))
-      (icon-args (cddr result)))
+          '(("*"
+             all-the-icons-faicon-family
+             all-the-icons-faicon
+             "chain-broken"
+             :v-adjust 0.0)
+            ("-"
+             all-the-icons-faicon-family
+             all-the-icons-faicon
+             "link"
+             :v-adjust 0.0)
+            ("%"
+             all-the-icons-octicon-family
+             all-the-icons-octicon
+             "lock"
+             :v-adjust 0.0)))
+         (result (cdr (assoc (format-mode-line "%*") config-alist)))
+         (icon-font-function (car result))
+         (icon-function (cadr result))
+         (icon-args (cddr result)))
     (->>
      (propertize
       (format " %s " (apply icon-function icon-args))
@@ -248,11 +248,11 @@
 (defun moder-piece-workgroup-icon ()
   "A piece for the workgroup name."
   (when (and (fboundp 'wg-current-workgroup)
-           (fboundp 'wg-workgroup-name)
-           (fboundp 'workgroups-mode)
-           (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
-           (not (null workgroups-mode))
-           (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
+             (fboundp 'wg-workgroup-name)
+             (fboundp 'workgroups-mode)
+             (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
+             (not (null workgroups-mode))
+             (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
     (-if-let (workgroup-icon (fmwc/workgroup-config-icon-for-workgroup))
         (format " %s " workgroup-icon)
       (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
@@ -260,33 +260,33 @@
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
   (when (and (fboundp 'projectile-project-name)
-           (fboundp 'projectile-project-p)
-           (projectile-project-p))
+             (fboundp 'projectile-project-p)
+             (projectile-project-p))
     (format " %s " (projectile-project-name))))
 
 (defun moder-piece-host ()
   "A piece for the host name."
   (when (and (boundp 'tramp-current-host)
-           (boundp 'tramp-default-host))
+             (boundp 'tramp-default-host))
     (format " %s "
             (or tramp-current-host
-               tramp-default-host))))
+                tramp-default-host))))
 
 (defun moder-piece-user ()
   "A piece for the user name."
   (when (and (boundp 'tramp-current-user)
-           (boundp 'tramp-default-user))
+             (boundp 'tramp-default-user))
     (format " %s "
             (or tramp-current-user
-               tramp-default-user))))
+                tramp-default-user))))
 
 (defun moder-piece-directory ()
   "A piece for the project directory."
   (when (and (boundp 'tramp-current-host)
-           (boundp 'tramp-default-host))
+             (boundp 'tramp-default-host))
     (format " %s "
             (or tramp-current-host
-               tramp-default-host))))
+                tramp-default-host))))
 
 (defun moder-piece-buffer-name ()
   "A piece for the buffer name."
@@ -310,7 +310,7 @@
 (defun moder-piece-frame-delay ()
   "A piece for frame delay."
   (when (and moder-frame-delay
-           (boundp 'fn/current-frame-delay))
+             (boundp 'fn/current-frame-delay))
     (cond
      ((< fn/current-frame-delay 1.0)
       (format moder-frame-delay-format (* fn/current-frame-delay 1000) " ms"))
@@ -361,14 +361,25 @@
 (defun moder-piece-shm-state ()
   "A piece for `structured-haskell-mode'."
   (when (and (boundp 'structured-haskell-mode)
-             (not (null structured-haskell-mode))
-             (boundp 'shm-lighter))
+           (not (null structured-haskell-mode))
+           (boundp 'shm-lighter))
     (format " %s " shm-lighter)))
+
+(defun moder-piece-mu4e-current-context ()
+  "A piece for `mu4e-context-current'"
+  (when (or (eq major-mode 'mu4e-main-mode)
+           (eq major-mode 'mu4e-view-mode)
+           (eq major-mode 'mu4e-headers-mode)
+           (eq major-mode 'mu4e-compose-mode))
+    (let ((current-context (mu4e-context-current)))
+      (when current-context
+        (format " %s " (mu4e-context-name current-context))))))
+
 
 (defun moder-between-time (lower-time upper-time time)
   "Check if between LOWER-TIME, UPPER-TIME and TIME."
   (and (or (string-greaterp time lower-time) (string-equal time lower-time))
-       (or (string-lessp time upper-time) (string-equal time upper-time))))
+     (or (string-lessp time upper-time) (string-equal time upper-time))))
 
 (defun moder-piece-cpu ()
   "A piece for the cpu."
@@ -647,6 +658,10 @@
                                          (moder-foreground "#ffffff")
                                          (moder-weight 'ultra-bold))
                                     (->> (moder-piece-flycheck-errors)
+                                         (moder-default-text-style)
+                                         (moder-weight 'ultra-bold)
+                                         (moder-background "#ecf0f1"))
+                                    (->> (moder-piece-mu4e-current-context)
                                          (moder-default-text-style)
                                          (moder-weight 'ultra-bold)
                                          (moder-background "#ecf0f1"))
