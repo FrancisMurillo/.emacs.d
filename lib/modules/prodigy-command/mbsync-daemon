@@ -1,0 +1,11 @@
+COMMAND=mbsync
+INTERVAL=30
+
+echo "Starting daemon"
+
+while true
+do
+    $COMMAND $*
+    echo "Waiting"
+    sleep $INTERVAL
+done

@@ -1144,6 +1144,11 @@
      (defconst fn/prodigy-map (fn/make-prefixed-keymap (kbd "P") fn-standard-prefix-map)
        "My custom prodigy map.")
 
+     (defconst fn/prodigy-command-dir (expand-file-name "prodigy-command/" fn/custom-module-dir)
+       "My custom command dir.")
+
+     (add-to-list 'exec-path fn/prodigy-command-dir)
+
      (use-package prodigy
        :ensure t
        :bind (:map fn/prodigy-map
@@ -1440,7 +1445,34 @@
           (prodigy-define-tag
             :name 'offlineimap
             :command "offlineimap"
-            :on-output 'fn/prodigy-offlineimap-state-change-listener)))
+            :on-output 'fn/prodigy-offlineimap-state-change-listener))
+
+        (fn/use-executables prodigy-mbsync
+          (mbsync)
+          (defconst fn/mbsync-daemon-command (expand-file-name "mbsync-daemon" fn/prodigy-command-dir)
+            "Wrappd `mbsync' as a daemon.")
+
+
+          (defcustom fn/prodigy-mbsync-state-change-hook (list)
+            "`mbsync' state change hook.
+      Possible values are `error', `synced' and `ready'.")
+
+          (defun fn/prodigy-mbsync-state-change-listener (&rest args)
+            "Listen on `mbsync' output for state changes."
+            (lexical-let ((output (plist-get args :output))
+                (service (plist-get args :service)))
+              (pcase output
+                ((pred (string-prefix-p "Reading configuration file"))
+                 (prodigy-set-status service 'ready)
+                 (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'ready))
+                ((pred (string-prefix-p "Synchronizing..."))
+                 (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'synced)))))
+
+          (prodigy-define-tag
+            :name 'mbsync
+            :command fn/mbsync-daemon-command
+            :args `("-V" "-a")
+            :on-output 'fn/prodigy-mbsync-state-change-listener)))
     #+END_SRC
 
 *** Service Sets
@@ -1454,7 +1486,6 @@
         :config
         nil)
     #+END_SRC
-
 
 ** procred
    Similarly, manage processes.
@@ -1736,7 +1767,7 @@
           (add-hook 'after-init-hook 'fn/add-company-yasnippet)))
     #+END_SRC
 
-* Ergonomicw
+* Ergonomic
   Things to assist in managing Emacs
 
 ** Jump
@@ -4006,38 +4037,66 @@
    Reading mail in Emacs
 
    #+BEGIN_SRC emacs-lisp :block-id 188b9d05-dd2e-1564-0453-b638bd6e103e
-     (defun fn/imap-service-setup ()
-       "Setup an IMAP `prodigy' service."
-       (interactive)
-       (when (or (executable-find "offlineimap")
-                (executable-find "mbsync"))
-         (require 'prodigy)
+     (with-eval-after-load 'prodigy
+       (prodigy-define-tag
+         :name 'imap)
 
-         (defconst fn/imap-service-name "imap-offlineimap"
-           "The IMAP service name.
-     The name might be taken from either `offlineimap' or `mbsync'")
-
-         (prodigy-define-tag
-           :name 'imap)
+       (when (executable-find "mbsync")
+         (defconst fn/imap-mbsync-service-name "imap-mbsync"
+           "The IMAP `mbsync' service name.")
 
          (fn/prodigy-define-service
-          :name fn/imap-service-name
-          :tags `(imap ,(if (executable-find "offlineimap") 'offlineimap 'mbsync))
+          :name fn/imap-mbsync-service-name
+          :tags '(imap mbsync)
+
+          ;; Custom binding
+          :bind-command-name "mbsync"
+          :bind-map fn/prodigy-map
+          :bind (kbd "g m"))
+
+         (progn
+           (require 'alert)
+
+           (defun fn/prodigy-mbsync-state-alert (service state)
+             "`mbsync' notify alert."
+             ;; Color Palette: http://www.color-hex.com/color-palette/201
+             (lexical-let ((service-name (plist-get service :name)))
+               (when (string= service-name fn/imap-mbsync-service-name)
+                 (pcase state
+                   ('ready (fn/alert-color
+                            (format "[mbsync] %s is ready" service-name)
+                            :color "#0000ff"))
+                   ('synced (fn/alert-color
+                             (format "[mbsynv] %s synced an account" service-name)
+                             :color "#eeeeee"))))))
+
+           (add-hook
+            'fn/prodigy-mbsync-state-change-hook
+            #'fn/prodigy-mbsync-state-alert))
+
+         (setq fn/imap-mbsync-service (prodigy-find-service fn/imap-mbsync-service-name)))
+
+       (when (executable-find "offlineimap")
+         (defconst fn/imap-offlineimap-service-name "imap-offlineimap"
+           "The IMAP `offlineimap' service name.")
+
+         (fn/prodigy-define-service
+          :name fn/imap-offlineimap-service-name
+          :tags '(imap offlineimap)
 
           ;; Custom binding
           :bind-command-name "imap"
           :bind-map fn/prodigy-map
-          :bind (kbd "g"))
+          :bind (kbd "g g"))
 
-         (cond
-          ((executable-find "offlineimap")
+         (progn
            (require 'alert)
 
            (defun fn/prodigy-offlineimap-state-alert (service state)
              "`offlineimap' notify alert."
              ;; Color Palette: http://www.color-hex.com/color-palette/201
              (lexical-let ((service-name (plist-get service :name)))
-               (when (string= service-name fn/imap-service-name)
+               (when (string= service-name fn/imap-offlineimap-service-name)
                  (pcase state
                    ('ready (fn/alert-color
                             (format "[offlineimap] %s is ready" service-name)
@@ -4052,15 +4111,8 @@
            (add-hook
             'fn/prodigy-offlineimap-state-change-hook
             #'fn/prodigy-offlineimap-state-alert))
-          (t nil))
 
-         (setq fn/imap-service (prodigy-find-service fn/imap-service-name))
-
-         (when fn/imap-service
-           (prodigy-start-service fn/imap-service)
-           (message "Auto-starting IMAP service."))))
-
-     (add-hook 'after-init-hook #'fn/imap-service-setup)
+         (setq fn/imap-offlineimap-service (prodigy-find-service fn/imap-offlineimap-service-name))))
    #+END_SRC
 
 *** gnus
@@ -4085,14 +4137,17 @@
          :bind (:map fn-standard-prefix-map
                      ("g m" . mu4e))
          :config
-         (setq mu4e-maildir (expand-file-name "Maildir" "~"))
+         (setq mu4e-maildir (expand-file-name "Maildir" "~")
+            mu4e-get-mail-command "true")
 
-         (setq mu4e-sent-messages-behavior 'delete)
-
-         (setq mu4e-get-mail-command "offlineimap -o")
+         (setq mu4e-sent-messages-behavior 'delete
+            mu4e-update-interval 60
+            mu4e-index-cleanup nil
+            mu4e-index-lazy-check t)
 
          (setq mu4e-completing-read-function 'completing-read
             mu4e-context-policy 'pick-first
+            mu4e-compose-context-policy nil
             mu4e-confirm-quit nil)
 
          (setq mu4e-headers-date-format "%F %H:%M"
@@ -7452,23 +7507,6 @@
        (message "All clean."))
 
      (add-hook 'after-init-hook 'fn/clean-user-emacs-home)
-   #+END_SRC
-
-** Initial View
-   My intial view when Emacs boots up
-
-   #+BEGIN_SRC emacs-lisp :block-id 3a40c500-5ad9-4d98-85de-75bc79d992f9
-     (defun fn/setup-initial-view ()
-       "Setup your personal view"
-       (interactive)
-       (message "Setting up initial view")
-       (when (fboundp 'fn/find-main-org-file)
-         (fn/find-main-org-file))
-
-       (select-frame-set-input-focus (selected-frame)))
-
-     (when (file-exists-p fn/external-module-dir)
-       (add-hook 'after-init-hook #'fn/setup-initial-view t))
    #+END_SRC
 
 ** Custom Emacs
