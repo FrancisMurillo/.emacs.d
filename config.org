@@ -4159,6 +4159,8 @@
 
          (setq mu4e-attachment-dir (expand-file-name "Downloads" "~"))
 
+         (setq mu4e-hide-index-messages t)
+
          (setq message-citation-line-format "%N @ %Y-%m-%d %H:%M %Z:\n"
             message-citation-line-function 'message-insert-formatted-citation-line)
 
@@ -4537,6 +4539,17 @@
          :ensure t
          :after magit)
      #+END_SRC
+*** Folding
+    Code folding is helpful
+
+    #+BEGIN_SRC emacs-lisp :block-id 6e8bf9e9-5e41-0601-090e-348a2c3c77e8
+      (use-package origami
+        :ensure t
+        :defer t
+        :config
+        (add-to-list 'origami-parser-alist '(json-mode . origami-javascript-style-parser)))
+    #+END_SRC
+
 *** gist
     GitHub integration with gists
 
@@ -4724,6 +4737,15 @@
 
     #+BEGIN_SRC emacs-lisp :block-id d33121e6-bc01-1990-3e5a-c98f230b5b43
       (use-package yaml-mode
+        :ensure t
+        :defer t)
+    #+END_SRC
+
+*** JSON
+    JSON support
+
+    #+BEGIN_SRC emacs-lisp :block-id 0005bae8-c985-4a30-f746-d395929415dc
+      (use-package json-mode
         :ensure t
         :defer t)
     #+END_SRC
