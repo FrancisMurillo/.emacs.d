@@ -6258,6 +6258,10 @@
 
          (defconst fn/w3m-ignore-arrived-hosts (list)
            "Ignore the urls of the arrived hosts.")
+
+         (defcustom fn/w3m-exclude-ignore-search-engine (list)
+           "Exclude search engine from being ignored."
+           :type 'list)
          :config
          ;; Main
          (setq w3m-home-page "https://duckduckgo.com"
@@ -6279,6 +6283,27 @@
             w3m-show-graphic-icons-in-header-line nil
 
             w3m-use-title-buffer-name t)
+
+         ;; Util
+         (defun fn/w3m-ignore-search-engine-pages (url &rest args)
+           "Ignore search engine pages as defined by `w3m-search-engine-alist'."
+           (ignore-errors ;; Ignore special urls such as //:about or whatnot
+             (lexical-let* ((url-parts (w3m-parse-http-url url))
+                 (url-host (elt url-parts 1)))
+               (cl-some
+                (lambda (pair)
+                  (pcase-let ((`(,name ,search-url) pair))
+                    (lexical-let* ((search-parts (w3m-parse-http-url search-url))
+                        (search-host (elt search-parts 1)))
+                      (and (not (member name fn/w3m-exclude-ignore-search-engine))
+                         (string= search-host url-host)))))
+                w3m-search-engine-alist))))
+
+         (defun fn/w3m-ignore-special-pages (url)
+           "Ignore special pages such like `about://'."
+           (pcase url
+             ((pred (string-prefix-p "about://")) t)
+             (_ nil)))
 
 
          ;; Search Engine
@@ -6309,9 +6334,9 @@
          (require 'w3m-hist)
 
          (setq w3m-y-reuse-history-elements t
-               w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir)
-               w3m-arrived-db-size 2000
-               w3m-keep-cache-size 1500)
+            w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir)
+            w3m-arrived-db-size 2000
+            w3m-keep-cache-size 1500)
 
 
          (defun fn/w3m-ignore-arrived-add-url (orig-fun &rest args)
@@ -6319,9 +6344,9 @@
      Each function predicate takes is the same arguments as `w3m-arrived-add'
      Good for privacy and cleanliness."
            (if (not (apply #'run-hook-with-args-until-success
-                           (append
-                            (list 'fn/w3m-ignore-arrived-url-functions)
-                            args)))
+                     (append
+                      (list 'fn/w3m-ignore-arrived-url-functions)
+                      args)))
                (apply orig-fun args)
              (message "Not saving arrived url %s" (car args))
              nil))
@@ -6338,7 +6363,7 @@
            (defun fn/w3m-ignore-all-arrived-url (&rest args)
              "Ignore all urls when `fn/w3m-private-mode' is active"
              (and (boundp 'fn/w3m-private-mode)
-                  fn/w3m-private-mode))
+                fn/w3m-private-mode))
 
            (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-all-arrived-url))
 
@@ -6347,11 +6372,11 @@
      Primary check comes from `w3m-parse-http-url' by direct string match."
            (condition-case ex
                (lexical-let* ((parts (w3m-parse-http-url url))
-                              (host (elt parts 1)))
+                   (host (elt parts 1)))
                  (not (cl-notany
-                       (lambda (check-host)
-                         (string= check-host host))
-                       fn/w3m-ignore-arrived-hosts)))
+                     (lambda (check-host)
+                       (string= check-host host))
+                     fn/w3m-ignore-arrived-hosts)))
              ('error
               (message
                "There was an error parsing with fn/w3m-ignore-arrived-host: %s"
@@ -6365,7 +6390,7 @@
          (require 'w3m-bookmark)
 
          (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/setting-dir)
-               w3m-bookmark-default-section "Misc")
+            w3m-bookmark-default-section "Misc")
 
 
          ;; Persistent Session
@@ -6886,34 +6911,8 @@
       when the page should not be summarized."
             :type 'hook)
 
-          (defcustom fn/w3m-exclude-ignore-search-engine (list)
-            "Exclude search engine from being ignored."
-            :type 'list)
-
           (add-to-list 'fn/w3m-exclude-ignore-search-engine "wikipedia")
           (add-to-list 'fn/w3m-exclude-ignore-search-engine "youtube")
-
-
-          (defun fn/w3m-ignore-search-engine-pages (url &rest args)
-            "Ignore search engine pages as defined by `w3m-search-engine-alist'."
-            (ignore-errors ;; Ignore special urls such as //:about or whatnot
-              (lexical-let* ((url-parts (w3m-parse-http-url url))
-                  (url-host (elt url-parts 1)))
-                (cl-some
-                 (lambda (pair)
-                   (pcase-let ((`(,name ,search-url) pair))
-                     (lexical-let* ((search-parts (w3m-parse-http-url search-url))
-                         (search-host (elt search-parts 1)))
-                       (and (not (member name fn/w3m-exclude-ignore-search-engine))
-                          (string= search-host url-host)))))
-                 w3m-search-engine-alist))))
-
-          (defun fn/w3m-ignore-special-pages (url)
-            "Ignore special pages such like `about://'."
-            (pcase url
-              ((pred (string-prefix-p "about://")) t)
-              (_ nil)))
-
 
           (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-search-engine-pages)
           (add-hook 'fn/w3m-summarize-ignore-page-functions #'fn/w3m-ignore-special-pages)
