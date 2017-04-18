@@ -4732,6 +4732,26 @@
             (add-to-list 'org-babel-load-languages '(restclient . t)))))
     #+END_SRC
 
+*** smerge
+    Resolving diffs the nice way.
+
+    #+BEGIN_SRC emacs-lisp
+      (use-package smerge-mode
+        :defer t
+        :config
+        (setq smerge-command-prefix "C-c v")
+
+        (progn
+          (define-key smerge-mode-map (kbd "n") #'smerge-next)
+          (define-key smerge-mode-map (kbd "p") #'smerge-prev)
+
+          (define-key smerge-mode-map (kbd "RET") #'smerge-keep-current)
+          (define-key smerge-mode-map (kbd "m") #'smerge-keep-mine)
+          (define-key smerge-mode-map (kbd "o") #'smerge-keep-other)
+
+          (define-key smerge-mode-map (kbd "E") #'smerge-ediff)))
+    #+END_SRC
+
 *** YAML
     YAML editing
 
