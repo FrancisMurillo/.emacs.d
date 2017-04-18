@@ -520,7 +520,7 @@ fringe gets colored whenever people chat on BitlBee:
       (if append
           (nconc alert-internal-configuration (list rule))
         (setq alert-internal-configuration
-           (cons rule alert-internal-configuration))))
+              (cons rule alert-internal-configuration))))
 
     rule))
 
@@ -528,9 +528,9 @@ fringe gets colored whenever people chat on BitlBee:
 
 (defun alert-log-notify (info)
   (let* ((mes (plist-get info :message))
-      (sev (plist-get info :severity))
-      (len (length mes))
-      (func (cdr (assoc sev alert-log-severity-functions))))
+         (sev (plist-get info :severity))
+         (len (length mes))
+         (func (cdr (assoc sev alert-log-severity-functions))))
     (if (not (featurep 'log4e))
         (alert-legacy-log-notify mes sev len)
       ;; when we get here you better be using log4e or have your logging
@@ -556,7 +556,7 @@ fringe gets colored whenever people chat on BitlBee:
     (insert mes)
     (set-text-properties (- (point) len) (point)
                          (list 'face (cdr (assq sev
-                                             alert-severity-faces))))
+                                                alert-severity-faces))))
     (insert ?\n)))
 
 (defun alert-log-clear (info)
@@ -960,19 +960,19 @@ Here are some more typical examples of usage:
                     current-buffer-name)
       (with-current-buffer (or buffer (current-buffer))
         (list (current-buffer)
-           (or mode major-mode)
-           (alert-buffer-status)
-           (buffer-name)))
+              (or mode major-mode)
+              (alert-buffer-status)
+              (buffer-name)))
 
     (let ((base-info (list :message message
-                      :title (or title current-buffer-name)
-                      :icon icon
-                      :severity severity
-                      :category category
-                      :buffer alert-buffer
-                      :mode current-major-mode
-                      :data data))
-        matched)
+                           :title (or title current-buffer-name)
+                           :icon icon
+                           :severity severity
+                           :category category
+                           :buffer alert-buffer
+                           :mode current-major-mode
+                           :data data))
+          matched)
 
       (when alert-log-messages
         (alert-log-notify base-info))
@@ -982,21 +982,21 @@ Here are some more typical examples of usage:
           (dolist (config (append alert-user-configuration
                                   alert-internal-configuration))
             (let* ((style-def (cdr (assq (or style (nth 1 config))
-                                      alert-styles)))
-                (options (nth 2 config))
-                (persist-p (or persistent
-                              (cdr (assq :persistent options))))
-                (persist (if (functionp persist-p)
-                             (funcall persist-p base-info)
-                           persist-p))
-                (never-persist-p
-                 (or never-persist
-                    (cdr (assq :never-persist options))))
-                (never-per (if (functionp never-persist-p)
-                               (funcall never-persist-p base-info)
-                             never-persist-p))
-                (continue (cdr (assq :continue options)))
-                info)
+                                         alert-styles)))
+                   (options (nth 2 config))
+                   (persist-p (or persistent
+                                  (cdr (assq :persistent options))))
+                   (persist (if (functionp persist-p)
+                                (funcall persist-p base-info)
+                              persist-p))
+                   (never-persist-p
+                    (or never-persist
+                        (cdr (assq :never-persist options))))
+                   (never-per (if (functionp never-persist-p)
+                                  (funcall never-persist-p base-info)
+                                never-persist-p))
+                   (continue (cdr (assq :continue options)))
+                   info)
               (setq info (if (not (memq :persistent base-info))
                              (append base-info (list :persistent persist))
                            base-info)
