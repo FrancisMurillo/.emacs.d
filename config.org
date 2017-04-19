@@ -3089,14 +3089,6 @@
       (setq font-lock-support-mode 'jit-lock-mode)
       (setq font-lock-maximum-decoration t)
     #+END_SRC
-*** prettify-symbols
-    Make things more algebraic
-
-    #+BEGIN_SRC emacs-lisp :block-id d6820a0e-ce89-788c-05e2-ceccda66bcb9
-      (fn/use-feature prettify-symbols-mode
-        nil)
-    #+END_SRC
-
 *** rainbow-delimeter
     Visual aid helps with very nested code
 
@@ -4876,66 +4868,6 @@
 
         (add-hook 'before-save-hook #'fn/elisp-format-buffer-on-save))
     #+END_SRC
-*** Prettify
-    Prettify some symbols to make it visible.
-
-    #+BEGIN_SRC emacs-lisp :block-id cd91807f-6008-2cb5-5716-f6ee48077fc7
-      (fn/use-function prettify-elisp
-        prettify-symbols-mode
-        (defun fn/prettify-elisp ()
-          "Prettify elisp."
-          (push '("require" . ?∈) prettify-symbols-alist)
-          (push '("provide" . ?∋) prettify-symbols-alist)
-
-          (push '("defun" . ?∫) prettify-symbols-alist)
-          (push '("defun*" . ?∮) prettify-symbols-alist)
-          (push '("lambda" . ?λ) prettify-symbols-alist)
-          (push '("interactive" . ?Ι) prettify-symbols-alist)
-
-          (push '("&rest" . ?…) prettify-symbols-alist)
-          (push '("&optional" . ?⁇) prettify-symbols-alist)
-          (push '("&key" . ?∴) prettify-symbols-alist)
-
-          (push '("defvar" . ?ν) prettify-symbols-alist)
-          (push '("define" . ?δ) prettify-symbols-alist)
-          (push '("defconst" . ?φ) prettify-symbols-alist)?
-
-          (push '("defcustom" . ?τ) prettify-symbols-alist)
-          (push '("defface" . ?κ) prettify-symbols-alist)
-
-          (push '("let" . ?▷) prettify-symbols-alist)
-          (push '("let*" . ?▶) prettify-symbols-alist)
-
-          (push '("lexical-let" . ?▭) prettify-symbols-alist)
-          (push '("lexical-let*" . ?▬) prettify-symbols-alist)
-
-          (push '("letrec" . ?●) prettify-symbols-alist)
-
-          (push '("and" . ?∧) prettify-symbols-alist)
-          (push '("or" . ?∨) prettify-symbols-alist)
-          (push '("not" . ?¬) prettify-symbols-alist)
-
-          (push '("t" . ?⊤) prettify-symbols-alist)
-          (push '("nil" . ?⊥) prettify-symbols-alist)
-
-
-          (push '("funcall" . ?→) prettify-symbols-alist)
-          (push '("apply". ?↦) prettify-symbols-alist)
-
-
-          (push '("setq" . ?≔) prettify-symbols-alist)
-          (push '("setq-default" . ?⩴) prettify-symbols-alist)
-          (push '("setf". ?≕) prettify-symbols-alist)
-
-
-          (push '("list" . ?∅) prettify-symbols-alist)
-          (push '("cons" . ?⊕) prettify-symbols-alist)
-
-          (prettify-symbols-mode t))
-
-        (add-hook 'emacs-lisp-mode-hook #'fn/prettify-elisp))
-    #+END_SRC
-
 *** Testing
     Some testing libraries
 
@@ -5193,83 +5125,6 @@
         (add-hook 'html-mode-hook 'skewer-html-mode))
     #+END_SRC
 
-*** Prettify
-    My symbols for JS
-
-    #+BEGIN_SRC emacs-lisp :block-id acb3e63d-ea49-d850-22c1-9e094a73b74a
-      (fn/use-function prettify-js2
-        prettify-symbols-mode
-        (fn/use-feature prettify-js2
-          (js2-mode)
-          (defun fn/prettify-js2 ()
-            "Prettify `js2-mode'."
-            (push '("import" . ?∈) prettify-symbols-alist)
-            (push '("export" . ?∋) prettify-symbols-alist)
-            (push '("default" . ?τ) prettify-symbols-alist)
-            (push '("from" . ?∋) prettify-symbols-alist)
-
-            (push '("function" . ?λ) prettify-symbols-alist)
-            (push '("arguments" . ?ω) prettify-symbols-alist)
-            (push '("var" . ?ν) prettify-symbols-alist)
-            (push '("const" . ?χ) prettify-symbols-alist)
-
-            (push '("return" . ?ρ) prettify-symbols-alist)
-            (push '("this" . ?ι) prettify-symbols-alist)
-
-            (push '("for" . ?∫) prettify-symbols-alist)
-            (push '("in" . ?⊂ ) prettify-symbols-alist)
-
-            (push '("Object" . ?Θ) prettify-symbols-alist)
-
-            (push '("if" . ?α) prettify-symbols-alist)
-            (push '("else if" . ?β) prettify-symbols-alist)
-            (push '("else" . ?γ) prettify-symbols-alist)
-
-            (push '("->" . ?→) prettify-symbols-alist)
-            (push '("&&" . ?∧) prettify-symbols-alist)
-            (push '("||" . ?∨) prettify-symbols-alist)
-
-            (push '("!" . ?¬) prettify-symbols-alist)
-            (push '("!!" . ?⌐) prettify-symbols-alist)
-
-            (push '("=" . ?⟵) prettify-symbols-alist)
-            (push '(":" . ?⟵) prettify-symbols-alist)
-
-            (push '("===" . ?≡) prettify-symbols-alist)
-            (push '("!==" . ?≢) prettify-symbols-alist)
-
-            (push '(">=" . ?≧) prettify-symbols-alist)
-            (push '("<=" . ?≦) prettify-symbols-alist)
-
-            (push '("true" . ?⊤) prettify-symbols-alist)
-            (push '("false" . ?⊥) prettify-symbols-alist)
-
-            (push '("null" . ?∅) prettify-symbols-alist)
-            (push '("undefined" . ?↑) prettify-symbols-alist)
-
-            (push '(", ". ?⟼) prettify-symbols-alist)
-            (push '("{". ?⟹) prettify-symbols-alist)
-            (push '("},". ?⟺) prettify-symbols-alist)
-            (push '("}". ?⟸) prettify-symbols-alist)
-            (push '("};". ?⟽) prettify-symbols-alist)
-
-            (push '("(". ?⟖) prettify-symbols-alist)
-            (push '(")". ?⟕) prettify-symbols-alist)
-            (push '(");". ?⟕) prettify-symbols-alist)
-            (push '("),". ?⟗) prettify-symbols-alist)
-            (push '(").". ?⟗) prettify-symbols-alist)
-
-            (push '("[". ?⊏) prettify-symbols-alist)
-            (push '("]". ?⊐) prettify-symbols-alist)
-            (push '("],". ?⊡) prettify-symbols-alist)
-            (push '("].". ?⊡) prettify-symbols-alist)
-            (push '("];". ?⊐) prettify-symbols-alist)
-
-            (push '(";". ?⟐) prettify-symbols-alist)
-
-            (prettify-symbols-mode t))
-          (add-hook 'js2-mode-hook #'fn/prettify-js2)))
-    #+END_SRC
 *** JSON
     JSON support
 
