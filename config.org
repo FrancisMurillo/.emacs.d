@@ -7156,19 +7156,20 @@
    =Slack= is awesome.
 
    #+BEGIN_SRC emacs-lisp :block-id 2f91f506-c8a6-85b4-769d-3fb460019887
+     (defconst fn/slack-map (fn/make-prefixed-keymap (kbd "s") fn-standard-prefix-map)
+       "My custom slack map.")
+
      (use-package slack
        :ensure t
        :defer t
-       :bind (:map fn-standard-prefix-map
-                   ("s s" . slack-start)
-                   ("s q" . slack-ws-close))
+       :bind (:map fn/slack-map
+                   ("s" . slack-start))
        :config
-       ;; If the timeout is too low, it will fail.
        (setq slack-request-timeout 60)
 
        (setq slack-enable-emoji nil
           slack-buffer-emojify nil
-          slack-typing-visibility 'buffer
+          slack-typing-visibility 'never
           slack-prefer-current-team t)
 
        (fn/use-feature slack-custom-alert
@@ -7199,14 +7200,31 @@
           'slack-mode
           (list 'all-the-icons-faicon "commenting-o" :v-adjust 0.0)))
 
-       (fn/use-feature phackers-candy
-         (text-candy)
-         (text-candy-add-candy-word
-          (propertize ;; phackers
-           "phackers"
-           'face
-           '(:foreground "#ffffff" :background "#28bfd0"
-                         :box (:line-width 2 :color "#e3ffff") :weight bold :height 0.9)))))
+       (progn
+         (define-key fn/slack-map (kbd "q") #'slack-ws-close)
+
+         (define-key fn/slack-map (kbd "t") #'slack-change-current-team)
+
+         (define-key fn/slack-map (kbd "b k") #'slack-buffer-kill)
+         (define-key fn/slack-map (kbd "b r") #'slack-select-rooms)
+         (define-key fn/slack-map (kbd "b c") #'slack-channel-select)
+         (define-key fn/slack-map (kbd "b i") #'slack-im-select)
+         (define-key fn/slack-map (kbd "b g") #'slack-group-select))
+
+       (progn
+         (define-key slack-mode-map (kbd "C-c r r") #'slack-message-remove-reaction)
+         (define-key slack-mode-map (kbd "C-c r s") #'slack-message-show-reaction-users)
+         (define-key slack-mode-map (kbd "C-c r a") #'slack-message-add-reaction)
+
+         (define-key slack-mode-map (kbd "C-c C-m") #'slack-message-write-another-buffer)
+
+         (define-key slack-mode-map (kbd "C-c m e") #'slack-message-edit)
+
+         (define-key slack-mode-map (kbd "C-c m u") #'slack-room-update-messages))
+
+       (progn
+         (define-key slack-edit-message-mode-map (kbd "C-c e m") #'slack-message-embed-mention)
+         (define-key slack-edit-message-mode-map (kbd "C-c e c") #'slack-message-embed-channel)))
    #+END_SRC
 
 ** sauron
