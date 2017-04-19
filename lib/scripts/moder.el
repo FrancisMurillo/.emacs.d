@@ -81,48 +81,6 @@
   "Frame delay format.")
 
 
-(defcustom moder-note-notes
-  (list
-   "A failure is you."
-   "Your quest is lost."
-   "And though I left."
-   "I took with me... their lightning and their prayers"
-   "It came in a dream and said."
-   "I have nothing but my lightning."
-   "May the storm pass."
-   "Oh indifferent nothingness."
-
-   "Oh little town of prayers."
-   "Shelter me from the gathering storm."
-   "Console: Run garbage collect."
-   "Oh infinite void."
-   "Give me just one more day! One more day!"
-   "Oh endless black hole."
-   "Let me see just one more sunset before you make everything dark."
-   "Oh pitiless system of garbage collection."
-   "I will comply."
-   "And the storm passed."
-
-   "But on we go."
-
-   "What is life but want?"
-   "What are prayers but needs?"
-   "Whether for air or food, love, or wealth, it is all I want."
-   "I wanted to complete my quest."
-   "Your new quest is to be free. Want nothing."
-   "And go at peace into your death."
-   "Go and wander to lovely, awesome, and mysterious places."
-   "Sit quietly and contemplate the precious silence."
-   "Take in the wonder of existence. And then want nothing else from it."
-   "Goodbye."
-
-   "Let me be with the one I loved.")
-  "Notes with note piece.")
-
-(defcustom moder-note-default-note
-  "Continue? 9.. 8.. 7.. 6.. 5.. 4.. 3.. 2.. 1.."
-  "The default note for note piece.")
-
 
 (defun moder-merge-style (style text &optional override)
   "Merge text with the new STYLE at TEXT with OVERRIDE."
@@ -248,11 +206,11 @@
 (defun moder-piece-workgroup-icon ()
   "A piece for the workgroup name."
   (when (and (fboundp 'wg-current-workgroup)
-           (fboundp 'wg-workgroup-name)
-           (fboundp 'workgroups-mode)
-           (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
-           (not (null workgroups-mode))
-           (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
+             (fboundp 'wg-workgroup-name)
+             (fboundp 'workgroups-mode)
+             (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
+             (not (null workgroups-mode))
+             (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
     (-if-let (workgroup-icon (fmwc/workgroup-config-icon-for-workgroup))
         (format " %s " workgroup-icon)
       (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
@@ -260,33 +218,33 @@
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
   (when (and (fboundp 'projectile-project-name)
-           (fboundp 'projectile-project-p)
-           (projectile-project-p))
+             (fboundp 'projectile-project-p)
+             (projectile-project-p))
     (format " %s " (projectile-project-name))))
 
 (defun moder-piece-host ()
   "A piece for the host name."
   (when (and (boundp 'tramp-current-host)
-           (boundp 'tramp-default-host))
+             (boundp 'tramp-default-host))
     (format " %s "
             (or tramp-current-host
-               tramp-default-host))))
+                tramp-default-host))))
 
 (defun moder-piece-user ()
   "A piece for the user name."
   (when (and (boundp 'tramp-current-user)
-           (boundp 'tramp-default-user))
+             (boundp 'tramp-default-user))
     (format " %s "
             (or tramp-current-user
-               tramp-default-user))))
+                tramp-default-user))))
 
 (defun moder-piece-directory ()
   "A piece for the project directory."
   (when (and (boundp 'tramp-current-host)
-           (boundp 'tramp-default-host))
+             (boundp 'tramp-default-host))
     (format " %s "
             (or tramp-current-host
-               tramp-default-host))))
+                tramp-default-host))))
 
 (defun moder-piece-buffer-name ()
   "A piece for the buffer name."
@@ -643,12 +601,18 @@
                                      (->> (moder-piece-process)
                                           (moder-default-text-style)
                                           (moder-background "#7f8c8d"))
-                                     (->> (moder-piece-note)
-                                          (moder-default-text-style)
-                                          (moder-background "#e74c3c")
-                                          (moder-foreground "#ffffff")
-                                          (moder-weight 'ultra-light)
-                                          (moder-height 1.0)))))
+                                     (when moder-cpu
+                                       (->> (moder-piece-cpu)
+                                            (moder-default-text-style)
+                                            (moder-background "#f1c40f")))
+                                     (when moder-memory
+                                       (->> (moder-piece-memory)
+                                            (moder-default-text-style)
+                                            (moder-background "#d35400")))
+                                     (when moder-battery
+                                       (->> (moder-piece-battery)
+                                            (moder-default-text-style)
+                                            (moder-background "#16a085"))))))
                                  (when (and (moder--current-window-p) (moder--active-state-p))
                                    (moder-separated
                                     #'moder-piece-inner-right-separator
@@ -673,18 +637,6 @@
                                          (moder-default-text-style)
                                          (moder-weight 'ultra-bold)
                                          (moder-background "#bdc3c7"))
-                                    (when moder-cpu
-                                      (->> (moder-piece-cpu)
-                                           (moder-default-text-style)
-                                           (moder-background "#f1c40f")))
-                                    (when moder-memory
-                                      (->> (moder-piece-memory)
-                                           (moder-default-text-style)
-                                           (moder-background "#d35400")))
-                                    (when moder-battery
-                                      (->> (moder-piece-battery)
-                                           (moder-default-text-style)
-                                           (moder-background "#16a085")))
                                     (->> (moder-piece-time)
                                          (moder-default-text-style)
                                          (moder-background "#2c3e50")
