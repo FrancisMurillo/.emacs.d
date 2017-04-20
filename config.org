@@ -4405,7 +4405,10 @@
       (fn/use-feature helm-ag
         (helm ag)
         (use-package helm-ag
-          :ensure t))
+          :ensure t
+          :demand t
+          :config
+          nil))
     #+END_SRC
 
 *** dumb-jump
