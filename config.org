@@ -1957,6 +1957,13 @@
               (nbutlast (wg-buf-list)))))
 
         (advice-add 'wg-add-buffer-to-buf-list :after #'fn/wg-limit-add-buffer-to-buf-list))
+
+      (use-package workgroups-layout
+        :load-path fn/custom-script-dir
+        :defer t
+        :after (workgroups2)
+        :config
+        (workgroups-layout-mode))
     #+END_SRC
 
 *** winner
@@ -7017,17 +7024,32 @@
 
          (defun fn/slack-goto-next-unread-channel ()
            "Go to next unread channel."
+           (interactive)
            (unless (fn/slack-current-buffer-channel-p)
              (error "Not in a slack buffer. Invoke this command in a slack buffer."))
            (let ((team (slack-team-select))
-                 (room-id slack-current-room-id))
+                 (channel-id slack-current-room-id))
              (with-slots (channels) team
-               (let* ((index (-find-index (lambda (channel)
-                                           t)
-                                         channels))
-                      (new-index (if (>= (1+ index) (length channels))
-                                     0 (1+ index))))
-                 nil)))))
+               (let* ((partitioned-channels
+                       (-partition-by
+                        (lambda (channel)
+                          (not (string= (oref channel id) channel-id)))
+                        channels))
+                      (sequenced-channels
+                       (if (<= (length partitioned-channels) 1)
+                           nil
+                         (let ((current-channels partitioned-channels))
+                           (while (not (= (length (car current-channels)) 1))
+                             (setq current-channels (-rotate -1 current-channels)))
+                           (apply #'-concat (cdr current-channels)))))
+                      (unread-channel
+                       (-first
+                        (lambda (channel)
+                          (not (zerop (oref channel unread-count-display))))
+                        sequenced-channels)))
+                 (if (null unread-channel)
+                     (error "No unread channel found.")
+                   (slack-room-create-buffer unread-channel team)))))))
 
        (fn/use-feature slack-message-flyspell
          (flyspell slack)
@@ -7622,304 +7644,6 @@
 
      (unless noninteractive
        (add-hook 'kill-emacs-hook #'fmk/persist-macros))
-   #+END_SRC
-
-** Session Configurations
-   When working with sessions, it would be nice to have some default
-   configuration when opened.
-
-   #+BEGIN_SRC emacs-lisp :block-id b8e02d73-638d-d7b5-2520-32fe159fdffb
-     (fn/use-feature workgroup-configuration
-       (workgroups2)
-       (require 'dash)
-
-
-       ;; Variables
-       (defvar fmwc/workgroup-configs (list)
-         "An data type of workgroup initialization configuration.")
-
-       (defvar fmwc/workgroup-config-icons (list)
-         "An list of workgroup config icons, taken from `all-the-icons' mode line.")
-
-       (defvar fmwc/current-workgroup-config nil
-         "Current workgroup config used.")
-
-       (defvar fmwc/workgroup-configs-loaded (list)
-         "Workgroups configs loaded.")
-
-       ;; Main macro config
-       (defmacro fmwc/define-workgroup-configs (config-name init-body setup-body cleanup-body)
-         (let* ((base-format "fmwc/%s-config-%s-hook")
-             (init-function-name (downcase (format base-format config-name "init")))
-             (setup-function-name (downcase (format base-format config-name "setup")))
-             (cleanup-function-name (downcase (format base-format config-name "cleanup")))
-             (init-function (intern init-function-name))
-             (setup-function (intern setup-function-name))
-             (cleanup-function (intern cleanup-function-name)))
-           (fset init-function
-                 `(lambda ()
-                    ,(format "Workspace init config for %s" config-name)
-                    (interactive)
-                    (list ,init-body)))
-           (fset setup-function
-                 `(lambda ()
-                    ,(format "Workspace setup config for %s" config-name)
-                    (interactive)
-                    (list ,setup-body)))
-           (fset cleanup-function
-                 `(lambda ()
-                    ,(format "Workspace cleanup config for %s" config-name)
-                    (interactive)
-                    (list ,cleanup-body)))
-           (if (>= (length fmwc/workgroup-configs) 10)
-               (error "You already have 10 workgroup configurations already")
-             `(add-to-list
-               'fmwc/workgroup-configs
-               (list
-                ,config-name
-                (quote ,init-function)
-                (quote ,setup-function)
-                (quote ,cleanup-function))
-               t))))
-
-       (defun fmwc/add-workgroup-config-icon (icon-family icon-function icon-name &rest args)
-         "Just like with `all-the-icons' mode line, this is for workgroup config with
-     ICON-FAMILY, ICON-FUNCTION, ICON-NAME and ARGS."
-         (let* ((config-name (fmwc/current-workgroup-name)))
-           (add-to-list
-            'fmwc/workgroup-config-icons
-            (append
-             (list
-              config-name
-              icon-family
-              icon-function
-              icon-name)
-             args))))
-
-       (defun fmwc/workgroup-config-icon-for-workgroup ()
-         "Return icon for workgroup as defined for `fmwc/workgroup-config-icons' list"
-         (-if-let* ((current-workgroup-name (fmwc/current-workgroup-name))
-                    (result (assoc current-workgroup-name fmwc/workgroup-config-icons)))
-             (let* ((icon-result (cdr result))
-                    (icon-font-function (car icon-result))
-                    (icon-function (cadr icon-result))
-                    (icon-args (cddr icon-result)))
-               (propertize
-                (format " %s " (apply icon-function icon-args))
-                'help-echo (format "Workgroup: `%s`" current-workgroup-name)
-                'face
-                (list
-                 :family (funcall icon-font-function))))
-           nil))
-
-
-       ;; Configurations
-       (fmwc/define-workgroup-configs
-        "Mine"
-        (progn
-          (fmwc/add-workgroup-config-icon
-           'all-the-icons-faicon-family
-           'all-the-icons-faicon
-           "random"
-           :v-adjust -0.1))
-        nil
-        nil)
-
-       (fmwc/define-workgroup-configs
-        "Personal"
-        (progn
-          (fmwc/add-workgroup-config-icon
-           'all-the-icons-faicon-family
-           'all-the-icons-faicon
-           "book"
-           :v-adjust -0.1)
-
-          (when (fboundp 'fn/erc)
-            (fn/erc))
-
-          (when (fboundp 'jabber-connect-all)
-            (jabber-connect-all))
-
-          (when (fboundp 'slack-start)
-            (slack-start)))
-        (progn
-          (delete-other-windows))
-        nil)
-
-       (fmwc/define-workgroup-configs
-        "Working"
-        (progn
-          (fmwc/add-workgroup-config-icon
-           'all-the-icons-faicon-family
-           'all-the-icons-faicon
-           "code"
-           :v-adjust -0.1))
-        nil
-        nil)
-
-       (fmwc/define-workgroup-configs
-        "Desktop"
-        (progn
-          (fmwc/add-workgroup-config-icon
-           'all-the-icons-faicon-family
-           'all-the-icons-faicon
-           "desktop"
-           :v-adjust -0.1))
-        nil
-        nil)
-
-       (fmwc/define-workgroup-configs
-        "Browser"
-        (progn
-          (fmwc/add-workgroup-config-icon
-           'all-the-icons-faicon-family
-           'all-the-icons-faicon
-           "globe"
-           :v-adjust -0.1))
-        nil
-        nil)
-
-       (fmwc/define-workgroup-configs
-        "Blogger"
-        (progn
-          (fmwc/add-workgroup-config-icon
-           'all-the-icons-faicon-family
-           'all-the-icons-faicon
-           "comment"
-           :v-adjust -0.1))
-        nil
-        nil)
-
-
-       ;; Api
-       (defun fmwc/workgroup-config-name (workgroup)
-         "Get the name of a WORKGROUP."
-         (nth 0 workgroup))
-
-       (defun fmwc/workgroup-config-init-function (workgroup)
-         "Get the init function of a WORKGROUP."
-         (nth 1 workgroup))
-
-
-       (defun fmwc/workgroup-config-setup-function (workgroup)
-         "Get the setup function of a WORKGROUP."
-         (nth 2 workgroup))
-
-       (defun fmwc/workgroup-config-cleanup-function (workgroup)
-         "Get the cleanup function of a WORKGROUP."
-         (nth 3 workgroup))
-
-
-       ;; Workgroup specific
-       (defun fmwc/workgroup-name (workgroup)
-         "Get the name of a WORKGROUP."
-         (wg-workgroup-name workgroup))
-
-       (defun fmwc/create-default-workgroup (name)
-         (wg-make-and-add-workgroup name t))
-
-       (defun fmwc/current-workgroup-name ()
-         "Get the current workgroup name."
-         (when workgroups-mode
-           (fmwc/workgroup-name (wg-current-workgroup))))
-
-       (defun fmwc/workgroups ()
-         "Get the workgroups."
-         (when workgroups-mode
-           (wg-workgroup-list-or-error)))
-
-
-       ;; Custom
-       (defun fmwc/get-workgroup-config-by-name (workgroup-name)
-         "Get the corresponding workgroup from the config by the WORKGROUP-NAME."
-         (-first
-          (lambda (workgroup-config)
-            (let ((config-name (fmwc/workgroup-config-name workgroup-config)))
-              (string-equal config-name workgroup-name)))
-          fmwc/workgroup-configs))
-
-       (defun fmwc/get-current-workgroup-config ()
-         "Get the current workgroup config."
-         (fmwc/get-workgroup-config-by-name (fmwc/current-workgroup-name)))
-
-       (defun fmwc/workgroup-config-setup ()
-         "Initialize the workgroup per configuration."
-         (condition-case ex
-             (-if-let* ((config (fmwc/get-current-workgroup-config))
-                        (config-name (fmwc/workgroup-config-name config))
-                        (init-function (fmwc/workgroup-config-init-function config)))
-                 (unless (-contains-p fmwc/workgroup-configs-loaded config-name)
-                   (message "Running init for %s" config-name)
-                   (prog2
-                       (setq fmwc/current-workgroup-config config)
-                       (funcall init-function)
-                     (setq fmwc/current-workgroup-config nil))
-                   (add-to-list 'fmwc/workgroup-configs-loaded config-name))
-               nil)
-           ('error (message "Workgroup config init error: " (error-message-string ex))))
-         (condition-case ex
-             (-if-let* ((config (fmwc/get-current-workgroup-config))
-                        (setup-function (fmwc/workgroup-config-setup-function config)))
-                 (progn
-                   (message "Running setup for %s" (fmwc/workgroup-config-name config))
-                   (prog2
-                       (setq fmwc/current-workgroup-config config)
-                       (funcall setup-function)
-                     (setq fmwc/current-workgroup-config nil)))
-               nil)
-           ('error (message "Workgroup config setup error: " (error-message-string ex)))))
-
-       (defun fmwc/workgroup-config-cleanup ()
-         "Cleanup for workgroup configuration."
-         (condition-case ex
-             (-if-let* ((config (fmwc/get-current-workgroup-config))
-                        (cleanup-function (fmwc/workgroup-config-cleanup-function config)))
-                 (progn
-                   (message "Running cleanup for %s" (fmwc/workgroup-config-name config))
-                   (prog2
-                       (setq fmwc/current-workgroup-config config)
-                       (funcall cleanup-function)
-                     (setq fmwc/current-workgroup-config nil)))
-               nil)
-           ('error (message "Workgroup config cleanup error: " (error-message-string ex)))))
-
-
-       (defun fmwc/workgroup-config-configure ()
-         "Tries to mirror the workspace configuration."
-         (interactive)
-         (if workgroups-mode
-             (prog1
-                 (-map-indexed
-                  (lambda (index config)
-                    (lexical-let* ((config-name (fmwc/workgroup-config-name config))
-                                   (workgroups (fmwc/workgroups))
-                                   (workgroup-index
-                                    (-find-index
-                                     (lambda (workgroup)
-                                       (string-equal (fmwc/workgroup-name workgroup) config-name))
-                                     workgroups)))
-                      (message "%s -> %s" index workgroup-index)
-                      (cond
-                       ((null workgroup-index)
-                        (message "Creating workspace %s" config-name)
-                        (wg-swap-workgroups-in-workgroup-list
-                         (fmwc/create-default-workgroup config-name)
-                         (nth index workgroups)))
-                       ((= workgroup-index index)
-                        "NOOP: All is good here.")
-                       (t
-                        (wg-swap-workgroups-in-workgroup-list
-                         (nth index workgroups)
-                         (nth workgroup-index workgroups))))))
-                  fmwc/workgroup-configs)
-               (message "Done auto configuring workgroups."))
-           (message "Workgroup mode is not active.")))
-
-
-       (setq wg-open-this-wg (fmwc/workgroup-config-name (car fmwc/workgroup-configs)))
-
-       (add-hook 'wg-after-switch-to-workgroup-hook #'fmwc/workgroup-config-setup)
-       (add-hook 'wg-before-switch-to-workgroup-hook #'fmwc/workgroup-config-cleanup))
    #+END_SRC
 
 ** Window Layouts

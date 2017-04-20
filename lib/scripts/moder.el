@@ -254,10 +254,10 @@
   (when (and (fboundp 'wg-current-workgroup)
              (fboundp 'wg-workgroup-name)
              (fboundp 'workgroups-mode)
-             (fboundp 'fmwc/workgroup-config-icon-for-workgroup)
+             (fboundp 'fn/workgroups-layout-workgroup-icon)
              (not (null workgroups-mode))
              (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
-    (-if-let (workgroup-icon (fmwc/workgroup-config-icon-for-workgroup))
+    (-if-let (workgroup-icon (fn/workgroups-layout-workgroup-icon))
         (format " %s " workgroup-icon)
       (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
 
