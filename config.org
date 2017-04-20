@@ -4616,7 +4616,7 @@
           :defer t
           :bind (:map fn-standard-prefix-map
                       ("n" . npm-mode))
-          :config
+          :init
           (setq npm-mode-command-prefix "C-c n n")))
     #+END_SRC
 
@@ -4900,12 +4900,21 @@
 
     #+BEGIN_SRC emacs-lisp :block-id da802e8e-8302-f301-51f5-6042384a98a7
       (unless noninteractive
-        (fn/use-feature flycheck-flow
-          (flycheck js2-mode)
-          (use-package flycheck-flow
-            :demand t
-            :config
-            (flycheck-add-next-checker 'javascript-eslint (cons t 'javascript-flow) t))))
+        (fn/use-executables flow-check
+          (flow)
+          (fn/use-feature flycheck-flow
+            (flycheck js2-mode)
+            (use-package flycheck-flow
+              :ensure t
+              :after (js2-mode)
+              :config
+              (flycheck-add-next-checker 'javascript-eslint (cons t 'javascript-flow) t))))
+
+        (fn/use-executables eslint-project-relative
+          (eslint-project-relative)
+          (fn/use-feature flycheck-eslint
+            (flycheck js2-mode)
+            (setq flycheck-javascript-eslint-executable "eslint-project-relative"))))
     #+END_SRC
 
 *** Formatter
@@ -7017,6 +7026,10 @@
                                      0 (1+ index))))
                  nil)))))
 
+       (fn/use-feature slack-message-flyspell
+         (flyspell slack)
+         (add-hook 'slack-edit-message-mode-hook #'flyspell-mode))
+
        (fn/use-feature slack-custom-alert
          (alert)
          (defun fn/slack-message-custom-notifier (message room team)
@@ -7043,7 +7056,10 @@
          (all-the-icons)
          (fn/add-major-mode-icon
           'slack-mode
-          (list 'all-the-icons-faicon "commenting-o" :v-adjust 0.0)))
+          (list 'all-the-icons-faicon "commenting-o" :v-adjust 0.0))
+         (fn/add-major-mode-icon
+          'slack-edit-message-mode
+          (list 'all-the-icons-faicon "pencil" :v-adjust 0.0)))
 
        (progn
          (define-key fn/slack-map (kbd "q") #'slack-ws-close)
