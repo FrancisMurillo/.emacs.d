@@ -1687,18 +1687,18 @@
           (add-hook 'prog-mode-hook 'company-mode)
           :config
           (setq company-idle-delay (/ 60.0)
-             company-minimum-prefix-length 3
+                company-minimum-prefix-length 3
 
-             company-begin-commands (list 'self-insert-command))
+                company-begin-commands (list 'self-insert-command))
 
 
           (setq company-show-numbers t
-             company-tooltip-limit 20
-             company-tooltip-align-annotations t)
+                company-tooltip-limit 20
+                company-tooltip-align-annotations t)
 
 
           (setq company-dabbrev-time-limit 0.001
-             company-dabbrev-code-time-limit 0.001)
+                company-dabbrev-code-time-limit 0.001)
 
 
           (setq company-backends (list))
@@ -1712,20 +1712,20 @@
             (if (and (listp backend) (member new-backend backend))
                 backend
               (let* ((list-backend (if (consp backend)
-                                    backend
-                                  (list backend)))
-                  (with-backend (if (member ':with list-backend)
-                                    list-backend
-                                  (append list-backend '(:with)))))
+                                       backend
+                                     (list backend)))
+                     (with-backend (if (member ':with list-backend)
+                                       list-backend
+                                     (append list-backend '(:with)))))
                 (append with-backend (list new-backend)))))
 
           (defun fn/append-to-backends (new-backend)
             "Append NEW-BACKEND to company."
             (setq company-backends
-               (mapcar
-                (lambda (backend)
-                  (fn/combine-backends backend new-backend))
-                company-backends)))
+                  (mapcar
+                   (lambda (backend)
+                     (fn/combine-backends backend new-backend))
+                   company-backends)))
 
           (setq fn/company-prog-backends (list 'company-dabbrev-code))
 
@@ -4615,7 +4615,9 @@
           :ensure t
           :defer t
           :bind (:map fn-standard-prefix-map
-                      ("n" . npm-mode))))
+                      ("n" . npm-mode))
+          :config
+          (setq npm-mode-command-prefix "C-c n n")))
     #+END_SRC
 
 ** Elisp
@@ -4815,6 +4817,12 @@
           (fn/add-major-mode-icon
            'js2-jsx-mode
            (list 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
+
+      (use-package rjsx-mode
+        :ensure t
+        :after js2-mode
+        :config
+        nil)
 
       (use-package js-doc
         :ensure t
