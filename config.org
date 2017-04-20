@@ -6985,6 +6985,30 @@
           slack-typing-visibility 'never
           slack-prefer-current-team t)
 
+       (progn
+         (require 'cl-lib)
+         (require 'dash)
+
+         (defun fn/slack-current-buffer-channel-p ()
+           "Check if the current buffer is a channel."
+           (with-current-buffer (current-buffer)
+             (and (boundp 'slack-current-room-id)
+                  (boundp 'slack-current-team-id))))
+
+         (defun fn/slack-goto-next-unread-channel ()
+           "Go to next unread channel."
+           (unless (fn/slack-current-buffer-channel-p)
+             (error "Not in a slack buffer. Invoke this command in a slack buffer."))
+           (let ((team (slack-team-select))
+                 (room-id slack-current-room-id))
+             (with-slots (channels) team
+               (let* ((index (-find-index (lambda (channel)
+                                           t)
+                                         channels))
+                      (new-index (if (>= (1+ index) (length channels))
+                                     0 (1+ index))))
+                 nil)))))
+
        (fn/use-feature slack-custom-alert
          (alert)
          (defun fn/slack-message-custom-notifier (message room team)
