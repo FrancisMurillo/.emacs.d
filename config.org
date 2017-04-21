@@ -1886,6 +1886,8 @@
            wg-restore-window-dedicated-p nil
            wg-remember-frame-for-each-wg nil
 
+           wg-load-last-workgroup nil
+
            wg-emacs-exit-save-behavior           'save
            wg-workgroups-mode-exit-save-behavior 'save)
 
@@ -8791,6 +8793,23 @@
                  " "))
              (message "Computing the checksum of \"%s\"" default-directory)))))
    #+END_SRC
+** Open in Sudo
+   Use =tramp= to open a file as root
+
+   #+BEGIN_SRC emacs-lisp :block-id 04e5806a-60cb-3e33-700b-3a28144d6aa7
+     (defun fn/sudo-edit (&optional arg)
+       "Edit currently visited file as root.
+
+     With a prefix ARG prompt for a file to visit.
+     Will also prompt for a file to visit if current
+     buffer is not visiting a file."
+       (interactive "P")
+       (if (or arg (not buffer-file-name))
+           (find-file (concat "/sudo:root@localhost:"
+                              (ido-read-file-name "Find file(as root): ")))
+         (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
+   #+END_SRC
+
 * Key Bindings
   Here is where all the key binding I mapped to
 
