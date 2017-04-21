@@ -1963,7 +1963,40 @@
         :defer t
         :after (workgroups2)
         :config
-        (workgroups-layout-mode))
+        (workgroups-layout-mode)
+
+        (defvar fn/workgroups-layout-icons (list)
+          "An list of workgroup config icons, taken from `all-the-icons' mode line.")
+
+        (defun fn/workgroups-layout-define-workgroup-config-icon (workgroup icon-family icon-function icon-name &rest args)
+          "Just like with `all-the-icons' mode line, this is for workgroup config with
+      ICON-FAMILY, ICON-FUNCTION, ICON-NAME and ARGS."
+          (let ((workgroup-name (wg-workgroup-name workgroup)))
+            (add-to-list
+             'fn/workgroups-layout-icons
+             (append
+              (list
+               workgroup-name
+               icon-family
+               icon-function
+               icon-name)
+              args))))
+
+        (defun fn/workgroups-layout-workgroup-icon ()
+          "Return icon for workgroup as defined for `fn/workgroups-layout-icons' list"
+          (-if-let* ((current-workgroup-name (workgroups-layout-current-workgroup-name))
+                     (result (assoc current-workgroup-name fn/workgroups-layout-icons)))
+              (let* ((icon-result (cdr result))
+                     (icon-font-function (car icon-result))
+                     (icon-function (cadr icon-result))
+                     (icon-args (cddr icon-result)))
+                (propertize
+                 (format " %s " (apply icon-function icon-args))
+                 'help-echo (format "Workgroup: `%s`" current-workgroup-name)
+                 'face
+                 (list
+                  :family (funcall icon-font-function))))
+            nil)))
     #+END_SRC
 
 *** winner
