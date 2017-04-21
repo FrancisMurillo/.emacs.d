@@ -1243,7 +1243,7 @@
             (if (prodigy-service-started-p service)
                 (prodigy-switch-to-process-buffer service)
               (message "Starting %s service." (plist-get service :name))
-              (prodigy-start-service service (apply-partially prodigy-switch-to-process-buffer service)))))
+              (prodigy-start-service service (apply-partially #'prodigy-switch-to-process-buffer service)))))
 
 
         (defun fn/prodigy-prepared-switch-to-process-buffer (service)
@@ -4251,7 +4251,8 @@
 
       (add-hook 'makefile-mode-hook 'fn/disable-indent-buffer-before-save t)
 
-      (add-hook 'prog-mode-hook 'fn/indent-before-save)
+      ;; (add-hook 'prog-mode-hook 'fn/indent-before-save)
+
     #+END_SRC
 
 *** smartparens
@@ -5879,7 +5880,7 @@
     #+BEGIN_SRC emacs-lisp :block-id c45379d4-5485-4f3f-bbec-0fe4f417b36b
       (use-package enh-ruby-mode
         :ensure t
-        :mode (("\\.\\(rb\\|json\\)$" . enh-ruby-mode)))
+        :mode (("\\.\\(rb\\)$" . enh-ruby-mode)))
     #+END_SRC
 
 *** Completion
