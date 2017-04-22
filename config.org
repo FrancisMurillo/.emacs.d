@@ -3115,7 +3115,7 @@
 
      (unless noninteractive
        (use-package alert
-         :load-path fn/alert-package-dir
+         :ensure t
          :defer t
          :commands (alert fn/alert-color)
          :config
