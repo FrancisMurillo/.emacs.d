@@ -3273,10 +3273,11 @@
       (fn/use-feature org-src-alert
         (org alert)
         nil)
+
       (fn/use-feature org-todo
         (org)
         (setq org-todo-keywords
-              '((sequence "TODO(t)" "PENDING(p)" "|" "DONE(d)" "CANCELLED(c)")
+              '((sequence "TODO(t)" "PENDING(p)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")
                 (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
 
       (fn/use-feature org-src-desktop
@@ -4434,12 +4435,24 @@
           (use-package ag
             :ensure t
             :defer t
-            :commands ag
+            :commands (ag)
             :config
             (setq ag-highlight-search t
 
-               ag-reuse-window t
-               ag-reuse-buffers t))))
+                  ag-reuse-window t
+                  ag-reuse-buffers t)
+
+            (add-to-list
+             'display-buffer-alist
+             (cons
+              (rx bos "*ag " (zero-or-more anything) "*" eos)
+              (cons 'display-buffer-same-window (list))))
+
+            (fn/use-feature restclient-mode--mode-icon
+              (ag all-the-icons)
+              (fn/add-major-mode-icon
+               'ag-mode
+               (list 'all-the-icons-faicon "binoculars" :v-adjust -0.1))))))
     #+END_SRC
 
     With [[helm]]
