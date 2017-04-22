@@ -4688,6 +4688,45 @@
           nil))
     #+END_SRC
 
+*** Tree View
+    Not merely a tree but a structure.
+
+    =speedbar= is a built-in default.
+
+    #+BEGIN_SRC emacs-lisp :block-id d1c4a74d-3098-f6ef-2636-3b6af0d39cbc
+      (use-package speedbar
+        :defer t
+        :config ;; I prefer the same frame version
+        (fn/use-feature speedbar-golden-ratio
+          (speedbar golden-ratio)
+          (add-to-list 'golden-ratio-exclude-modes 'speedbar-mode)))
+
+      (use-package sr-speedbar
+        :ensure t
+        :defer t
+        :bind (:map fn-standard-prefix-map
+                    ("t o" . sr-speedbar-open)
+                    ("t t" . sr-speedbar-toggle))
+        :after (speedbar)
+        :commands (sr-speedbar-open)
+        :config
+        (setq sr-speedbar-auto-refresh t
+              sr-speedbar-right-side t)
+
+        (fn/use-feature workgroups-speedbar
+          (workgroups2 sr-speedbar)
+          (add-hook 'wg-before-switch-to-workgroup-hook #'sr-speedbar-close))
+
+        (fn/use-feature projectile-speedbar
+          (projectile sr-speedbar)
+          (use-package projectile-speedbar
+            :ensure t
+            :defer t
+            :after (projectile sr-speedbar)
+            :config
+            nil)))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -6020,6 +6059,19 @@
         :after auctex
         :config
         (define-key latex-mode-map (kbd "C-c C-p") 'latex-preview-pane-mode))
+    #+END_SRC
+
+*** Git Gutter
+    Git gutter support for Emacs
+
+    #+BEGIN_SRC emacs-lisp :block-id 7e3ab6c8-050f-9112-3b81-95fa8f85452f
+      (use-package git-gutter
+        :ensure t
+        :defer t
+        :init
+        (add-hook 'prog-mode-hook #'git-gutter-mode)
+        :config
+        nil)
     #+END_SRC
 
 * Random Was Alone
