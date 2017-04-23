@@ -4074,7 +4074,20 @@
 
          (fn/use-feature org-mu4e
            (org mu4e)
-           (setq org-mu4e-link-query-in-headers-mode nil))))
+           (setq org-mu4e-link-query-in-headers-mode nil))
+
+         (fn/use-feature mu4e-alert
+           (mu4e alert)
+           (use-package mu4e-alert
+             :ensure t
+             :defer t
+             :after (mu4e alert)
+             :functions (mu4e-alert-enable-notifications)
+             :init
+             (mu4e-alert-enable-notifications)
+             :config
+             (setq mu4e-alert-email-notification-types `(count)
+                   mu4e-alert-style 'libnotify)))))
    #+END_SRC
 
 *** smtpmail
