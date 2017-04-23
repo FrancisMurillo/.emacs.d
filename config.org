@@ -4288,11 +4288,6 @@
       (defun fn/disable-indent-buffer-before-save ()
         "Disable `fn/indent-before-save' for a specific mode."
         (setq-local fn/indent-buffer-on-save nil))
-
-      (add-hook 'makefile-mode-hook 'fn/disable-indent-buffer-before-save t)
-
-      ;; (add-hook 'prog-mode-hook 'fn/indent-before-save)
-
     #+END_SRC
 
 *** smartparens
