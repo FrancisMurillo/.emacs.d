@@ -6075,13 +6075,26 @@
     Git gutter support for Emacs
 
     #+BEGIN_SRC emacs-lisp :block-id 7e3ab6c8-050f-9112-3b81-95fa8f85452f
+      (defconst fn/git-gutter-map (fn/make-prefixed-keymap (kbd "C-c M-g"))
+        "My custom git-gutter map.")
+
       (use-package git-gutter
         :ensure t
         :defer t
         :init
-        (add-hook 'prog-mode-hook #'git-gutter-mode)
+        (add-hook 'prog-mode-hook #'git-gutter)
+        :commands (git-gutter)
+        :bind (:map fn/git-gutter-map
+                    ("g" . git-gutter:statistic)
+                    ("n" . git-gutter:next-hunk)
+                    ("p" . git-gutter:previous-hunk)
+                    ("s" . git-gutter:stage-hunk)
+                    ("r" . git-gutter:revert-hunk))
         :config
-        nil)
+        (setq git-gutter:window-width 1
+              git-gutter:modified-sign "/"
+              git-gutter:added-sign "+"
+              git-gutter:deleted-sign "-"))
     #+END_SRC
 
 * Random Was Alone
