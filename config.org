@@ -2023,8 +2023,18 @@
 *** e2wm
     Specific layouts for Emacs
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 35932bb3-c241-0675-ae70-5a7c63dd3aaf
+      (use-package e2wm
+        :ensure t
+        :defer t
+        :config
+        (fn/use-feature e2em-disable-golden-ratio
+          (e2wm golden-ratio)
+          (defun fn/e2wm-disable-golden-ratio ()
+            "Disable `golden-ratio-mode' when layout is managed."
+            (golden-ratio-mode -1))
 
+          (add-hook 'e2wm:pre-start-hook #'fn/e2wm-disable-golden-ratio)))
     #+END_SRC
 
 *** winner
