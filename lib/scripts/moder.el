@@ -359,15 +359,16 @@
 
 (defun moder-piece--dired-branch ()
   "Cache `moder-piece--branch' for a buffer."
-  (when dired-mode
+  (when (eq major-mode 'dired-mode)
     (setq-local moder-piece--branch
                 (cond
                  ((vc-git-responsible-p default-directory)
                   (car (vc-git-branches)))
                  (t nil)))))
 
-(add-hook 'dired-mode-hook #'moder-piece--dired-branch)
-(add-hook 'after-revert-hook #'moder-piece--dired-branch)
+(with-eval-after-load 'dired
+  (add-hook 'dired-mode-hook #'moder-piece--dired-branch)
+  (add-hook 'after-revert-hook #'moder-piece--dired-branch))
 
 
 (defun moder-piece-flycheck-errors ()
