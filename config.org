@@ -4712,6 +4712,9 @@
           (speedbar golden-ratio)
           (add-to-list 'golden-ratio-exclude-modes 'speedbar-mode)))
 
+      (defconst fn/sr-speedbar-extras-dir (expand-file-name "sr-speedbar-extras" fn/custom-module-dir)
+        "Some extra `sr-speedbar' scripts.")
+
       (use-package sr-speedbar
         :ensure t
         :defer t
@@ -4720,9 +4723,6 @@
                     ("t t" . sr-speedbar-toggle))
         :after (speedbar)
         :commands (sr-speedbar-open)
-        :init
-        (defconst fn/sr-speedbar-extras-dir (expand-file-name "sr-speedbar-extras" fn/custom-module-dir)
-          "Some extra `sr-speedbar' scripts.")
         :config
         (setq sr-speedbar-auto-refresh t
               sr-speedbar-right-side t)
