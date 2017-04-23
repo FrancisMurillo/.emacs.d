@@ -296,6 +296,23 @@
   "A piece for the buffer name."
   (format-mode-line " %b "))
 
+(defun moder-piece-projectile-project-root ()
+  "A piece for the project root."
+  (when (and (fboundp 'projectile-project-root)
+             (fboundp 'projectile-project-p)
+             (projectile-project-p))
+    (format " %s " (projectile-project-root))))
+
+(defun moder-piece-projectile-project-file ()
+  "A piece for the project file."
+  (when (and (fboundp 'projectile-project-p)
+             (fboundp 'projectile-project-root)
+             (projectile-project-p))
+    (format " %s " (file-relative-name
+                    (or (buffer-file-name)
+                        (expand-file-name default-directory))
+                    (projectile-project-root)))))
+
 (defun moder-piece-buffer-filename ()
   "A piece for the buffer filename."
   (when (buffer-file-name)
@@ -323,27 +340,34 @@
      (t
       (format " ! ")))))
 
-(defun moder-piece-vc--git ()
-  "A piece implementation for git vc."
-  (let ((branch (mapconcat 'concat (cdr (split-string vc-mode "[:-]")) "-")))
-    (->>
-     (propertize (format " %s " branch))
-     (moder-background "#f54d27"))))
-
-(defun moder-piece-vc--svn ()
-  "A piece implementation for svn vc."
-  (let ((revision (cadr (split-string vc-mode "-"))))
-    (->>
-     (propertize (format " %s " revision))
-     (moder-background "#98b0d6"))))
 
 (defun moder-piece-vc-branch ()
   "A piece for the vc branch."
-  (when vc-mode
-    (cond
-     ((string-match "Git[:-]" vc-mode) (moder-piece-vc--git))
-     ((string-match "SVN-" vc-mode) (moder-piece-vc--svn))
-     (t (format "%s" vc-mode)))))
+  (if vc-mode ;; Default implementation
+      (cond
+       ((string-match "Git[:-]" vc-mode)
+        (let ((branch (mapconcat 'concat (cdr (split-string vc-mode "[:-]")) "-")))
+          (format " %s " branch)))
+       ((string-match "SVN-" vc-mode)
+        (let ((revision (cadr (split-string vc-mode "-"))))
+          (propertize (format " %s " revision))))
+       (t (format "%s" vc-mode)))
+    (if (and (boundp 'moder-piece--branch) ;; Custom dired fallback
+             moder-piece--branch)
+        (format " %s " moder-piece--branch)
+      nil)))
+
+(defun moder-piece--dired-branch ()
+  "Cache `moder-piece--branch' for a buffer."
+  (when dired-mode
+    (setq-local moder-piece--branch
+                (cond
+                 ((vc-git-responsible-p default-directory)
+                  (car (vc-git-branches)))
+                 (t nil)))))
+
+(add-hook 'dired-mode-hook #'moder-piece--dired-branch)
+(add-hook 'after-revert-hook #'moder-piece--dired-branch)
 
 
 (defun moder-piece-flycheck-errors ()
@@ -677,7 +701,8 @@
                                           (moder-foreground "#ffffff")
                                           (moder-weight 'ultra-light)
                                           (moder-height 1.0))))))
-                                 (when (and (moder--current-window-p) (moder--active-state-p))
+                                 (when (and (moder--current-window-p)
+                                            (moder--active-state-p))
                                    (moder-separated
                                     #'moder-piece-inner-right-separator
                                     (->> (moder-piece-flycheck-errors)
@@ -728,12 +753,27 @@
                               (moder-default-text-style)
                               (moder-background "#4b8812")
                               (moder-weight 'ultra-bold))
-                         (->> (moder-piece-buffer-filename)
-                              (moder-default-text-style)
-                              (moder-background "#19868f")
-                              (moder-weight 'ultra-bold))
+                         (if (and (fboundp 'projectile-project-p)
+                                  (projectile-project-p))
+                             (moder-separated
+                              #'moder-piece-right-separator
+                              (->> (moder-piece-projectile-project-root)
+                                   (moder-default-text-style)
+                                   (moder-background "#2980b9")
+                                   (moder-foreground "#ffffff")
+                                   (moder-weight 'ultra-bold))
+                              (->> (moder-piece-projectile-project-file)
+                                   (moder-default-text-style)
+                                   (moder-background "#f39c12")
+                                   (moder-foreground "#ffffff")
+                                   (moder-weight 'ultra-bold)))
+                           (->> (moder-piece-buffer-filename)
+                                (moder-default-text-style)
+                                (moder-background "#19868f")
+                                (moder-weight 'ultra-bold)))
                          (->> (moder-piece-vc-branch)
                               (moder-default-text-style)
+                              (moder-background "#f54d27")
                               (moder-foreground "#ffffff")
                               (moder-weight 'ultra-bold)
                               (moder-height 1.0)))
