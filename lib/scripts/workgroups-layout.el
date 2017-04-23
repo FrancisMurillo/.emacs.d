@@ -167,7 +167,7 @@ Used to guarantee `setup' is called only once.")
             (message "Running entry for %s" (workgroups-layout-name config))
             (prog2
                 (setq workgroups-layout-current-workgroup-config config)
-                (funcall entry-function workgroups)
+                (funcall entry-function workgroup)
               (setq workgroups-layout-current-workgroup-config nil)))
         nil)
     ('error (message "Workgroup config entry error: %s" (error-message-string ex)))))
