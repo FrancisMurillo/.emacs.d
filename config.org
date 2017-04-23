@@ -2148,7 +2148,7 @@
           (golden-ratio-mode t)
 
           (setq split-width-threshold nil
-             golden-ratio-adjust-factor 1.0)
+                golden-ratio-adjust-factor 1.0)
 
 
           ;; Frame entry exit fix
@@ -4022,31 +4022,31 @@
                      ("g m" . mu4e))
          :config
          (setq mu4e-maildir (expand-file-name "Maildir" "~")
-            mu4e-get-mail-command "true")
+               mu4e-get-mail-command "true")
 
          (setq mu4e-sent-messages-behavior 'delete
-            mu4e-update-interval 60
-            mu4e-index-cleanup nil
-            mu4e-index-lazy-check t)
+               mu4e-update-interval 60
+               mu4e-index-cleanup nil
+               mu4e-index-lazy-check t)
 
          (setq mu4e-completing-read-function 'completing-read
-            mu4e-context-policy 'pick-first
-            mu4e-compose-context-policy nil
-            mu4e-confirm-quit nil)
+               mu4e-context-policy 'pick-first
+               mu4e-compose-context-policy nil
+               mu4e-confirm-quit nil)
 
          (setq mu4e-headers-date-format "%F %H:%M"
-            mu4e-view-show-addresses nil
-            mu4e-headers-fields '((:date . 25)
-                                  (:flags . 6)
-                                  (:from . 22)
-                                  (:subject . nil)))
+               mu4e-view-show-addresses nil
+               mu4e-headers-fields '((:date . 25)
+                                     (:flags . 6)
+                                     (:from . 22)
+                                     (:subject . nil)))
 
          (setq mu4e-attachment-dir (expand-file-name "Downloads" "~"))
 
          (setq mu4e-hide-index-messages t)
 
          (setq message-citation-line-format "%N @ %Y-%m-%d %H:%M %Z:\n"
-            message-citation-line-function 'message-insert-formatted-citation-line)
+               message-citation-line-function 'message-insert-formatted-citation-line)
 
          (fn/use-feature restclient-mode--mode-icon
            (mu4e all-the-icons)
@@ -4257,9 +4257,12 @@
     #+BEGIN_SRC emacs-lisp :block-id 177ce3cd-1ce9-388e-0edb-22c0a08ec60b
       (use-package ws-butler
         :ensure t
+        :defer t
         :init
         (add-hook 'prog-mode-hook 'ws-butler-mode)
-        (add-hook 'org-mode-hook 'ws-butler-mode))
+        (add-hook 'org-mode-hook 'ws-butler-mode)
+        :config
+        nil)
     #+END_SRC
 
 *** Indent Everywhere
@@ -6140,10 +6143,10 @@
          :config
          ;; Main
          (setq w3m-home-page "https://duckduckgo.com"
-            w3m-init-file (expand-file-name "emacs-w3m.config" fn/cache-dir)
-            w3m-use-cookies nil
-            w3m-confirm-leaving-secure-page nil
-            w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
+               w3m-init-file (expand-file-name "emacs-w3m.config" fn/cache-dir)
+               w3m-use-cookies nil
+               w3m-confirm-leaving-secure-page nil
+               w3m-cookie-file (expand-file-name "w3m-cookie" fn/cache-dir))
 
 
          (setq w3m-command-arguments (list))
@@ -6151,27 +6154,27 @@
 
          ;; Tabs
          (setq w3m-add-tab-number t
-            w3m-make-new-session nil
+               w3m-make-new-session nil
 
-            w3m-use-header-line t
-            w3m-use-header-line-title t
-            w3m-show-graphic-icons-in-header-line nil
+               w3m-use-header-line t
+               w3m-use-header-line-title t
+               w3m-show-graphic-icons-in-header-line nil
 
-            w3m-use-title-buffer-name t)
+               w3m-use-title-buffer-name t)
 
          ;; Util
          (defun fn/w3m-ignore-search-engine-pages (url &rest args)
            "Ignore search engine pages as defined by `w3m-search-engine-alist'."
            (ignore-errors ;; Ignore special urls such as //:about or whatnot
              (lexical-let* ((url-parts (w3m-parse-http-url url))
-                 (url-host (elt url-parts 1)))
+                            (url-host (elt url-parts 1)))
                (cl-some
                 (lambda (pair)
                   (pcase-let ((`(,name ,search-url) pair))
                     (lexical-let* ((search-parts (w3m-parse-http-url search-url))
-                        (search-host (elt search-parts 1)))
+                                   (search-host (elt search-parts 1)))
                       (and (not (member name fn/w3m-exclude-ignore-search-engine))
-                         (string= search-host url-host)))))
+                           (string= search-host url-host)))))
                 w3m-search-engine-alist))))
 
          (defun fn/w3m-ignore-special-pages (url)
@@ -6209,9 +6212,9 @@
          (require 'w3m-hist)
 
          (setq w3m-y-reuse-history-elements t
-            w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir)
-            w3m-arrived-db-size 2000
-            w3m-keep-cache-size 1500)
+               w3m-arrived-file (expand-file-name "w3m-arrived" fn/cache-dir)
+               w3m-arrived-db-size 2000
+               w3m-keep-cache-size 1500)
 
 
          (defun fn/w3m-ignore-arrived-add-url (orig-fun &rest args)
@@ -6219,9 +6222,9 @@
      Each function predicate takes is the same arguments as `w3m-arrived-add'
      Good for privacy and cleanliness."
            (if (not (apply #'run-hook-with-args-until-success
-                     (append
-                      (list 'fn/w3m-ignore-arrived-url-functions)
-                      args)))
+                           (append
+                            (list 'fn/w3m-ignore-arrived-url-functions)
+                            args)))
                (apply orig-fun args)
              (message "Not saving arrived url %s" (car args))
              nil))
@@ -6238,7 +6241,7 @@
            (defun fn/w3m-ignore-all-arrived-url (&rest args)
              "Ignore all urls when `fn/w3m-private-mode' is active"
              (and (boundp 'fn/w3m-private-mode)
-                fn/w3m-private-mode))
+                  fn/w3m-private-mode))
 
            (add-hook 'fn/w3m-ignore-arrived-url-functions #'fn/w3m-ignore-all-arrived-url))
 
@@ -6247,11 +6250,11 @@
      Primary check comes from `w3m-parse-http-url' by direct string match."
            (condition-case ex
                (lexical-let* ((parts (w3m-parse-http-url url))
-                   (host (elt parts 1)))
+                              (host (elt parts 1)))
                  (not (cl-notany
-                     (lambda (check-host)
-                       (string= check-host host))
-                     fn/w3m-ignore-arrived-hosts)))
+                       (lambda (check-host)
+                         (string= check-host host))
+                       fn/w3m-ignore-arrived-hosts)))
              ('error
               (message
                "There was an error parsing with fn/w3m-ignore-arrived-host: %s"
@@ -6265,7 +6268,7 @@
          (require 'w3m-bookmark)
 
          (setq w3m-bookmark-file (expand-file-name "w3m-bookmark.html" fn/setting-dir)
-            w3m-bookmark-default-section "Misc")
+               w3m-bookmark-default-section "Misc")
 
 
          ;; Persistent Session
