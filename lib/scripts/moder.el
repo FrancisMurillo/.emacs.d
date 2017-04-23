@@ -315,8 +315,8 @@
 
 (defun moder-piece-buffer-filename ()
   "A piece for the buffer filename."
-  (when (buffer-file-name)
-    (format " %s " (buffer-file-name))))
+  (format " %s " (or (buffer-file-name)
+                     (expand-file-name default-directory))))
 
 
 (defun moder-piece-process ()
@@ -357,18 +357,21 @@
         (format " %s " moder-piece--branch)
       nil)))
 
-(defun moder-piece--dired-branch ()
+(defun moder-piece--branch (&rest args)
   "Cache `moder-piece--branch' for a buffer."
-  (when (eq major-mode 'dired-mode)
-    (setq-local moder-piece--branch
-                (cond
-                 ((vc-git-responsible-p default-directory)
-                  (car (vc-git-branches)))
-                 (t nil)))))
+  (setq-local moder-piece--branch
+              (cond
+               ((vc-git-responsible-p default-directory)
+                (car (vc-git-branches)))
+               (t nil))))
 
 (with-eval-after-load 'dired
-  (add-hook 'dired-mode-hook #'moder-piece--dired-branch)
-  (add-hook 'after-revert-hook #'moder-piece--dired-branch))
+  (add-hook 'dired-mode-hook #'moder-piece--branch)
+  (advice-add 'dired-revert :after #'moder-piece--branch))
+
+(with-eval-after-load 'magit
+  (add-hook 'magit-mode-hook #'moder-piece--branch)
+  (add-hook 'magit-post-refresh-hook #'moder-piece--branch))
 
 
 (defun moder-piece-flycheck-errors ()
