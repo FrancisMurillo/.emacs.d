@@ -2905,7 +2905,11 @@
       (use-package rainbow-mode
         :ensure t
         :defer t
-        :commands (rainbow-mode))
+        :commands (rainbow-mode)
+        :bind (:map fn-standard-prefix-map
+                    ("R" . rainbow-mode))
+        :config
+        nil)
     #+END_SRC
 
 *** whitespace
