@@ -81,14 +81,19 @@ Used to guarantee `setup' is called only once.")
       (fset setup-function setup)
       (fset entry-function entry)
       (fset exit-function exit)
-      (add-to-list
-       'workgroups-layout-layouts
-       (list
-        layout-name
-        setup-function
-        entry-function
-        exit-function)
-       t))))
+      (if (assoc layout-name workgroups-layout-layouts)
+          (setcdr (assoc layout-name workgroups-layout-layouts)
+                  (list setup-function
+                        entry-function
+                        exit-function))
+        (add-to-list
+         'workgroups-layout-layouts
+         (list
+          layout-name
+          setup-function
+          entry-function
+          exit-function)
+         t)))))
 
 
 ;; Api
