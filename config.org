@@ -5744,13 +5744,14 @@
     #+BEGIN_SRC emacs-lisp :block-id cbcaef17-718e-c364-2cb8-c46ef34bd4b5
       (use-package irony
         :ensure t
+        :disabled t
+        :defer t
         :init
-
         (add-hook 'c-mode-hook 'irony-mode)
         (add-hook 'c++-mode-hook 'irony-mode)
         :config
         (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
-           irony-server-install-prefix irony-user-dir)
+              irony-server-install-prefix irony-user-dir)
 
         (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
 
@@ -5766,7 +5767,7 @@
 
       (use-package company-irony
         :ensure t
-        :after irony
+        :after (irony)
         :config
         (add-to-list 'company-backends 'company-irony))
     #+END_SRC
