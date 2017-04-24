@@ -3048,7 +3048,7 @@
         (setq scratch-ext-log-directory (expand-file-name ".scratch" fn/cache-dir)))
     #+END_SRC
 
-*** focus-mode
+*** Focus Mode
     Seems like a good mode
 
     #+BEGIN_SRC emacs-lisp :block-id 2141a379-9505-12c0-a682-edba8c2a3b58
