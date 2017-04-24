@@ -4369,52 +4369,47 @@
     Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
 
     #+BEGIN_SRC emacs-lisp :block-id 25b4c3c1-0062-54ae-4d23-b3070fdcb4a2
-      (fn/use-executables git-check
-        (git)
-        (use-package magit
-          :ensure t
-          :if (version<= "24.4.4" emacs-version)
-          :bind (("C-c g" . magit-status)
-                 ("M-g b" . magit-blame))
-          :init
-          (setq magit-push-always-verify t)
-          :config
-          (setq magit-repository-directories (list)
-             magit-repository-directories-depth 1)
+      (unless noninteractive
+        (fn/use-executables git-check
+          (git)
+          (use-package magit
+            :ensure t
+            :if (version<= "24.4.4" emacs-version)
+            :bind (("C-c g" . magit-status)
+                   ("M-g b" . magit-blame))
+            :init
+            (setq magit-push-always-verify t)
+            :config
+            (setq magit-repository-directories (list)
+                  magit-repository-directories-depth 1)
 
-          (when (file-exists-p (expand-file-name "Fakespace"))
-            (add-to-list 'magit-repository-directories (expand-file-name "Fakespace")))
+            (when (file-exists-p (expand-file-name "Fakespace"))
+              (add-to-list 'magit-repository-directories (expand-file-name "Fakespace")))
 
-          (when (file-exists-p (expand-file-name "Modules"))
-            (add-to-list 'magit-repository-directories (expand-file-name "Modules")))
+            (when (file-exists-p (expand-file-name "Modules"))
+              (add-to-list 'magit-repository-directories (expand-file-name "Modules")))
 
-          (defun fq/display-magit-on-same-buffer (buffer)
-            (if magit-display-buffer-noselect
-                (magit-display-buffer-traditional buffer)
-              (display-buffer-same-window buffer nil)))
+            (defun fq/display-magit-on-same-buffer (buffer)
+              (if magit-display-buffer-noselect
+                  (magit-display-buffer-traditional buffer)
+                (display-buffer-same-window buffer nil)))
 
-          (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
+            (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
 
-          (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
+            (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
 
-          ;; Commit message same buffer
-          (add-to-list
-           'display-buffer-alist
-           (cons
-            (rx bos "COMMIT_EDITMSG")
-            (cons 'display-buffer-same-window (list)))))
+            ;; Commit message same buffer
+            (add-to-list
+             'display-buffer-alist
+             (cons
+              (rx bos "COMMIT_EDITMSG")
+              (cons 'display-buffer-same-window (list)))))))
 
+      (unless noninteractive
         (use-package git-timemachine
           :ensure t
           :defer t
-          :bind (("M-g t" . git-timemachine)))
-
-        (use-package git-gutter
-          :ensure t
-          :diminish git-gutter-mode
-          :defer t
-          :config
-          (global-git-gutter-mode t)))
+          :bind (("M-g t" . git-timemachine))))
     #+END_SRC
 
 **** magithub
