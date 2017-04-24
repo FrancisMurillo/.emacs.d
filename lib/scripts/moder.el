@@ -488,6 +488,27 @@
                           (time-subtract (current-time) fn/camcorder-start-time))))
       (format " %s[%2.0ds] " (or icon state)  elapsed-time))))
 
+(defun moder-piece-emms-track-name ()
+  "A pice for emms track."
+  (when (and (fboundp 'emms-playlist-current-selected-track)
+             (boundp 'emms-player-stopped-p)
+             (fboundp 'emms-track-name)
+             (emms-playlist-current-selected-track))
+    (let* ((current-track (emms-playlist-current-selected-track))
+           (playing (not emms-player-stopped-p))
+           (track-name (emms-track-name current-track)))
+      (format " %s %s "
+              (if playing
+                  (propertize
+                   (all-the-icons-faicon "play" :v-adjust -0.0)
+                   'face (list :family (all-the-icons-faicon-family))
+                   'help-echo (format "Playing"))
+                (propertize
+                 (all-the-icons-faicon "stop-circle" :v-adjust -0.0)
+                 'face (list :family (all-the-icons-faicon-family))
+                 'help-echo (format "Stopped")))
+              (file-name-nondirectory track-name)))))
+
 
 ;;* Separator
 (defun moder-xpm-feature-p ()
@@ -689,7 +710,11 @@
                                      (when moder-memory
                                        (->> (moder-piece-memory)
                                             (moder-default-text-style)
-                                            (moder-background "#27ae60")))))
+                                            (moder-background "#27ae60")))
+                                     (->> (moder-piece-emms-track-name)
+                                          (moder-default-text-style)
+                                          (moder-background "#9b59b6")
+                                          (moder-foreground "#ffffff"))))
                                    (t
                                     (moder-separated
                                      #'moder-piece-inner-right-separator
