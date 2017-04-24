@@ -4710,13 +4710,14 @@
     =speedbar= is a built-in default.
 
     #+BEGIN_SRC emacs-lisp :block-id d1c4a74d-3098-f6ef-2636-3b6af0d39cbc
-      (use-package speedbar
-        :defer t
-        :config
-        ;; I prefer the same frame version
-        (fn/use-feature speedbar-golden-ratio
-          (speedbar golden-ratio)
-          (add-to-list 'golden-ratio-exclude-modes 'speedbar-mode)))
+      (unless noninteractive
+        (use-package speedbar
+          :defer t
+          :config
+          ;; I prefer the same frame version
+          (fn/use-feature speedbar-golden-ratio
+            (speedbar golden-ratio)
+            (add-to-list 'golden-ratio-exclude-modes 'speedbar-mode))))
 
       (defconst fn/sr-speedbar-extras-dir (expand-file-name "sr-speedbar-extras" fn/custom-module-dir)
         "Some extra `sr-speedbar' scripts.")
@@ -4731,7 +4732,10 @@
         :commands (sr-speedbar-open)
         :config
         (setq sr-speedbar-auto-refresh t
-              sr-speedbar-right-side t)
+              sr-speedbar-right-side t
+              sr-speedbar-default-width 15
+              sr-speedbar-width 15
+              sr-speedbar-max-width 25)
 
         (fn/use-feature workgroups-speedbar
           (workgroups2 sr-speedbar)
