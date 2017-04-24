@@ -491,22 +491,19 @@
 (defun moder-piece-emms-track-name ()
   "A pice for emms track."
   (when (and (fboundp 'emms-playlist-current-selected-track)
-             (boundp 'emms-player-stopped-p)
+             (boundp 'emms-player-playing-p)
+             (boundp 'emms-player-paused-p)
              (fboundp 'emms-track-name)
-             (emms-playlist-current-selected-track))
+             (emms-playlist-current-selected-track)
+             emms-player-playing-p)
     (let* ((current-track (emms-playlist-current-selected-track))
-           (playing (not emms-player-stopped-p))
            (track-name (emms-track-name current-track)))
       (format " %s %s "
-              (if playing
-                  (propertize
-                   (all-the-icons-faicon "play" :v-adjust -0.0)
-                   'face (list :family (all-the-icons-faicon-family))
-                   'help-echo (format "Playing"))
-                (propertize
-                 (all-the-icons-faicon "stop-circle" :v-adjust -0.0)
-                 'face (list :family (all-the-icons-faicon-family))
-                 'help-echo (format "Stopped")))
+              (propertize
+               (if emms-player-paused-p
+                   (all-the-icons-faicon "pause" :v-adjust -0.0)
+                 (all-the-icons-faicon "play" :v-adjust -0.0))
+               'face (list :family (all-the-icons-faicon-family)))
               (file-name-nondirectory track-name)))))
 
 
