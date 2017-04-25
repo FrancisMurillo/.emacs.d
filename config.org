@@ -1445,9 +1445,8 @@
 
         (fn/use-executables prodigy-mbsync
           (mbsync)
-          (defconst fn/mbsync-daemon-command (expand-file-name "mbsync-daemon" fn/prodigy-command-dir)
+          (defconst fn/mbsync-daemon-command "mbsync-daemon"
             "Wrappd `mbsync' as a daemon.")
-
 
           (defcustom fn/prodigy-mbsync-state-change-hook (list)
             "`mbsync' state change hook.

@@ -1,9 +1,11 @@
+#!/usr/bin/bash
+
 COMMAND=mbsync
 INTERVAL=30
 
 echo "Starting daemon"
 
-while true
+while :
 do
     $COMMAND $*
     echo "Waiting"
