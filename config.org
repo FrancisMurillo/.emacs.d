@@ -5749,34 +5749,34 @@
     A lot of irony for an IDE
 
     #+BEGIN_SRC emacs-lisp :block-id cbcaef17-718e-c364-2cb8-c46ef34bd4b5
-      (use-package irony
-        :ensure t
-        :disabled t
-        :defer t
-        :init
-        (add-hook 'c-mode-hook 'irony-mode)
-        (add-hook 'c++-mode-hook 'irony-mode)
-        :config
-        (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
-              irony-server-install-prefix irony-user-dir)
+      (unless noninteractive
+        (use-package irony
+          :ensure t
+          :defer t
+          :config
+          (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
+                irony-server-install-prefix irony-user-dir)
 
-        (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
+          (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
 
-        (defun fn/irony-mode-setup ()
-          (define-key irony-mode-map [remap completion-at-point]
-            'irony-completion-at-point-async)
-          (define-key irony-mode-map [remap complete-symbol]
-            'irony-completion-at-point-async))
+          (defun fn/irony-mode-setup ()
+            (define-key irony-mode-map [remap completion-at-point]
+              'irony-completion-at-point-async)
+            (define-key irony-mode-map [remap complete-symbol]
+              'irony-completion-at-point-async))
 
-        (add-hook 'irony-mode-hook 'fn/irony-mode-setup)
+          (add-hook 'irony-mode-hook 'fn/irony-mode-setup)
 
-        (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+          (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)))
 
-      (use-package company-irony
-        :ensure t
-        :after (irony)
-        :config
-        (add-to-list 'company-backends 'company-irony))
+      (fn/use-feature irony-autocomplete
+        (company irony)
+        (use-package company-irony
+          :ensure t
+          :defer t
+          :after (company irony)
+          :config
+          (add-to-list 'company-backends 'company-irony)))
     #+END_SRC
 
 *** Linter
