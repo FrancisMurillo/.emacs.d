@@ -4756,11 +4756,12 @@
             :defer t
             :after (projectile sr-speedbar)
             :config
-            nil))
+            (remove-hook 'projectile-find-dir-hook 'projectile-speedbar-open-current-buffer-in-tree)
+            (remove-hook 'projectile-find-file-hook 'projectile-speedbar-open-current-buffer-in-tree)))
 
         (use-package sb-imenu
           :load-path fn/sr-speedbar-extras-dir
-          :demand t
+          :after (sr-speedbar)
           :config
           (setq speedbar-initial-expansion-list-name "sb-imenu")))
     #+END_SRC
