@@ -4681,7 +4681,13 @@
     #+BEGIN_SRC emacs-lisp :block-id 0005bae8-c985-4a30-f746-d395929415dc
       (use-package json-mode
         :ensure t
-        :defer t)
+        :defer t
+        :config
+        (fn/use-executables jsonlint-check
+          (jsonlint)
+          (fn/use-feature flycheck-json
+            (json-mode flycheck)
+            (add-to-list 'flycheck-enabled-checkers 'json-jsonlint))))
     #+END_SRC
 
 *** evalator
