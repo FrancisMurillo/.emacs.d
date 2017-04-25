@@ -2753,17 +2753,19 @@
         :config
         (global-set-key [remap describe-mode] #'helm-describe-modes))
     #+END_SRC
-** Optimizer
+** Profiler
    Some things to help debug Emacs performance
 
    #+BEGIN_SRC emacs-lisp :block-id dbe3b540-57be-0cbc-4269-c04eaaa41eba
-     (use-package profiler-log-size
-       :bind (:map fn-standard-prefix-map
-                   ("C-p b" . profiler-start)
-                   ("C-p e" . profiler-stop)
-                   ("C-p r" . profiler-report))
-       :init
-       (add-hook 'after-init-hook (lambda () (profiler-start 'cpu+mem))))
+     (unless noninteractive
+       (use-package profiler-log-size
+         :init
+         (defun fn/profiler-start ()
+           "Start profiler with `cpu+mem'"
+           (profiler-start 'cpu+mem))
+
+         (add-hook 'after-init-hook #'fn/profiler-start)
+         :commands (profiler-start profiler-report profiler-stop)))
    #+END_SRC
 
 ** Packages
