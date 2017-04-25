@@ -4766,6 +4766,19 @@
           (setq speedbar-initial-expansion-list-name "sb-imenu")))
     #+END_SRC
 
+*** =rx= Converter
+    I hope the =rx= syntax can be ported to other languages.
+
+    #+BEGIN_SRC emacs-lisp :block-id 5e337070-17b4-bb7a-7035-f65032b4dbcc
+      (unless noninteractive
+        (use-package pcre2el
+          :ensure t
+          :defer t
+          :commands (rxt-global-mode)
+          :config
+          nil))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
