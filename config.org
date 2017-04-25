@@ -5985,7 +5985,9 @@
         :ensure t
         :defer t
         :config
-        nil)
+        (setq php-mode-coding-style 'psr-2)
+
+        (add-hook 'php-mode-hook 'php-enable-default-coding-style))
     #+END_SRC
 
 *** Completion
@@ -6010,6 +6012,7 @@
       (fn/use-feature flycheck-php
         (flycheck php-mode)
         (when (executable-find "phpcs")
+          (setq flycheck-phpcs-standard "PSR2")
           (add-to-list 'flycheck-enabled-checkers 'php-phpcs)))
     #+END_SRC
 
