@@ -6007,7 +6007,10 @@
     Flycheck to the rescue
 
     #+BEGIN_SRC emacs-lisp :block-id 1767707b-bdba-a830-9dec-8131d1fb23cc
-
+      (fn/use-feature flycheck-php
+        (flycheck php-mode)
+        (when (executable-find "phpcs")
+          (add-to-list 'flycheck-enabled-checkers 'php-phpcs)))
     #+END_SRC
 
 ** Ruby
