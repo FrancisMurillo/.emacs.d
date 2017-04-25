@@ -7340,6 +7340,9 @@
    This controls the music player.
 
    #+BEGIN_SRC emacs-lisp :block-id 0ebc0aed-f749-2d71-297a-692d5ab3b0a6
+     (defconst fn/emms-map (fn/make-prefixed-keymap (kbd "C-p") fn-standard-prefix-map)
+       "My custom prodigy map.")
+
      (fn/use-executables emms-player-check
        (vlc mpd)
        (use-package emms
@@ -7347,8 +7350,16 @@
          :defer t
          :init
          (setq emms-directory (expand-file-name "emms" fn/cache-dir))
+         :bind (:map fn/emms-map
+                     ("C-p" . emms)
+                     ("p n" . emms-next)
+                     ("p p " . emms-previous)
+                     ("p q" . emms-pause)
+                     ("p s" . emms-start)
+                     ("p S" . emms-stop))
          :config
          (emms-standard)
+
          (require 'emms-player-simple)
          (require 'emms-player-vlc)
          (require 'emms-player-mpd)
