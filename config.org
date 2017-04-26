@@ -2760,17 +2760,19 @@
         :config
         (global-set-key [remap describe-mode] #'helm-describe-modes))
     #+END_SRC
-** Optimizer
+** Profiler
    Some things to help debug Emacs performance
 
    #+BEGIN_SRC emacs-lisp :block-id dbe3b540-57be-0cbc-4269-c04eaaa41eba
-     (use-package profiler-log-size
-       :bind (:map fn-standard-prefix-map
-                   ("C-p b" . profiler-start)
-                   ("C-p e" . profiler-stop)
-                   ("C-p r" . profiler-report))
-       :init
-       (add-hook 'after-init-hook (lambda () (profiler-start 'cpu+mem))))
+     (unless noninteractive
+       (use-package profiler-log-size
+         :init
+         (defun fn/profiler-start ()
+           "Start profiler with `cpu+mem'"
+           (profiler-start 'cpu+mem))
+
+         (add-hook 'after-init-hook #'fn/profiler-start)
+         :commands (profiler-start profiler-report profiler-stop)))
    #+END_SRC
 
 ** Packages
@@ -4686,7 +4688,13 @@
     #+BEGIN_SRC emacs-lisp :block-id 0005bae8-c985-4a30-f746-d395929415dc
       (use-package json-mode
         :ensure t
-        :defer t)
+        :defer t
+        :config
+        (fn/use-executables jsonlint-check
+          (jsonlint)
+          (fn/use-feature flycheck-json
+            (json-mode flycheck)
+            (add-to-list 'flycheck-enabled-checkers 'json-jsonlint))))
     #+END_SRC
 
 *** evalator
@@ -4761,13 +4769,27 @@
             :defer t
             :after (projectile sr-speedbar)
             :config
-            nil))
+            (remove-hook 'projectile-find-dir-hook 'projectile-speedbar-open-current-buffer-in-tree)
+            (remove-hook 'projectile-find-file-hook 'projectile-speedbar-open-current-buffer-in-tree)))
 
         (use-package sb-imenu
           :load-path fn/sr-speedbar-extras-dir
-          :demand t
+          :after (sr-speedbar)
           :config
           (setq speedbar-initial-expansion-list-name "sb-imenu")))
+    #+END_SRC
+
+*** =rx= Converter
+    I hope the =rx= syntax can be ported to other languages.
+
+    #+BEGIN_SRC emacs-lisp :block-id 5e337070-17b4-bb7a-7035-f65032b4dbcc
+      (unless noninteractive
+        (use-package pcre2el
+          :ensure t
+          :defer t
+          :commands (rxt-global-mode)
+          :config
+          nil))
     #+END_SRC
 
 ** Helper
@@ -5081,7 +5103,8 @@
           (eslint-project-relative)
           (fn/use-feature flycheck-eslint
             (flycheck js2-mode)
-            (setq flycheck-javascript-eslint-executable "eslint-project-relative"))))
+            ;; (setq flycheck-javascript-eslint-executable "eslint-project-relative")
+            )))
     #+END_SRC
 
 *** Formatter
@@ -5107,7 +5130,8 @@
           "Apply eslint fix after save"
           (add-hook 'after-save-hook #'eslint-fix nil t))
 
-        (add-hook 'js2-mode-hook #'fn/eslint-fix-after-save))
+        ;; (add-hook 'js2-mode-hook #'fn/eslint-fix-after-save)
+        )
     #+END_SRC
 
 *** Snippets
@@ -5753,34 +5777,34 @@
     A lot of irony for an IDE
 
     #+BEGIN_SRC emacs-lisp :block-id cbcaef17-718e-c364-2cb8-c46ef34bd4b5
-      (use-package irony
-        :ensure t
-        :disabled t
-        :defer t
-        :init
-        (add-hook 'c-mode-hook 'irony-mode)
-        (add-hook 'c++-mode-hook 'irony-mode)
-        :config
-        (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
-              irony-server-install-prefix irony-user-dir)
+      (unless noninteractive
+        (use-package irony
+          :ensure t
+          :defer t
+          :config
+          (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
+                irony-server-install-prefix irony-user-dir)
 
-        (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
+          (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
 
-        (defun fn/irony-mode-setup ()
-          (define-key irony-mode-map [remap completion-at-point]
-            'irony-completion-at-point-async)
-          (define-key irony-mode-map [remap complete-symbol]
-            'irony-completion-at-point-async))
+          (defun fn/irony-mode-setup ()
+            (define-key irony-mode-map [remap completion-at-point]
+              'irony-completion-at-point-async)
+            (define-key irony-mode-map [remap complete-symbol]
+              'irony-completion-at-point-async))
 
-        (add-hook 'irony-mode-hook 'fn/irony-mode-setup)
+          (add-hook 'irony-mode-hook 'fn/irony-mode-setup)
 
-        (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options))
+          (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)))
 
-      (use-package company-irony
-        :ensure t
-        :after (irony)
-        :config
-        (add-to-list 'company-backends 'company-irony))
+      (fn/use-feature irony-autocomplete
+        (company irony)
+        (use-package company-irony
+          :ensure t
+          :defer t
+          :after (company irony)
+          :config
+          (add-to-list 'company-backends 'company-irony)))
     #+END_SRC
 
 *** Linter
@@ -5970,7 +5994,9 @@
         :ensure t
         :defer t
         :config
-        nil)
+        (setq php-mode-coding-style 'psr-2)
+
+        (add-hook 'php-mode-hook 'php-enable-default-coding-style))
     #+END_SRC
 
 *** Completion
@@ -5992,7 +6018,11 @@
     Flycheck to the rescue
 
     #+BEGIN_SRC emacs-lisp :block-id 1767707b-bdba-a830-9dec-8131d1fb23cc
-
+      (fn/use-feature flycheck-php
+        (flycheck php-mode)
+        (when (executable-find "phpcs")
+          (setq flycheck-phpcs-standard "PSR2")
+          (add-to-list 'flycheck-enabled-checkers 'php-phpcs)))
     #+END_SRC
 
 ** Ruby
@@ -6105,11 +6135,11 @@
         (define-key latex-mode-map (kbd "C-c C-p") 'latex-preview-pane-mode))
     #+END_SRC
 
-*** Git Gutter
+*** Git Gutter`
     Git gutter support for Emacs
 
     #+BEGIN_SRC emacs-lisp :block-id 7e3ab6c8-050f-9112-3b81-95fa8f85452f
-      (defconst fn/git-gutter-map (fn/make-prefixed-keymap (kbd "C-c M-g"))
+      (defconst fn/git-gutter-map (fn/make-prefixed-keymap (kbd "C-c M-g") global-map)
         "My custom git-gutter map.")
 
       (use-package git-gutter
@@ -7279,7 +7309,8 @@
          (define-key fn/slack-map (kbd "b r") #'slack-select-rooms)
          (define-key fn/slack-map (kbd "b c") #'slack-channel-select)
          (define-key fn/slack-map (kbd "b i") #'slack-im-select)
-         (define-key fn/slack-map (kbd "b g") #'slack-group-select))
+         (define-key fn/slack-map (kbd "b g") #'slack-group-select)
+         (define-key fn/slack-map (kbd "b t") #'slack-group-select))
 
        (progn
          (define-key slack-mode-map (kbd "C-c r r") #'slack-message-remove-reaction)
@@ -7345,6 +7376,9 @@
    This controls the music player.
 
    #+BEGIN_SRC emacs-lisp :block-id 0ebc0aed-f749-2d71-297a-692d5ab3b0a6
+     (defconst fn/emms-map (fn/make-prefixed-keymap (kbd "C-p") fn-standard-prefix-map)
+       "My custom prodigy map.")
+
      (fn/use-executables emms-player-check
        (vlc mpd)
        (use-package emms
@@ -7352,8 +7386,16 @@
          :defer t
          :init
          (setq emms-directory (expand-file-name "emms" fn/cache-dir))
+         :bind (:map fn/emms-map
+                     ("C-p" . emms)
+                     ("p n" . emms-next)
+                     ("p p " . emms-previous)
+                     ("p q" . emms-pause)
+                     ("p s" . emms-start)
+                     ("p S" . emms-stop))
          :config
          (emms-standard)
+
          (require 'emms-player-simple)
          (require 'emms-player-vlc)
          (require 'emms-player-mpd)
