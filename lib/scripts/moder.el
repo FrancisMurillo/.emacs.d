@@ -359,11 +359,13 @@
 
 (defun moder-piece--branch (&rest args)
   "Cache `moder-piece--branch' for a buffer."
-  (setq-local moder-piece--branch
-              (cond
-               ((vc-git-responsible-p default-directory)
-                (car (vc-git-branches)))
-               (t nil))))
+  (when (and (fboundp 'vc-git-responsible-p)
+             (fboundp 'vc-git-branches))
+    (setq-local moder-piece--branch
+                (cond
+                 ((vc-git-responsible-p default-directory)
+                  (car (vc-git-branches)))
+                 (t nil)))))
 
 (with-eval-after-load 'dired
   (add-hook 'dired-mode-hook #'moder-piece--branch)
