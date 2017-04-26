@@ -1425,16 +1425,16 @@
           (defun fn/prodigy-offlineimap-state-change-listener (&rest args)
             "Just notify me when the offlineimap has something new"
             (lexical-let ((output (plist-get args :output))
-                (service (plist-get args :service)))
+                          (service (plist-get args :service)))
               (pcase output
                 ((pred (string-match-p "OfflineIMAP"))
                  (prodigy-set-status service 'ready)
                  (run-hook-with-args 'fn/prodigy-offlineimap-state-change-hook service 'ready))
                 ((and (guard (not fn/prodigy-offlineimap-current-state))
-                    (pred (string-match-p "Copy message")))
+                      (pred (string-match-p "Copy message")))
                  (setq fn/prodigy-offlineimap-current-state t))
                 ((and (guard fn/prodigy-offlineimap-current-state)
-                    (pred (string-match-p "Finished account")))
+                      (pred (string-match-p "Finished account")))
                  (run-hook-with-args 'fn/prodigy-offlineimap-state-change-hook service 'synced)
                  (setq fn/prodigy-offlineimap-current-state nil)))))
 
@@ -1448,6 +1448,14 @@
           (defconst fn/mbsync-daemon-command "mbsync-daemon"
             "Wrappd `mbsync' as a daemon.")
 
+          (defconst fn/mbsync-slave-pattern
+            (rx line-start
+                "slave: "
+                (group-n 1 (one-or-more digit))
+                " messages, "
+                (group-n 2 (one-or-more digit))
+                " recent" line-end))
+
           (defcustom fn/prodigy-mbsync-state-change-hook (list)
             "`mbsync' state change hook.
       Possible values are `error', `synced' and `ready'.")
@@ -1455,12 +1463,12 @@
           (defun fn/prodigy-mbsync-state-change-listener (&rest args)
             "Listen on `mbsync' output for state changes."
             (lexical-let ((output (plist-get args :output))
-                (service (plist-get args :service)))
+                          (service (plist-get args :service)))
               (pcase output
-                ((pred (string-prefix-p "Reading configuration file"))
+                ((pred (string-prefix-p "Starting daemon"))
                  (prodigy-set-status service 'ready)
                  (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'ready))
-                ((pred (string-prefix-p "Synchronizing..."))
+                ((pred (string-match fn/mbsync-slave-pattern))
                  (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'synced)))))
 
           (prodigy-define-tag
@@ -3953,7 +3961,7 @@
                             (format "[mbsync] %s is ready" service-name)
                             :color "#0000ff"))
                    ('synced (fn/alert-color
-                             (format "[mbsynv] %s synced an account" service-name)
+                             (format "[mbsync] %s synced an account" service-name)
                              :color "#eeeeee"))))))
 
            (add-hook
