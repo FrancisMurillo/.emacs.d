@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+
 COMMAND=mbsync
 INTERVAL=30
 

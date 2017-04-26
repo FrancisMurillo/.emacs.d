@@ -5096,7 +5096,8 @@
           (eslint-project-relative)
           (fn/use-feature flycheck-eslint
             (flycheck js2-mode)
-            (setq flycheck-javascript-eslint-executable "eslint-project-relative"))))
+            ;; (setq flycheck-javascript-eslint-executable "eslint-project-relative")
+            )))
     #+END_SRC
 
 *** Formatter
@@ -5122,7 +5123,8 @@
           "Apply eslint fix after save"
           (add-hook 'after-save-hook #'eslint-fix nil t))
 
-        (add-hook 'js2-mode-hook #'fn/eslint-fix-after-save))
+        ;; (add-hook 'js2-mode-hook #'fn/eslint-fix-after-save)
+        )
     #+END_SRC
 
 *** Snippets
@@ -6126,11 +6128,11 @@
         (define-key latex-mode-map (kbd "C-c C-p") 'latex-preview-pane-mode))
     #+END_SRC
 
-*** Git Gutter
+*** Git Gutter`
     Git gutter support for Emacs
 
     #+BEGIN_SRC emacs-lisp :block-id 7e3ab6c8-050f-9112-3b81-95fa8f85452f
-      (defconst fn/git-gutter-map (fn/make-prefixed-keymap (kbd "C-c M-g"))
+      (defconst fn/git-gutter-map (fn/make-prefixed-keymap (kbd "C-c M-g") global-map)
         "My custom git-gutter map.")
 
       (use-package git-gutter
@@ -7300,7 +7302,8 @@
          (define-key fn/slack-map (kbd "b r") #'slack-select-rooms)
          (define-key fn/slack-map (kbd "b c") #'slack-channel-select)
          (define-key fn/slack-map (kbd "b i") #'slack-im-select)
-         (define-key fn/slack-map (kbd "b g") #'slack-group-select))
+         (define-key fn/slack-map (kbd "b g") #'slack-group-select)
+         (define-key fn/slack-map (kbd "b t") #'slack-group-select))
 
        (progn
          (define-key slack-mode-map (kbd "C-c r r") #'slack-message-remove-reaction)
