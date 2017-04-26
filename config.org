@@ -6135,25 +6135,21 @@
         (define-key latex-mode-map (kbd "C-c C-p") 'latex-preview-pane-mode))
     #+END_SRC
 
-*** Git Gutter`
+*** Git Gutter
     Git gutter support for Emacs
 
     #+BEGIN_SRC emacs-lisp :block-id 7e3ab6c8-050f-9112-3b81-95fa8f85452f
-      (defconst fn/git-gutter-map (fn/make-prefixed-keymap (kbd "C-c M-g") global-map)
-        "My custom git-gutter map.")
-
       (use-package git-gutter
         :ensure t
         :defer t
         :init
-        (add-hook 'prog-mode-hook #'git-gutter)
-        :commands (git-gutter)
-        :bind (:map fn/git-gutter-map
-                    ("g" . git-gutter:statistic)
-                    ("n" . git-gutter:next-hunk)
-                    ("p" . git-gutter:previous-hunk)
-                    ("s" . git-gutter:stage-hunk)
-                    ("r" . git-gutter:revert-hunk))
+        (add-hook 'prog-mode-hook #'git-gutter-mode)
+        :commands (git-gutter-mode)
+        :bind (("C-x g" . git-gutter:toggle)
+               ("C-x n" . git-gutter:next-hunk)
+               ("C-x p" . git-gutter:previous-hunk)
+               ("C-x v s" . git-gutter:stage-hunk)
+               ("C-x v r" . git-gutter:revert-hunk))
         :config
         (setq git-gutter:window-width 1
               git-gutter:modified-sign "/"
