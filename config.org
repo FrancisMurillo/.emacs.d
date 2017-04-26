@@ -3070,8 +3070,8 @@
         :defer t
         :bind (:map fn-standard-prefix-map
                     ("f" . focus-mode))
-        :init
-        (add-hook 'prog-mode-hook #'focus-mode))
+        :config
+        nil)
     #+END_SRC
 
 *** font-lock
