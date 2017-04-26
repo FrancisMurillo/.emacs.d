@@ -4424,7 +4424,9 @@
         (use-package git-timemachine
           :ensure t
           :defer t
-          :bind (("M-g t" . git-timemachine))))
+          :bind (("M-g t" . git-timemachine))
+          :config
+          nil))
     #+END_SRC
 
 **** magithub
