@@ -33,8 +33,8 @@
 (when (version<= "25" emacs-version)
   (require 'nsm)
   (setq nsm-settings-file
-     (expand-file-name "network-security" fn/cache-dir)
-     network-security-level 'high))
+        (expand-file-name "network-security" fn/cache-dir)
+        network-security-level 'high))
 
 
 (setq load-prefer-newer t)
