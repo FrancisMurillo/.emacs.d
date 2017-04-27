@@ -56,33 +56,43 @@
 (defconst fn/bootstrap-dir (expand-file-name "bootstrap" user-emacs-directory)
   "Bootstrap directory.")
 
-(defconst fn/bootstrap-packages (list 'use-package 'org
-                                      ;; 'org-plus-contrib
-                                      )
+(defconst fn/bootstrap-packages
+  `((bind-key . "bind-key.tar")
+    (diminish . "diminish.tar")
+    (use-package . "use-package.tar")
+    (org . "org.tar")
+    (org-plus-contrib . "org-plus-contrib.tar")
+    (benchmark-init . "benchmark-init.tar"))
   "Required bootstrap packages.")
 
 (progn ;; Use Package & Dependencies
   (unless (package-installed-p 'bind-key)
     (package-install-file
-     (expand-file-name "bind-key.tar" fn/bootstrap-dir)))
+     (expand-file-name (cdr (assoc 'bind-key fn/bootstrap-packages))
+                       fn/bootstrap-dir)))
 
   (unless (package-installed-p 'diminish)
     (package-install-file
-     (expand-file-name "diminish.tar" fn/bootstrap-dir)))
+     (expand-file-name (cdr (assoc 'diminish fn/bootstrap-packages))
+                       fn/bootstrap-dir)))
 
   (unless (package-installed-p 'use-package)
     (package-install-file
-     (expand-file-name "use-package.tar" fn/bootstrap-dir))))
+     (expand-file-name (cdr (assoc 'use-package fn/bootstrap-packages))
+                       fn/bootstrap-dir))))
 
 (unless (package-installed-p 'org) ;; org-mode
   (package-install-file
-   (expand-file-name "org.tar" fn/bootstrap-dir))
+   (expand-file-name (cdr (assoc 'org fn/bootstrap-packages))
+                     fn/bootstrap-dir))
   (package-install-file
-   (expand-file-name "org-plus-contrib.tar" fn/bootstrap-dir)))
+   (expand-file-name (cdr (assoc 'org-plus-contrib fn/bootstrap-packages))
+                     fn/bootstrap-dir)))
 
 (unless (package-installed-p 'benchmark-init) ;; benchmarking
   (package-install-file
-   (expand-file-name "benchmark-init.tar" fn/bootstrap-dir)))
+   (expand-file-name (cdr (assoc 'benchmark-init fn/bootstrap-packages))
+                     fn/bootstrap-dir)))
 
 
 ;; Preconfig

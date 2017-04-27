@@ -2815,7 +2815,54 @@
         :ensure t
         :demand t
         :config ;; Configuration in personal.el
-        nil)
+        (require 'rx)
+        (require 's)
+
+        (defconst fn/backup-file-pattern
+          (rx line-start
+              (group-n 1 (one-or-more anything))
+              "-"
+              (group-n 2 (one-or-more (or digit ".")))
+              "."
+              (group-n 3 (one-or-more anything))
+              line-end)
+          "The `elpamr' backup file pattern.")
+
+        (defun fn/update-bootstrapped-packages ()
+          "Update `fn/bootstrap-packages' with files from `elpamr-default-output-directory'."
+          (interactive)
+          (let* ((raw-backup-package-files
+                  (mapcar #'file-name-nondirectory
+                          (with-temp-buffer
+                            (setq default-directory elpamr-default-output-directory)
+                            (append
+                             (file-expand-wildcards
+                              (expand-file-name  "*.tar"))
+                             (file-expand-wildcards
+                              (expand-file-name  "*.el"))))))
+                 (backup-packages
+                  (mapcar (lambda (raw-backup-package-file)
+                            (car (s-match-strings-all fn/backup-file-pattern raw-backup-package-file)))
+                          raw-backup-package-files))
+                 (bootstrap-packages
+                  (mapcar (lambda (bootstrap-package)
+                            (cons
+                             (file-name-base (cdr bootstrap-package))
+                             (cdr bootstrap-package)))
+                          fn/bootstrap-packages)))
+            (mapc
+             (lambda (package)
+               (pcase-let ((`(,package-file ,package-name _ ,package-extension) package))
+                 (let ((found-package (assoc-string package-name bootstrap-packages)))
+                   (when found-package
+                     (copy-file
+                      (expand-file-name package-file elpamr-default-output-directory)
+                      (expand-file-name (cdr found-package) fn/bootstrap-dir)
+                      t)
+                     (message "Updating bootstrapped package %s from %s"
+                              package-name
+                              package-file)))))
+             backup-packages))))
     #+END_SRC
 
 * Artist
