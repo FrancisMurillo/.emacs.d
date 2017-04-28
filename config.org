@@ -1468,6 +1468,8 @@
                 ((pred (string-prefix-p "Starting daemon"))
                  (prodigy-set-status service 'ready)
                  (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'ready))
+                ((pred (string-prefix-p "Error:"))
+                 (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'error))
                 ((pred (string-match fn/mbsync-slave-pattern))
                  (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'synced)))))
 
@@ -4009,6 +4011,9 @@
                    ('ready (fn/alert-color
                             (format "[mbsync] %s is ready" service-name)
                             :color "#0000ff"))
+                   ('error (fn/alert-color
+                            (format "[mbsync] %s is ready" service-name)
+                            :color "#bc4b4b"))
                    ('synced (fn/alert-color
                              (format "[mbsync] %s synced an account" service-name)
                              :color "#eeeeee"))))))
