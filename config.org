@@ -3907,7 +3907,13 @@
        :after eshell
        :config
        (setq tramp-persistency-file-name (expand-file-name "tramp" fn/cache-dir)
-          tramp-default-user (getenv "USER")))
+             tramp-default-user (getenv "USER")
+
+             tramp-verbose 6)
+
+       ;; Make SSH work faster by reusing connections
+       (setq tramp-ssh-controlmaster-options
+             "-o ControlMaster=auto -o ControlPath='tramp.%%C' -o ControlPersist=no"))
    #+END_SRC
 
 ** ledger
