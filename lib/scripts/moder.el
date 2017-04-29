@@ -270,19 +270,35 @@
 
 (defun moder-piece-host ()
   "A piece for the host name."
-  (when (and (boundp 'tramp-current-host)
+  (when (and (fboundp 'with-parsed-tramp-file-name)
              (boundp 'tramp-default-host))
-    (format " %s "
-            (or tramp-current-host
-                tramp-default-host))))
+    (condition-case ex
+        (with-parsed-tramp-file-name
+            (or (buffer-file-name) default-directory)
+            props
+          (format " %s " (tramp-file-name-real-host props)))
+      ('error (format " %s " tramp-default-host)))))
 
 (defun moder-piece-user ()
-  "A piece for the user name."
-  (when (and (boundp 'tramp-current-user)
+  "A piece for the tramp connection type."
+  (when (and (fboundp 'with-parsed-tramp-file-name)
              (boundp 'tramp-default-user))
-    (format " %s "
-            (or tramp-current-user
-                tramp-default-user))))
+    (condition-case ex
+        (with-parsed-tramp-file-name
+            (or (buffer-file-name) default-directory)
+            props
+          (format " %s " (tramp-file-name-real-user props)))
+      ('error (format " %s " tramp-default-user)))))
+
+(defun moder-piece-connection-type ()
+  "A piece for the user name."
+  (when (fboundp 'with-parsed-tramp-file-name)
+    (condition-case ex
+        (with-parsed-tramp-file-name
+            (or (buffer-file-name) default-directory)
+            props
+          (format " %s " (tramp-file-name-method props)))
+      ('error nil))))
 
 (defun moder-piece-directory ()
   "A piece for the project directory."
@@ -301,7 +317,14 @@
   (when (and (fboundp 'projectile-project-root)
              (fboundp 'projectile-project-p)
              (projectile-project-p))
-    (format " %s " (projectile-project-root))))
+    (if (and (fboundp 'with-parsed-tramp-file-name)
+             (fboundp 'tramp-file-name-localname))
+        (condition-case ex
+            (with-parsed-tramp-file-name (projectile-project-root)
+                props
+              (format " %s " (tramp-file-name-localname props)))
+          ('error (format " %s " (projectile-project-root))))
+      (format " %s " (projectile-project-root)))))
 
 (defun moder-piece-projectile-project-file ()
   "A piece for the project file."
@@ -315,8 +338,14 @@
 
 (defun moder-piece-buffer-filename ()
   "A piece for the buffer filename."
-  (format " %s " (or (buffer-file-name)
-                     (expand-file-name default-directory))))
+  (condition-case ex
+      (with-parsed-tramp-file-name
+          (or (buffer-file-name)
+              (expand-file-name default-directory))
+          props
+        (format " %s " (tramp-file-name-localname props)))
+    ('error (format " %s " (or (buffer-file-name)
+                               (expand-file-name default-directory))))))
 
 
 (defun moder-piece-process ()
@@ -777,10 +806,16 @@
                               (moder-default-text-style)
                               (moder-background "#2980b9")
                               (moder-weight 'ultra-bold))
-                         (->> (moder-piece-host)
-                              (moder-default-text-style)
-                              (moder-background "#4b8812")
-                              (moder-weight 'ultra-bold))
+                         (moder-separated
+                          #'moder-piece-inner-right-separator
+                          (->> (moder-piece-host)
+                               (moder-default-text-style)
+                               (moder-background "#4b8812")
+                               (moder-weight 'ultra-bold))
+                          (->> (moder-piece-connection-type)
+                               (moder-default-text-style)
+                               (moder-background "#27ae60")
+                               (moder-weight 'ultra-bold)))
                          (if (and (fboundp 'projectile-project-p)
                                   (projectile-project-p))
                              (moder-separated
