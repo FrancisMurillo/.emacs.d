@@ -1471,7 +1471,9 @@
                 ((pred (string-prefix-p "Error:"))
                  (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'error))
                 ((pred (string-match fn/mbsync-slave-pattern))
-                 (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'synced)))))
+                 (let ((recent (match-string 2 output)))
+                   (when (> (string-to-number recent) 0)
+                     (run-hook-with-args 'fn/prodigy-mbsync-state-change-hook service 'synced)))))))
 
           (prodigy-define-tag
             :name 'mbsync
