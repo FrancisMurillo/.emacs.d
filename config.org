@@ -3444,6 +3444,37 @@
 
         ;; More at personal.el
 
+        (defun fn/org-todo-entries ()
+          "Get all entries from `org-todo-list' as cons pairs of id and text.
+      Useful for linking TODO entries."
+          (save-window-excursion
+            (org-todo-list 0)
+            (let ((entries (list))
+                  (entry nil)
+                  (current-point (point)))
+              (org-agenda-next-item 1)
+              (while (/= (point) current-point)
+                (setq current-point (point))
+                (call-interactively 'org-store-link) ;; Trick agenda in storing the link into `org-stored-links'
+                (setq entry (car org-stored-links))
+                (push (cons (cadr entry) (car entry)) entries)
+                (org-agenda-next-item 1))
+              entries)))
+
+        (defun fn/org-insert-completing-todo-link ()
+          "Select a todo item to link.
+      Uses `fn/org-todo-entries' as the collection."
+          (interactive)
+          (let* ((entries (fn/org-todo-entries))
+                 (description (completing-read "Select a TODO entry: " ;; Bug in completing read?
+                                               entries ;; Does not work if the todos are not unique, rare.
+                                               nil
+                                               t))
+                 (link (car (assoc-string description entries))))
+            (org-insert-link nil link description)))
+
+        (define-key org-capture-mode-map (kbd "C-c C-l") #'fn/org-insert-completing-todo-link)
+
         (advice-add 'org-agenda-get-restriction-and-command :around #'fn/org-ignore-delete-other-windows))
     #+END_SRC
 
