@@ -3473,6 +3473,7 @@
             (org-insert-link nil link description)))
 
         (define-key org-capture-mode-map (kbd "C-c C-l") #'fn/org-insert-completing-todo-link)
+        (define-key org-mode-map (kbd "C-c C-L") #'fn/org-insert-completing-todo-link)
 
         (advice-add 'org-agenda-get-restriction-and-command :around #'fn/org-ignore-delete-other-windows))
     #+END_SRC
