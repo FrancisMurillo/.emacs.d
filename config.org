@@ -7483,43 +7483,33 @@
                      ("p s" . emms-start)
                      ("p S" . emms-stop))
          :config
+         (emms-minimalistic)
          (emms-standard)
 
          (require 'emms-player-simple)
-         (require 'emms-player-vlc)
-         (require 'emms-player-mpd)
 
          (setq emms-player-list nil)
-
 
          (setq emms-source-file-default-directory (expand-file-name "~/Musicbox/"))
 
 
-         (with-eval-after-load 'emms-player-vlc
-           (add-to-list 'emms-player-list 'emms-player-vlc)
-           (add-to-list 'emms-player-list 'emms-player-vlc-playlist)
+         (require 'emms-player-vlc)
 
-           ;; Remove default advice for vlc which does not work
-           (advice-remove 'emms-player-vlc-start #'ad-Advice-emms-player-vlc-start))
+         (add-to-list 'emms-player-list 'emms-player-vlc)
+         (add-to-list 'emms-player-list 'emms-player-vlc-playlist)
 
-         (with-eval-after-load 'emms-player-mpd
-           (setq emms-player-mpd-server-name "localhost"
-              emms-player-mpd-server-port 18600
-              emms-player-mpd-music-directory emms-source-file-default-directory)
-
-           (add-to-list 'emms-info-functions 'emms-info-mpd)
-           (add-to-list 'emms-player-list 'emms-player-mpd))
-
-
-
+         ;; Remove default advice for vlc which does not work
+         (advice-remove 'emms-player-vlc-start #'ad-Advice-emms-player-vlc-start)
 
          (setq emms-info-asynchronously nil
-            emms-playlist-buffer-name "*Music*")
+               emms-playlist-buffer-name "*Music*")
 
          (setq emms-playlist-default-major-mode 'emms-playlist-mode)
 
          ;; emms-mark
          (require 'emms-mark)
+
+         (add-hook 'emms-playlist-mode-hook #'emms-mark-mode)
 
          ;; emms-history
          (require 'emms-history)
@@ -7534,6 +7524,8 @@
          (emms-volume-minor-mode t)
 
          (setq emms-volume-mode-timeout 1)
+
+         (setq emms-info-functions '(emms-info-mp3info))
 
          (fn/add-major-mode-icon
           'emms-playlist-mode
