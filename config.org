@@ -3324,6 +3324,8 @@
        :config
        (setq org-id-locations-file (expand-file-name "org-id-locations" fn/cache-dir))
 
+       (setq org-catch-invisible-edits 'show)
+
        (add-to-list 'savehist-additional-variables 'org-insert-link-history)
 
 
@@ -3378,8 +3380,16 @@
       (fn/use-feature org-todo
         (org)
         (setq org-todo-keywords
-              '((sequence "TODO(t)" "PENDING(p)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")
-                (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" ))))
+              `((sequence "TODO(t)" "PENDING(p)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")
+                (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" )))
+
+        (setq org-todo-keyword-faces
+              ;; Color pattern from: http://stackoverflow.com/questions/12707492/add-custom-markers-to-emacs-org-mode
+              '(("TODO" :background "#e74c3c" :foreground "#000000" :weight bold :box (:line-width 2 :style released-button))
+                ("WAITING" :background  "#3498db" :foreground "#000000" :weight bold :box (:line-width 2 :style released-button))
+                ("PENDING" :background "#f1c40f" :foreground "#000000" :weight bold :box (:line-width 2 :style released-button))
+                ("DONE" :background "#2ecc71" :foreground "#000000" :weight bold :box (:line-width 2 :style released-button))
+                ("CANCELLED" :background "lime green" :foreground "black" :weight bold :box (:line-width 2 :style released-button)))))
 
       (fn/use-feature org-src-desktop
         (org desktop)
@@ -3472,8 +3482,10 @@
                  (link (car (assoc-string description entries))))
             (org-insert-link nil link description)))
 
-        (define-key org-capture-mode-map (kbd "C-c C-l") #'fn/org-insert-completing-todo-link)
-        (define-key org-mode-map (kbd "C-c C-L") #'fn/org-insert-completing-todo-link)
+        (with-eval-after-load 'org-capture
+          (define-key org-capture-mode-map (kbd "C-c m l") #'fn/org-insert-completing-todo-link))
+
+        (define-key org-mode-map (kbd "C-c m l") #'fn/org-insert-completing-todo-link)
 
         (advice-add 'org-agenda-get-restriction-and-command :around #'fn/org-ignore-delete-other-windows))
     #+END_SRC
