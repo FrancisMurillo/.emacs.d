@@ -6539,7 +6539,8 @@
 
 
           (defun fn/w3m-privacy-update-conf ()
-            "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new configurations."
+            "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new
+configurations."
             (interactive)
             (make-directory fn/w3m-polipo-cache-dir t)
             (make-directory fn/w3m-tor-cache-dir t)
@@ -8488,7 +8489,7 @@
      (defconst fmd/md-photo-extension "jpg"
        "The photo file extension")
 
-     (defconst fmd/md-audio-extension "wav"
+     (defconst fmd/md-audio-extension "mp3"
        "The audio file extension")
 
 
