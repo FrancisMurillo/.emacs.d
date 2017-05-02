@@ -4897,6 +4897,18 @@
           nil))
     #+END_SRC
 
+*** RedMine
+    Using =org-mode= with =Redmine=.
+
+    #+BEGIN_SRC emacs-lisp :block-id 6a7adfd0-aacf-09f1-4cdb-02eb32de28f3
+      (use-package org-redmine
+        :ensure t
+        :defer t
+        :config
+        ;; Use redmine auth api key
+        nil)
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
