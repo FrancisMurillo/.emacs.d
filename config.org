@@ -3350,14 +3350,6 @@
        :after org)
    #+END_SRC
 
-   I prefer to see my main org file on boot
-
-   #+BEGIN_SRC emacs-lisp :block-id 257c9465-3051-7e92-e91d-762f3ec6b8be
-     (defun fn/find-main-org-file ()
-       (interactive)
-       (find-file fn/org-main-file))
-   #+END_SRC
-
 *** org-src
     Configuration for =org-src=
 
