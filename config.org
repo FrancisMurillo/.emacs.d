@@ -3705,7 +3705,7 @@
 *** org-helm
     Using =helm= to navigate =org-mode=.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 0bb62bd0-fed3-06de-a7dd-1dd2c4e07034
       (fn/use-feature org-helm-completing-read
         (helm org)
         ;; Thanks to :
@@ -3719,7 +3719,7 @@
               ;; `org-icompleting-read' again without this function in
               ;; `helm-completing-read-handlers-alist'
               (let ((helm-completing-read-handlers-alist (rassq-delete-all
-                                                          'aj/org-completing-read-tags
+                                                          'fj/org-completing-read-tags
                                                           helm-completing-read-handlers-alist)))
                 (org-icompleting-read prompt coll pred req initial hist def inh))
             ;; Tags prompt
@@ -3740,7 +3740,7 @@
                                (concat "Tags " initial)
                              prompt)))
               (concat initial (mapconcat 'identity
-                                         (nreverse (aj/helm-completing-read-multiple
+                                         (nreverse (fq/helm-completing-read-multiple
                                                     prompt table pred nil nil hist def
                                                     t "Org tags" "*Helm org tags*" ":"))
                                          ":")))))
