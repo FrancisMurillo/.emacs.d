@@ -1,0 +1,5 @@
+Timesheet
+
+Project, Issue, User, Date, Hours, Comments
+{% for t in timesheets %}
+${t.project_name}, ${t.issue_id}, ${t.username}, ${t.spent_on}, ${t.hours}, ${t.comments} {% end %}

@@ -1,0 +1,20 @@
+:issue${issue.id}:
+
+Subject: ${issue.subject}
+Status: ${issue.status.name}
+
+${issue.description}
+
+Journals
+--------
+{% for journal in issue.journals %}
+${journal.created_on} : 
+   ${journal.notes}
+{% end %}
+
+Tasks
+-----
+{% for task in issue.children %}
+:task${task.id}: ${task.subject}
+{% end %}
+

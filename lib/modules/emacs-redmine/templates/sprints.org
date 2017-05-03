@@ -1,0 +1,5 @@
+Sprints for ${project}:
+(press 'r' to show issues for the sprint, 'o' to show sprint in org mode )
+
+{% for s in sprints %}
+  :${s.id}: (${s.status}) ${s.name} {% end %}

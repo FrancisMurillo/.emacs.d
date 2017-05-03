@@ -1,0 +1,20 @@
+Issues:
+(list of keyboard shortcuts at the end of this buffer)
+
+{% for i in issues %}
+  :issue${i.id}: (${i.status.name}) ${i.subject} {% end %}
+
+
+---------------------------
+Shortcut Keys:
+  g : refresh
+  2 : view page 2 (if there are more than 100 issues)
+  s : show issue information
+  A : add new issue
+  e : edit issue
+  j : add journal entry
+  d : delete issue
+  C-c n : set status to new
+  C-c d : set status to devdone
+  C-c r : set status to reopened
+  C-c t : set status to tested

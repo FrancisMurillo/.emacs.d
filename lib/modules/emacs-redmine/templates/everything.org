@@ -1,0 +1,33 @@
+* Project ${project}
+
+{% for s in sprints %}
+** Sprint ${s.name}
++ id ${s.id}:
++ status ${s.status}
+
+{% for issue in s.issues %}
+*** Issue${issue.id} (${issue.status.name}) ${issue.subject}  
+${issue.description}
+
+{% for journal in issue.journals %}
++ (${journal.created_on}):  ${journal.notes}
+{% end %}
+
+{% for task in issue.tasks %}
+**** Task${task.id} (${task.status.name}) ${task.subject}  
++ id ${task.id}
++ status ${task.status.name}
+
+${task.description}
+
+{% for journal in issue.journals %}
++ (${journal.created_on}):  ${journal.notes}
+{% end %}
+
+{% end %}
+
+{% end %}
+
+{% end %}
+
+{% end %}

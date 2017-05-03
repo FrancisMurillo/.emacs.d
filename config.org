@@ -4962,7 +4962,7 @@
     #+END_SRC
 
 *** RedMine
-    Using =org-mode= with =Redmine=.
+    Using =Redmine= in any means necessary.
 
     #+BEGIN_SRC emacs-lisp :block-id 6a7adfd0-aacf-09f1-4cdb-02eb32de28f3
       (use-package org-redmine
@@ -4971,6 +4971,16 @@
         :config
         ;; Use redmine auth api key
         nil)
+
+
+      (defconst fn/redmine-package-dir (expand-file-name "emacs-redmine" fn/custom-module-dir)
+        "My local `redmine' package dir.")
+
+      (use-package redmine
+        :load-path fn/redmine-package-dir
+        :defer t
+        :config
+        (setq redmine-program (expand-file-name "redmine.py" fn/emacs-redmine-package-dir)))
     #+END_SRC
 
 ** Helper
