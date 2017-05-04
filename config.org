@@ -4980,7 +4980,7 @@
         :load-path fn/redmine-package-dir
         :defer t
         :config
-        (setq redmine-program (expand-file-name "redmine.py" fn/emacs-redmine-package-dir)))
+        (setq redmine-program (expand-file-name "redmine.py" fn/redmine-package-dir)))
     #+END_SRC
 
 ** Helper
