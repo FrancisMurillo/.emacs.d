@@ -268,7 +268,7 @@ class Redmine:
 		self.issuesXML = {}
 		
 		if readonlytest:
-			print 'Redmine instance running in read only test mode.  No data will be written to the server.'
+			print('Redmine instance running in read only test mode.  No data will be written to the server.')
 		
 		self.__opener = None
 
@@ -353,7 +353,7 @@ class Redmine:
 			
 		#debug
 		if self.debug:
-			print fullUrl + urldata
+			print(fullUrl + urldata)
 		
 		# Set up the request
 		if HTTPrequest:
@@ -391,7 +391,7 @@ class Redmine:
 	def post(self, page, objXML, parms=None ):
 		'''Posts an XML object to the server - used to make new Redmine items.  Returns an XML object.'''
 		if self.readonlytest:
-			print 'Redmine read only test: Pretending to create: ' + page
+			print( 'Redmine read only test: Pretending to create: ' + page)
 			return objXML
 		else:
 			return self.open( page, parms, objXML )
@@ -399,14 +399,14 @@ class Redmine:
 	def put(self, page, objXML, parms=None ):
 		'''Puts an XML object on the server - used to update Redmine items.  Returns nothing useful.'''
 		if self.readonlytest:
-			print 'Redmine read only test: Pretending to update: ' + page
+			print('Redmine read only test: Pretending to update: ' + page) 
 		else:
 			return self.open( page, parms, objXML, HTTPrequest=self.PUT_Request )
 	
 	def delete(self, page ):
 		'''Deletes a given object on the server - used to remove items from Redmine.  Use carefully!'''
 		if self.readonlytest:
-			print 'Redmine read only test: Pretending to delete: ' + page
+			print( 'Redmine read only test: Pretending to delete: ' + page)
 		else:
 			return self.open( page, HTTPrequest=self.DELETE_Request )
 			
@@ -439,7 +439,7 @@ class Redmine:
 	def getVersions(self, projectIdent):
 		#versions = self.get('api/versions/'+projectIdent)
 		#return sorted([ self.Version(v) for v in versions.findall('version') ], key=attrgetter('created_on'))
-		versions = self.get('/projects/%s/versions.xml'%projectIdent)
+		versions = self.get('projects/%s/versions.xml'%projectIdent)
 		versions = [ self.Version(ET.ElementTree(version)) for version in versions.findall('version') ]
 		return sorted(versions, key=attrgetter('created_on'))
 

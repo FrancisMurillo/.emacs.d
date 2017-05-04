@@ -4193,7 +4193,7 @@
             )))
      #+END_SRC
 
-*** mu4e
+***  mu4e
    A quick alternative for =gnus=
 
    #+BEGIN_SRC emacs-lisp :block-id 4b99ca89-ec33-86b9-fac0-3e0dbc7d5424
@@ -4269,8 +4269,15 @@
              (mu4e-alert-enable-notifications)
              :config
              (setq mu4e-alert-email-notification-types `(count)
-                   mu4e-alert-style 'libnotify)))))
+                   mu4e-alert-style 'libnotify)))
+
+         (fn/use-executables w3m-check
+           (w3m) ;; Use `w3m' to render the pages.
+           (setq mu4e-html2text-command "w3m -dump -T text/html"
+                 mu4e-view-show-images t))))
    #+END_SRC
+
+   #+RESULTS:
 
 *** smtpmail
     Sending mail is just as important
