@@ -7422,43 +7422,33 @@ configurations."
           slack-prefer-current-team t)
 
        (progn
-         (require 'cl-lib)
-         (require 'dash)
+         ;; Thanks https://github.com/yuya373/emacs-slack/issues/175#issuecomment-300159618
+         (defun fn/slack-unread-rooms ()
+           "Get unread rooms from slack."
+           (let ((team (slack-team-select)))
+             (cl-loop for team in (list team)
+                      append
+                      (with-slots (groups ims channels) team
+                        (cl-remove-if
+                         #'(lambda (room)
+                             (not (< 0 (oref room unread-count-display))))
+                         (append ims groups channels))))))
 
-         (defun fn/slack-current-buffer-channel-p ()
-           "Check if the current buffer is a channel."
-           (with-current-buffer (current-buffer)
-             (and (boundp 'slack-current-room-id)
-                  (boundp 'slack-current-team-id))))
-
-         (defun fn/slack-goto-next-unread-channel ()
-           "Go to next unread channel."
+         (defun fn/slack-select-unread-rooms ()
+           "Selet unread rooms from slack."
            (interactive)
-           (unless (fn/slack-current-buffer-channel-p)
-             (error "Not in a slack buffer. Invoke this command in a slack buffer."))
-           (let ((team (slack-team-select))
-                 (channel-id slack-current-room-id))
-             (with-slots (channels) team
-               (let* ((partitioned-channels
-                       (-partition-by
-                        (lambda (channel)
-                          (not (string= (oref channel id) channel-id)))
-                        channels))
-                      (sequenced-channels
-                       (if (<= (length partitioned-channels) 1)
-                           nil
-                         (let ((current-channels partitioned-channels))
-                           (while (not (= (length (car current-channels)) 1))
-                             (setq current-channels (-rotate -1 current-channels)))
-                           (apply #'-concat (cdr current-channels)))))
-                      (unread-channel
-                       (-first
-                        (lambda (channel)
-                          (not (zerop (oref channel unread-count-display))))
-                        sequenced-channels)))
-                 (if (null unread-channel)
-                     (error "No unread channel found.")
-                   (slack-room-create-buffer unread-channel team)))))))
+           (let ((team (slack-team-select)))
+             (slack-room-select (fn/slack-unread-rooms))))
+
+         (defun fn/slack-goto-unread-room ()
+           "Quickly visit an unread room in slack."
+           (interactive)
+           (let ((unread-rooms (fn/slack-unread-rooms)))
+             (if (null unread-rooms)
+                 (error "No unread rooms in slack. Silence is good.")
+               (slack-room-create-buffer
+                (car unread-rooms)
+                (slack-team-find (oref (car unread-rooms))))))))
 
        (fn/use-feature slack-message-flyspell
          (flyspell slack)
@@ -7505,7 +7495,9 @@ configurations."
          (define-key fn/slack-map (kbd "b c") #'slack-channel-select)
          (define-key fn/slack-map (kbd "b i") #'slack-im-select)
          (define-key fn/slack-map (kbd "b g") #'slack-group-select)
-         (define-key fn/slack-map (kbd "b t") #'slack-group-select))
+         (define-key fn/slack-map (kbd "b t") #'slack-group-select)
+
+         (define-key fn/slack-map (kbd "u u") #'fn/slack-select-unread-rooms))
 
        (progn
          (define-key slack-mode-map (kbd "C-c r r") #'slack-message-remove-reaction)
