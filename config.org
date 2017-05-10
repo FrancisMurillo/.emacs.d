@@ -72,11 +72,10 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 8ec65bd3-dc31-0455-99d0-301267fdd059
      (defconst fn/package-archives
-       (list
-        (list "gnu" "http://elpa.gnu.org/packages/" 10)
-        (list "org" "http://orgmode.org/elpa/" 0 )
-        (list "melpa" "http://melpa.org/packages/" 20)
-        (list "melpa-stable" "http://stable.melpa.org/packages/" 5))
+       `(("gnu" "http://elpa.gnu.org/packages/" 10)
+         ("org" "http://orgmode.org/elpa/" 0 )
+         ("melpa" "http://melpa.org/packages/" 20)
+         ("melpa-stable" "http://stable.melpa.org/packages/" 5))
        "List of my packages")
 
      (mapc
