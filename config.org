@@ -7434,11 +7434,19 @@ configurations."
                              (not (< 0 (oref room unread-count-display))))
                          (append ims groups channels))))))
 
+         (defun fn/slack-unread-message-count ()
+           "Get the total number of unread messages."
+           (cl-loop for room in (fn/slack-unread-rooms)
+                    sum (oref room unread-count-display)))
+
          (defun fn/slack-select-unread-rooms ()
            "Selet unread rooms from slack."
            (interactive)
-           (let ((team (slack-team-select)))
-             (slack-room-select (fn/slack-unread-rooms))))
+           (let ((team (slack-team-select))
+                 (unread-rooms (fn/slack-unread-rooms)))
+             (if (null unread-rooms)
+                 (error "No unread rooms in slack. Silence is good.")
+               (slack-room-select unread-rooms))))
 
          (defun fn/slack-goto-unread-room ()
            "Quickly visit an unread room in slack."
@@ -7448,7 +7456,18 @@ configurations."
                  (error "No unread rooms in slack. Silence is good.")
                (slack-room-create-buffer
                 (car unread-rooms)
-                (slack-team-find (oref (car unread-rooms))))))))
+                (slack-team-find (oref (car unread-rooms) team-id))))))
+
+         (defvar fn/slack-current-unread-message-count 0
+           "Just a tracer for my unread messages.")
+
+         (defun fn/slack-update-unread-message-count (&rest args)
+           "Update `fn/slack-current-unread-message-count'."
+           (setq fn/slack-current-unread-message-count
+                 (fn/slack-unread-message-count)))
+
+         (fn/slack-update-unread-message-count)
+         (advice-add 'slack-ws-handle-message :after #e'fn/slack-update-unread-message-count))
 
        (fn/use-feature slack-message-flyspell
          (flyspell slack)
@@ -7497,7 +7516,8 @@ configurations."
          (define-key fn/slack-map (kbd "b g") #'slack-group-select)
          (define-key fn/slack-map (kbd "b t") #'slack-group-select)
 
-         (define-key fn/slack-map (kbd "u u") #'fn/slack-select-unread-rooms))
+         (define-key fn/slack-map (kbd "u b") #'fn/slack-select-unread-rooms)
+         (define-key fn/slack-map (kbd "u u") #'fn/slack-goto-unread-room))
 
        (progn
          (define-key slack-mode-map (kbd "C-c r r") #'slack-message-remove-reaction)

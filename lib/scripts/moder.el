@@ -348,6 +348,15 @@
                                (expand-file-name default-directory))))))
 
 
+(defun moder-piece-slack-unread-notification ()
+  "A piece for unread `emacs-slack' messages."
+  (when (and (boundp 'fn/slack-current-unread-message-count)
+             (> fn/slack-current-unread-message-count 0))
+    (format " %s %s "
+            fn/slack-current-unread-message-count
+            (propertize
+             (all-the-icons-faicon "slack" :v-adjust -0.0)
+             'face (list :family (all-the-icons-faicon-family))))))
 (defun moder-piece-process ()
   "A piece for process name."
   (unless (string-empty-p (format-mode-line mode-line-process))
