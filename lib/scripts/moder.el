@@ -357,6 +357,18 @@
             (propertize
              (all-the-icons-faicon "slack" :v-adjust -0.0)
              'face (list :family (all-the-icons-faicon-family))))))
+
+(defun moder-piece-mu4e-unread-notification ()
+  "A piece for unread `mu4w'"
+  (when (and (boundp 'fn/mu4e-current-unread-message-count)
+             (> fn/mu4e-current-unread-message-count 0))
+    (format " %s %s "
+            fn/mu4e-current-unread-message-count
+            (propertize
+             (all-the-icons-faicon "envelope" :v-adjust 0.0)
+             'face (list :family (all-the-icons-faicon-family))))))
+
+
 (defun moder-piece-process ()
   "A piece for process name."
   (unless (string-empty-p (format-mode-line mode-line-process))
