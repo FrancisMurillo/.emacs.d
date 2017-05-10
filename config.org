@@ -7430,7 +7430,8 @@ configurations."
        (setq slack-enable-emoji nil
              slack-buffer-emojify nil
              slack-typing-visibility 'never
-             slack-prefer-current-team t)
+             slack-prefer-current-team t
+             slack-buffer-function #'switch-to-buffer)
 
        (progn
          ;; Thanks https://github.com/yuya373/emacs-slack/issues/175#issuecomment-300159618
