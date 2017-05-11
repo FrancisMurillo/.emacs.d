@@ -4278,9 +4278,9 @@
              "Update `fn/mu4e-update-unread-message-count'."
              (setq fn/mu4e-current-unread-message-count mail-count))
 
-           (add-hook 'mu4e-view-mode-hook #'fn/mu4e-current-unread-message-count)
-           (add-hook 'mu4e-index-updated-hook #'fn/mu4e-current-unread-message-count)
-           (add-hook 'mu4e-msg-changed-hook #'fn/mu4e-current-unread-message-count))
+           (add-hook 'mu4e-view-mode-hook #'fn/mu4e-update-unread-message-count)
+           (add-hook 'mu4e-index-updated-hook #'fn/mu4e-update-unread-message-count)
+           (add-hook 'mu4e-msg-changed-hook #'fn/mu4e-update-unread-message-count))
 
          (fn/use-executables w3m-check
            (w3m) ;; Use `w3m' to render the pages.
