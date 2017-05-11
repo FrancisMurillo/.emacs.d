@@ -7478,8 +7478,7 @@ configurations."
            (setq fn/slack-current-unread-message-count
                  (fn/slack-unread-message-count)))
 
-         (fn/slack-update-unread-message-count)
-         (advice-add 'slack-ws-handle-message :after #'fn/slack-update-unread-message-count))
+         (advice-add 'slack-ws-on-message :after #'fn/slack-update-unread-message-count))
 
        (fn/use-feature slack-message-flyspell
          (flyspell slack)
