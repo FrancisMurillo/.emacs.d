@@ -4192,7 +4192,7 @@
             )))
      #+END_SRC
 
-***  mu4e
+*** mu4e
    A quick alternative for =gnus=
 
    #+BEGIN_SRC emacs-lisp :block-id 4b99ca89-ec33-86b9-fac0-3e0dbc7d5424
@@ -4268,19 +4268,22 @@
              (mu4e-alert-enable-notifications)
              :config
              (setq mu4e-alert-email-notification-types `(count)
-                   mu4e-alert-style 'libnotify)))
+                   mu4e-alert-style 'libnotify)
 
-         (progn ;; Mail count
-           (defvar fn/mu4e-current-unread-message-count 0
-             "The current `mu4e' unread message count.")
+             (progn ;; Mail count, along-side mu4e-alert
+               (defvar fn/mu4e-current-unread-message-count 0
+                 "The current `mu4e' unread message count.")
 
-           (defun fn/mu4e-update-unread-message-count (mail-count)
-             "Update `fn/mu4e-update-unread-message-count'."
-             (setq fn/mu4e-current-unread-message-count mail-count))
+               (defun fn/mu4e-alert--get-mu-unread-mails (orig-fun callback)
+                 "Just `mu4e-alert--get-mu-unread-mails' but the CALLBACK updating the message count."
+                 (lexical-let ((callback callback))
+                   (funcall orig-fun
+                            (lambda (mails)
+                              (prog1
+                                  (funcall callback mails)
+                                (setq fn/mu4e-current-unread-message-count (length mails)))))))
 
-           (add-hook 'mu4e-view-mode-hook #'fn/mu4e-update-unread-message-count)
-           (add-hook 'mu4e-index-updated-hook #'fn/mu4e-update-unread-message-count)
-           (add-hook 'mu4e-msg-changed-hook #'fn/mu4e-update-unread-message-count))
+               (advice-add 'mu4e-alert--get-mu-unread-mails :around #'fn/mu4e-alert--get-mu-unread-mails))))
 
          (fn/use-executables w3m-check
            (w3m) ;; Use `w3m' to render the pages.
@@ -5300,7 +5303,8 @@
       (unless noninteractive
         (fn/use-feature flycheck-eslint-relative
           (flycheck js2-mode)
-          (defun my/use-eslint-from-node-modules ()
+          ;; Thanks to https://emacs.stackexchange.com/questions/21205/flycheck-with-file-relative-eslint-executable
+          (defun fq/use-eslint-from-node-modules ()
             (let* ((root (locate-dominating-file
                           (or (buffer-file-name) default-directory)
                           "node_modules"))
@@ -5310,7 +5314,7 @@
               (when (and eslint (file-executable-p eslint))
                 (setq-local flycheck-javascript-eslint-executable eslint))))
 
-          (add-hook 'flycheck-mode-hook #'my/use-eslint-from-node-modules)))
+          (add-hook 'flycheck-mode-hook #'fq/use-eslint-from-node-modules)))
     #+END_SRC
 
 *** Formatter
