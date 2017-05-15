@@ -4879,12 +4879,34 @@
       (use-package json-mode
         :ensure t
         :defer t
+        :mode ("\\.json\\'" . json-mode)
         :config
         (fn/use-executables jsonlint-check
           (jsonlint)
           (fn/use-feature flycheck-json
             (json-mode flycheck)
             (add-to-list 'flycheck-enabled-checkers 'json-jsonlint))))
+
+
+      (use-package json-snatcher
+        :ensure t
+        :defer t
+        :after (json-mode))
+
+
+      (use-package json-reformat ;; Native tool for json formatting
+        :ensure t
+        :defer t
+        :after (json-mode))
+
+
+      (fn/use-executables js-beautify-check
+        (js-beautify)  ;; sudo npm -g install js-beautify
+        (use-package web-beautify ;; A bit more nodejs
+          :ensure t
+          :defer t
+          :after json-mode))
+
     #+END_SRC
 
 *** evalator
@@ -7482,11 +7504,10 @@ configurations."
          (advice-add 'slack-ws-on-message :after #'fn/slack-update-unread-message-count))
 
        (progn ;; Force subscription
-         (defun fn/slack-room-all-subcribedp (_room team)
-           (debug)
+         (defun fn/slack-room-all-subcribedp (_ team)
            "Overrides `slack-room-subscribedp' to always return
            non-nil to force subscription."
-           t)
+           team)
 
          (advice-add 'slack-room-subscribedp :override #'fn/slack-room-all-subcribedp))
 
