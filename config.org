@@ -7477,6 +7477,15 @@ configurations."
 
          (advice-add 'slack-ws-on-message :after #'fn/slack-update-unread-message-count))
 
+       (progn ;; Force subscription
+         (defun fn/slack-room-all-subcribedp (_room team)
+           (debug)
+           "Overrides `slack-room-subscribedp' to always return
+           non-nil to force subscription."
+           t)
+
+         (advice-add 'slack-room-subscribedp :override #'fn/slack-room-all-subcribedp))
+
        (fn/use-feature slack-message-flyspell
          (flyspell slack)
          (add-hook 'slack-edit-message-mode-hook #'flyspell-mode))
