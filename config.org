@@ -5240,27 +5240,6 @@
           (fn/add-major-mode-icon
            'js2-jsx-mode
            (list 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
-
-      (use-package rjsx-mode
-        :ensure t
-        :after js2-mode
-        :config
-        nil)
-
-      (use-package js-doc
-        :ensure t
-        :after js2-mode
-        :init
-        (add-hook 'js2-mode-hook
-                  (lambda ()
-                    (define-key js2-mode-map (kbd "C-c i") #'js-doc-insert-function-doc)
-                    (define-key js2-mode-map "@" 'js-doc-insert-tag)))
-
-
-        (setq js-doc-mail-address user-mail-address
-              js-doc-author (format "I am <%s>" js-doc-mail-address)
-              js-doc-url "francismurillo.github.io"
-              js-doc-license "GPL"))
     #+END_SRC
 
 *** Refactor
@@ -5335,6 +5314,8 @@
                                                   root))))
               (when (and eslint (file-executable-p eslint))
                 (setq-local flycheck-javascript-eslint-executable eslint))))
+
+          (add-to-list 'flycheck-enabled-checkers 'javascript-eslint)
 
           (add-hook 'flycheck-mode-hook #'fq/use-eslint-from-node-modules)))
     #+END_SRC
