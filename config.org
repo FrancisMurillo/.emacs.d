@@ -5177,14 +5177,7 @@
       (use-package web-mode
         :ensure t
         :defer t
-        :mode (("\\.tt\\'" . web-mode)
-               ("\\.erb\\'" . web-mode)
-               ("\\.html\\.ep\\'" . web-mode)
-               ("\\.blade\\.php\\'" . web-mode)
-               ("\\.hbs\\'" . web-mode))
-        :init
-        (dolist (hook '(emmet-mode))
-          (add-hook 'web-mode-hook hook))
+        :mode (("\\.html'" . web-mode))
         :config
         (setq web-mode-enable-auto-pairing t
               web-mode-enable-auto-closing t
@@ -5193,6 +5186,7 @@
 
       (use-package company-web
         :ensure t
+        :defer t
         :after web-mode)
     #+END_SRC
 
@@ -5204,8 +5198,14 @@
         :ensure t
         :defer t
         :init
-        (dolist (hook '(sgml-mode-hook css-mode-hook kolon-mode-hook))
-          (add-hook hook 'emmet-mode)))
+        (add-hook 'web-mode-hook 'emmet-mode)
+        (add-hook 'css-mode-hook 'emmet-mode)
+        :config
+        (setq emmet-self-closing-tag-style " /")
+
+        (fn/use-feature jsx-emmet
+          (js2-mode emmet-mode)
+          (setq emmet-expand-jsx-className? t)))
     #+END_SRC
 
 *** CSS
@@ -5226,7 +5226,7 @@
       (use-package js2-mode
         :ensure t
         :interpreter (("node" . js2-mode))
-        :mode (("\\.\\(js\\|json\\)$" . js2-mode)
+        :mode (("\\.\\(js\\)$" . js2-mode)
                ("\\.\\(jsx\\)$" . js2-jsx-mode))
         :defer t
         :config
