@@ -5176,6 +5176,42 @@
         (add-hook 'emacs-lisp-mode-hook #'overseer-mode))
     #+END_SRC
 
+** SQL
+
+*** Client
+    If enterprise grade support is needed.
+
+    #+BEGIN_SRC emacs-lisp :block-id ac79d4bb-f43a-6895-98c0-387a01f4dbfe
+      (fn/use-executables lein-check
+        (lein)
+        (use-package ejc-sql
+          :ensure t
+          :defer t
+          :after (sql)
+          :functions (ejc-create-connection)
+          :commands (ejc-connect)
+          :config
+          (setq ejc-set-rows-limit 1000
+                nrepl-sync-request-timeout 60)))
+    #+END_SRC
+
+*** Literate Programming
+    Sometimes it's just easier to get a scratch pad.
+
+    #+BEGIN_SRC emacs-lisp :block-id 7564fa01-38ae-c6c0-8425-7f3790553612
+      (fn/use-feature org-literate-sql
+        (org sql)
+        (require 'ob-sql) ;; Default
+
+        (use-package ob-sql-mode
+          :ensure t
+          :defer t
+          :after (org sql)
+          :config
+          nil ;; None yet
+          ))
+    #+END_SRC
+
 ** Web
 *** Mode
     The defacto mode for web development
