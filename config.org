@@ -6644,256 +6644,256 @@
     I want w3m to use tor at least.
 
     #+BEGIN_SRC emacs-lisp :block-id 024bb8e1-c51e-c67b-b36b-77e031e445e5
-      (fn/use-feature w3m-privacy-proxy
-        (w3m )
-        (fn/use-executables w3m-privacy-proxy
-          (w3m tor polipo privoxy)
-          (defcustom fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
-            "Polipo cache directory."
-            :type 'directory)
+            (fn/use-feature w3m-privacy-proxy
+              (w3m )
+              (fn/use-executables w3m-privacy-proxy
+                (w3m tor polipo privoxy)
+                (defcustom fn/w3m-polipo-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
+                  "Polipo cache directory."
+                  :type 'directory)
 
-          (defcustom fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
-            "Tor cache directory."
-            :type 'directory)
+                (defcustom fn/w3m-tor-cache-dir (expand-file-name "tor-cache" fn/cache-dir)
+                  "Tor cache directory."
+                  :type 'directory)
 
-          (defcustom fn/w3m-privoxy-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
-            "Privoxy cache directory."
-            :type 'directory)
+                (defcustom fn/w3m-privoxy-cache-dir (expand-file-name "polipo-cache" fn/cache-dir)
+                  "Privoxy cache directory."
+                  :type 'directory)
 
-          (defcustom fn/w3m-privoxy-conf-dir (expand-file-name "privoxy" fn/system-dir)
-            "Privoxy conf directory."
-            :type 'directory)
-
-
-
-          (defcustom fn/w3m-tor-port 18050
-            "Tor port"
-            :type 'number)
-
-          (defcustom fn/w3m-polipo-port 18123
-            "Polipo port"
-            :type 'number)
-
-          (defcustom fn/w3m-privoxy-port 18118
-            "Polipo port"
-            :type 'number)
+                (defcustom fn/w3m-privoxy-conf-dir (expand-file-name "privoxy" fn/system-dir)
+                  "Privoxy conf directory."
+                  :type 'directory)
 
 
-          (defcustom fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
-            "Polipo configuration."
-            :type 'file)
 
-          (defcustom fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
-            "Tor configuration."
-            :type 'file)
+                (defcustom fn/w3m-tor-port 18050
+                  "Tor port"
+                  :type 'number)
 
-          (defcustom fn/w3m-privoxy-conf-file (expand-file-name "privoxy-w3m-conf" fn/cache-dir)
-            "Privoxy configuration."
-            :type 'file)
+                (defcustom fn/w3m-polipo-port 18123
+                  "Polipo port"
+                  :type 'number)
 
-
-          (defun fn/w3m-privacy-update-conf ()
-            "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new
-configurations."
-            (interactive)
-            (make-directory fn/w3m-polipo-cache-dir t)
-            (make-directory fn/w3m-tor-cache-dir t)
-
-            (make-directory fn/w3m-privoxy-cache-dir t)
-            (make-directory fn/w3m-privoxy-conf-dir t)
-
-            (fn/prodigy-create-polipo-conf
-             fn/w3m-polipo-conf-file
-             `(("proxyAddress" . "127.0.0.1")
-               ("allowedClients" . "127.0.0.1")
-               ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
-               ("proxyPort" . ,fn/w3m-polipo-port)
-               ("cacheIsShared" . false)
-               ("socksParentProxy" .
-                ,(format "%s:%s" "127.0.0.1" fn/w3m-tor-port))
-               ("socksProxyType" . socks5)
-               ("relaxTransparency" . true)
-               ("logSyslog" . false)
-               ("logLevel" . 0xFF)
-               ("logFile" . "")
-
-               ;; Optional Security Setting
-               ("localDocumentRoot" . "")
-               ("disableLocalInterface" . true)
-               ("disableConfiguration" . true)
-               ("dnsUseGethostbyname" . yes)
-               ("disableVia" . true)
-               ("censorReferer" . maybe)
-               ("maxConnectionAge" . 5m)
-               ("maxConnectionRequests" . 120)
-               ("serverMaxSlots" . 8)
-               ("serverSlots" . 2)))
-
-            (fn/prodigy-create-tor-conf
-             fn/w3m-tor-conf-file
-             `(("SocksPort" . ,fn/w3m-tor-port)
-               ("DataDirectory" . ,fn/w3m-tor-cache-dir)
-               ("ControlPort" . ,(1+ fn/w3m-tor-port))
-               ("DisableDebuggerAttachment" . 0)
-               ("Log" . "info")))
-
-            (fn/prodigy-create-privoxy-conf
-             fn/w3m-privoxy-conf-file
-             `(("confdir" . ,fn/w3m-privoxy-conf-dir)
-               ("logdir" . ,fn/w3m-privoxy-cache-dir)
-
-               ("actionsfile" . "match-all.action")
-               ("actionsfile" . "default.action")
-               ("actionsfile" . "user.action")
-               ("filterfile" . "default.filter")
-
-               ("debug" . 13313)
-               ("logfile" . "logfile")
-               ("listen-address" .
-                ,(format "%s:%s" "127.0.0.1" fn/w3m-privoxy-port))
-               ("forward" .
-                ,(format "/ %s:%s" "127.0.0.1" fn/w3m-polipo-port))
-
-               ("toggle" . 1)
-               ("enable-remote-toggle" . 0)
-               ("enable-edit-actions" . 0)
-               ("enforce-blocks" . 0)
-               ("buffer-limit" . 4096)
-               ("enable-proxy-authentication-forwarding" . 0)
-               ("forwarded-connect-retries" .  0)
-               ("accept-intercepted-requests" . 0)
-               ("allow-cgi-request-crunching" . 0)
-               ("split-large-forms" . 0)
-               ("keep-alive-timeout" . 5)
-               ("tolerate-pipelining" . 1)
-               ("socket-timeout" . 300))))
-
-          (defun fn/w3m-remove-http-proxy-arguments ()
-            "Remove http_proxy= from `w3m-command-arguments'."
-            (setq w3m-command-arguments ;; Remove added http_proxy arguments
-               (cl-reduce  ;; I wish this could be easier
-                (lambda (val xs)
-                  (if (and (string= "-o" val)
-                         (or
-                          (string-prefix-p "http_proxy="
-                                           (or (car xs) ""))
-                          (string-prefix-p "https_proxy="
-                                           (or (car xs) ""))))
-                      (cdr xs)
-                    (cons val xs)))
-                w3m-command-arguments
-                :from-end t
-                :initial-value (list))))
-
-          (defun fn/w3m-append-http-proxy-arguments ()
-            "Add http_proxy= to `w3m-command-arguments' while removing previous ones."
-            (fn/w3m-remove-http-proxy-arguments)
-            (setq w3m-command-arguments
-               (append w3m-command-arguments
-                       (list "-o"
-                          (format
-                           "http_proxy=http://127.0.0.1:%s/"
-                           fn/w3m-privoxy-port))
-                       (list "-o"
-                          (format
-                           "https_proxy=https://127.0.0.1:%s/"
-                           fn/w3m-privoxy-port)))))
+                (defcustom fn/w3m-privoxy-port 18118
+                  "Polipo port"
+                  :type 'number)
 
 
-          (require 'prodigy)
-          (require 'prodigy-set)
+                (defcustom fn/w3m-polipo-conf-file (expand-file-name "polipo-w3m-conf" fn/cache-dir)
+                  "Polipo configuration."
+                  :type 'file)
 
-          (defun fn/w3m-service-start (&rest args)
-            "Add http-proxy from `w3m-command-arguments'."
-            (when (prodigy-set-started-p fn/w3m-privacy-set)
-              (fn/w3m-append-http-proxy-arguments)))
+                (defcustom fn/w3m-tor-conf-file (expand-file-name "tor-w3m-conf" fn/cache-dir)
+                  "Tor configuration."
+                  :type 'file)
 
-          (defun fn/w3m-service-stop (&rest args)
-            "Add http-proxy from `w3m-command-arguments'."
-            (fn/w3m-remove-http-proxy-arguments))
-
-          (defun fn/w3m-service-init (&rest args)
-            "If both service are stopped, update config before starting."
-            (unless (prodigy-set-started-p fn/w3m-privacy-set)
-              (fn/w3m-privacy-update-conf)))
+                (defcustom fn/w3m-privoxy-conf-file (expand-file-name "privoxy-w3m-conf" fn/cache-dir)
+                  "Privoxy configuration."
+                  :type 'file)
 
 
-          (prodigy-define-tag
-            :name 'w3m
-            :init #'fn/w3m-service-init
-            :on-start #'fn/w3m-service-start
-            :on-stop #'fn/w3m-service-stop)
+                (defun fn/w3m-privacy-update-conf ()
+                  "Create/update `fn/w3m-polipo-conf-file' and `fn/w3m-tor-conf-file' with new
+      configurations."
+                  (interactive)
+                  (make-directory fn/w3m-polipo-cache-dir t)
+                  (make-directory fn/w3m-tor-cache-dir t)
+
+                  (make-directory fn/w3m-privoxy-cache-dir t)
+                  (make-directory fn/w3m-privoxy-conf-dir t)
+
+                  (fn/prodigy-create-polipo-conf
+                   fn/w3m-polipo-conf-file
+                   `(("proxyAddress" . "127.0.0.1")
+                     ("allowedClients" . "127.0.0.1")
+                     ("diskCacheRoot" . ,fn/w3m-polipo-cache-dir)
+                     ("proxyPort" . ,fn/w3m-polipo-port)
+                     ("cacheIsShared" . false)
+                     ("socksParentProxy" .
+                      ,(format "%s:%s" "127.0.0.1" fn/w3m-tor-port))
+                     ("socksProxyType" . socks5)
+                     ("relaxTransparency" . true)
+                     ("logSyslog" . false)
+                     ("logLevel" . 0xFF)
+                     ("logFile" . "")
+
+                     ;; Optional Security Setting
+                     ("localDocumentRoot" . "")
+                     ("disableLocalInterface" . true)
+                     ("disableConfiguration" . true)
+                     ("dnsUseGethostbyname" . yes)
+                     ("disableVia" . true)
+                     ("censorReferer" . maybe)
+                     ("maxConnectionAge" . 5m)
+                     ("maxConnectionRequests" . 120)
+                     ("serverMaxSlots" . 8)
+                     ("serverSlots" . 2)))
+
+                  (fn/prodigy-create-tor-conf
+                   fn/w3m-tor-conf-file
+                   `(("SocksPort" . ,fn/w3m-tor-port)
+                     ("DataDirectory" . ,fn/w3m-tor-cache-dir)
+                     ("ControlPort" . ,(1+ fn/w3m-tor-port))
+                     ("DisableDebuggerAttachment" . 0)
+                     ("Log" . "info")))
+
+                  (fn/prodigy-create-privoxy-conf
+                   fn/w3m-privoxy-conf-file
+                   `(("confdir" . ,fn/w3m-privoxy-conf-dir)
+                     ("logdir" . ,fn/w3m-privoxy-cache-dir)
+
+                     ("actionsfile" . "match-all.action")
+                     ("actionsfile" . "default.action")
+                     ("actionsfile" . "user.action")
+                     ("filterfile" . "default.filter")
+
+                     ("debug" . 13313)
+                     ("logfile" . "logfile")
+                     ("listen-address" .
+                      ,(format "%s:%s" "127.0.0.1" fn/w3m-privoxy-port))
+                     ("forward" .
+                      ,(format "/ %s:%s" "127.0.0.1" fn/w3m-polipo-port))
+
+                     ("toggle" . 1)
+                     ("enable-remote-toggle" . 0)
+                     ("enable-edit-actions" . 0)
+                     ("enforce-blocks" . 0)
+                     ("buffer-limit" . 4096)
+                     ("enable-proxy-authentication-forwarding" . 0)
+                     ("forwarded-connect-retries" .  0)
+                     ("accept-intercepted-requests" . 0)
+                     ("allow-cgi-request-crunching" . 0)
+                     ("split-large-forms" . 0)
+                     ("keep-alive-timeout" . 5)
+                     ("tolerate-pipelining" . 1)
+                     ("socket-timeout" . 300))))
+
+                (defun fn/w3m-remove-http-proxy-arguments ()
+                  "Remove http_proxy= from `w3m-command-arguments'."
+                  (setq w3m-command-arguments ;; Remove added http_proxy arguments
+                     (cl-reduce  ;; I wish this could be easier
+                      (lambda (val xs)
+                        (if (and (string= "-o" val)
+                               (or
+                                (string-prefix-p "http_proxy="
+                                                 (or (car xs) ""))
+                                (string-prefix-p "https_proxy="
+                                                 (or (car xs) ""))))
+                            (cdr xs)
+                          (cons val xs)))
+                      w3m-command-arguments
+                      :from-end t
+                      :initial-value (list))))
+
+                (defun fn/w3m-append-http-proxy-arguments ()
+                  "Add http_proxy= to `w3m-command-arguments' while removing previous ones."
+                  (fn/w3m-remove-http-proxy-arguments)
+                  (setq w3m-command-arguments
+                     (append w3m-command-arguments
+                             (list "-o"
+                                (format
+                                 "http_proxy=http://127.0.0.1:%s/"
+                                 fn/w3m-privoxy-port))
+                             (list "-o"
+                                (format
+                                 "https_proxy=https://127.0.0.1:%s/"
+                                 fn/w3m-privoxy-port)))))
 
 
-          (defconst fn/w3m-polipo-service-name "w3m-polipo"
-            "Polipo prodigy service name.")
+                (require 'prodigy)
+                (require 'prodigy-set)
 
-          (defconst fn/w3m-tor-service-name "w3m-tor"
-            "Tor prodigy service name.")
+                (defun fn/w3m-service-start (&rest args)
+                  "Add http-proxy from `w3m-command-arguments'."
+                  (when (prodigy-set-started-p fn/w3m-privacy-set)
+                    (fn/w3m-append-http-proxy-arguments)))
 
-          (defconst fn/w3m-privoxy-service-name "w3m-privoxy"
-            "Privoxy prodigy service name.")
+                (defun fn/w3m-service-stop (&rest args)
+                  "Add http-proxy from `w3m-command-arguments'."
+                  (fn/w3m-remove-http-proxy-arguments))
 
-
-          (fn/prodigy-define-service
-           :name fn/w3m-polipo-service-name
-           :tags '(w3m polipo)
-           :port fn/w3m-polipo-port
-           :args (list "-c" fn/w3m-polipo-conf-file))
-
-          (fn/prodigy-define-service
-           :name fn/w3m-tor-service-name
-           :tags '(w3m tor)
-           :port fn/w3m-tor-port
-           :args (list "-f" fn/w3m-tor-conf-file))
-
-          (fn/prodigy-define-service
-           :name fn/w3m-privoxy-service-name
-           :tags '(w3m privoxy)
-           :port fn/w3m-privoxy-port
-           :args (list "--no-daemon" fn/w3m-privoxy-conf-file))
-
-          (defconst fn/w3m-privacy-set
-            (prodigy-set-define-set
-             :name "w3m-privacy"
-             :strategy 'sequential
-             :services `(("w3m-privoxy" . ready)
-                         ("w3m-polipo" . ready)
-                         ("w3m-tor" . ready)))
-            "My privacy set.")
-
-          (prodigy-set-mode t)
+                (defun fn/w3m-service-init (&rest args)
+                  "If both service are stopped, update config before starting."
+                  (unless (prodigy-set-started-p fn/w3m-privacy-set)
+                    (fn/w3m-privacy-update-conf)))
 
 
-          (defun fn/w3m-start-privacy-proxies (&rest args)
-            "Start services"
-            (interactive)
-            (prodigy-set-mode t)
-            (prodigy-set-start-set fn/w3m-privacy-set))
-
-          (defun fn/w3m-kill-privacy-proxies (&rest args)
-            "Stop special services."
-            (interactive)
-            (prodigy-set-mode t)
-            (prodigy-set-stop-set fn/w3m-privacy-set))
+                (prodigy-define-tag
+                  :name 'w3m
+                  :init #'fn/w3m-service-init
+                  :on-start #'fn/w3m-service-start
+                  :on-stop #'fn/w3m-service-stop)
 
 
-          (add-to-list 'w3m-no-proxy-domains "127.0.0.1")
-          (add-to-list 'w3m-no-proxy-domains "localhost")
+                (defconst fn/w3m-polipo-service-name "w3m-polipo"
+                  "Polipo prodigy service name.")
 
-          (defun fn/w3m-add-current-host-to-no-proxy-domains ()
-            "Add current host to `w3m-no-proxy-domains'"
-            (interactive)
-            (when (eq major-mode 'w3m-mode)
-              (lexical-let* ((parts (w3m-parse-http-url w3m-current-url))
-                  (host (elt parts 1)))
-                (add-to-list 'w3m-no-proxy-domains host t)
-                (w3m-reload-this-page))))
+                (defconst fn/w3m-tor-service-name "w3m-tor"
+                  "Tor prodigy service name.")
 
-          (when (yes-or-no-p "Start privacy proxies for w3m? ")
-            (fn/w3m-start-privacy-proxies)
-            (message "Delaying a little bit after starting the proxies.")
-            (sleep-for 1))))
+                (defconst fn/w3m-privoxy-service-name "w3m-privoxy"
+                  "Privoxy prodigy service name.")
+
+
+                (fn/prodigy-define-service
+                 :name fn/w3m-polipo-service-name
+                 :tags '(w3m polipo)
+                 :port fn/w3m-polipo-port
+                 :args (list "-c" fn/w3m-polipo-conf-file))
+
+                (fn/prodigy-define-service
+                 :name fn/w3m-tor-service-name
+                 :tags '(w3m tor)
+                 :port fn/w3m-tor-port
+                 :args (list "-f" fn/w3m-tor-conf-file))
+
+                (fn/prodigy-define-service
+                 :name fn/w3m-privoxy-service-name
+                 :tags '(w3m privoxy)
+                 :port fn/w3m-privoxy-port
+                 :args (list "--no-daemon" fn/w3m-privoxy-conf-file))
+
+                (defconst fn/w3m-privacy-set
+                  (prodigy-set-define-set
+                   :name "w3m-privacy"
+                   :strategy 'sequential
+                   :services `(("w3m-privoxy" . ready)
+                               ("w3m-polipo" . ready)
+                               ("w3m-tor" . ready)))
+                  "My privacy set.")
+
+                (prodigy-set-mode t)
+
+
+                (defun fn/w3m-start-privacy-proxies (&rest args)
+                  "Start services"
+                  (interactive)
+                  (prodigy-set-mode t)
+                  (prodigy-set-start-set fn/w3m-privacy-set))
+
+                (defun fn/w3m-kill-privacy-proxies (&rest args)
+                  "Stop special services."
+                  (interactive)
+                  (prodigy-set-mode t)
+                  (prodigy-set-stop-set fn/w3m-privacy-set))
+
+
+                (add-to-list 'w3m-no-proxy-domains "127.0.0.1")
+                (add-to-list 'w3m-no-proxy-domains "localhost")
+
+                (defun fn/w3m-add-current-host-to-no-proxy-domains ()
+                  "Add current host to `w3m-no-proxy-domains'"
+                  (interactive)
+                  (when (eq major-mode 'w3m-mode)
+                    (lexical-let* ((parts (w3m-parse-http-url w3m-current-url))
+                        (host (elt parts 1)))
+                      (add-to-list 'w3m-no-proxy-domains host t)
+                      (w3m-reload-this-page))))
+
+                (when (yes-or-no-p "Start privacy proxies for w3m? ")
+                  (fn/w3m-start-privacy-proxies)
+                  (message "Delaying a little bit after starting the proxies.")
+                  (sleep-for 1))))
     #+END_SRC
 
 *** External Video Player
