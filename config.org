@@ -7784,7 +7784,11 @@
            :args `("--no-daemon"
                    "--stderr"
                    "--verbose"
-                   ,fn/emms-mpd-config-file))
+                   ,fn/emms-mpd-config-file)
+
+           :bind-name "emms-mpd"
+           :bind-map fn/prodigy-map
+           :bind (kbd "m m"))
 
           (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
     #+END_SRC
@@ -7799,8 +7803,9 @@
           (emms)
           (require 'emms-player-vlc)
 
-          (add-to-list 'emms-player-list 'emms-player-vlc)
-          (add-to-list 'emms-player-list 'emms-player-vlc-playlist)
+          ;; Fallback
+          (add-to-list 'emms-player-list 'emms-player-vlc t)
+          (add-to-list 'emms-player-list 'emms-player-vlc-playlist t)
 
           ;; Remove default advice for vlc which does not work
           (advice-remove 'emms-player-vlc-start #'ad-Advice-emms-player-vlc-start)))
