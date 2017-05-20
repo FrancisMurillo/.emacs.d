@@ -1323,13 +1323,12 @@
             :cwd user-emacs-directory
             :command "polipo"
             :stop-signal 'kill
-            :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
             :ready-message "\\.*Established listening socket on \\.*")
 
           (defun fn/prodigy-create-polipo-conf (file options)
             "Update FILE with polipo OPTIONS."
-            (with-temp-file fn/w3m-polipo-conf-file
+            (with-temp-file file
               (insert
                (string-join
                 (mapcar
@@ -1352,7 +1351,6 @@
             :cwd user-emacs-directory
             :command "tor"
             :stop-signal 'kill
-            :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
             :ready-message ".*Bootstapped 100.*")
 
@@ -1382,7 +1380,6 @@
             :cwd user-emacs-directory
             :command "privoxy"
             :stop-signal 'kill
-            :kill-signal 'sigkill
             :kill-process-buffer-on-stop t
             :ready-message "\\.*Listening on port \\.*")
 
@@ -1410,7 +1407,8 @@
             :name 'jekyll
             :command "jekyll"
             :args (list "serve")
-            :kill-signal 'sigkill))
+            :stop-signal 'kill
+            :kill-process-buffer-on-stop t))
 
         (fn/use-executables prodigy-offlineimap
           (offlineimap)
@@ -1478,7 +1476,32 @@
             :name 'mbsync
             :command fn/mbsync-daemon-command
             :args `("-V" "-a")
-            :on-output 'fn/prodigy-mbsync-state-change-listener)))
+            :on-output 'fn/prodigy-mbsync-state-change-listener))
+
+        (fn/use-executables prodigy-mpd
+          (mpd)
+          (prodigy-define-tag
+            :name 'mpd
+            :cwd user-emacs-directory
+            :command "mpd"
+            :stop-signal 'kill
+            :args `("--no-daemon")
+            :kill-process-buffer-on-stop t)
+
+          (defun fn/prodigy-create-mpd-conf (file options)
+            "Update FILE with mpd OPTIONS."
+            (with-temp-file file
+              (insert
+               (string-join
+                (mapcar
+                 (lambda (pair)
+                   (pcase-let ((`(,key . ,value) pair))
+                     (format
+                      "%s %s"
+                      key
+                      (format "\"%s\"" value))))
+                 options)
+                "\n"))))))
     #+END_SRC
 
 *** Service Sets
