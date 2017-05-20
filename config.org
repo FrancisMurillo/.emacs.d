@@ -7562,7 +7562,8 @@
                                :category 'phackers
                                :color "#3a417a"))))
 
-         (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier))
+         (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier
+               slack-message-custom-delete-notifier #'fn/slack-message-custom-notifier))
 
        (fn/use-feature slack-mode--mode-icon
          (all-the-icons)
