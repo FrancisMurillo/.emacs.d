@@ -4481,29 +4481,14 @@
         nil)
     #+END_SRC
 
-*** Indent Everywhere
-    Just indent before I save when working with code.
+*** Literate Programming
+    Enable some literate programming
 
-    #+BEGIN_SRC emacs-lisp :block-id fa5c65de-552d-f599-b71c-d25689845d72
-      (make-variable-buffer-local
-       (defvar fn/indent-buffer-on-save t
-         "When non-nil, indent buffer on save"))
-
-      (defun fn/indent-buffer ()
-        "The editor itself is the best formatter"
-        (interactive)
-        (when fn/indent-buffer-on-save
-          (message "Indenting buffer in %s." (current-buffer))
-          (indent-region (point-min) (point-max))))
-
-      (defun fn/indent-before-save ()
-        "Indent buffer after saving to make handling the editor sane.
-      This somehow disregards SVN formatting in favor of the editor"
-        (add-hook 'before-save-hook #'fn/indent-buffer nil t))
-
-      (defun fn/disable-indent-buffer-before-save ()
-        "Disable `fn/indent-before-save' for a specific mode."
-        (setq-local fn/indent-buffer-on-save nil))
+    #+BEGIN_SRC emacs-lisp :block-id 385aba9b-e54b-b801-e5e8-43ac0017be00
+      (fn/use-feature org-literate
+        (org)
+        (require 'ob-shell)
+        (require 'ob-sql))
     #+END_SRC
 
 *** smartparens
