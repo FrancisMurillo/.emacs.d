@@ -4510,8 +4510,7 @@
     #+BEGIN_SRC emacs-lisp :block-id 385aba9b-e54b-b801-e5e8-43ac0017be00
       (fn/use-feature org-literate
         (org)
-        (require 'ob-shell)
-        (require 'ob-sql))
+        (require 'ob-shell))
     #+END_SRC
 
 *** smartparens
