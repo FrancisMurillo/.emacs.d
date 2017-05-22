@@ -549,15 +549,20 @@
              (emms-playlist-current-selected-track)
              emms-player-playing-p)
     (let* ((current-track (emms-playlist-current-selected-track))
-           (track-name (emms-track-name current-track)))
-      (format " %s %s "
+           (track-number (emms-track-get
+                          current-track
+                          'info-tracknumber))
+           (track-name (emms-track-get
+                        current-track
+                        'info-title)))
+      (format " %s %s%s "
               (propertize
                (if emms-player-paused-p
                    (all-the-icons-faicon "pause" :v-adjust -0.0)
                  (all-the-icons-faicon "play" :v-adjust -0.0))
                'face (list :family (all-the-icons-faicon-family)))
+              (if track-number  (format "%s - " track-number) "")
               (file-name-nondirectory track-name)))))
-
 
 ;;* Separator
 (defun moder-xpm-feature-p ()

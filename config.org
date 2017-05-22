@@ -1410,6 +1410,15 @@
             :stop-signal 'kill
             :kill-process-buffer-on-stop t))
 
+        (fn/use-executables prodigy-npm
+          (npm)
+          (prodigy-define-tag
+            :name 'npm
+            :command "npm"
+            :args `("run start")
+            :stop-signal 'kill
+            :kill-process-buffer-on-stop t))
+
         (fn/use-executables prodigy-offlineimap
           (offlineimap)
           (defcustom fn/prodigy-offlineimap-state-change-hook (list)
