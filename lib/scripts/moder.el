@@ -551,10 +551,12 @@
     (let* ((current-track (emms-playlist-current-selected-track))
            (track-number (emms-track-get
                           current-track
-                          'info-tracknumber))
+                          'info-tracknumber
+                          nil))
            (track-name (emms-track-get
                         current-track
-                        'info-title)))
+                        'info-title
+                        (emms-track-name current-track))))
       (format " %s %s%s "
               (propertize
                (if emms-player-paused-p
