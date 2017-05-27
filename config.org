@@ -4826,7 +4826,7 @@
           :defer t
           :after (outline)
           :config
-          (define-key outline-minor-mode-map (kbd "C-TAB") 'outline-cycle)))
+          (define-key outline-minor-mode-map (kbd "<C-TAB>") 'outline-cycle)))
     #+END_SRC
 
 *** REST Client
