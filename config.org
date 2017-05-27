@@ -4812,8 +4812,24 @@
         nil)
     #+END_SRC
 
-*** rest-client
+*** Generic Outline
+    Generic support for outlining.
 
+    #+BEGIN_SRC emacs-lisp :block-id c70d45d4-2ce4-94c6-f7ff-6657f33be30c
+      (unless noninteractive
+        (use-package outline
+          :ensure t
+          :demand t)
+
+        (use-package outline-magic
+          :ensure t
+          :defer t
+          :after (outline)
+          :config
+          (define-key outline-minor-mode-map (kbd "C-TAB") 'outline-cycle)))
+    #+END_SRC
+
+*** REST Client
     I need REST.
 
     #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
@@ -4860,7 +4876,17 @@
             :ensure t
             :demand t
             :config
-            (add-to-list 'org-babel-load-languages '(restclient . t)))))
+            (add-to-list 'org-babel-load-languages '(restclient . t))))
+
+        (fn/use-feature org-restclient
+          (restclient outline)
+          (defun fn/outline-restclient-setup ()
+            "Setup `outline' with `restclient'."
+            (outline-minor-mode +1)
+            (setq-local outline-regexp "###")
+            (define-key restclient-mode-map (kbd "C-c TAB") 'outline-toggle-children))
+
+          (add-hook 'restclient-mode-hook 'fn/outline-restclient-setup)))
     #+END_SRC
 
 *** smerge
