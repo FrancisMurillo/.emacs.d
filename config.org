@@ -4883,8 +4883,7 @@
           (defun fn/outline-restclient-setup ()
             "Setup `outline' with `restclient'."
             (outline-minor-mode +1)
-            (setq-local outline-regexp "###")
-            (define-key restclient-mode-map (kbd "C-c TAB") 'outline-toggle-children))
+            (setq-local outline-regexp "###"))
 
           (add-hook 'restclient-mode-hook 'fn/outline-restclient-setup)))
     #+END_SRC
