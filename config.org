@@ -8499,6 +8499,8 @@
    Check if Emacs is running fast.
 
    #+BEGIN_SRC emacs-lisp :block-id 1c95aa79-5f9f-abcf-7d28-a9110a32d753
+     (run-at-time nil 60 #'force-mode-line-update)
+
      (fn/use-feature frame-delay
        nil
        (require 'deferred)
