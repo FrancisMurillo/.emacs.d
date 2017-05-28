@@ -4828,14 +4828,16 @@
       (unless noninteractive
         (use-package outline
           :ensure t
-          :demand t)
+          :demand t
+          :config
+          nil)
 
         (use-package outline-magic
           :ensure t
           :defer t
           :after (outline)
           :config
-          (define-key outline-minor-mode-map (kbd "<C-TAB>") 'outline-cycle)))
+          (define-key outline-minor-mode-map (kbd "<C-tab>") 'outline-cycle)))
     #+END_SRC
 
 *** REST Client
