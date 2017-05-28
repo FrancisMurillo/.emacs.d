@@ -1690,6 +1690,15 @@
                     ("C-_" . undo-tree-visualize)))
     #+END_SRC
 
+*** glasses
+    I don't like the camelCase convention  so I make it more like Emacs.
+
+    #+BEGIN_SRC emacs-lisp :block-id bc2bb876-e2b5-ac90-acd0-07047d7487ea
+      (unless noninteractive
+        (with-eval-after-load 'glasses
+          (setq glasses-separator "~")))
+    #+END_SRC
+
 ** Completion
 *** hippie-exp
     Hippie expand rocks
