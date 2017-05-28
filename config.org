@@ -5319,6 +5319,8 @@
         :defer t
         :config
         (add-hook 'js-mode-hook 'js2-minor-mode)
+        (add-hook 'js2-mode-hook 'subword-mode)
+        (add-hook 'js2-jsx-mode-hook 'subword-mode)
 
         (setq js2-highlight-level 3
               js2-mode-show-parse-errors nil
