@@ -7544,20 +7544,6 @@
                              (not (< 0 (oref room unread-count-display))))
                          (append ims groups channels))))))
 
-         (defun fn/slack-unread-message-count ()
-           "Get the total number of unread messages."
-           (cl-loop for room in (fn/slack-unread-rooms)
-                    sum (oref room unread-count-display)))
-
-         (defun fn/slack-select-unread-rooms ()
-           "Selet unread rooms from slack."
-           (interactive)
-           (let ((team (slack-team-select))
-                 (unread-rooms (fn/slack-unread-rooms)))
-             (if (null unread-rooms)
-                 (error "No unread rooms in slack. Silence is good.")
-               (slack-room-select unread-rooms))))
-
          (defun fn/slack-goto-unread-room ()
            "Quickly visit an unread room in slack."
            (interactive)
@@ -7566,17 +7552,7 @@
                  (error "No unread rooms in slack. Silence is good.")
                (slack-room-create-buffer
                 (car unread-rooms)
-                (slack-team-find (oref (car unread-rooms) team-id))))))
-
-         (defvar fn/slack-current-unread-message-count 0
-           "Just a tracer for my unread messages.")
-
-         (defun fn/slack-update-unread-message-count (&rest args)
-           "Update `fn/slack-current-unread-message-count'."
-           (setq fn/slack-current-unread-message-count
-                 (fn/slack-unread-message-count)))
-
-         (advice-add 'slack-ws-on-message :after #'fn/slack-update-unread-message-count))
+                (slack-team-find (oref (car unread-rooms) team-id)))))))
 
        (progn ;; Force subscription
          (defun fn/slack-room-all-subcribedp (_ team)

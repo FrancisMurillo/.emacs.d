@@ -350,10 +350,10 @@
 
 (defun moder-piece-slack-unread-notification ()
   "A piece for unread `emacs-slack' messages."
-  (when (and (boundp 'fn/slack-current-unread-message-count)
-             (> fn/slack-current-unread-message-count 0))
+  (when (and (fboundp 'slack-team-get-unread-messages)
+             (boundp 'slack-current-team))
     (format " %s %s "
-            fn/slack-current-unread-message-count
+            (slack-team-get-unread-messages slack-current-team)
             (propertize
              (all-the-icons-faicon "slack" :v-adjust -0.0)
              'face (list :family (all-the-icons-faicon-family))))))
