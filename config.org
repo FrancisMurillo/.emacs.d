@@ -549,8 +549,9 @@
      (setq auth-sources (list (list  :source "~/.authinfo.gpg")))
 
      (setq browse-url-browser-function 'browse-url-generic
-           browse-url-generic-program "conkeror")
+           browse-url-generic-program "chromium")
    #+END_SRC
+
 ** Commands
    Unlock some commands I need
 
@@ -7907,6 +7908,7 @@
         ".gitignore"
         "init.el"
         "init-standard.el"
+        "LICENSE"
         "lib"
         "personal.el"
         ".projectile"
