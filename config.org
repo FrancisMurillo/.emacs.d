@@ -7610,7 +7610,7 @@
          (define-key fn/slack-map (kbd "b g") #'slack-group-select)
          (define-key fn/slack-map (kbd "b t") #'slack-group-select)
 
-         (define-key fn/slack-map (kbd "u b") #'fn/slack-select-unread-rooms)
+         (define-key fn/slack-map (kbd "u b") #'slack-select-unread-rooms)
          (define-key fn/slack-map (kbd "u u") #'fn/slack-goto-unread-room))
 
        (progn
