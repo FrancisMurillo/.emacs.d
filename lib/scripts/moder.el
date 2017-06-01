@@ -352,11 +352,14 @@
   "A piece for unread `emacs-slack' messages."
   (when (and (fboundp 'slack-team-get-unread-messages)
              (boundp 'slack-current-team))
-    (format " %s %s "
-            (slack-team-get-unread-messages slack-current-team)
-            (propertize
-             (all-the-icons-faicon "slack" :v-adjust -0.0)
-             'face (list :family (all-the-icons-faicon-family))))))
+    (let ((unread-count (slack-team-get-unread-messages slack-current-team)))
+      (if (> unread-count 0)
+          (format " %s %s "
+                  (slack-team-get-unread-messages slack-current-team)
+                  (propertize
+                   (all-the-icons-faicon "slack" :v-adjust -0.0)
+                   'face (list :family (all-the-icons-faicon-family))))
+        nil))))
 
 (defun moder-piece-mu4e-unread-notification ()
   "A piece for unread `mu4w'"
@@ -822,12 +825,12 @@
                                           (moder-default-text-style)
                                           (moder-weight 'ultra-bold)
                                           (moder-foreground "#000000")
-                                          (moder-background "#fffdd0"))
+                                          (moder-background "#cddc39"))
                                      (->> (moder-piece-mu4e-unread-notification)
                                           (moder-default-text-style)
                                           (moder-weight 'ultra-bold)
                                           (moder-foreground "#000000")
-                                          (moder-background "#fffacd"))))))
+                                          (moder-background "#ffc107"))))))
                                 (moder-closing-separator #'moder-piece-left-separator)
                                 (moder-starting-separator #'moder-piece-right-separator))
                              ('error (error-message-string ex)))))))
