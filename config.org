@@ -7583,7 +7583,7 @@
                     (user-name (slack-message-sender-name message team))
                     (out (fn/chat-log team-name room-name user-name text)))
                (fn/alert-color out
-                               :category 'phackers
+                               :category (intern team-name)
                                :color "#3a417a"))))
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier
