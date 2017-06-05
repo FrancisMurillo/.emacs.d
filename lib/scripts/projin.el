@@ -221,6 +221,15 @@
  (list))
 
 (projin--dsl-defblock
+ `(defblock react-native
+    (comment "Block for react-native")
+    (root
+     (dir "ios")
+     (dir "android")
+     (dir "node_modules")))
+ (list))
+
+(projin--dsl-defblock
  `(defblock lein
     (comment "Block for lein")
     (root
