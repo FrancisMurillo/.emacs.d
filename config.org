@@ -4573,8 +4573,8 @@
           (add-hook 'prog-mode-hook 'flycheck-mode)
           :config
           (setq flycheck-highlighting-mode 'lines
-             flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
-             flycheck-checker-error-threshold nil)))
+                flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
+                flycheck-checker-error-threshold nil)))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -7583,7 +7583,7 @@
                     (user-name (slack-message-sender-name message team))
                     (out (fn/chat-log team-name room-name user-name text)))
                (fn/alert-color out
-                               :category 'phackers
+                               :category (intern team-name)
                                :color "#3a417a"))))
 
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier
