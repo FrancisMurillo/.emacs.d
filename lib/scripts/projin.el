@@ -237,6 +237,15 @@
      (dir "target")))
  (list))
 
+(projin--dsl-defblock
+ `(defblock phoenix
+    (comment "Block for phoenix")
+    (root
+     (dir "_build")
+     (dir "deps")
+     (dir "node_modules")))
+ (list))
+
 
 (provide 'projin)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

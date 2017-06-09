@@ -6246,6 +6246,8 @@
         :ensure t
         :defer t
         :config
+        (add-hook 'elixir-mode-hook 'subword-mode)
+
         (fn/use-feature elixir-mode--mode-icon
           (elixir-mode all-the-icons)
           (fn/add-major-mode-icon
