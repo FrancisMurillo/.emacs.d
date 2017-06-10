@@ -6236,7 +6236,7 @@
     #+END_SRC
 
 ** Elixir
-   The dynamic Haskell in my opinion... or was it Python
+   The dynamic Haskell in my opinion... or was it Python or Ruby
 
 *** Mode
     Main mode for Elixir
@@ -6261,8 +6261,11 @@
     #+BEGIN_SRC emacs-lisp :block-id 06d9fdcc-6c8d-a6b2-83ea-45179f85ca51
       (fn/use-feature flycheck-elixir
         (elixir-mode flycheck)
-        (use-package flycheck-elixir
-          :ensure t))
+        (use-package flycheck-credo
+          :ensure t
+          :defer t
+          :init
+          (add-hook 'elixir-mode-hook 'flycheck-credo-setup)))
     #+END_SRC
 
     Integration with =mix=
@@ -6271,7 +6274,11 @@
       (fn/use-feature flycheck-mix
         (elixir-mode flycheck)
         (use-package flycheck-mix
-          :ensure t))
+          :ensure t
+          :defer t
+          :after (flycheck)
+          :config
+          nil))
     #+END_SRC
 
 *** Snippets
@@ -6291,7 +6298,14 @@
       (use-package alchemist
         :ensure t
         :after elixir-mode
-        :defer t)
+        :defer t
+        :config
+        (setq alchemist-test-status-modeline nil
+              alchemist-hooks-compile-on-save t)
+
+        (fn/use-feature alchemist-iex-company
+          (alchemist company)
+          (add-hook 'alchemist-iex-mode-hook 'company-mode)))
     #+END_SRC
 
 ** PHP
