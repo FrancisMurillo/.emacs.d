@@ -3161,6 +3161,8 @@
         :defer t
         :bind (:map fn-standard-prefix-map
                     ("f" . focus-mode))
+        :init
+        (add-hook 'prog-mode-hook #'focus-mode)
         :config
         nil)
     #+END_SRC
@@ -4847,7 +4849,8 @@
     #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
       (use-package restclient
         :ensure t
-        :mode ("\\.rest\\'" . restclient-mode)
+        :mode (("\\.rest\\'" . restclient-mode)
+               ("\\.rst\\'" . restclient-mode))
         :defer t
         :config
         ;; Setting it up as editing mode

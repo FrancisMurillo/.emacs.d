@@ -224,8 +224,8 @@
  `(defblock react-native
     (comment "Block for react-native")
     (root
-     (dir "ios")
      (dir "android")
+     (dir "ios")
      (dir "node_modules")))
  (list))
 
