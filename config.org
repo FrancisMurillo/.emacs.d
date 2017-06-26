@@ -4054,7 +4054,10 @@
                  '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
                    ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
                    ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
-                   ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")))
+                   ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")
+                   ;; Custom Report
+                   ("monthly expense" "gpg --no-tty -d %(ledger-file) | ledger -f - -M reg ^expenses")
+                   ("weekly expense" "gpg --no-tty -d %(ledger-file) | ledger -f - -W reg ^expenses")))
 
            (fn/use-feature ledger-mode--mode-icon
              (all-the-icons)
