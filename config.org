@@ -1509,7 +1509,20 @@
                      (format
                       "%s %s"
                       key
-                      (format "\"%s\"" value))))
+                      (if (listp value)
+                          (format
+                           "{\n%s\n}"
+                           (string-join
+                            (mapcar
+                             (lambda (pair)
+                               (pcase-let ((`(,key . ,value) pair))
+                                 (format
+                                  "%s %s"
+                                  key
+                                  (format "\"%s\"" value))))
+                             value)
+                            "\n"))
+                        (format "\"%s\"" value)))))
                  options)
                 "\n"))))))
     #+END_SRC
@@ -5409,7 +5422,7 @@
           (defun fq/use-eslint-from-node-modules ()
             (let* ((root (locate-dominating-file
                           (or (buffer-file-name) default-directory)
-                          "node_modules"))
+                          ".projectile"))
                    (eslint (and root
                                 (expand-file-name "node_modules/eslint/bin/eslint.js"
                                                   root))))
@@ -6213,22 +6226,26 @@
     Formatter for Elm, requires =elm-format=
 
     #+BEGIN_SRC emacs-lisp :block-id cb77963e-7a17-06c2-c461-1ab9fa6ec359
-      (use-package *elm-mode-formatter
-        :after elm-mode
-        :config
-        (setq elm-format-on-save t
-              elm-sort-imports-on-save t))
+      (fn/use-executables elm-format-check
+        (elm-format)
+        (use-package elm-mode-formatter
+          :after elm-mode
+          :config
+          (setq elm-format-on-save t
+                elm-sort-imports-on-save t)))
 
     #+END_SRC
 *** Autocomplete
     A needed feature, requires =elm-oracle=
 
     #+BEGIN_SRC emacs-lisp :block-id d86ddd6e-2eae-1b6f-9157-13eb41f40258
-      (use-package *elm-mode-autocomplete
-        :after company
-        :config
-        (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
-        (add-to-list 'company-backends 'company-elm))
+      (fn/use-executables elm-oracle-check
+        (elm-oracle)
+        (use-package elm-mode-autocomplete
+          :after company
+          :config
+          (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
+          (add-to-list 'company-backends 'company-elm)))
     #+END_SRC
 
 *** Snippets
@@ -6307,7 +6324,8 @@
         :defer t
         :config
         (setq alchemist-test-status-modeline nil
-              alchemist-hooks-compile-on-save t)
+              alchemist-hooks-compile-on-save t
+              alchemist-iex-program-name "iex -S mix")
 
         (fn/use-feature alchemist-iex-company
           (alchemist company)
@@ -7807,7 +7825,9 @@
                ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
                ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
                ("port" . ,fn/emms-mpd-port)
-               ("bind_to_address" . "127.0.0.1"))))
+               ("bind_to_address" . "127.0.0.1")
+               ("database" . (("plugin" . "simple")
+                              ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
 
           (defun fn/emms-mpd-on-start (&rest args)
             "On start of mpd server.."
