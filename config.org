@@ -6202,12 +6202,8 @@
     #+BEGIN_SRC emacs-lisp :block-id 32b54390-5bb4-16e4-208d-f91567657a3b
       (use-package elm-mode
         :ensure t
-        :defer t
         :config
-        ;; There is a conflict if you're using this with aggressive indent
-        (add-hook 'elm-mode-hook
-                  (lambda ()
-                    (setq-local aggressive-indent-mode nil))))
+        nil)
     #+END_SRC
 
 *** Linter
@@ -6218,6 +6214,7 @@
         (flycheck elm-mode)
         (use-package flycheck-elm
           :ensure t
+          :after elm-mode
           :config
           (flycheck-elm-setup)))
     #+END_SRC
@@ -6228,12 +6225,10 @@
     #+BEGIN_SRC emacs-lisp :block-id cb77963e-7a17-06c2-c461-1ab9fa6ec359
       (fn/use-executables elm-format-check
         (elm-format)
-        (use-package elm-mode-formatter
-          :after elm-mode
-          :config
+        (fn/use-feature elm-mode-formatter
+          (elm-mode)
           (setq elm-format-on-save t
                 elm-sort-imports-on-save t)))
-
     #+END_SRC
 *** Autocomplete
     A needed feature, requires =elm-oracle=
@@ -6241,9 +6236,8 @@
     #+BEGIN_SRC emacs-lisp :block-id d86ddd6e-2eae-1b6f-9157-13eb41f40258
       (fn/use-executables elm-oracle-check
         (elm-oracle)
-        (use-package elm-mode-autocomplete
-          :after company
-          :config
+        (fn/use-feature elm-mode-autocomplete
+          (elm-mode company)
           (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
           (add-to-list 'company-backends 'company-elm)))
     #+END_SRC
