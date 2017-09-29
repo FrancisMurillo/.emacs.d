@@ -74,8 +74,7 @@
      (defconst fn/package-archives
        `(("gnu" "http://elpa.gnu.org/packages/" 10)
          ("org" "http://orgmode.org/elpa/" 0 )
-         ("melpa" "http://melpa.org/packages/" 20)
-         ("melpa-stable" "http://stable.melpa.org/packages/" 5))
+         ("melpa" "http://melpa.org/packages/" 20))
        "List of my packages")
 
      (mapc
@@ -5511,50 +5510,6 @@
         (add-to-list 'org-babel-load-languages '(js . t)))
     #+END_SRC
 
-** Java
-*** Mode
-    Already a built in mode
-
-    #+BEGIN_SRC emacs-lisp :block-id 8bb9a156-88c3-3dc2-a0c1-f9a80813a822
-      (use-package meghanada
-        :ensure t
-        :after java
-        :init
-        (add-hook 'java-mode-hook 'meghanada-mode)
-        :config
-        (setq meghanada-server-install-dir (expand-file-name "meghanada" fn/cache-dir)))
-    #+END_SRC
-
-*** IDE
-    How I hate that word specially when talking about Java
-
-    #+BEGIN_SRC emacs-lisp :block-id eae7c8e8-8138-a1f4-5ebf-15bd6953e699
-      (use-package eclim
-        :ensure t
-        :after java
-        :config
-        (setq eclimd-eclipse-dirs (getenv "ECLIPSE_HOME")
-           eclimd-executable (expand-file-name "eclimd" eclimd-eclipse-dirs)
-
-           eclimd-default-workspace "~/espace"
-           eclimd-wait-for-process t)
-
-        (use-package company-emacs-eclim
-          :ensure t
-          :after eclim
-          :config
-          (company-emacs-eclim-setup)))
-    #+END_SRC
-
-*** Android
-    Android specific configuration.
-
-    #+BEGIN_SRC emacs-lisp :block-id 5c33e2b3-d9e7-1a3a-51b5-adf9735e4507
-      (use-package android-mode
-        :ensure t
-        :after java)
-    #+END_SRC
-
 ** Scala
    The functional JVM
 
@@ -7785,7 +7740,7 @@
           (emms)
           (require 'emms-player-mpd)
 
-          (add-to-list 'emms-info-functions 'emms-info-mpd)
+          ;; (add-to-list 'emms-info-functions 'emms-info-mpd)
           (add-to-list 'emms-player-list 'emms-player-mpd))
 
         (fn/use-feature prodigy-emms-mpd
