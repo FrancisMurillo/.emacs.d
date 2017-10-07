@@ -4565,18 +4565,6 @@
         (define-key smartparens-mode-map (kbd "C-<up>") 'sp-splice-sexp))
     #+END_SRC
 
-*** paredit-everywhere
-    [[paredit]] also works well with other modes as well but not really
-    primarily
-
-    #+BEGIN_SRC emacs-lisp :block-id bfff7479-af59-caee-1140-9fe693e6f838
-      (use-package paredit-everywhere
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'prog-mode-hook 'paredit-mode))
-    #+END_SRC
-
 *** flycheck
     Syntax checking is very important
 
