@@ -6262,7 +6262,7 @@
         :config
         (setq alchemist-test-status-modeline nil
               alchemist-hooks-compile-on-save t
-              alchemist-iex-program-name "iex -S mix")
+              alchemist-iex-program-name "iex")
 
         (fn/use-feature alchemist-iex-company
           (alchemist company)
