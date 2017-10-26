@@ -253,6 +253,8 @@
      (dir "_build")
      (dir "deps")
      (dir "node_modules")
+     (path "assets"
+           (dir "node_modules"))
      (path ".deliver"
            (dir "releases"))))
  (list))
