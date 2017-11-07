@@ -2266,7 +2266,7 @@
                  ("C-c p d" . projectile-find-dir))
           :init
           (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
-             projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
+                projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir))
           :config
           (defconst fn/project-file ".project.el"
             "Project configuration file")
@@ -2283,8 +2283,8 @@
       This is run once after the project is loaded signifying project setup."
             (interactive)
             (when (projectile-project-p)
-              (lexical-let* ((current-project-root (projectile-project-root))
-                  (project-init-file (expand-file-name fn/project-file current-project-root)))
+              (let* ((current-project-root (projectile-project-root))
+                     (project-init-file (expand-file-name fn/project-file current-project-root)))
                 (when (file-exists-p project-init-file)
                   (message "Loading project init file for %s" (projectile-project-name))
                   (condition-case ex
@@ -2301,9 +2301,9 @@
             (interactive)
             (when (projectile-project-p)
               (let* ((current-project-root (projectile-project-root))
-                  (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+                     (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
                 (when (and (file-exists-p project-local-init-file)
-                         (not (member (buffer-file-name) fn/project-init-files)))
+                           (not (member (buffer-file-name) fn/project-init-files)))
                   (message
                    "Loading project local file for %s on %s"
                    (projectile-project-name)
@@ -2329,21 +2329,44 @@
               "The last access time of ATTRIBUTES"
               (nth 5 attributes)))
 
+          (defun fn/trust-project ()
+            "Trust current project."
+            (interactive)
+            (if (not (projectile-project-p))
+                (message ("Not in a project."))
+              (let* ((project-root (projectile-project-root))
+                     (project-entry (assoc project-root fn/checked-projects)))
+                (if project-entry
+                    (progn
+                      (setcdr
+                       project-entry
+                       (plist-put
+                        (cdr project-entry)
+                        :trusted
+                        t)))
+                  (add-to-list
+                   'fn/checked-projects
+                   (list project-root
+                         :last-modification-time (file-attribute-modification-time (file-attributes project-root))
+                         :project-root project-root
+                         :trusted t)))
+                (message "Project %s trusted" project-root))))
+
           (defun fn/safe-project-p (project-root)
             "Check if PROJECT-ROOT can be trusted."
-            (lexical-let* ((last-modification-time
-                 (file-attribute-modification-time (file-attributes project-root)))
-                (safe-project-properties
-                 (or (cdr (assoc project-root fn/checked-projects))
-                    (lexical-let* ((base-properties
-                         (list :last-modification-time last-modification-time
-                            :project-root project-root))
-                        (trusted
-                         (yes-or-no-p
-                          (format "Do you ultimately trust the project at %s?" project-root)))
-                        (new-properties
-                         (plist-put base-properties :trusted trusted)))
-                      new-properties))))
+            (let* ((last-modification-time
+                    (file-attribute-modification-time (file-attributes project-root)))
+                   (safe-project-properties
+                    (or (cdr (assoc project-root fn/checked-projects))
+                        (let* ((base-properties
+                                (list :last-modification-time last-modification-time
+                                      :project-root project-root))
+                               (trusted
+                                (yes-or-no-p
+                                 (format "Do you ultimately trust the project at %s?" project-root)))
+                               (new-properties
+                                (plist-put base-properties :trusted trusted)))
+                          new-properties))))
               (prog1
                   (plist-get safe-project-properties :trusted)
                 (add-to-list 'fn/checked-projects
@@ -2351,9 +2374,10 @@
 
           (defun fn/safe-load-project-file ()
             "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
-            (when (projectile-project-p)
-              (lexical-let ((project-root (projectile-project-root))
-                  (project-name (projectile-project-name)))
+            (if (not (projectile-project-p))
+                (message "Not in a project.")
+              (let ((project-root (projectile-project-root))
+                    (project-name (projectile-project-name)))
                 (when (not (member project-root fn/loaded-projects))
                   (if (not (fn/safe-project-p project-root))
                       (message "Project script for %s is not trusted." project-name)
@@ -2362,9 +2386,10 @@
 
           (defun fn/safe-load-project-local-file ()
             "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
-            (when (projectile-project-p)
-              (lexical-let ((project-root (projectile-project-root))
-                  (project-name (projectile-project-name)))
+            (if (not (projectile-project-p))
+                (message "Not in a project.")
+              (let ((project-root (projectile-project-root))
+                    (project-name (projectile-project-name)))
                 (if (not (fn/safe-project-p project-root))
                     (message "Project local script for %s is not trusted." project-name)
                   (fn/load-project-local-file)))))
