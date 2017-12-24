@@ -1804,15 +1804,17 @@
       (unless noninteractive
         (use-package yasnippet
           :ensure t
-          :after company
+          :after (company)
           :defer t
           :diminish yas-minor-mode
           :bind (:map fn-standard-prefix-map
                       ("y" . yas-new-snippet))
           :init
           (setq yas-verbosity 3
-             yas-snippet-dirs (list (expand-file-name "snippets" fn/extra-dir)))
+                yas--default-user-snippets-dir (expand-file-name "snippets" fn/extra-dir)
+                yas-snippet-dirs (list yas--default-user-snippets-dir))
 
+          (make-directory yas--default-user-snippets-dir t)
           (add-hook 'prog-mode-hook 'yas/minor-mode-on)
           :config
 
@@ -2489,16 +2491,8 @@
        (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-module-dir)
          "My custom helm projectile package")
 
-       (use-package helm-projectile
-         :ensure t
-         :defer t
-         :bind (("C-c p h" . helm-projectile)
-                ("C-c p p" . helm-projectile-switch-project))
-         :after (projectile)
-         :config
-         (require 'helm)
-         (require 'projectile)
-
+       (fn/use-feature helm-projectile
+         (helm projectile)
          (require 'dash)
          (require 'dash-functional)
          (require 's)
