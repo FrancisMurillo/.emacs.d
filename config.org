@@ -1815,7 +1815,7 @@
                 yas-snippet-dirs (list yas--default-user-snippets-dir))
 
           (make-directory yas--default-user-snippets-dir t)
-          (add-hook 'prog-mode-hook 'yas/minor-mode-on)
+          (add-hook 'prog-mode-hook 'yas-minor-mode)
           :config
 
           (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
