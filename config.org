@@ -5383,24 +5383,26 @@
         "My performance customization on tern")
 
       (unless noninteractive
-        (use-package tern
-          :ensure t
-          :diminish tern-mode
-          :init
-          (add-hook 'js2-mode-hook #'tern-mode)
-          :config
-          (setq tern-idle-time 10.0)
-
-          (use-package company-tern
+        (fn/use-executables tern-check
+          (tern)
+          (use-package tern
             :ensure t
-            :after company
+            :disabled t
+            :diminish tern-mode
+            :hook js2-mode-hook
             :config
-            (add-to-list 'company-backends 'company-tern))
+            (setq tern-idle-time 10.0)
 
-          (fn/use-feature tern-prodigy
-            (tern)
-            (prodigy-define-tag
-              :name 'tern))))
+            (use-package company-tern
+              :ensure t
+              :after company
+              :config
+              (add-to-list 'company-backends 'company-tern))
+
+            (fn/use-feature tern-prodigy
+              (tern)
+              (prodigy-define-tag
+                :name 'tern)))))
 
 
       (unless noninteractive
