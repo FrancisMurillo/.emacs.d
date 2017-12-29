@@ -2492,7 +2492,7 @@
          "My custom helm projectile package")
 
        (fn/use-feature helm-projectile
-         (helm projectile)
+         (helm)
          (require 'dash)
          (require 'dash-functional)
          (require 's)
