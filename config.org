@@ -2999,20 +2999,20 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 3223619e-5554-3bc0-f00c-3cbc1d8b0507
      (use-package apropospriate-theme
-       :ensure t
-       :defer t)
+       :ensure t)
 
      (use-package base16-theme
-       :ensure t
-       :defer t)
+       :ensure t)
+
+     (defconst fn/tronsesque-package-dir (expand-file-name "tronesque/" fn/custom-module-dir)
+       "Tronesque package dir")
 
      (use-package tronesque-theme
-       :ensure t
-       :defer t)
+       :load-path fn/tronsesque-package-dir
+       :demand t)
 
      (use-package material-theme
-       :ensure t
-       :defer t)
+       :ensure t)
    #+END_SRC
 
    Load the theme if it is a terminal or desktop.
