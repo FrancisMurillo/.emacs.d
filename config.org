@@ -3020,10 +3020,6 @@
    #+BEGIN_SRC emacs-lisp :block-id ce022e28-6f80-1566-89e8-ea2d1ac41d47
      (load-theme 'tronesque t)
      (tronesque-mode-line)
-     ;; (load-theme 'xresources t)
-
-
-
    #+END_SRC
 
 ** Aesthetic
