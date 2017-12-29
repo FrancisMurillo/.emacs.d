@@ -718,18 +718,19 @@
 
      (use-package exec-path-from-shell
        :ensure t
-       :if (not (eq system-type 'windows-nt)) ;; Sorry Windows
+       :load-path fn/exec-path-from-shell-package-dir
        :demand t
+       :if (not (eq system-type 'windows-nt)) ;; Sorry Windows
        :config
        (setq exec-path-from-shell-variables
-          (list
-           "PATH" "MANPATH"
-           "PROMPT" "PS1"
+             (list
+              "PATH" "MANPATH"
+              "PROMPT" "PS1"
 
-           "JAVA_HOME" "ECLIPSE_HOME")
-          exec-path-from-shell-arguments
-          (list
-           "-l" "-i"))
+              "JAVA_HOME" "ECLIPSE_HOME")
+             exec-path-from-shell-arguments
+             (list
+              "-l" "-i"))
 
        (exec-path-from-shell-initialize))
    #+END_SRC
