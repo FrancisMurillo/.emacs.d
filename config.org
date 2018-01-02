@@ -5115,8 +5115,8 @@
           :defer t
           :commands (google-translate)
           :config
-          (setq google-translate-default-source-language "English"
-                google-translate-default-target-language "Arabic")))
+          (setq google-translate-default-source-language "en"
+                google-translate-default-target-language "ar")))
     #+END_SRC
 
 ** Helper
