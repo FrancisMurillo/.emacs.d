@@ -5105,6 +5105,19 @@
         (setq redmine-program (expand-file-name "redmine.py" fn/redmine-package-dir)))
     #+END_SRC
 
+*** Translate
+    Google Translate support for those RTL times
+
+    #+BEGIN_SRC emacs-lisp
+      (unless noninteractive
+        (use-package google-translate
+          :ensure t
+          :defer t
+          :commands (google-translate)
+          :config
+          (setq google-translate-default-source-language "English"
+                google-translate-default-target-language "Arabic")))
+    #+END_SRC
 ** Helper
    Specific helper modes
 
