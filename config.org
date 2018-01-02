@@ -5118,6 +5118,7 @@
           (setq google-translate-default-source-language "English"
                 google-translate-default-target-language "Arabic")))
     #+END_SRC
+
 ** Helper
    Specific helper modes
 
