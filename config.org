@@ -1805,6 +1805,7 @@
       (unless noninteractive
         (use-package yasnippet
           :ensure t
+          :disabled t
           :after (company)
           :defer t
           :diminish yas-minor-mode
@@ -5108,15 +5109,19 @@
 *** Translate
     Google Translate support for those RTL times
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id cf724186-d0c5-d350-e050-d7ef52cd5224
       (unless noninteractive
         (use-package google-translate
           :ensure t
           :defer t
-          :commands (google-translate)
+          :commands (google-translate-at-point)
           :config
+          (require 'google-translate-default-ui)
+
           (setq google-translate-default-source-language "en"
-                google-translate-default-target-language "ar")))
+                google-translate-default-target-language "ar")
+
+          (setq google-translate-output-destination 'current-buffer)))
     #+END_SRC
 
 ** Helper
