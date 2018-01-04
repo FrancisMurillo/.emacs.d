@@ -5114,14 +5114,24 @@
         (use-package google-translate
           :ensure t
           :defer t
-          :commands (google-translate-at-point)
+          :commands (google-translate-at-point google-translate-query-translate fn/google-translate-at-point)
           :config
           (require 'google-translate-default-ui)
 
           (setq google-translate-default-source-language "en"
                 google-translate-default-target-language "ar")
 
-          (setq google-translate-output-destination 'current-buffer)))
+          (setq google-translate-output-destination 'current-buffer)
+
+          (defun fn/google-translate-at-point ()
+            "Translate at point while replacing the text."
+            (interactive)
+            (when (region-active-p)
+              (let ((beginning (region-beginning))
+                    (end (region-end))
+                    (google-translate-output-destination 'current-buffer))
+                (google-translate-at-point)
+                (kill-region beginning end))))))
     #+END_SRC
 
 ** Helper
