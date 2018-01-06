@@ -2206,12 +2206,12 @@
       (unless noninteractive
         (use-package golden-ratio
           :ensure t
-          :after window-numbering
+          :demand T
+          :after (window-numbering)
           :diminish golden-ratio-mode
           :bind (("C-c q" . golden-ratio)
                  :map fn-standard-prefix-map
                  ("q" . golden-ratio-mode))
-          :demand T
           :config
           (golden-ratio-mode t)
 
@@ -5388,20 +5388,6 @@
            (list 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
     #+END_SRC
 
-*** Refactor
-
-    #+BEGIN_SRC emacs-lisp :block-id 66c12076-e02d-31ae-df2b-71906bbcff01
-      (use-package js2-refactor
-        :diminish js2-refactor-mode
-        :ensure t
-        :defer t
-        :after js2-mode
-        :init
-        (add-hook 'js2-mode-hook #'js2-refactor-mode)
-        :config
-        (js2r-add-keybindings-with-prefix "C-c C-m"))
-    #+END_SRC
-
 *** Autocomplete
     A must have for Javascript development
 
@@ -5492,16 +5478,6 @@
 
         ;; (add-hook 'js2-mode-hook #'fn/eslint-fix-after-save)
         )
-    #+END_SRC
-
-*** Snippets
-    Snippet support
-
-    #+BEGIN_SRC emacs-lisp :block-id 7142c005-0729-b76e-8998-a7291dc11104
-      (fn/use-feature react-snippets
-        (js2-mode yasnippet)
-        (use-package react-snippets
-          :ensure t))
     #+END_SRC
 
 *** REPL
