@@ -4273,13 +4273,26 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 4b99ca89-ec33-86b9-fac0-3e0dbc7d5424
      (unless noninteractive
+       (defconst fn/mu-package-dir
+         "/usr/share/emacs/site-lisp/mu4e/"
+         "Installed via Arch Linux mu package")
+
        (use-package mu4e
-         :defer t
+         :load-path "/usr/share/emacs/site-lisp/mu4e/"
+         :if (file-exists-p "/usr/share/emacs/site-lisp/mu4e/")
          :bind (:map fn-standard-prefix-map
                      ("g m" . mu4e))
          :config
+
          (setq mu4e-maildir (expand-file-name "Maildir" "~")
                mu4e-get-mail-command "true")
+
+         (mapc
+          (lambda (internal-maildir)
+            (let ((maildir (expand-file-name internal-maildir mu4e-maildir)))
+              (unless (file-exists-p maildir)
+                (make-directory sent-maildir))))
+          '("sent" "drafts" "trash"))
 
          (setq mu4e-sent-messages-behavior 'delete
                mu4e-update-interval 60
