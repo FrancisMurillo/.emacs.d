@@ -5322,6 +5322,32 @@
           ))
     #+END_SRC
 
+*** Formatting
+
+    Some utility when editing SQL files
+
+    #+BEGIN_SRC emacs-lisp :block-id dda929e1-ef59-31e2-6cbd-480077675efe
+      (unless noninteractive
+        (fn/use-executables ruby-sql-formatter
+          (anbt-sql-formatter) ;; gem install anbt-sql-formatter
+          (defun fn/sql-beautify-region (beg end)
+            "Beautify SQL in region between beg and END."
+            (interactive "r")
+            (save-excursion
+              (shell-command-on-region beg end "anbt-sql-formatter" nil t)))
+
+          (defun fn/sql-beautify-buffer ()
+            "Beautify SQL in buffer."
+            (interactive)
+            (fn/sql-beautify-region (point-min) (point-max))))
+
+        (fn/use-executables python-sql-formatter
+          (format-sql) ;; pip install --user format-sql
+          (use-package format-sql
+            :ensure t
+            :defer t
+            :commands (format-sql-buffer format-sql-region))))
+    #+END_SRC
 ** Web
 *** Mode
     The defacto mode for web development
