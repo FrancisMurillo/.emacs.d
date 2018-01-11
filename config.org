@@ -3672,43 +3672,47 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 3f6d71ed-f861-c6a4-d043-820b5f369b1d
       (unless noninteractive
-        (use-package ox-reveal
-          :ensure t
-          :after org-plus-contrib
-          :config
-          (define-minor-mode fn-reveal-editing
-            "Some editing enhancement when editing org-reveal files"
-            :lighter " FnRevealer"
-            :init-value nil
-            :global nil
-            :keymap (let* ((map (fn/make-prefixed-keymap (kbd "C-c b")))
-                           (tangle-current-file
-                            (lambda ()
-                              (interactive)
-                              (let* ((current-file (buffer-file-name))
-                                     (target-file (replace-regexp-in-string ".org" ".js" current-file))
-                                     (target-lang "javascript"))
-                                (org-babel-tangle-file current-file target-file target-lang))))
-                           (export-reveal
-                            (lambda ()
-                              (interactive)
-                              (message "Exporting %s" (buffer-file-name))
-                              (org-reveal-export-to-html t))))
+        (defconst fn/org-reveal-module-dir (expand-file-name "~/Modules/reveal.js")
+          "reveal.js directory")
 
-                      (define-key map (kbd "C-p") tangle-current-file)
-                      (define-key map (kbd "C-e") export-reveal)
-                      map)
-            (let ((export-reveal
-                   (lambda ()
-                     (when fnr/enable-auto-export-on-save
-                       (message "Auto exporting %s" (buffer-file-name))
+        (fn/use-feature ox-reveal
+          (org)
+          (use-package ox-reveal
+            :ensure t
+            :if (file-exists-p fn/org-reveal-module-dir)
+            :demand t
+            :config
+            (setq org-reveal-root (format "file:///%s" fn/org-reveal-module-dir))
 
-                       (org-reveal-export-to-html t)))))
-              (add-hook 'after-save-hook export-reveal t t))
+            (defun fnr/tangle-buffer ()
+              "Tangle current file via ox-reveal"
+              (interactive)
+              (let* ((current-file (buffer-file-name))
+                     (target-file (replace-regexp-in-string ".org" ".js" current-file))
+                     (target-lang "javascript"))
+                (org-babel-tangle-file current-file target-file target-lang)))
 
-            (make-variable-buffer-local
-             (defvar fnr/enable-auto-export-on-save t
-               "When non-nil. auto exports org-reveal files on save")))))
+            (defun fnr/export-buffer ()
+              "Export current file via ox-reveal"
+              (interactive)
+              (message "Exporting %s" (buffer-file-name))
+              (org-reveal-export-to-html nil))
+
+            (defun fnr/reveal-export-buffer-on-save ()
+              "Auto reveal export buffer on save"
+              (interactive)
+              (message "Adding hook to auto-export")
+              (add-hook 'after-save-hook 'fnr/export-buffer t t))
+
+            (define-minor-mode fn-reveal-editing-mode
+              "Some editing enhancement when editing org-reveal files"
+              :lighter " FnReveal"
+              :init-value nil
+              :global nil
+              :keymap (let* ((map (make-sparse-keymap)))
+                        (define-key map (kbd "C-c b C-p") 'fnr/tangle-buffer)
+                        (define-key map (kbd "C-c b C-e") 'fnr/export-buffer)
+                        map)))))
     #+END_SRC
 
 *** org-clock
@@ -4273,13 +4277,26 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 4b99ca89-ec33-86b9-fac0-3e0dbc7d5424
      (unless noninteractive
+       (defconst fn/mu-package-dir
+         "/usr/share/emacs/site-lisp/mu4e/"
+         "Installed via Arch Linux mu package")
+
        (use-package mu4e
-         :defer t
+         :load-path "/usr/share/emacs/site-lisp/mu4e/"
+         :if (file-exists-p "/usr/share/emacs/site-lisp/mu4e/")
          :bind (:map fn-standard-prefix-map
                      ("g m" . mu4e))
          :config
+
          (setq mu4e-maildir (expand-file-name "Maildir" "~")
                mu4e-get-mail-command "true")
+
+         (mapc
+          (lambda (internal-maildir)
+            (let ((maildir (expand-file-name internal-maildir mu4e-maildir)))
+              (unless (file-exists-p maildir)
+                (make-directory sent-maildir))))
+          '("sent" "drafts" "trash"))
 
          (setq mu4e-sent-messages-behavior 'delete
                mu4e-update-interval 60
@@ -5309,6 +5326,32 @@
           ))
     #+END_SRC
 
+*** Formatting
+
+    Some utility when editing SQL files
+
+    #+BEGIN_SRC emacs-lisp :block-id dda929e1-ef59-31e2-6cbd-480077675efe
+      (unless noninteractive
+        (fn/use-executables ruby-sql-formatter
+          (anbt-sql-formatter) ;; gem install anbt-sql-formatter
+          (defun fn/sql-beautify-region (beg end)
+            "Beautify SQL in region between beg and END."
+            (interactive "r")
+            (save-excursion
+              (shell-command-on-region beg end "anbt-sql-formatter" nil t)))
+
+          (defun fn/sql-beautify-buffer ()
+            "Beautify SQL in buffer."
+            (interactive)
+            (fn/sql-beautify-region (point-min) (point-max))))
+
+        (fn/use-executables python-sql-formatter
+          (format-sql) ;; pip install --user format-sql
+          (use-package format-sql
+            :ensure t
+            :defer t
+            :commands (format-sql-buffer format-sql-region))))
+    #+END_SRC
 ** Web
 *** Mode
     The defacto mode for web development
