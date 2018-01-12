@@ -6347,12 +6347,27 @@
     #+BEGIN_SRC emacs-lisp :block-id ce3e7a1d-a1c7-f983-a3a8-db499704136f
       (use-package alchemist
         :ensure t
-        :after elixir-mode
         :defer t
+        :init
+        (add-hook 'elixir-mode-hook 'alchemist-mode)
         :config
         (setq alchemist-test-status-modeline nil
               alchemist-hooks-compile-on-save t
               alchemist-iex-program-name "iex")
+
+        (with-eval-after-load 'projectile ;; Custom alchemist hooks
+          (defun fn/alchemist-hooks-format-on-save ()
+            "Run mix format when saving files"
+            (when (and (alchemist-project-p)
+                       (buffer-file-name))
+              (alchemist-report-run (format "mix format %s" (buffer-file-name))
+                                    (format "%s - fn/format" alchemist-mix-process-name)
+                                    (format "%s - fn/format" alchemist-mix-buffer-name)
+                                    #'alchemist-mix-mode
+                                    nil
+                                    t)))
+
+          (add-hook 'after-save-hook 'fn/alchemist-hooks-format-on-save nil nil))
 
         (fn/use-feature alchemist-iex-company
           (alchemist company)
