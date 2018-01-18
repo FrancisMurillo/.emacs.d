@@ -4277,111 +4277,114 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 4b99ca89-ec33-86b9-fac0-3e0dbc7d5424
      (unless noninteractive
-       (defconst fn/mu-package-dir
-         "/usr/share/emacs/site-lisp/mu4e/"
-         "Installed via Arch Linux mu package")
+       (fn/use-executables mu4e-check
+         (mu)
+         (defconst fn/mu-package-dir
+           "/usr/share/emacs/site-lisp/mu4e/"
+           "Installed via Arch Linux mu package")
 
-       (use-package mu4e
-         :load-path "/usr/share/emacs/site-lisp/mu4e/"
-         :if (file-exists-p "/usr/share/emacs/site-lisp/mu4e/")
-         :bind (:map fn-standard-prefix-map
-                     ("g m" . mu4e))
-         :config
+         (use-package mu4e
+           :load-path "/usr/share/emacs/site-lisp/mu4e/"
+           :if (file-exists-p "/usr/share/emacs/site-lisp/mu4e/")
+           :bind (:map fn-standard-prefix-map
+                       ("g m" . mu4e))
+           :config
 
-         (setq mu4e-maildir (expand-file-name "Maildir" "~")
-               mu4e-get-mail-command "true")
+           (setq mu4e-maildir (expand-file-name "Maildir" "~")
+                 mu4e-get-mail-command "true")
 
-         (mapc
-          (lambda (internal-maildir)
-            (let ((maildir (expand-file-name internal-maildir mu4e-maildir)))
-              (unless (file-exists-p maildir)
-                (make-directory sent-maildir))))
-          '("sent" "drafts" "trash"))
+           (mapc
+            (lambda (internal-maildir)
+              (let ((maildir (expand-file-name internal-maildir mu4e-maildir)))
+                (unless (file-exists-p maildir)
+                  (make-directory sent-maildir))))
+            '("sent" "drafts" "trash"))
 
-         (setq mu4e-sent-messages-behavior 'delete
-               mu4e-update-interval 60
-               mu4e-index-cleanup nil
-               mu4e-index-lazy-check t)
+           (setq mu4e-sent-messages-behavior 'delete
+                 mu4e-update-interval 60
+                 mu4e-index-cleanup nil
+                 mu4e-index-lazy-check t
+                 mu4e-headers-results-limit 1000)
 
-         (setq mu4e-completing-read-function 'completing-read
-               mu4e-context-policy 'pick-first
-               mu4e-compose-context-policy nil
-               mu4e-confirm-quit nil)
+           (setq mu4e-completing-read-function 'completing-read
+                 mu4e-context-policy 'pick-first
+                 mu4e-compose-context-policy nil
+                 mu4e-confirm-quit nil)
 
-         (setq mu4e-headers-date-format "%F %H:%M"
-               mu4e-view-show-addresses nil
-               mu4e-headers-fields '((:date . 25)
-                                     (:flags . 6)
-                                     (:from . 22)
-                                     (:subject . nil)))
+           (setq mu4e-headers-date-format "%F %H:%M"
+                 mu4e-view-show-addresses nil
+                 mu4e-headers-fields '((:date . 25)
+                                       (:flags . 6)
+                                       (:from . 22)
+                                       (:subject . nil)))
 
-         (setq mu4e-attachment-dir (expand-file-name "Downloads" "~"))
+           (setq mu4e-attachment-dir (expand-file-name "Downloads" "~"))
 
-         (setq mu4e-hide-index-messages t)
+           (setq mu4e-hide-index-messages t)
 
-         (setq message-citation-line-format "%N @ %Y-%m-%d %H:%M %Z:\n"
-               message-citation-line-function 'message-insert-formatted-citation-line)
+           (setq message-citation-line-format "%N @ %Y-%m-%d %H:%M %Z:\n"
+                 message-citation-line-function 'message-insert-formatted-citation-line)
 
-         (fn/use-feature restclient-mode--mode-icon
-           (mu4e all-the-icons)
-           (fn/add-major-mode-icon
-            'mu4e-headers-mode
-            (list 'all-the-icons-faicon "newspaper-o" :v-adjust -0.1))
+           (fn/use-feature restclient-mode--mode-icon
+             (mu4e all-the-icons)
+             (fn/add-major-mode-icon
+              'mu4e-headers-mode
+              (list 'all-the-icons-faicon "newspaper-o" :v-adjust -0.1))
 
-           (fn/add-major-mode-icon
-            'mu4e-main-mode
-            (list 'all-the-icons-faicon "envelope" :v-adjust -0.1))
+             (fn/add-major-mode-icon
+              'mu4e-main-mode
+              (list 'all-the-icons-faicon "envelope" :v-adjust -0.1))
 
-           (fn/add-major-mode-icon
-            'mu4e-compose-mode
-            (list 'all-the-icons-faicon "paper-plane" :v-adjust -0.1))
+             (fn/add-major-mode-icon
+              'mu4e-compose-mode
+              (list 'all-the-icons-faicon "paper-plane" :v-adjust -0.1))
 
-           (fn/add-major-mode-icon
-            'mu4e-view-mode
-            (list 'all-the-icons-faicon "envelope-o" :v-adjust -0.1)))
-
-
-         (fn/use-feature mu4e-flyspell
-           (mu4e flyspell)
-           (add-hook 'mu4e-compose-mode-hook #'flyspell-mode))
+             (fn/add-major-mode-icon
+              'mu4e-view-mode
+              (list 'all-the-icons-faicon "envelope-o" :v-adjust -0.1)))
 
 
-         (fn/use-feature org-mu4e
-           (org mu4e)
-           (setq org-mu4e-link-query-in-headers-mode nil))
+           (fn/use-feature mu4e-flyspell
+             (mu4e flyspell)
+             (add-hook 'mu4e-compose-mode-hook #'flyspell-mode))
 
-         (fn/use-feature mu4e-alert
-           (mu4e alert)
-           (use-package mu4e-alert
-             :ensure t
-             :defer t
-             :after (mu4e alert)
-             :functions (mu4e-alert-enable-notifications)
-             :init
-             (mu4e-alert-enable-notifications)
-             :config
-             (setq mu4e-alert-email-notification-types `(count)
-                   mu4e-alert-style 'libnotify)
 
-             (progn ;; Mail count, along-side mu4e-alert
-               (defvar fn/mu4e-current-unread-message-count 0
-                 "The current `mu4e' unread message count.")
+           (fn/use-feature org-mu4e
+             (org mu4e)
+             (setq org-mu4e-link-query-in-headers-mode nil))
 
-               (defun fn/mu4e-alert--get-mu-unread-mails (orig-fun callback)
-                 "Just `mu4e-alert--get-mu-unread-mails' but the CALLBACK updating the message count."
-                 (lexical-let ((callback callback))
-                   (funcall orig-fun
-                            (lambda (mails)
-                              (prog1
-                                  (funcall callback mails)
-                                (setq fn/mu4e-current-unread-message-count (length mails)))))))
+           (fn/use-feature mu4e-alert
+             (mu4e alert)
+             (use-package mu4e-alert
+               :ensure t
+               :defer t
+               :after (mu4e alert)
+               :functions (mu4e-alert-enable-notifications)
+               :init
+               (mu4e-alert-enable-notifications)
+               :config
+               (setq mu4e-alert-email-notification-types `(count)
+                     mu4e-alert-style 'libnotify)
 
-               (advice-add 'mu4e-alert--get-mu-unread-mails :around #'fn/mu4e-alert--get-mu-unread-mails))))
+               (progn ;; Mail count, along-side mu4e-alert
+                 (defvar fn/mu4e-current-unread-message-count 0
+                   "The current `mu4e' unread message count.")
 
-         (fn/use-executables w3m-check
-           (w3m) ;; Use `w3m' to render the pages.
-           (setq mu4e-html2text-command "w3m -dump -T text/html"
-                 mu4e-view-show-images t))))
+                 (defun fn/mu4e-alert--get-mu-unread-mails (orig-fun callback)
+                   "Just `mu4e-alert--get-mu-unread-mails' but the CALLBACK updating the message count."
+                   (lexical-let ((callback callback))
+                     (funcall orig-fun
+                              (lambda (mails)
+                                (prog1
+                                    (funcall callback mails)
+                                  (setq fn/mu4e-current-unread-message-count (length mails)))))))
+
+                 (advice-add 'mu4e-alert--get-mu-unread-mails :around #'fn/mu4e-alert--get-mu-unread-mails))))
+
+           (fn/use-executables w3m-check
+             (w3m) ;; Use `w3m' to render the pages.
+             (setq mu4e-html2text-command "w3m -dump -T text/html"
+                   mu4e-view-show-images t)))))
    #+END_SRC
 
    #+RESULTS:
@@ -5703,7 +5706,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 7b20b3c8-e4d0-7bcc-2013-9f12a6bb4aba
       (fn/use-executables haskell-check
-        (ghci stack cabal)
+        (ghci)
         (use-package haskell-mode
           :ensure t
           :defer t
@@ -5755,7 +5758,15 @@
 
 
           (add-hook 'haskell-interactive-mode-hook 'smartparens-mode)
-          (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
+          (fn/use-executables haskell-hoogle-check
+            (hoogle)
+            (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
+
+            (fn/use-feature helm-hoogle
+              (helm haskell-mode)
+              (use-package helm-hoogle
+                :ensure t
+                :demand t)))
 
 
           (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
@@ -5765,11 +5776,6 @@
           (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
           (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle)))
 
-      (fn/use-feature helm-hoogle
-        (helm haskell-mode)
-        (use-package helm-hoogle
-          :ensure t
-          :demand t))
     #+END_SRC
 
 *** Motion
@@ -5778,6 +5784,7 @@
     #+BEGIN_SRC emacs-lisp :block-id 3ebe801f-52f6-35a4-35bd-b41deec624ba
       (use-package shm
         :ensure t
+        :disabled t
         :after haskell-mode
         :init
         (add-hook 'haskell-mode-hook 'structured-haskell-mode)
