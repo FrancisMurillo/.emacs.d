@@ -6359,7 +6359,9 @@
         :ensure t
         :defer t
         :config
-        (setq php-mode-coding-style 'psr-2)
+        (setq php-mode-coding-style 'psr2
+               php-style-delete-trailing-whitespace t)
+
 
         (add-hook 'php-mode-hook 'php-enable-default-coding-style))
     #+END_SRC
