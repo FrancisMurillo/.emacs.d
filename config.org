@@ -1763,7 +1763,8 @@
 
 
           (setq company-dabbrev-time-limit 0.001
-                company-dabbrev-code-time-limit 0.001)
+                company-dabbrev-code-time-limit 0.001
+                company-dabbrev-downcase nil)
 
 
           (setq company-backends (list))
