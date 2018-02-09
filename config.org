@@ -5155,6 +5155,20 @@
                 (kill-region beginning end))))))
     #+END_SRC
 
+*** String Inflection
+
+    Support for rotating between camel case and what not
+
+    #+BEGIN_SRC emacs-lisp :block-id 9133b0b9-3170-4a75-980e-abefd1f497ec
+      (unless noninteractive
+        (use-package string-inflection
+          :ensure t
+          :defer t
+          :bind (("C-c C-u" . string-inflection-all-cycle))
+          :config
+          nil))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -6368,8 +6382,7 @@
         :defer t
         :config
         (setq php-mode-coding-style 'psr2
-               php-style-delete-trailing-whitespace t)
-
+              php-style-delete-trailing-whitespace t)
 
         (add-hook 'php-mode-hook 'php-enable-default-coding-style))
     #+END_SRC
@@ -6389,14 +6402,36 @@
         (add-to-list 'company-backends 'company-ac-php-backend))
     #+END_SRC
 
+*** Formatter
+    Formatter via =phpcbf=
+
+    #+BEGIN_SRC emacs-lisp :block-id c479998c-21d4-3f55-b22e-e619550d9eb7
+      (unless noninteractive
+        (fn/use-executables php-formatter-check
+          (phpcbf)
+          (use-package phpcbf
+            :ensure t
+            :defer t
+            :after (php-mode)
+            :config
+            (setq phpcbf-standard "PSR2"
+                  phpcbf-executable "phpcbf")
+
+            (add-hook 'php-mode-hook 'phpcbf-enable-on-save))))
+    #+END_SRC
+
 *** Linter
     Flycheck to the rescue
 
     #+BEGIN_SRC emacs-lisp :block-id 1767707b-bdba-a830-9dec-8131d1fb23cc
       (fn/use-feature flycheck-php
         (flycheck php-mode)
-        (when (executable-find "phpcs")
-          (setq flycheck-phpcs-standard "PSR2")
+        (fn/use-executables php-linter-check
+          (phpcs)
+          (setq flycheck-phpcs-standard "PSR2"
+                flycheck-php-phpcs-executable "phpcs")
+
+          (add-to-list 'flycheck-enabled-checkers 'php)
           (add-to-list 'flycheck-enabled-checkers 'php-phpcs)))
     #+END_SRC
 
@@ -8484,68 +8519,6 @@
 
      (add-to-list 'auto-mode-alist '("\\.gpg\\'" . fq/sensitive-mode))
    #+END_SRC
-** Variable Namer
-   Some quick means to insert variables
-
-   #+BEGIN_SRC emacs-lisp :block-id b94325a4-18e7-f361-2ea0-154f2cbc5d0c
-     (defun fmv/map-head-tail (header tailer xs)
-       "Map the head and tail separately"
-       (pcase xs
-         (`nil nil)'
-         (`(,head . ,tail) (append
-                            (list (funcall header head))
-                            (mapcar tailer tail)))))
-
-     (defun fn/naming-format--camel-case (pieces)
-       "Convert a list of PIECES into camelCase."
-       (string-join
-        (append (list (downcase (car pieces)))
-                (mapcar #'capitalize (cdr pieces)))
-        ""))
-
-     (defun fn/naming-parser--camel-case (var)
-       "Parse the pieces of VAR for camelCase."
-
-       (rx (char lower) (*? (char upper))))
-
-
-     (defun fn/naming-format--hyphenated (pieces)
-       "Convert a list of PIECES into hyphen-ated"
-       (string-join
-        (mapcar #'downcase pieces)
-        "-"))
-
-     (defun fn/naming-format--underscored (pieces)
-       "Convert a list of PIECES into under_scored"
-       (string-join
-        (mapcar #'downcase pieces)
-        "_"))
-
-
-
-
-     (defun fmv/insert-camel-case (name)
-       "At point, insert a given name as camelCase"
-       (interactive "sCamel Case a variable name(varName):")
-       (lexical-let* ((separator "")
-           (var-tokens (split-string name " " t))
-           (var-pieces (fmn/map-head-tail #'downcase
-                                          #'upcase-initials
-                                          var-tokens)))
-         (insert (string-join var-pieces separator))))
-
-     (defun fmv/insert-hyphenated (name)
-       "At point, insert a given name as hyphen-ated"
-       (interactive "sHyphenate variable name(var-name):")
-       (lexical-let* ((separator "-")
-           (var-tokens (split-string name " " t))
-           (var-pieces (mapcar #'downcase var-tokens)))
-         (insert (string-join var-pieces separator))))
-   #+END_SRC
-
-   #+RESULTS:
-   : fmv/insert-hyphenated
-
 ** Dired Shortcuts
    Some shortcuts with the common folder
 
@@ -9540,10 +9513,6 @@
     (define-key fn-standard-prefix-map (kbd "l a") #'fn/alert-log-open)
 
     (define-key fn-custom-prefix-map (kbd "i p") #'fn/insert-relative-file-path)
-
-    ;; Namer
-    (define-key fn-custom-prefix-map (kbd "v c") #'fmv/insert-camel-case)
-    (define-key fn-custom-prefix-map (kbd "v h") #'fmv/insert-hyphenated)
 
 
     ;; Espeak
