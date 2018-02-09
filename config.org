@@ -5155,6 +5155,18 @@
                 (kill-region beginning end))))))
     #+END_SRC
 
+*** CSV mode
+
+    CSV moder
+
+    #+BEGIN_SRC emacs-lisp :block-id 92c5b0a9-a99d-2404-5877-f5e96a847049
+      (unless noninteractive
+        (use-package csv-mode
+          :ensure t
+          :defer t
+          :config
+          nil))
+    #+END_SRC
 ** Helper
    Specific helper modes
 
@@ -6367,9 +6379,8 @@
         :ensure t
         :defer t
         :config
-        (setq php-mode-coding-style 'psr2
-               php-style-delete-trailing-whitespace t)
-
+        (setq php-mode-coding-style 'PSR2
+              php-style-delete-trailing-whitespace t)
 
         (add-hook 'php-mode-hook 'php-enable-default-coding-style))
     #+END_SRC
