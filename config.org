@@ -4266,7 +4266,8 @@
         (when (file-exists-p (expand-file-name ".gnus" "~"))
           (use-package gnus
             :bind (:map fn-standard-prefix-map
-                        ("g g" . gnus))
+                        ("g g" . gnus)
+                        ("g G" . gnus-other-frame))
             :defer t
             :config
             nil ;; Config at `~/.gnus'
