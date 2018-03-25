@@ -5128,6 +5128,40 @@
         (setq redmine-program (expand-file-name "redmine.py" fn/redmine-package-dir)))
     #+END_SRC
 
+*** Jira
+
+    Need Jira support
+
+    #+BEGIN_SRC emacs-lisp :block-id f5ff629c-ac2a-dcc1-0ac2-d4eafe9d9150
+      (unless noninteractive
+        (defconst org-jira-keymap (make-sparse-keymap)
+          "Shiv keymap for org-jira")
+
+        (use-package org-jira
+          :ensure t
+          :defer t
+          :bind-keymap ("C-c j" . org-jira-keymap)
+          :config
+          (define-key org-jira-keymap (kbd "p p") 'org-jira-get-projects)
+          (define-key org-jira-keymap (kbd "i b") 'org-jira-browse-issue)
+          (define-key org-jira-keymap (kbd "i i") 'org-jira-get-issues)
+          (define-key org-jira-keymap (kbd "i h") 'org-jira-get-issues-headonly)
+          (define-key org-jira-keymap (kbd "i u") 'org-jira-update-issue)
+          (define-key org-jira-keymap (kbd "i p") 'org-jira-progress-issue)
+          (define-key org-jira-keymap (kbd "i P") 'org-jira-progress-issue-next)
+          (define-key org-jira-keymap (kbd "i a") 'org-jira-assign-issue)
+          (define-key org-jira-keymap (kbd "i r") 'org-jira-refresh-issue)
+          (define-key org-jira-keymap (kbd "i R") 'org-jira-refresh-issues-in-buffer)
+          (define-key org-jira-keymap (kbd "i c") 'org-jira-create-issue)
+          (define-key org-jira-keymap (kbd "i k") 'org-jira-copy-current-issue-key)
+          (define-key org-jira-keymap (kbd "s c") 'org-jira-create-subtask)
+          (define-key org-jira-keymap (kbd "s s") 'org-jira-get-subtasks)
+          (define-key org-jira-keymap (kbd "c u") 'org-jira-update-comment)
+          (define-key org-jira-keymap (kbd "c C") 'org-jira-update-worklogs-from-org-clocks)
+          (define-key org-jira-keymap (kbd "t t") 'org-jira-todo-to-jira)
+          (define-key org-jira-keymap (kbd "f f") 'org-jira-get-issues-by-fixversion)))
+
+    #+END_SRC
 *** Translate
     Google Translate support for those RTL times
 
