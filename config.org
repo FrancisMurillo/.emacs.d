@@ -5142,6 +5142,9 @@
           :defer t
           :bind-keymap ("C-c j" . org-jira-keymap)
           :config
+          ;; Project specific configuration
+          (setq jiralib-url nil)
+
           (define-key org-jira-keymap (kbd "p p") 'org-jira-get-projects)
           (define-key org-jira-keymap (kbd "i b") 'org-jira-browse-issue)
           (define-key org-jira-keymap (kbd "i i") 'org-jira-get-issues)
