@@ -2110,10 +2110,11 @@
     You got to have those window configuration
 
     #+BEGIN_SRC emacs-lisp :block-id 1bccc5be-c2b8-eca5-8158-9b40eccdbc8e
-      (use-package winner
-        :ensure t
-        :config
-        (winner-mode t))
+      (unless noninteractive
+        (use-package winner
+          :ensure t
+          :config
+          (winner-mode t)))
     #+END_SRC
 
 *** window-numbering
@@ -4948,7 +4949,7 @@
 *** smerge
     Resolving diffs the nice way.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 388f67b8-dbd6-d93c-b004-77770634d1ae
       (use-package smerge-mode
         :defer t
         :config
@@ -5193,6 +5194,18 @@
                 (kill-region beginning end))))))
     #+END_SRC
 
+*** CSV mode
+
+    CSV moder
+
+    #+BEGIN_SRC emacs-lisp :block-id 92c5b0a9-a99d-2404-5877-f5e96a847049
+      (unless noninteractive
+        (use-package csv-mode
+          :ensure t
+          :defer t
+          :config
+          nil))
+    #+END_SRC
 *** String Inflection
 
     Support for rotating between camel case and what not
