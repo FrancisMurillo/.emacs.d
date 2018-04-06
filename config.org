@@ -2844,15 +2844,16 @@
    Some things to help debug Emacs performance
 
    #+BEGIN_SRC emacs-lisp :block-id dbe3b540-57be-0cbc-4269-c04eaaa41eba
-     (unless noninteractive
-       (use-package profiler-log-size
-         :init
-         (defun fn/profiler-start ()
-           "Start profiler with `cpu+mem'"
-           (profiler-start 'cpu+mem))
+     (use-package profiler
+       :if (not noninteractive)
+       :init
+       (defun fn/profiler-start ()
+         "Start profiler with `cpu+mem'"
+         (profiler-start 'cpu+mem))
 
-         (add-hook 'after-init-hook #'fn/profiler-start)
-         :commands (profiler-start profiler-report profiler-stop)))
+       (add-hook 'after-init-hook #'fn/profiler-start)
+       :commands (profiler-start profiler-report profiler-stop))
+
    #+END_SRC
 
 ** Packages
@@ -6033,17 +6034,18 @@
             "Reload interactive haskell process on save."
             (add-hook 'after-save-hook 'fn/haskell-process-load-or-reload t t)))
 
-          (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
+          ;; (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
 
-          (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
-          (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-reload-on-save)
+          ;; (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
+          ;; (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-reload-on-save)
 
-          (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
-          (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
+          ;; (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
+          ;; (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
 
           (fn/use-feature literate-haskell-hindent
             (haskell-mode hindent)
-            (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save))))
+            ;; (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)
+            )))
     #+END_SRC
 
 ** Clojure
