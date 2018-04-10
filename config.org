@@ -1578,7 +1578,10 @@
        (docker)
        (use-package docker
          :ensure t
-         :defer t))
+         :defer t
+         :commands (docker-images docker-containers docker-volumes docker-networks docker-machines)
+         :config
+         nil))
    #+END_SRC
 
    Something to edit =Dockerfile=
