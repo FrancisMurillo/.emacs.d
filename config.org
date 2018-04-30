@@ -3253,23 +3253,30 @@
    My modification on =display-buffer=.
 
    #+BEGIN_SRC emacs-lisp :block-id 8372b341-c122-bf85-8837-f3eab3c1c801
-     (add-to-list
-      'display-buffer-alist
-      (cons
-       (rx bos "*Process List*" eos)
-       (cons 'display-buffer-same-window (list))))
+     (progn
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*Process List*" eos)
+         (cons 'display-buffer-same-window (list))))
 
-     (add-to-list
-      'display-buffer-alist
-      (cons
-       (rx bos "*Help*" eos)
-       (cons 'display-buffer-same-window (list))))
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*Help*" eos)
+         (cons 'display-buffer-same-window (list))))
 
-     (add-to-list
-      'display-buffer-alist
-      (cons
-       (rx bos "*Async Shell Command*")
-       (cons 'display-buffer-same-window (list))))
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*Async Shell Command*")
+         (cons 'display-buffer-same-window (list))))
+
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*shell" (* anything) "*")
+         (cons 'display-buffer-same-window (list)))))
    #+END_SRC
 
 ** Mode Line
