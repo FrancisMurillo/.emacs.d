@@ -9479,6 +9479,27 @@
          (find-alternate-file (concat "/sudo:root@localhost:" buffer-file-name))))
    #+END_SRC
 
+** Clean Async Buffers
+   Just utilities to remove async buffers.
+
+   #+BEGIN_SRC emacs-lisp :block-id f8d2f890-e03e-2045-f6a3-a6ca82357577
+     (progn
+       (require 'cl)
+
+       (defun fn/kill-inactive-async-buffers ()
+         (interactive)
+         (->> (buffer-list)
+              (--filter
+               (and
+                (string-prefix-p
+                 "*Async Shell Command*"
+                 (buffer-name it))
+                (not (get-buffer-process it))))
+              (--map (kill-buffer it))
+              (length)
+              (message "Killed %s inactive async buffers"))))
+   #+END_SRC
+
 * Key Bindings
   Here is where all the key binding I mapped to
 
@@ -9517,6 +9538,7 @@
     ;; Buffers
     (define-key fn-standard-prefix-map (kbd "k") 'kill-this-buffer)
     (define-key fn-standard-prefix-map (kbd "C-k") 'fn/save-and-kill-buffer)
+    (define-key fn-standard-prefix-map (kbd "K &") 'fn/kill-inactive-async-buffers)
 
     ;; Windows
     (define-key fn-custom-prefix-map (kbd "w h") 'fmw/four-part-horizontal-window-layout)
