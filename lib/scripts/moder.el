@@ -351,7 +351,8 @@
 (defun moder-piece-slack-unread-notification ()
   "A piece for unread `emacs-slack' messages."
   (when (and (fboundp 'slack-team-get-unread-messages)
-             (boundp 'slack-current-team))
+             (boundp 'slack-current-team)
+             slack-current-team)
     (let ((unread-count (slack-team-get-unread-messages slack-current-team)))
       (if (> unread-count 0)
           (format " %s %s "
