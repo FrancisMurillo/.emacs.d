@@ -9543,9 +9543,9 @@
 
 
     ;; Buffers
-    (define-key fn-standard-prefix-map (kbd "k") 'kill-this-buffer)
-    (define-key fn-standard-prefix-map (kbd "C-k") 'fn/save-and-kill-buffer)
-    (define-key fn-standard-prefix-map (kbd "K &") 'fn/kill-inactive-async-buffers)
+    (define-key fn-standard-prefix-map (kbd "k k") 'kill-this-buffer)
+    (define-key fn-standard-prefix-map (kbd "k C-k") 'fn/save-and-kill-buffer)
+    (define-key fn-standard-prefix-map (kbd "k &") 'fn/kill-inactive-async-buffers)
 
     ;; Windows
     (define-key fn-custom-prefix-map (kbd "w h") 'fmw/four-part-horizontal-window-layout)
