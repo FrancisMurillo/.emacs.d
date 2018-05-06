@@ -541,6 +541,13 @@
    #+BEGIN_SRC emacs-lisp :block-id 218a476d-ce2f-a92a-cf26-54576622e00a
      (mouse-avoidance-mode 'cat-and-mouse)
    #+END_SRC
+** Shell
+   Some minor shell enhancement
+
+   #+BEGIN_SRC emacs-lisp :block-id 185a0a15-d659-6d03-bcf2-3eef1997af21
+     (setq comint-input-ignoredups t)
+   #+END_SRC
+
 ** Others
    Some other configurations that I can't classify yet
 
