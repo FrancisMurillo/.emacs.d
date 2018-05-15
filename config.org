@@ -955,6 +955,20 @@
                   (message "The %s is not installed, you might want it installed." family))))
             fn/all-the-icon-font-families))
 
+         (defun fn/install-font-families-locally ()
+           "Install all-the-icons fonts in the `~/.local/share/fonts' folder.
+     Tested on Arch Linux."
+           (interactive)
+           (let ((local-font-folder (expand-file-name "~/.local/share/fonts")))
+             (make-directory local-font-folder t)
+             (mapcar
+              (lambda (font-file)
+                (copy-file font-file local-font-folder t))
+              (directory-files fn/all-the-icon-font-dir  t ".ttf"))
+
+             (when (executable-find "fc-cache")
+               (shell-command "fc-cache"))))
+
          (add-hook 'after-init-hook 'fn/check-installed-font-families)))
    #+END_SRC
 
