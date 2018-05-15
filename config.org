@@ -4318,7 +4318,7 @@
             (lambda (internal-maildir)
               (let ((maildir (expand-file-name internal-maildir mu4e-maildir)))
                 (unless (file-exists-p maildir)
-                  (make-directory sent-maildir))))
+                  (make-directory maildir))))
             '("sent" "drafts" "trash"))
 
            (setq mu4e-sent-messages-behavior 'delete
