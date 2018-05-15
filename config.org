@@ -5384,8 +5384,11 @@
          (list 'all-the-icons-faicon "glass" :v-adjust 0.1)))
 
       (unless noninteractive
+        (defconst fn/header2-dir (expand-file-name "header2/" fn/custom-module-dir)
+          "Archived `header2' packages.")
+
         (use-package header2
-          :ensure t
+          :load-path fn/header2-dir
           :demand t
           :functions auto-make-header
           :init
