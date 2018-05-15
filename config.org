@@ -4587,8 +4587,11 @@
    A better way of viewing processes
 
    #+BEGIN_SRC emacs-lisp :block-id b627e0fd-bda7-5a5a-cec1-ecba55ba606d
+     (defconst fn/list-processes+-dir (expand-file-name "list-processes+/" fn/custom-module-dir)
+       "Archived `list-processes+' packages.")
+
      (use-package list-processes+
-       :ensure t
+       :load-path fn/list-processes+-dir
        :defer t
        :bind (:map fn-standard-prefix-map
                    ("M-p" . list-processes+)))
