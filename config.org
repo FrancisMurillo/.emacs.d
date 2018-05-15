@@ -4314,6 +4314,8 @@
            (setq mu4e-maildir (expand-file-name "Maildir" "~")
                  mu4e-get-mail-command "true")
 
+           (shell-command (format  "mu index --maildir=%s" mu4e-maildir))
+
            (mapc
             (lambda (internal-maildir)
               (let ((maildir (expand-file-name internal-maildir mu4e-maildir)))
