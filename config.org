@@ -1887,12 +1887,12 @@
     Enhancement for normal bookmarking
 
     #+BEGIN_SRC emacs-lisp :block-id 3165bffb-1127-0d5d-0a4f-7ff0b07d7612
-      (defconst fn/bookmark+-dir (expand-file-name "bookmark+/" fn/custom-module-dir)
+      (defconst fn/bookmark+-module-dir (expand-file-name "bookmark+/" fn/custom-module-dir)
         "Archived `bookmark+' packages.")
 
       (unless noninteractive
         (use-package bookmark+
-          :load-path fn/bookmark+-dir
+          :load-path fn/bookmark+-module-dir
           :defer t
           ;; :commands ()
           :config
@@ -4590,11 +4590,11 @@
    A better way of viewing processes
 
    #+BEGIN_SRC emacs-lisp :block-id b627e0fd-bda7-5a5a-cec1-ecba55ba606d
-     (defconst fn/list-processes+-dir (expand-file-name "list-processes+/" fn/custom-module-dir)
+     (defconst fn/list-processes+-module-dir (expand-file-name "list-processes+/" fn/custom-module-dir)
        "Archived `list-processes+' packages.")
 
      (use-package list-processes+
-       :load-path fn/list-processes+-dir
+       :load-path fn/list-processes+-module-dir
        :defer t
        :bind (:map fn-standard-prefix-map
                    ("M-p" . list-processes+)))
@@ -5373,6 +5373,9 @@
     Some packages to help making packages
 
     #+BEGIN_SRC emacs-lisp :block-id 08cd7439-df60-4b11-e8a1-17917ed8dd26
+      (defconst fn/header2-module-dir (expand-file-name "header2/" fn/custom-module-dir)
+        "Archived `header2' packages.")
+
       (use-package cask-mode
         :ensure t
         :defer t)
@@ -5384,11 +5387,8 @@
          (list 'all-the-icons-faicon "glass" :v-adjust 0.1)))
 
       (unless noninteractive
-        (defconst fn/header2-dir (expand-file-name "header2/" fn/custom-module-dir)
-          "Archived `header2' packages.")
-
         (use-package header2
-          :load-path fn/header2-dir
+          :load-path fn/header2-module-dir
           :demand t
           :functions auto-make-header
           :init
