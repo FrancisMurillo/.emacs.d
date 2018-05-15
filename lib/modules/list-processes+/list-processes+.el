@@ -5,6 +5,7 @@
 ;; Author: wenbinye@163.com
 ;; Time-stamp: <Ye Wenbin 2006-10-15 18:35:43>
 ;; Version: $Id: list-process-mode.el,v 0.0 <2006-10-15 17:13:28> ywb Exp $
+;; Package-Version: 20131117.1135
 ;; Keywords: 
 ;; X-URL: not distributed yet
 
@@ -100,3 +101,5 @@
         (message "No associate buffer!")))))
 
 ;;; list-process-mode.el ends here
+
+;;; list-processes+.el ends here

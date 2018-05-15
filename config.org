@@ -1887,9 +1887,12 @@
     Enhancement for normal bookmarking
 
     #+BEGIN_SRC emacs-lisp :block-id 3165bffb-1127-0d5d-0a4f-7ff0b07d7612
+      (defconst fn/bookmark+-dir (expand-file-name "bookmark+/" fn/custom-module-dir)
+        "Archived `bookmark+' packages.")
+
       (unless noninteractive
         (use-package bookmark+
-          :ensure t
+          :load-path fn/bookmark+-dir
           :defer t
           ;; :commands ()
           :config
