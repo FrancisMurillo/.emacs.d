@@ -7973,7 +7973,7 @@
             (make-directory fn/emms-mpd-cache-dir t)
 
             (setq emms-player-mpd-server-port fn/emms-mpd-port
-                  emms-player-mpd-server-name "127.0.0.1")
+                  emms-player-mpd-server-name (expand-file-name "socket" fn/emms-mpd-cache-dir))
 
             (fn/prodigy-create-mpd-conf
              fn/emms-mpd-config-file
@@ -7983,7 +7983,7 @@
                ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
                ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
                ("port" . ,fn/emms-mpd-port)
-               ("bind_to_address" . "127.0.0.1")
+               ("bind_to_address" . ,emms-player-mpd-server-name)
                ("database" . (("plugin" . "simple")
                               ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
 
