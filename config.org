@@ -7902,7 +7902,6 @@
 
          (setq emms-source-file-default-directory (expand-file-name "~/Musicbox/"))
 
-
          (setq emms-info-asynchronously nil
                emms-playlist-buffer-name "*Music*")
 
@@ -7951,6 +7950,11 @@
           (emms)
           (require 'emms-player-mpd)
 
+          (setq emms-player-mpd-supported-regexp
+                (regexp-opt '(".ogg" ".mp3" ".wav" ".mpg" ".mpeg" ".wmv" ".wma"
+                              ".mov" ".avi" ".divx" ".ogm" ".asf" ".mkv" "http://" "mms://"
+                              ".rm" ".rmvb" ".mp4" ".flac" ".vob" ".m4a" ".flv" ".ogv" ".pls")))
+
           ;; (add-to-list 'emms-info-functions 'emms-info-mpd)
           (add-to-list 'emms-player-list 'emms-player-mpd))
 
@@ -7974,7 +7978,7 @@
             (interactive)
             (make-directory fn/emms-mpd-cache-dir t)
 
-            (setq emms-player-mpd-server-port fn/emms-mpd-port
+            (setq emms-player-mpd-server-port nil
                   emms-player-mpd-server-name (expand-file-name "socket" fn/emms-mpd-cache-dir))
 
             (fn/prodigy-create-mpd-conf
@@ -8019,10 +8023,10 @@
           (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
     #+END_SRC
 
-*** VLC Integration
+*** COMMENT VLC Integration
     A good fallback but not that I depend on it.
 
-    #+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp :block-id 2a94f5b0-ad91-2061-13ea-a693b18903fa
       (fn/use-executables vlc-check
         (vlc)
         (fn/use-feature emms-vlc
