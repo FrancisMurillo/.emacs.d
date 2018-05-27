@@ -5412,11 +5412,11 @@
           (add-hook 'emacs-lisp-mode-hook 'auto-make-header)))
 
       (use-package overseer
+        :disabled t
         :ensure t
         :defer t
-        :diminish 'overseer-mode
-        :init
-        (add-hook 'emacs-lisp-mode-hook #'overseer-mode))
+        :hook (emacs-lisp-mode-hook . overseer-mode)
+        :diminish 'overseer-mode)
     #+END_SRC
 
 ** SQL
