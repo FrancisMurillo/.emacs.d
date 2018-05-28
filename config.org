@@ -2655,21 +2655,27 @@
      =smex= is faster than =helm-M-x=
 
      #+BEGIN_SRC emacs-lisp :block-id 7f1cc404-a888-5187-4df6-dcba60ae2373
+       (defconst fn/smex-module-dir (expand-file-name "smex/" fn/custom-module-dir)
+         "Archived `smex' packages.")
+
+       (defconst fn/helm-smex-module-dir (expand-file-name "helm-smex/" fn/custom-module-dir)
+         "Archived `helm-smex' packages.")
+
        (unless noninteractive
          (use-package smex
-           :ensure t
+           :load-path fn/smex-module-dir
            :demand t
            :config
            (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
-              smex-history-length 100)))
+                 smex-history-length 100)))
 
        (use-package helm-smex
-         :ensure t
+         :load-path fn/helm-smex-module-dir
          :after helm
          :bind (("M-x" . helm-smex))
          :config
          (setq helm-smex-show-bindings t
-            smex-history-length (or helm-adaptive-history-length smex-history-length)))
+               smex-history-length (or helm-adaptive-history-length smex-history-length)))
      #+END_SRC
 
 *** ivy
