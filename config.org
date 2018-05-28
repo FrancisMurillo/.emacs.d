@@ -7955,7 +7955,7 @@
                               ".mov" ".avi" ".divx" ".ogm" ".asf" ".mkv" "http://" "mms://"
                               ".rm" ".rmvb" ".mp4" ".flac" ".vob" ".m4a" ".flv" ".ogv" ".pls")))
 
-          ;; (add-to-list 'emms-info-functions 'emms-info-mpd)
+          (add-to-list 'emms-info-functions 'emms-info-mpd)
           (add-to-list 'emms-player-list 'emms-player-mpd))
 
         (fn/use-feature prodigy-emms-mpd
