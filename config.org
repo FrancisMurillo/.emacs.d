@@ -5266,6 +5266,17 @@
           nil))
     #+END_SRC
 
+*** EditorConfig
+    Support editor config for some project.
+
+    #+BEGIN_SRC emacs-lisp :block-id 56b6bea0-b629-0a0d-52a3-990d009757b3
+      (use-package editorconfig
+        :ensure t
+        :hook (prog-mode . editorconfig-mode)
+        :config
+        nil)
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -5382,6 +5393,13 @@
       (defconst fn/header2-module-dir (expand-file-name "header2/" fn/custom-module-dir)
         "Archived `header2' packages.")
 
+      (defconst fn/epl-module-dir (expand-file-name "epl/" fn/custom-module-dir)
+        "Archived `epl' packages.")
+
+      (use-package epl
+        :load-path fn/epl-module-dir
+        :demand t)
+
       (use-package cask-mode
         :ensure t
         :defer t)
@@ -5401,11 +5419,11 @@
           (add-hook 'emacs-lisp-mode-hook 'auto-make-header)))
 
       (use-package overseer
+        :disabled t
         :ensure t
         :defer t
-        :diminish 'overseer-mode
-        :init
-        (add-hook 'emacs-lisp-mode-hook #'overseer-mode))
+        :hook (emacs-lisp-mode-hook . overseer-mode)
+        :diminish 'overseer-mode)
     #+END_SRC
 
 ** SQL
