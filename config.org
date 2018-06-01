@@ -9191,9 +9191,7 @@
            (comment "Project specific")
            (file "working-config.org")
 
-           (file ,(format "%s.el" (file-name-base fn/config-backup-file)))
-           (file  ,(format "%s.el" (file-name-base fmk/macro-file))))
-
+           (file ,(format "%s.el" (file-name-base fn/config-backup-file))))
 
           (context
            (comment "Library")

@@ -9,7 +9,6 @@ extra/
 # Project specific
 working-config.org
 working-config.el
-my-macros.el
 
 # Library
 lib/sandbox/
