@@ -1,6 +1,6 @@
 # Base files
 config.el
-personal.el
+.personal.el
 
 # Base directory
 .cache/

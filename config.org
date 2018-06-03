@@ -238,10 +238,10 @@
    Just some things that relate to me
 
    #+BEGIN_SRC emacs-lisp :block-id fb2d2f9a-2897-33af-e228-d088d9e8c242
-     (defconst fn/personal-file-name "personal.el"
+     (defconst fn/personal-file-name ".personal.el"
        "Personal configuration file name")
 
-     (defconst fn/personal-file (expand-file-name fn/personal-file-name user-emacs-directory)
+     (defconst fn/personal-file (expand-file-name fn/personal-file-name "~")
        "Personal configuration file to be loaded. This is symlinked in another private repository")
 
      (load fn/personal-file t)
@@ -397,16 +397,10 @@
            kept-new-versions 10
            kept-old-versions 50
 
-           backup-directory-alist
-           (list
-            (cons "." fn/backup-dir))
+           backup-directory-alist `(("." . ,fn/backup-dir))
 
-           auto-save-list-file-prefix
-           fn/auto-save-dir
-
-           auto-save-file-name-transforms
-           (list
-            (list ".*" fn/auto-save-dir t)))
+           auto-save-list-file-prefix fn/auto-save-dir
+           auto-save-file-name-transforms `((".*" ,fn/auto-save-dir t)))
    #+END_SRC
 
 ** History
@@ -2024,10 +2018,8 @@
           (let ((current-prefix-arg t))
             (call-interactively #'wg-create-workgroup)))
 
-
         (define-key wg-prefixed-map (kbd "b") #'fn/wg-switch-to-buffer)
         (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
-
 
         (run-with-idle-timer 0 nil (lambda  ()
                                    (define-key workgroups-mode-map
@@ -8584,12 +8576,12 @@
        (dired "~/Downloads"))
 
      (defun fn/dired-mountain-dir ()
-       "Just a quick shortcut to my mountain folder"
+       "Just a quick shortcut to my mounting folder"
        (interactive)
        (dired "~/Mountain"))
 
      (defun fn/dired-fakespace-dir ()
-       "Just a quick shortcut to my fakespace folder"
+       "Just a quick shortcut to my temp workspace folder"
        (interactive)
        (dired "~/Fakespace"))
 

@@ -183,5 +183,4 @@ Hacked on v9 since it is lexically binded.")
 (defconst fn/post-config-file (expand-file-name ".init-extension.el" "~")
   "Post script to load after the main configuration loads.")
 
-
 (load fn/post-config-file t)
