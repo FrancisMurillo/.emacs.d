@@ -4116,16 +4116,12 @@
            :config
            (setq ledger-clear-whole-transactions t)
 
-           ;; Encrypting my ledger
-           ;; Reference: https://groups.google.com/forum/#!topic/ledger-cli/_umUQakuVkM
-           (setq ledger-reports
-                 '(("bal" "gpg --no-tty -d %(ledger-file) | ledger -f - bal")
-                   ("reg" "gpg --no-tty -d %(ledger-file) | ledger -f - reg")
-                   ("payee" "gpg --no-tty -d %(ledger-file) ledger -f - reg @%(payee)")
-                   ("account" "gpg --no-tty -d %(ledger-file) | ledger -f - reg %(account)")
-                   ;; Custom Report
-                   ("monthly expense" "gpg --no-tty -d %(ledger-file) | ledger -f - -M reg ^expenses")
-                   ("weekly expense" "gpg --no-tty -d %(ledger-file) | ledger -f - -W reg ^expenses")))
+           (add-to-list
+            'ledger-reports
+            '("monthly expense" "%(binary) -f %(ledger-file) -M reg ^expenses"))
+           (add-to-list
+            'ledger-reports
+            '("weekly expense" "%(binary) -f %(ledger-file) -W reg ^expenses"))
 
            (fn/use-feature ledger-mode--mode-icon
              (all-the-icons)
@@ -5267,6 +5263,15 @@
         :hook (prog-mode . editorconfig-mode)
         :config
         nil)
+    #+END_SRC
+
+*** Thesaurus
+    A little thesaurus help.
+
+    #+BEGIN_SRC emacs-lisp :block-id abd98313-2523-3476-e1e0-cad8fdb875d1
+      (use-package powerthesaurus
+        :ensure t
+        :commands (powerthesaurus-lookup-word))
     #+END_SRC
 
 ** Helper
