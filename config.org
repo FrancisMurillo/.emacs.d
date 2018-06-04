@@ -4133,7 +4133,13 @@
              (all-the-icons)
              (fn/add-major-mode-icon
               'ledger-report-mode
-              (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1))))))
+              (list 'all-the-icons-faicon "line-chart" :v-adjust -0.1))))
+
+         (use-package flycheck-ledger
+           :ensure t
+           :hook (ledger-mode . flycheck-mode)
+           :config
+           (add-to-list 'flycheck-enabled-checkers 'ledger))))
    #+END_SRC
 
 ** engine
