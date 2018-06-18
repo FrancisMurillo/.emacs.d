@@ -745,7 +745,7 @@
        "Htmlize package dir")
 
      (use-package htmlize
-       :load-path fn/htmlize-package-dir
+       :ensure t
        :defer t)
    #+END_SRC
 
@@ -2564,7 +2564,7 @@
                 (map-car
                  (lambda (f pair)
                    (cons (funcall f (car pair))
-                      (cdr pair))))
+                         (cdr pair))))
                 (pair-as-label
                  (lambda (pairs)
                    (lexical-let*
@@ -6476,10 +6476,15 @@
               alchemist-iex-program-name "iex")
 
         (with-eval-after-load 'projectile ;; Custom alchemist hooks
+          (defun fn/elixir-file-p (file-name)
+            (or (string-suffix-p ".ex" file-name)
+                (string-suffix-p ".exs" file-name)))
+
           (defun fn/alchemist-hooks-format-on-save ()
             "Run mix format when saving files"
             (when (and (alchemist-project-p)
-                       (buffer-file-name))
+                       (buffer-file-name)
+                       (fn/elixir-file-p (buffer-file-name)))
               (alchemist-report-run (format "mix format %s" (buffer-file-name))
                                     (format "%s - fn/format" alchemist-mix-process-name)
                                     (format "%s - fn/format" alchemist-mix-buffer-name)
