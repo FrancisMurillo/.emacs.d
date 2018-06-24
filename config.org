@@ -5422,10 +5422,9 @@
           (add-hook 'emacs-lisp-mode-hook 'auto-make-header)))
 
       (use-package overseer
-        :disabled t
         :ensure t
         :defer t
-        :hook (emacs-lisp-mode-hook . overseer-mode)
+        :hook (emacs-lisp-mode . overseer-mode)
         :diminish 'overseer-mode)
     #+END_SRC
 
@@ -6115,6 +6114,40 @@
             (haskell-mode hindent)
             ;; (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)
             )))
+    #+END_SRC
+
+** Purescript
+*** Mode
+    A major mode for purescript.
+
+    #+BEGIN_SRC emacs-lisp :block-id f586336d-6a0d-4260-efea-5db7b72b7142
+      (use-package purescript-mode
+        :ensure t
+        :config
+        nil)
+    #+END_SRC
+
+*** Linter
+    Flycheck for the win
+
+    #+BEGIN_SRC emacs-lisp :block-id f8cbb541-8fb2-2ddb-be99-eaa883f23e07
+      (use-package flycheck-purescript
+        :ensure t
+        :after (flycheck purescript)
+        :config
+        (flycheck-purescript-setup))
+    #+END_SRC
+
+*** IDE
+    The default IDE support for purescript.
+
+    #+BEGIN_SRC emacs-lisp :block-id fe9e4bdf-831e-b991-6727-4357f3083f60
+      (use-package psc-ide
+        :ensure t
+        :hook (purescript-mode . psc-ide-mode)
+        :config
+        (setq psc-ide-use-npm-bin t)
+        (turn-on-purescript-indentation))
     #+END_SRC
 
 ** Clojure
