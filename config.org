@@ -5280,6 +5280,33 @@
         :commands (powerthesaurus-lookup-word))
     #+END_SRC
 
+*** PlantUML
+    Support for making diagrams
+
+    #+BEGIN_SRC emacs-lisp :block-id d21de630-e067-119b-6961-49102cadb0aa
+      (defconst fn/plantuml-file (expand-file-name "plantuml.jar" "~"))
+      ;;; Download link: http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
+
+      (when (file-exists-p fn/plantuml-file)
+        (use-package plantuml-mode
+          :ensure t
+          :defer t
+          :config
+          nil)
+
+        (use-package flycheck-plantuml
+          :ensure t
+          :after flycheck
+          :config
+          (flycheck-plantuml-setup))
+
+        (with-eval-after-load 'org
+          (require 'ob-plantuml)
+
+          (add-to-list 'org-babel-load-languages '(plantuml . t))
+          (setq org-plantuml-jar-path fn/plantuml-file)))
+    #+END_SRC
+
 ** Helper
    Specific helper modes
 
@@ -6147,7 +6174,8 @@
         :hook (purescript-mode . psc-ide-mode)
         :config
         (setq psc-ide-use-npm-bin t)
-        (turn-on-purescript-indentation))
+
+        (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation))
     #+END_SRC
 
 ** Clojure
