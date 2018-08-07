@@ -2442,7 +2442,6 @@
 
           (setq projectile-switch-project-action #'fn/find-project-root)
 
-
           (projectile-mode)
           (setq projectile-indexing-method 'native
                 projectile-enable-caching t
@@ -2450,8 +2449,56 @@
 
           (setq projectile-sort-order 'modification-time)
 
-          (add-to-list 'projectile-project-root-files "config.xml")))
+
+    (add-to-list 'projectile-project-root-files "config.xml")))
     #+END_SRC
+
+
+**** Completion System
+     Fix for the completion system being removed each time an upgrade is
+     completed.
+
+     #+BEGIN_SRC emacs-lisp :block-id 98315fa2-0cb4-6f9e-4ce6-e58001e1e45a
+       (with-eval-after-load 'projectile
+         (cl-defun projectile-completing-read (prompt choices &key initial-input action)
+           "Present a project tailored PROMPT with CHOICES."
+           (let ((prompt (projectile-prepend-project-name prompt))
+                 res)
+             (setq res
+                   (cond
+                    ((eq projectile-completion-system 'ido)
+                     (ido-completing-read prompt choices nil nil initial-input))
+                    ((eq projectile-completion-system 'default)
+                     (completing-read prompt choices nil nil initial-input))
+                    ((eq projectile-completion-system 'helm)
+                     (if (and (fboundp 'helm)
+                              (fboundp 'helm-make-source))
+                         (helm :sources
+                               (helm-make-source "Projectile" 'helm-source-sync
+                                 :candidates choices
+                                 :action (if action
+                                             (prog1 action
+                                               (setq action nil))
+                                           #'identity))
+                               :prompt prompt
+                               :input initial-input
+                               :buffer "*helm-projectile*")
+                       (user-error "Please install helm from \
+       https://github.com/emacs-helm/helm")))
+                    ((eq projectile-completion-system 'ivy)
+                     (if (fboundp 'ivy-read)
+                         (ivy-read prompt choices
+                                   :initial-input initial-input
+                                   :action (prog1 action
+                                             (setq action nil))
+                                   :caller 'projectile-completing-read)
+                       (user-error "Please install ivy from \
+       https://github.com/abo-abo/swiper")))
+                    (t (funcall projectile-completion-system prompt choices))))
+             (if action
+                 (funcall action res)
+               res))))
+     #+END_SRC
 
 *** helm
     The revolutionary package to find
@@ -4429,6 +4476,15 @@
 
    #+RESULTS:
 
+*** wanderlust
+    Alternative to =gnus=
+
+    #+BEGIN_SRC emacs-lisp :block-id 5cb8e831-3e7a-4919-a0cf-fa4b7361f621
+      (use-package wanderlust
+        :ensure t
+        :defer t)
+    #+END_SRC
+
 *** smtpmail
     Sending mail is just as important
 
@@ -5930,15 +5986,71 @@
                 :ensure t
                 :demand t)))
 
-
           (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
-
 
           ;; Hoogle
           (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
           (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle)))
 
     #+END_SRC
+
+**** Haskell Process Load Fix
+
+     #+BEGIN_SRC emacs-lisp :block-id 2c21cd5d-7397-9c9f-cedb-6cdfcb92ae2e
+       (with-eval-after-load 'haskell-mode
+         ;;;  https://github.com/haskell/haskell-mode/pull/1605
+         (defun haskell-process-load-complete (session process buffer reload module-buffer &optional cont)
+           "Handle the complete loading response. BUFFER is the string of
+       text being sent over the process pipe. MODULE-BUFFER is the
+       actual Emacs buffer of the module being loaded."
+           (when (get-buffer (format "*%s:splices*" (haskell-session-name session)))
+             (with-current-buffer (haskell-interactive-mode-splices-buffer session)
+               (erase-buffer)))
+           (let* ((ok (cond
+                       ((haskell-process-consume
+                         process
+                         "Ok, \\(?:[0-9]+\\) modules? loaded\\.$")
+                        t)
+                       ((haskell-process-consume
+                         process
+                         "Ok, \\(?:[a-z]+\\) module loaded\\.$") ;; for ghc 8.4
+                        t)
+                       ((haskell-process-consume
+                         process
+                         "Failed, \\(?:[0-9]+\\) modules? loaded\\.$")
+                        nil)
+                       ((haskell-process-consume
+                         process
+                         "Ok, modules loaded: \\(.+\\)\\.$")
+                        t)
+                       ((haskell-process-consume
+                         process
+                         "Failed, modules loaded: \\(.+\\)\\.$")
+                        nil)
+                       (t
+                        (error (message "Unexpected response from haskell process.")))))
+                  (modules (haskell-process-extract-modules buffer))
+                  (cursor (haskell-process-response-cursor process))
+                  (warning-count 0))
+             (haskell-process-set-response-cursor process 0)
+             (haskell-check-remove-overlays module-buffer)
+             (while
+                 (haskell-process-errors-warnings module-buffer session process buffer)
+               (setq warning-count (1+ warning-count)))
+             (haskell-process-set-response-cursor process cursor)
+             (if (and (not reload)
+                      haskell-process-reload-with-fbytecode)
+                 (haskell-process-reload-with-fbytecode process module-buffer)
+               (haskell-process-import-modules process (car modules)))
+             (if ok
+                 (haskell-mode-message-line (if reload "Reloaded OK." "OK."))
+               (haskell-interactive-mode-compile-error session "Compilation failed."))
+             (when cont
+               (condition-case-unless-debug e
+                   (funcall cont ok)
+                 (error (message "%S" e))
+                 (quit nil))))))
+     #+END_SRC
 
 *** Motion
     The paredit for haskell, this weirdly needs [[exec-path-from-shell]] to work
@@ -6687,13 +6799,17 @@
     Actual mode to do the job
 
     #+BEGIN_SRC emacs-lisp :block-id 7dcc691e-16df-540c-0843-822d99c01e35
+      (with-eval-after-load 'latex
+        (add-hook 'latex-mode-hook 'flyspell-mode)
+
+        (add-to-list 'TeX-command-list '("XeLaTeX" "%`xelatex%(mode)%' %t" TeX-run-TeX nil t)))
+
       (use-package auctex
         :ensure t
         :defer t
         :init
         (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
         (add-hook 'latex-mode-hook 'turn-on-reftex)
-        (add-hook 'latex-mode-hook 'flyspell-mode)
         (setq reftex-plug-into-AUCTex t)
         :config
         (setq TeX-auto-save t
@@ -8154,12 +8270,12 @@
 
      (use-package calibre-mode
        :load-path fn/calibre-mode-package-dir
-       :defer t
+       :commands (calibre-list calibre-find)
        :config
        (setq sql-sqlite-program "sqlite3")
 
-       (setq calibre-root-dir "~/Books"
-          calibre-db (expand-file-name "metadata.db" calibre-root-dir)))
+       (setq calibre-root-dir (expand-file-name "Books" "~'")
+             calibre-db (expand-file-name "metadata.db" calibre-root-dir)))
    #+END_SRC
 
 * Scripts
