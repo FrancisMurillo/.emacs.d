@@ -5583,6 +5583,17 @@
             :defer t
             :commands (format-sql-buffer format-sql-region))))
     #+END_SRC
+** NoSQL
+*** Literate Programming
+    I need me some SQL support for NoSQL types
+
+    #+BEGIN_SRC emacs-lisp :block-id 52ced2ee-3888-35f1-e88b-2f3564b97a63
+      (use-package ob-mongo
+        :ensure t
+        :defer t
+        :after org)
+    #+END_SRC
+
 ** Web
 *** Mode
     The defacto mode for web development
