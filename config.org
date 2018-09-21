@@ -5118,6 +5118,16 @@
 
     #+END_SRC
 
+*** Markdown
+    Markdown editing
+
+    #+BEGIN_SRC emacs-lisp :block-id 9f29863c-e970-6161-ca7f-96c383d1893f
+      (use-package markdown-mode
+        :ensure t
+        :defer t
+        :config nil)
+    #+END_SRC
+
 *** evalator
     Expression building.
 
