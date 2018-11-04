@@ -6694,8 +6694,35 @@
     #+BEGIN_SRC emacs-lisp :block-id 10bab1d8-1d69-5d81-e5ba-4c75dca5a291
       (use-package rust-mode
         :ensure t
-        :defer t)
+        :defer t
+        :config
+        (setq rust-format-on-save t))
     #+END_SRC
+
+*** Completion
+    Code completion for Rust
+
+    #+BEGIN_SRC emacs-lisp :block-id 9c0e8673-fae1-8385-7f86-b5fa2af4f2e1
+      (use-package racer
+        :ensure t
+        :disabled t
+        :after company
+        :init
+        (add-hook 'rust-mode-hook #'racer-mode)
+        (add-hook 'racer-mode-hook #'company-mode))
+    #+END_SRC
+
+** Project Tooling
+   Cargo is the way to go
+
+   #+BEGIN_SRC emacs-lisp :block-id 4439f6e4-af8a-5298-8ddf-ddc8cdd400b7
+     (use-package cargo
+       :ensure t
+       :after rust
+       :init
+       (add-hook 'rust-mode-hook 'cargo-minor-mode))
+
+   #+END_SRC
 
 ** PHP
 *** Mode
@@ -6894,6 +6921,17 @@
               git-gutter:modified-sign "/"
               git-gutter:added-sign "+"
               git-gutter:deleted-sign "-"))
+    #+END_SRC
+
+
+*** Project Tooling
+    Cargo is the way to go
+
+    #+BEGIN_SRC emacs-lisp :block-id 56dd4258-4b58-e797-2436-b03da0f81ae2
+      (use-package cargo
+        :ensure t
+        :init
+        (add-hook 'rust-mode-hook 'cargo-minor-mode))
     #+END_SRC
 
 * Random Was Alone
