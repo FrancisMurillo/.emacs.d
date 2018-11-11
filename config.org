@@ -953,7 +953,7 @@
            "Install all-the-icons fonts in the `~/.local/share/fonts' folder.
      Tested on Arch Linux."
            (interactive)
-           (let ((local-font-folder (expand-file-name "~/.local/share/fonts")))
+           (let ((local-font-folder (expand-file-name "~/.local/share/fonts/")))
              (make-directory local-font-folder t)
              (mapcar
               (lambda (font-file)
@@ -6687,7 +6687,6 @@
 ** Rust
    A close C alternative
 
-
 *** Mode
     Major mode for Rust
 
@@ -6712,17 +6711,26 @@
         (add-hook 'racer-mode-hook #'company-mode))
     #+END_SRC
 
-** Project Tooling
-   Cargo is the way to go
+*** Linter
+    Integrate rust with flycheck
 
-   #+BEGIN_SRC emacs-lisp :block-id 4439f6e4-af8a-5298-8ddf-ddc8cdd400b7
-     (use-package cargo
-       :ensure t
-       :after rust
-       :init
-       (add-hook 'rust-mode-hook 'cargo-minor-mode))
+    #+BEGIN_SRC emacs-lisp :block-id c90a831d-97a8-bbef-0165-59740d87063e
+      (use-package flycheck-rust
+        :ensure t
+        :after rust
+        :config
+        (flycheck-rust-setup))
+    #+END_SRC
 
-   #+END_SRC
+*** Project Tooling
+    Cargo is the way to go
+
+    #+BEGIN_SRC emacs-lisp :block-id 56dd4258-4b58-e797-2436-b03da0f81ae2
+      (use-package cargo
+        :ensure t
+        :init
+        (add-hook 'rust-mode-hook 'cargo-minor-mode))
+    #+END_SRC
 
 ** PHP
 *** Mode
@@ -6789,13 +6797,7 @@
 
 ** Ruby
 *** Mode
-    I'll be using =enh-ruby-mode=
-
-    #+BEGIN_SRC emacs-lisp :block-id c45379d4-5485-4f3f-bbec-0fe4f417b36b
-      (use-package enh-ruby-mode
-        :ensure t
-        :mode (("\\.\\(rb\\)$" . enh-ruby-mode)))
-    #+END_SRC
+    Built in =ruby-mode= is enough
 
 *** Completion
     Still using [[company]] with [[robe]]
@@ -6807,15 +6809,51 @@
           (add-to-list 'company-backends 'company-robe)))
     #+END_SRC
 
+*** Linter
+    Integrating =rubocop= here
+
+    #+BEGIN_SRC emacs-lisp :block-id 72aee93d-2dee-3827-4c54-663cafcb9f97
+      (use-package rubocop
+        :ensure t
+        :after ruby
+        :hook ruby-mode
+        :config
+        nil)
+    #+END_SRC
+
 *** IDE
     Almost
 
     #+BEGIN_SRC emacs-lisp :block-id 3b8cee73-9554-9e25-183e-db0517d7f342
       (use-package robe
         :ensure t
-        :after enh-ruby-mode
-        :init
-        (add-hook 'enh-ruby-mode-hook 'robe-mode))
+        :after ruby-mode
+        :config
+        nil)
+    #+END_SRC
+
+*** Terminal
+    Some inferior process support
+
+    #+BEGIN_SRC emacs-lisp :block-id fbb14190-11fe-a8c6-0436-a63bae9e0311
+      (unless noninteractive
+        (use-package inf-ruby
+          :ensure t
+          :after ruby
+          :config
+          nil))
+    #+END_SRC
+
+*** Editing
+    Some editing tools
+
+    #+BEGIN_SRC emacs-lisp :block-id ba8a6b52-0db9-adf4-4f91-4f8757ae86d0
+      (unless noninteractive
+        (use-package ruby-tools
+          :ensure t
+          :after ruby
+          :config
+          nil))
     #+END_SRC
 
 *** Project
@@ -6921,17 +6959,6 @@
               git-gutter:modified-sign "/"
               git-gutter:added-sign "+"
               git-gutter:deleted-sign "-"))
-    #+END_SRC
-
-
-*** Project Tooling
-    Cargo is the way to go
-
-    #+BEGIN_SRC emacs-lisp :block-id 56dd4258-4b58-e797-2436-b03da0f81ae2
-      (use-package cargo
-        :ensure t
-        :init
-        (add-hook 'rust-mode-hook 'cargo-minor-mode))
     #+END_SRC
 
 * Random Was Alone
