@@ -2034,7 +2034,6 @@
         (add-hook 'wg-after-switch-to-workgroup-hook 'fn/wg-cleanup)
         (add-hook 'wg-after-switch-to-workgroup-hook 'garbage-collect)
 
-
         ;; Performance
         ;; Limit tracked buffers
         (defcustom fn/wg-buf-list-limit 500
@@ -2059,7 +2058,14 @@
                   (apply orig-fun args)
                 (golden-ratio-mode +1))))
 
-          (advice-add 'wg-switch-to-workgroup :around #'fn/workgroups-switch-disable-golden-ratio)))
+          (advice-add 'wg-switch-to-workgroup :around #'fn/workgroups-switch-disable-golden-ratio))
+
+        ;; Multi frame fix
+        (defun fn/wg-delete-other-frames (&rest args)
+          "Remove other frames on exit since it causes a `PickelError'."
+          (delete-other-frames))
+
+        (advice-add 'wg-save-session-on-exit :before #'fn/wg-delete-other-frames))
     #+END_SRC
 
 **** workgroup-layouts
