@@ -2147,6 +2147,7 @@
           :config
           (window-numbering-mode t)
 
+          (global-set-key (kbd "M-`") #'other-frame)
 
           (require 'dash)
 
@@ -2174,20 +2175,7 @@
                   (message "Window %s does not exist"
                            window-number)
                 (fn/swap-windows this-window that-window)
-                (select-window-by-number window-number)))))
-
-
-        (use-package winum
-          :ensure t
-          :disabled t
-          :demand t
-          :config
-          (setq window-numbering-scope 'global
-             winum-auto-setup-mode-line nil)
-
-          (winum-set-keymap-prefix (kbd "C-c C-x w"))
-
-          (winum-mode)))
+                (select-window-by-number window-number))))))
     #+END_SRC
 
 *** window-layout
