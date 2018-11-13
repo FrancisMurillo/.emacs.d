@@ -6815,33 +6815,17 @@
     #+BEGIN_SRC emacs-lisp :block-id 72aee93d-2dee-3827-4c54-663cafcb9f97
       (use-package rubocop
         :ensure t
-        :after ruby
-        :hook ruby-mode
+        :init
+        (add-hook 'ruby-mode-hook #'rubocop-mode)
         :config
         nil)
-    #+END_SRC
 
-*** IDE
-    Almost
-
-    #+BEGIN_SRC emacs-lisp :block-id 3b8cee73-9554-9e25-183e-db0517d7f342
-      (use-package robe
+      (use-package rubocopfmt
         :ensure t
-        :after ruby-mode
+        :init
+        (add-hook 'rubocop-mode-hook #'rubocopfmt-mode)
         :config
-        nil)
-    #+END_SRC
-
-*** Terminal
-    Some inferior process support
-
-    #+BEGIN_SRC emacs-lisp :block-id fbb14190-11fe-a8c6-0436-a63bae9e0311
-      (unless noninteractive
-        (use-package inf-ruby
-          :ensure t
-          :after ruby
-          :config
-          nil))
+        (setq rubocopfmt-use-bundler-when-possible nil))
     #+END_SRC
 
 *** Editing
@@ -6851,7 +6835,8 @@
       (unless noninteractive
         (use-package ruby-tools
           :ensure t
-          :after ruby
+          :init
+          (add-hook 'ruby-mode-hook #'ruby-tools-mode)
           :config
           nil))
     #+END_SRC
@@ -6860,9 +6845,19 @@
     Ruby has it's own environment
 
     #+BEGIN_SRC emacs-lisp :block-id 779d9b22-60a5-9956-ea14-8bba646238f0
-      (use-package rvm
+      (use-package projectile-rails
         :ensure t
-        :after robe)
+        :init
+        (add-hook 'projectile-mode-hook #'projectile-rails-global-mode)
+        :config
+        nil)
+
+      (use-package ruby-test-mode
+        :ensure t
+        :init
+        (add-hook 'ruby-mode-hook #'ruby-test-mode)
+        :config
+        nil)
     #+END_SRC
 
 ** dotNet
