@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 COMMAND=mbsync
-INTERVAL=30
+INTERVAL=15
 
 echo "Starting daemon"
 
