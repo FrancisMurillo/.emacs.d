@@ -6844,7 +6844,11 @@
         :init
         (add-hook 'projectile-mode-hook #'projectile-rails-global-mode)
         :config
-        nil)
+        (add-to-list
+         'display-buffer-alist
+         (cons
+          (rx bos "*projectile-rails-server*" eos)
+          (cons 'display-buffer-same-window (list)))))
 
       (use-package ruby-test-mode
         :ensure t
