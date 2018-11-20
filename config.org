@@ -1183,6 +1183,27 @@
          (rx bos "*prodigy-" (* anything))
          (cons 'display-buffer-same-window (list))))
 
+       ;; Service restart shiv
+       (defun prodigy-find-service-by-buffer (&optional buffer)
+         "Find `prodigy' service based on BUFFER name."
+         (let* ((this-prodigy-buffer-name (buffer-name buffer))
+                (service (-find
+                          (lambda (service)
+                            (string= (prodigy-buffer-name service)
+                                     this-prodigy-buffer-name))
+                          (prodigy-services))))
+           service))
+
+       (defun prodigy-restart-view ()
+         "Restart a `prodigy-view-mode' buffer."
+         (interactive)
+         (-if-let (service (prodigy-find-service-by-buffer))
+             (prodigy-with-refresh
+              (prodigy-restart-service service))
+           (error "Current buffer is not a prodigy view buffer.")))
+
+       (define-key prodigy-view-mode-map (kbd "C-c r") #'prodigy-restart-view)
+
        (fn/use-feature prodigy-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
