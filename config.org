@@ -4897,6 +4897,31 @@
           nil))
     #+END_SRC
 
+*** ripgrep
+    Allow for ripgrep
+
+    #+BEGIN_SRC emacs-lisp :block-id de06748b-2d12-d328-5f56-4d23d61b177f
+      (unless noninteractive
+        (fn/use-executables ripgrep-check
+          (rg)
+          (use-package ripgrep
+            :ensure t
+            :defer t
+            :after projectile
+            :config
+            (add-to-list
+             'display-buffer-alist
+             (cons
+              (rx bos "*ripgrep-search*" eos)
+              (cons 'display-buffer-same-window (list))))
+
+            (fn/use-feature ripgrep-mode--mode-icon
+              (ripgrep all-the-icons)
+              (fn/add-major-mode-icon
+               'ripgrep-search-mode
+               (list 'all-the-icons-faicon "binoculars" :v-adjust -0.1))))))
+    #+END_SRC
+
 *** dumb-jump
     Dump jumping with =ag=
 
