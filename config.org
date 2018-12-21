@@ -6904,6 +6904,40 @@
         nil)
     #+END_SRC
 
+** Solidity
+   Block chain development.
+
+*** Mode
+    Major mode support
+
+    #+BEGIN_SRC emacs-lisp :block-id c282d8b7-9fc9-feb6-bfd8-72df64ea9977
+      (use-package solidity-mode
+        :ensure t
+        :defer t
+        :config
+        nil)
+    #+END_SRC
+
+*** Linter
+    Flycheck support
+
+    #+BEGIN_SRC emacs-lisp :block-id b11a2210-cb08-a519-8aa7-f94211749548
+      (use-package solidity-flycheck
+        :ensure t
+        :hook solidity
+        :config
+        nil)
+    #+END_SRC
+
+*** Autocomplete
+    Company completion
+
+    #+BEGIN_SRC emacs-lisp :block-id dbec1ab5-6c00-627c-0520-73199854883b
+      (use-package company-solidity
+        :ensure t
+        :hook solidity)
+    #+END_SRC
+
 ** dotNet
 *** omnisharp
     For C# development
