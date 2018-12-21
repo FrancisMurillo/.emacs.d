@@ -6713,7 +6713,7 @@
         :ensure t
         :defer t
         :init
-        (add-hook 'elixir-mode-hook 'alchemist-mode)
+        (add-hook 'elixir-mode-hook #'alchemist-mode)
         :config
         (setq alchemist-test-status-modeline nil
               alchemist-hooks-compile-on-save t
