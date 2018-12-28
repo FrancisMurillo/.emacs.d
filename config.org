@@ -8325,83 +8325,87 @@
     I prefer =mpd= as a music player as it is more stable.
 
     #+BEGIN_SRC emacs-lisp :block-id 1f4faf52-204f-8d79-a1a6-60c474d30480
-      (fn/use-executables mpd-check
-        (mpd)
-        (fn/use-feature emms-mpd
-          (emms)
-          (require 'emms-player-mpd)
+            (fn/use-executables mpd-check
+              (mpd)
+              (fn/use-feature emms-mpd
+                (emms)
+                (require 'emms-player-mpd)
 
-          (setq emms-player-mpd-supported-regexp
-                (regexp-opt '(".ogg" ".mp3" ".wav" ".mpg" ".mpeg" ".wmv" ".wma"
-                              ".mov" ".avi" ".divx" ".ogm" ".asf" ".mkv" "http://" "mms://"
-                              ".rm" ".rmvb" ".mp4" ".flac" ".vob" ".m4a" ".flv" ".ogv" ".pls")))
+                (setq emms-player-mpd-supported-regexp
+                      (regexp-opt '(".ogg" ".mp3" ".wav" ".mpg" ".mpeg" ".wmv" ".wma"
+                                    ".mov" ".avi" ".divx" ".ogm" ".asf" ".mkv" "http://" "mms://"
+                                    ".rm" ".rmvb" ".mp4" ".flac" ".vob" ".m4a" ".flv" ".ogv" ".pls")))
 
-          (add-to-list 'emms-info-functions 'emms-info-mpd)
-          (add-to-list 'emms-player-list 'emms-player-mpd))
+                (add-to-list 'emms-info-functions 'emms-info-mpd)
+                (add-to-list 'emms-player-list 'emms-player-mpd))
 
-        (fn/use-feature prodigy-emms-mpd
-          (prodigy emms)
-          (defcustom fn/emms-mpd-cache-dir (expand-file-name "emms-mpd" fn/cache-dir)
-            "Emms cache directory."
-            :type 'directory)
+              (fn/use-feature prodigy-emms-mpd
+                (prodigy emms)
+                (defcustom fn/emms-mpd-cache-dir (expand-file-name "emms-mpd" fn/cache-dir)
+                  "Emms cache directory."
+                  :type 'directory)
 
-          (defcustom fn/emms-mpd-config-file (expand-file-name "mpd.conf" fn/emms-mpd-cache-dir)
-            "Mpd config file"
-            :type 'file)
+                (defcustom fn/emms-mpd-config-file (expand-file-name "mpd.conf" fn/emms-mpd-cache-dir)
+                  "Mpd config file"
+                  :type 'file)
 
-          (defcustom fn/emms-mpd-port 38700
-            "Mpd port config file"
-            :type 'number)
+                (defcustom fn/emms-mpd-port 38700
+                  "Mpd port config file"
+                  :type 'number)
 
-          (defun fn/emms-mpd-update-conf (&rest args)
-            "Create/update `fn/emms-mpd-config-file' with new
-      configurations."
-            (interactive)
-            (make-directory fn/emms-mpd-cache-dir t)
+                (defun fn/emms-mpd-update-conf (&rest args)
+                  "Create/update `fn/emms-mpd-config-file' with new
+            configurations."
+                  (interactive)
+                  (make-directory fn/emms-mpd-cache-dir t)
 
-            (setq emms-player-mpd-server-port nil
-                  emms-player-mpd-server-name (expand-file-name "socket" fn/emms-mpd-cache-dir))
+                  (setq emms-player-mpd-server-port nil
+                        emms-player-mpd-server-name (expand-file-name "socket" fn/emms-mpd-cache-dir))
 
-            (fn/prodigy-create-mpd-conf
-             fn/emms-mpd-config-file
-             `(("music_directory" . ,emms-source-file-default-directory)
-               ("connection_timeout" . 30)
-               ("state_file" . ,(expand-file-name "state" fn/emms-mpd-cache-dir))
-               ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
-               ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
-               ("port" . ,fn/emms-mpd-port)
-               ("bind_to_address" . ,emms-player-mpd-server-name)
-               ("database" . (("plugin" . "simple")
-                              ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
+                  (fn/prodigy-create-mpd-conf
+                   fn/emms-mpd-config-file
+                   `(("music_directory" . ,(expand-file-name emms-source-file-default-directory))
+                     ("playlist_directory" . ,(expand-file-name "Playlist"))
+                     ("connection_timeout" . 30)
+                     ("state_file" . ,(expand-file-name "state" fn/emms-mpd-cache-dir))
+                     ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
+                     ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
+                     ("port" . ,fn/emms-mpd-port)
+                     ("bind_to_address" . ,emms-player-mpd-server-name)
+                     ("audio_output" . (("type" . "pulse")
+                                        ("name" . "My PULSE Device")))
+                     ("database" . (("plugin" . "simple")
+                                    ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
 
-          (defun fn/emms-mpd-on-start (&rest args)
-            "On start of mpd server.."
-            (emms-player-mpd-connect)
-            (emms-cache-set-from-mpd-all))
+                (defun fn/emms-mpd-on-start (&rest args)
+                  "On start of mpd server.."
+                  (setq emms-volume-change-function 'emms-volume-mpd-change)
+                  (emms-player-mpd-connect)
+                  (emms-cache-set-from-mpd-all))
 
-          (defun fn/emms-mpd-on-stop (&rest args)
-            "On stop of mpd server."
-            (emms-player-mpd-disconnect))
+                (defun fn/emms-mpd-on-stop (&rest args)
+                  "On stop of mpd server."
+                  (emms-player-mpd-disconnect))
 
-          (defconst fn/emms-mpd-service-name "emms-mpd"
-            "Emms mpd prodigy service name.")
+                (defconst fn/emms-mpd-service-name "emms-mpd"
+                  "Emms mpd prodigy service name.")
 
-          (fn/prodigy-define-service
-           :name fn/emms-mpd-service-name
-           :tags '(mpd emms)
-           :init #'fn/emms-mpd-update-conf
-           :on-start #'fn/emms-mpd-on-stop
-           :on-stop #'emms-player-mpd-disconnect
-           :args `("--no-daemon"
-                   "--stderr"
-                   "--verbose"
-                   ,fn/emms-mpd-config-file)
+                (fn/prodigy-define-service
+                 :name fn/emms-mpd-service-name
+                 :tags '(mpd emms)
+                 :init #'fn/emms-mpd-update-conf
+                 :on-start #'fn/emms-mpd-on-stop
+                 :on-stop #'emms-player-mpd-disconnect
+                 :args `("--no-daemon"
+                         "--stderr"
+                         "--verbose"
+                         ,fn/emms-mpd-config-file)
 
-           :bind-name "emms-mpd"
-           :bind-map fn/prodigy-map
-           :bind (kbd "m m"))
+                 :bind-name "emms-mpd"
+                 :bind-map fn/prodigy-map
+                 :bind (kbd "m m"))
 
-          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
+                (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
     #+END_SRC
 
 *** COMMENT VLC Integration
