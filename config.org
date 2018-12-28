@@ -5154,6 +5154,15 @@
 
     #+END_SRC
 
+*** GraphQL
+    GraphQL support
+
+    #+BEGIN_SRC emacs-lisp :block-id d41152e2-aa5a-bc66-2e4f-eaf8b4d9c2a6
+      (use-package graphql-mode
+        :ensure t
+        :defer t)
+    #+END_SRC
+
 *** Markdown
     Markdown editing
 
