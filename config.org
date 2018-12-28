@@ -8364,18 +8364,22 @@
 
             (fn/prodigy-create-mpd-conf
              fn/emms-mpd-config-file
-             `(("music_directory" . ,emms-source-file-default-directory)
+             `(("music_directory" . ,(expand-file-name emms-source-file-default-directory))
+               ("playlist_directory" . ,(expand-file-name "Playlist"))
                ("connection_timeout" . 30)
                ("state_file" . ,(expand-file-name "state" fn/emms-mpd-cache-dir))
                ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
                ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
                ("port" . ,fn/emms-mpd-port)
                ("bind_to_address" . ,emms-player-mpd-server-name)
+               ("audio_output" . (("type" . "pulse")
+                                  ("name" . "My PULSE Device")))
                ("database" . (("plugin" . "simple")
                               ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
 
           (defun fn/emms-mpd-on-start (&rest args)
             "On start of mpd server.."
+            (setq emms-volume-change-function 'emms-volume-mpd-change)
             (emms-player-mpd-connect)
             (emms-cache-set-from-mpd-all))
 
