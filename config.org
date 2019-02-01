@@ -1390,36 +1390,15 @@
         :bind (("C-=" . er/expand-region)))
     #+END_SRC
 
-*** multiple-cursors
-    This functions does not get too much attention
-
-    #+BEGIN_SRC emacs-lisp :block-id 46dc1c91-1847-19d5-981e-6b68a22b3b16
-      (use-package multiple-cursors
-        :ensure t
-        :bind (("C-S-c C-S-c" . mc/edit-lines)
-               ("C->" . mc/mark-next-like-this)
-               ("C-<" . mc/mark-previous-like-this)
-               ("C-c C-<" . mc/mark-all-like-this)))
-    #+END_SRC
 *** undo-tree
     Visualizing undo like vi
 
     #+BEGIN_SRC emacs-lisp :block-id 30703a30-7eb6-884f-b69c-ec5e4ab5b73a
       (use-package undo-tree
         :ensure t
-        :defer t
         :diminish undo-tree-mode
         :bind (:map fn-standard-prefix-map
                     ("C-_" . undo-tree-visualize)))
-    #+END_SRC
-
-*** glasses
-    I don't like the camelCase convention  so I make it more like Emacs.
-
-    #+BEGIN_SRC emacs-lisp :block-id bc2bb876-e2b5-ac90-acd0-07047d7487ea
-      (unless noninteractive
-        (with-eval-after-load 'glasses
-          (setq glasses-separator "~")))
     #+END_SRC
 
 ** Completion
@@ -1431,8 +1410,7 @@
         :bind (("M-/" . hippie-expand))
         :config
         (setq hippie-expand-try-functions-list
-           '(
-                try-expand-dabbrev
+              '(try-expand-dabbrev
                 try-expand-dabbrev-all-buffers
                 try-complete-file-name-partially
                 try-complete-file-name
@@ -1451,90 +1429,86 @@
     A replacement for =autocomplete=.
 
     #+BEGIN_SRC emacs-lisp :block-id 14b030d6-a17c-98ae-444f-7529560d8b4d
-      (unless noninteractive
-        (use-package company
-          :ensure t
-          :diminish company-mode
-          :defines company-backends
-          :demand t
-          :init
-          (add-hook 'prog-mode-hook 'company-mode)
-          :config
-          (setq company-idle-delay (/ 60.0)
-                company-minimum-prefix-length 3
+      (use-package company
+        :ensure t
+        :unless noninteractive
+        :diminish company-mode
+        :defines company-backends
+        :hook (prog-mode company-mode)
+        :config
+        (setq company-idle-delay (/ 60.0)
+              company-minimum-prefix-length 3
 
-                company-begin-commands (list 'self-insert-command))
+              company-begin-commands (list 'self-insert-command))
 
+        (setq company-show-numbers t
+              company-tooltip-limit 20
+              company-tooltip-align-annotations t)
 
-          (setq company-show-numbers t
-                company-tooltip-limit 20
-                company-tooltip-align-annotations t)
+        (setq company-dabbrev-time-limit 0.001
+              company-dabbrev-code-time-limit 0.001
+              company-dabbrev-downcase nil)
 
+        (setq company-backends (list))
 
-          (setq company-dabbrev-time-limit 0.001
-                company-dabbrev-code-time-limit 0.001
-                company-dabbrev-downcase nil)
+        (add-to-list 'company-backends 'company-capf)
+        (add-to-list 'company-backends 'company-dabbrev)
+        (add-to-list 'company-backends 'company-elisp)
+      v
+        (defun fn/combine-backends (backend new-backend)
+          "Combine BACKEND with NEW-BACKEND."
+          (if (and (listp backend) (member new-backend backend))
+              backend
+            (let* ((list-backend (if (consp backend)
+                                     backend
+                                   (list backend)))
+                   (with-backend (if (member ':with list-backend)
+                                     list-backend
+                                   (append list-backend '(:with)))))
+              (append with-backend (list new-backend)))))
 
+        (defun fn/append-to-backends (new-backend)
+          "Append NEW-BACKEND to company."
+          (setq company-backends
+                (mapcar
+                 (lambda (backend)
+                   (fn/combine-backends backend new-backend))
+                 company-backends)))
 
-          (setq company-backends (list))
+        (setq fn/company-prog-backends (list 'company-dabbrev-code))
 
-          (add-to-list 'company-backends 'company-capf)
-          (add-to-list 'company-backends 'company-dabbrev)
-          (add-to-list 'company-backends 'company-elisp)
+        (defun fn/backend-with-prog ()
+          (fn/append-to-backends 'company-keywords)))
 
-          (defun fn/combine-backends (backend new-backend)
-            "Combine BACKEND with NEW-BACKEND."
-            (if (and (listp backend) (member new-backend backend))
-                backend
-              (let* ((list-backend (if (consp backend)
-                                       backend
-                                     (list backend)))
-                     (with-backend (if (member ':with list-backend)
-                                       list-backend
-                                     (append list-backend '(:with)))))
-                (append with-backend (list new-backend)))))
-
-          (defun fn/append-to-backends (new-backend)
-            "Append NEW-BACKEND to company."
-            (setq company-backends
-                  (mapcar
-                   (lambda (backend)
-                     (fn/combine-backends backend new-backend))
-                   company-backends)))
-
-          (setq fn/company-prog-backends (list 'company-dabbrev-code))
-
-          (defun fn/backend-with-prog ()
-            (fn/append-to-backends 'company-keywords))))
     #+END_SRC
 
 *** yasnippet
     Snippet system along with autocomplete is awesome
 
     #+BEGIN_SRC emacs-lisp :block-id 26aea11a-6b42-e3c0-dc5f-a8ba5ceb6f42
-      (unless noninteractive
-        (use-package yasnippet
-          :ensure t
-          :defer t
-          :diminish yas-minor-mode
-          :bind (:map fn-standard-prefix-map
-                      ("y" . yas-new-snippet))
-          :init
-          (setq yas-verbosity 3
-                yas/root-directory (expand-file-name "snippets" fn/extra-dir)
-                yas--default-user-snippets-dir yas/root-directory
-                yas-snippet-dirs `(,yas/root-directory))
+      (use-package yasnippet
+        :ensure t
+        :unless noninteractive
+        :diminish yas-minor-mode
+        :hook (prog-mode . yas-minor-mode)
+        :bind (:map fn-standard-prefix-map
+                    ("y" . yas-new-snippet))
+        :init
+        (setq yas-verbosity 3
+              yas/root-directory (expand-file-name "snippets" fn/extra-dir)
+              yas--default-user-snippets-dir yas/root-directory
+              yas-snippet-dirs `(,yas/root-directory))
 
-          (make-directory yas--default-user-snippets-dir t)
-          (add-hook 'prog-mode-hook 'yas-minor-mode)
-          :config
-          (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
+        (make-directory yas--default-user-snippets-dir t)
+        :config
+        (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
 
-          (defun fn/add-company-yasnippet ()
-            "Add yasnippet to company backends"
-            (fn/append-to-backends 'company-yasnippet))
+        (defun fn/add-company-yasnippet ()
+          "Add yasnippet to company backends"
+          (fn/append-to-backends 'company-yasnippet))
 
-          (add-hook 'after-init-hook 'fn/add-company-yasnippet)))
+        (add-hook 'after-init-hook 'fn/add-company-yasnippet))
+
     #+END_SRC
 
 * Ergonomic
