@@ -91,44 +91,14 @@
    The package manager of this whole configuration
 
    #+BEGIN_SRC emacs-lisp :block-id 363333a0-026e-ebda-9692-2dfed8316172
-     (require 'use-package)
+     (eval-when-compile
+       (require 'use-package))
 
      (setq use-package-verbose t
-        use-package-check-before-init t
-        use-package-minimum-reported-time 0.025
-        use-package-always-defer t
-        use-package-always-defer-install nil)
-
-     (progn ;; :fn-hook keyword
-       (add-to-list 'use-package-keywords :fn-hook t)
-
-       (defun use-package-normalize/:fn-hook (name-symbol keyword args)
-         "`use-package' normalizer for `:fn-hook'."
-         (use-package-only-one (symbol-name keyword) args
-           (lambda (label arg)
-             (cond
-              ((symbolp arg) arg)
-              (t
-               (use-package-error
-                ":fn-hook should be a symbol hook"))))))
-
-       (defun use-package-handler/:fn-hook  (name-symbol keyword hook-symbol rest state)
-         (let* ((body (use-package-process-keywords name-symbol rest state))
-             (package-hook-symbol
-              (intern
-               (concat
-                "fn/use-package--fn-hook--"
-                (symbol-name name-symbol)
-                "--"
-                (symbol-name hook-symbol))))
-             (package-hook
-              (fset package-hook-symbol
-                    `(lambda ()
-                       ,(format "`fn-hook' require hook for `%s' with `%s'"
-                                (symbol-name name-symbol) (symbol-name hook-symbol))
-                       (require (quote ,name-symbol))))))
-           (add-hook hook-symbol package-hook-symbol)
-           body)))
+           use-package-check-before-init t
+           use-package-minimum-reported-time 0.025
+           use-package-always-defer t
+           use-package-always-defer-install nil)
    #+END_SRC
 
 ** Org Src
@@ -231,79 +201,52 @@
      (add-to-list 'load-path fn/custom-script-dir)
    #+END_SRC
 
-* Basic Setup
-  Basic configurations anyone can do for vanilla Emacs
+* Vanilla Emacs
+  Basic configurations that I need for vanilla Emacs
 
-** Personal Information
-   Just some things that relate to me
+** Environment
+   Some environment configuration.
 
-   #+BEGIN_SRC emacs-lisp :block-id fb2d2f9a-2897-33af-e228-d088d9e8c242
-     (defconst fn/personal-file-name ".personal.el"
-       "Personal configuration file name")
+   #+BEGIN_SRC emacs-lisp :block-id e0adbf59-f7d8-f4c2-281d-4cabc523a47e
+     (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
 
-     (defconst fn/personal-file (expand-file-name fn/personal-file-name "~")
-       "Personal configuration file to be loaded. This is symlinked in another private repository")
+     (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
 
-     (load fn/personal-file t)
-   #+END_SRC
+     (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
 
-** Customization
-   Basis for configuration
+     (mouse-avoidance-mode 'cat-and-mouse) ;; Avoid mouse
 
-   #+BEGIN_SRC emacs-lisp :block-id 8e36f9f4-4f43-646d-eb41-4ff7d425d03e
-     ;; Don't really care about custom file
+     (setq comint-input-ignoredups t)
+
+     (setq search-highlight t)
+
+     ;; This ignores whitespace when searching
+     (setq-default search-whitespace-regexp ".*?")
+
+     (setq save-interprogram-paste-before-kill t)
+
+     (global-set-key (kbd "RET") 'newline-and-indent)
+
+     (temp-buffer-resize-mode t)
+
+     (setq compilation-window-height 10
+           compilation-scroll-output 'first-error
+           compilation-ask-about-save nil)
+
+     (setq whitespace-line-column 10000 ;; No line too long font locking please
+           sentence-end-double-space nil
+           require-final-newline t)
+
+     (setq-default indent-tabs-mode nil)
+
+     (add-hook 'makefile-mode-hook 'indent-tabs-mode)
+
+     ;; I don't need the customization group but might be useful keeping it around
      (setq custom-file (expand-file-name "custom-file.el" fn/cache-dir))
-
-
-     (defgroup fn nil
-       "My namespace for customizing my configuration")
-
-
-     ;;* Custom Prefixes
-     ;; Anything that just calls normal commands
-     ;; Binding: C-c n
-     (define-prefix-command 'fn-standard-prefix-map)
-
-     ;; Anything that I worked experimentally on
-     ;; Binding: C-c m
-     (define-prefix-command 'fn-custom-prefix-map)
-
-     ;; Anything that is important while I am working on something
-     ;; Binding: C-c C-m / C-c C-n / C-c b / C-C C-b
-     (define-prefix-command 'fn-work-prefix-map)
-
-
-     (defun fn/make-prefixed-keymap (key &optional base-keymap)
-       "Make a sparse keymap that is already prefixed by KEY.
-     It also accepts a BASE-KEYMAP if you are prefixing an existing key map."
-       (let* ((prefixed-keymap (make-sparse-keymap))
-              (target-keymap (or base-keymap
-                                 prefixed-keymap)))
-         (define-key target-keymap key prefixed-keymap)
-         prefixed-keymap))
-
-
-     ;;* Custom Key Sequences
-     (defconst fn/standard-key-sequence (kbd "C-c n")
-       "My standard key sequence.")
-
-     (defconst fn/custom-key-sequence (kbd "C-c m")
-       "My custom key sequence.")
-
-     (defconst fn/work-key-sequence (kbd "C-c C-m")
-       "My work key sequence.")
-
-     (defun fn/make-work-keymap (&optional base-keymap)
-       "Just `fn/make-prefixed-keymap` with `fn/work-key-sequence`."
-       (fn/make-prefixed-keymap fn/work-key-sequence base-keymap))
-
-
-     (global-set-key (kbd "C-c n") fn-standard-prefix-map)
-     (global-set-key (kbd "C-c m") fn-custom-prefix-map)
    #+END_SRC
 
-** Startup
-   Everything related to the startup state
+** Garbage Collector
+   Making the garbage collector more colorful and loose
 
    #+BEGIN_SRC emacs-lisp :block-id e3857d2d-0e50-e886-7186-cd58a7fd80ee
      (defconst fn/gc-cons-threshold (* 256 1024 1024)
@@ -312,23 +255,25 @@
      (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
 
-     (defvar fn/my-lightning (concat
-                         (propertize
-                          " MY LIGHTNING "
-                          'face '(:background "#ff1e02" :foreground "#110200"
-                                              :box (:line-width 0 :color "#ff1e02")))
-                         "...")
+     (defvar fn/my-lightning
+       (concat
+        (propertize
+         " MY LIGHTNING "
+         'face '(:background "#ff1e02" :foreground "#110200"
+                             :box (:line-width 0 :color "#ff1e02")))
+        "...")
        "A reference to continue?987654321.
      May I accept the lightning.")
 
-     (defvar fn/my-prayer (format "%s %s"
-                             fn/my-lightning
-                             (concat
-                              (propertize
-                               " MY PRAYER "
-                               'face '(:background "#ffffff" :foreground "#121212"
-                                                   :box (:line-width 0 :color "#ffffff")))
-                              "..."))
+     (defvar fn/my-prayer
+       (format "%s %s"
+               fn/my-lightning
+               (concat
+                (propertize
+                 " MY PRAYER "
+                 'face '(:background "#ffffff" :foreground "#121212"
+                                     :box (:line-width 0 :color "#ffffff")))
+                "..."))
        "The closing message for garbage collection.
      May I be lift up.")
 
@@ -351,22 +296,10 @@
 
 
      ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
-     (run-with-idle-timer 30 t #'garbage-collect)
-
+     (run-with-idle-timer 120 t #'garbage-collect)
 
      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-        initial-scratch-message nil)
-   #+END_SRC
-
-** Environment
-   Some environment configuration.
-
-   #+BEGIN_SRC emacs-lisp :block-id e0adbf59-f7d8-f4c2-281d-4cabc523a47e
-     (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
-
-     (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
-
-     (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
+           initial-scratch-message nil)
    #+END_SRC
 
 ** Backups
@@ -425,33 +358,6 @@
                                                'regexp-search-ring))
 
      (savehist-mode t)
-
-
-     (setq bookmark-file (expand-file-name "bookmarks" fn/cache-dir)
-           bookmark-default-file (expand-file-name "bookmarks-default" fn/cache-dir))
-
-     (add-to-list
-      'display-buffer-alist
-      (cons
-       (rx bos "*Bookmark List*" eos)
-       (cons 'display-buffer-same-window (list))))
-   #+END_SRC
-
-** Editing
-   Some editing configurations
-
-   #+BEGIN_SRC emacs-lisp :block-id b761153a-62c3-05c4-7231-89856bbae249
-     (setq whitespace-line-column 10000 ;; No line too long font locking please
-
-           ;; C-M-a should go to the beginning of a sentence
-           sentence-end-double-space nil
-
-           require-final-newline t)
-
-     ;; I like tabs but they should just be converted to spaces for equality
-     (setq-default indent-tabs-mode nil)
-
-     (add-hook 'makefile-mode 'indent-tabs-mode)
    #+END_SRC
 
 ** Bookmark
@@ -459,94 +365,20 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 3730e40d-63fb-3b03-1830-a85c557fe522
      (setq bookmark-default-file (expand-file-name "bookmarks" fn/cache-dir)
-        bookmark-save-flag t)
-   #+END_SRC
+           bookmark-file bookmark-default-file
+           bookmark-save-flag t)
 
-** Search
-   You must have this setup, it's like butter and you're the bread.
-
-   #+BEGIN_SRC emacs-lisp :block-id 7d1d92eb-2c93-53fe-e24f-dfcb94509754
-     (defconst fn/default-search-whitespace-regexp search-whitespace-regexp
-       "Store the default whitespace option")
-
-     (setq search-highlight t)
-
-     ;; This ignores whitespace when searching
-     (setq-default search-whitespace-regexp ".*?")
-
-
-     (defun fn/isearch-forward-normally ()
-       "This custom command does i-search without the whitespace skips,
-        the vanilla behavior"
-       (interactive)
-       (let ((search-whitespace-regexp fn/default-search-whitespace-regexp))
-         (isearch-forward)))
-
-
-     (defun fn/isearch-backward-normally ()
-       "Ditto with fn/isearch-foward-normally except backwards."
-       (interactive)
-       (let ((search-whitespace-regexp fn/default-search-whitespace-regexp))
-         (isearch-backward)))
-   #+END_SRC
-
-** Coding
-   Some programming configuration that make sense
-
-   #+BEGIN_SRC emacs-lisp :block-id 0654a092-0c78-f18e-e9bb-515041e26a3a
-     (setq save-interprogram-paste-before-kill t)
-
-     ;; Please indent after newline to maintain sanity
-     (global-set-key (kbd "RET") 'newline-and-indent)
-
-
-     (make-variable-buffer-local
-      (defvar fn/whitespace-cleanup-on-save t
-        "When non-nil, delete trailing whitespace on save"))
-
-     (add-to-list 'safe-local-variable-values '(fn/whitespace-cleanup-on-save))
-
-     (defun fn/delete-trailing-whitespace-on-save ()
-       "Delete trailing whitespace on save."
-       (when fn/whitespace-cleanup-on-save
-         (with-current-buffer (current-buffer)
-           (message "Deleting trailing whitespace in %s" (current-buffer))
-           (delete-trailing-whitespace (point-min) (point-max)))))
-
-     ;; (add-hook 'before-save-hook 'fn/delete-trailing-whitespace-on-save)
-
-     (defun fn/disable-delete-trailing-whitespace-on-save ()
-       "Disable `fn/delete-trailing-whitespace-on-save' for a specific mode."
-       (setq-local fn/whitespace-cleanup-on-save nil))
-
-     (add-hook 'makefile-mode-hook 'fn/disable-delete-trailing-whitespace-on-save t)
-
-
-     (temp-buffer-resize-mode t)
-
-     (setq compilation-window-height 10
-           compilation-scroll-output 'first-error
-           compilation-ask-about-save nil)
-   #+END_SRC
-
-** Mouse
-   I better be a cat
-
-   #+BEGIN_SRC emacs-lisp :block-id 218a476d-ce2f-a92a-cf26-54576622e00a
-     (mouse-avoidance-mode 'cat-and-mouse)
-   #+END_SRC
-** Shell
-   Some minor shell enhancement
-
-   #+BEGIN_SRC emacs-lisp :block-id 185a0a15-d659-6d03-bcf2-3eef1997af21
-     (setq comint-input-ignoredups t)
+     (add-to-list
+      'display-buffer-alist
+      `(,(rx bos "*Bookmark List*" eos) .
+        (display-buffer-same-window .  ())))
    #+END_SRC
 
 ** Others
    Some other configurations that I can't classify yet
 
    #+BEGIN_SRC emacs-lisp :block-id 0bf9bac3-a449-98ef-8936-fa7e6d1f4205
-     (setq auth-sources (list (list  :source "~/.authinfo.gpg")))
+     (setq auth-sources '((:source "~/.authinfo.gpg")))
 
      (setq browse-url-browser-function 'browse-url-generic
            browse-url-generic-program "chromium")
@@ -560,6 +392,58 @@
      (put 'downcase-region 'disabled nil)
      (put 'upcase-region 'disabled nil)
    #+END_SRC
+
+** Namespace
+   Basis for configuration
+
+   #+BEGIN_SRC emacs-lisp :block-id 8e36f9f4-4f43-646d-eb41-4ff7d425d03e
+     (defgroup fn nil
+       "My namespace for customizing my configuration")
+
+
+     ;;* Custom Prefixes
+     ;; Anything that just calls normal commands
+     ;; Binding: C-c n
+     (define-prefix-command 'fn-standard-prefix-map)
+
+     ;; Anything that I worked experimentally on
+     ;; Binding: C-c m
+     (define-prefix-command 'fn-custom-prefix-map)
+
+     ;; Anything that is important while I am working on something
+     ;; Binding: C-c C-m / C-c C-n / C-c b / C-C C-b
+     (define-prefix-command 'fn-work-prefix-map)
+
+
+     (defun fn/make-prefixed-keymap (key &optional base-keymap)
+       "Make a sparse keymap that is already prefixed by KEY.
+     It also accepts a BASE-KEYMAP if you are prefixing an existing key map."
+       (let* ((prefixed-keymap (make-sparse-keymap))
+              (target-keymap (or base-keymap
+                                 prefixed-keymap)))
+         (define-key target-keymap key prefixed-keymap)
+         prefixed-keymap))
+
+
+     ;;* Custom Key Sequences
+     (defconst fn/standard-key-sequence (kbd "C-c n")
+       "My standard key sequence.")
+
+     (defconst fn/custom-key-sequence (kbd "C-c m")
+       "My custom key sequence.")
+
+     (defconst fn/work-key-sequence (kbd "C-c C-m")
+       "My work key sequence.")
+
+     (defun fn/make-work-keymap (&optional base-keymap)
+       "Just `fn/make-prefixed-keymap` with `fn/work-key-sequence`."
+       (fn/make-prefixed-keymap fn/work-key-sequence base-keymap))
+
+
+     (global-set-key (kbd "C-c n") fn-standard-prefix-map)
+     (global-set-key (kbd "C-c m") fn-custom-prefix-map)
+   #+END_SRC
+
 * Dependencies
   Everything needed to support this more complex configurations
 
@@ -590,15 +474,19 @@
 
    #+BEGIN_SRC emacs-lisp :block-id 80387d51-f9a0-25ab-75ea-a36947dbeb03
      (use-package s
-       :ensure t)
+       :ensure t
+       :defer t)
    #+END_SRC
+
 ** f
    File manipulation library for Emacs
 
    #+BEGIN_SRC emacs-lisp :block-id bad34a22-8eab-ea19-6a8b-da30a258fff8
      (use-package f
-       :ensure t)
+       :ensure t
+       :defer t)
    #+END_SRC
+
 ** promise
    Something to help with package configuration
 
@@ -656,10 +544,10 @@
    Unicode is an required aesthetic
 
    #+BEGIN_SRC emacs-lisp :block-id 0e75a034-c275-fe20-35db-c9d18176e817
-     (use-package pcache ;; Required by unicode-fonts
+     (use-package pcache
        :ensure t
+       :defer t
        :init
-       ;; Mentioned here to redirect directory
        (setq pcache-directory (expand-file-name "pcache/" fn/cache-dir)))
 
      (use-package unicode-fonts
@@ -667,46 +555,6 @@
        :demand t
        :config
        (unicode-fonts-setup))
-   #+END_SRC
-
-** persistent-soft
-   Nice to have some persistence.
-
-   #+BEGIN_SRC emacs-lisp :block-id 5ae1d8f2-f9b7-4eff-d903-020af5b5a9b3
-     (use-package persistent-soft
-       :ensure t
-       :demand t
-       :config
-       (defconst fn/persistence-location "custom-persistence"
-         "My persistence location.")
-
-       (defvar fn/persistence-managed-symbols (list)
-         "Managed persistent symbols.")
-
-
-       (defun fn/persistence-store (key value)
-         "Just a wrapper for `persistent-soft-store' with KEY and VALUE,
-     location is defined by `fn/-persistence-location'."
-         (persistent-soft-store key value fn/persistence-location))
-
-       (defun fn/persistence-fetch (key)
-         "Another wrapper for `persistent-soft-fetch' with KEY,
-     and location is defined by `fn/custom-persistence-file'."
-         (persistent-soft-fetch key fn/persistence-location))
-
-       (defun fn/persistence-flush ()
-         "Store all symbols in `fn/persistence-managed-symbols' before Emacs closes."
-         (mapc
-          (lambda (symbol)
-            (ignore-errors
-              (fn/persistence-store symbol (symbol-value symbol))))
-          fn/persistence-managed-symbols))
-
-       (add-hook 'kill-emacs-hook #'fn/persistence-flush)
-
-       (defun fn/persistence-manage-symbol (symbol)
-         (set symbol (fn/persistence-fetch symbol))
-         (push symbol fn/persistence-managed-symbols)))
    #+END_SRC
 
 ** exec-path-from-shell
@@ -720,24 +568,21 @@
      (use-package exec-path-from-shell
        :ensure t
        :load-path fn/exec-path-from-shell-package-dir
+       :if (not (eq system-type 'windows-nt))
        :demand t
-       :if (not (eq system-type 'windows-nt)) ;; Sorry Windows
        :config
        (setq exec-path-from-shell-variables
-             (list
-              "PATH" "MANPATH"
-              "PROMPT" "PS1"
-
-              "JAVA_HOME" "ECLIPSE_HOME")
+             '("PATH" "MANPATH" "PROMPT" "PS1" "JAVA_HOME" "ECLIPSE_HOME")
              exec-path-from-shell-arguments
-             (list
-              "-l" "-i"))
+             '("-l" "-i"))
 
        (exec-path-from-shell-initialize))
    #+END_SRC
 
 ** htmlize
-   My custom library for exporting.
+   A custom =htmlize= library is required since code blocks are messed
+   up when exporting for my blog. Hopefully this can be removed sometime
+   but for now I need it.
 
    #+BEGIN_SRC emacs-lisp :block-id b05ead3c-6bc6-be20-949f-da7437b935b4
      (defconst fn/htmlize-package-dir
@@ -749,123 +594,13 @@
        :defer t)
    #+END_SRC
 
-** log4e
-   Nice logging library
-
-   #+BEGIN_SRC emacs-lisp :block-id e8344e55-09ff-27a8-a6c0-8d76e44cd3f0
-     (unless noninteractive
-       (use-package log4e
-         :ensure t
-         :demand t
-         :config
-         (log4e:deflogger
-           "chat"
-           ">>> %t \n%m\n<<<"
-           "%F %H:%M:%S"
-           (list (cons 'info "info")))
-
-         (chat--log-enable-logging)
-
-
-         (defface fn/chat-server-name  '((t (:weight bold :height 0.9)))
-           "Chat server name face")
-
-         (defface fn/chat-channel-name  '((t (:weight ultra-bold :height 1.1)))
-           "Chat server  name face")
-
-         (defface fn/chat-chatter-name  '((t (:underline t :weight semi-bold :height 1.0)))
-           "Chat sender name face")
-
-         (defface fn/chat-message  '((t (:weight thin :height 1.0)))
-           "Chat message face")
-
-
-         (defun fn/chat-propertize (text style)
-           "Add extra coloring with TEXT and STYLE."
-           (let ((new-text (substring text)))
-             (add-face-text-property
-              0
-              (length new-text)
-              style
-              nil
-              new-text)
-             new-text))
-
-
-         (defun fn/prettify-word (word)
-           "Prettify word if possible."
-           (if (fboundp 'text-candy-candied-word)
-               (text-candy-candied-word word)
-             word))
-
-         (defun fn/chat-log (server channel chatter message)
-           "Log SERVER, CHANNEL, CHATTER and MESSAGE."
-           (unless (string-empty-p message)
-             (let* ((out
-                  (string-trim-right
-                   (format "[%s/%s] %s: %s"
-                           (fn/chat-propertize (fn/prettify-word server) 'fn/chat-server-name)
-                           (fn/chat-propertize (fn/prettify-word channel) 'fn/chat-channel-name)
-                           (fn/chat-propertize chatter 'fn/chat-chatter-name)
-                           (fn/chat-propertize message 'fn/chat-message)))))
-               (chat--log-info out)
-               out)))
-
-         (defun fn/chat-log-open ()
-           "Open chat log."
-           (interactive)
-           (chat--log-open-log))
-
-
-         (defconst fn/chat-log-file (expand-file-name ".chat-log.txt.gpg" fn/cache-dir)
-           "My chat log file.")
-
-         (defun fn/chat-log-clear ()
-           "Clear chat log."
-           (interactive)
-           (chat--log-clear-log))
-
-         (defun fn/chat-log-flush (&optional retain)
-           "Save log for posterity.  If RETAIN is non-nil, do not clear the log."
-           (ignore-errors
-             (save-window-excursion
-               (fn/chat-log-open) ;; NOTE: Error might result if the log isn't populated yet.
-               (let ((new-log
-                      (with-current-buffer log4e--log-buffer-chat
-                        (buffer-substring-no-properties (point-min) (point-max))))
-                     (file (find-file-noselect fn/chat-log-file)))
-                 (with-current-buffer file
-                   (end-of-buffer)
-                   (newline)
-                   (insert new-log)
-                   (save-buffer))
-                 (unless retain
-                   (fn/chat-log-clear))
-                 nil))))
-
-         (defun fn/chat-log-flush-before-clear (&rest args)
-           "Save the log before clearing."
-           (fn/chat-log-flush t))
-
-         ;; (advice-add 'chat--log-clear-log :before #'fn/chat-log-flush-before-clear)
-         ;; (add-hook 'kill-emacs-hook #'fn/chat-log-flush)
-
-
-         (fn/use-feature log4e-mode--mode-icon
-           (all-the-icons)
-           (fn/add-major-mode-icon
-            'log4e-mode
-            (list 'all-the-icons-octicon "clippy" :v-adjust 0.0)))))
-   #+END_SRC
-
 ** auto-compile
    Automatic compilation of package files
 
    #+BEGIN_SRC emacs-lisp :block-id cf5a9ca5-1bd8-421b-d6f6-76a4cf5194fc
      (use-package auto-compile
        :ensure t
-       :init
-       (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
+       :hook emacs-lisp-mode
        :config
        (auto-compile-on-load-mode)
        (auto-compile-on-save-mode))
@@ -892,11 +627,12 @@
 
      (fset 'fn/add-major-mode-icon 'ignore)
 
-     (unless noninteractive
-       (use-package all-the-icons
-         :ensure t
-         :demand t
-         :config
+     (use-package all-the-icons
+       :ensure t
+       :unless noninteractive
+       :demand t
+       :config
+       (progn
          (defun fn/add-major-mode-icon (main-mode icon-config)
            "Add icon mapping to major mode given MAIN-MODE, ICON-CONFIG."
            (add-to-list
@@ -905,69 +641,69 @@
 
          (fn/add-major-mode-icon
           'makefile-mode
-          (list 'all-the-icons-faicon "wrench" :v-adjust -0.1))
+          '(all-the-icons-faicon "wrench" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'special-mode
-          (list 'all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
+          '(all-the-icons-faicon "birthday-cake" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'fundamental-mode
-          (list 'all-the-icons-faicon "pencil" :v-adjust -0.1))
+          '(all-the-icons-faicon "pencil" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'compilation-mode
-          (list 'all-the-icons-faicon "cog" :v-adjust -0.1))
+          '(all-the-icons-faicon "cog" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'process-menu-mode
-          (list 'all-the-icons-faicon "list" :v-adjust -0.1))
+          '(all-the-icons-faicon "list" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'package-menu-mode
-          (list 'all-the-icons-octicon "package" :v-adjust 0.0))
+          '(all-the-icons-octicon "package" :v-adjust 0.0))
 
          (fn/add-major-mode-icon
           'outline-mode
-          (list 'all-the-icons-faicon "list-ul" :v-adjust -0.1))
+          '(all-the-icons-faicon "list-ul" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'conf-unix-mode
-          (list 'all-the-icons-faicon "code" :v-adjust -0.1))
+          '(all-the-icons-faicon "code" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'edmacro-mode
-          (list 'all-the-icons-faicon "pause-circle" :v-adjust -0.1))
+          '(all-the-icons-faicon "pause-circle" :v-adjust -0.1)))
 
 
-         (defun fn/check-installed-font-families ()
-           "Check if `fn/all-the-icon-font-families' is intalled."
-           (mapc
-            (lambda (pair)
-              (pcase-let ((`(,family . ,_) pair))
-                (unless (member family (font-family-list))
-                  (message "The %s is not installed, you might want it installed." family))))
-            fn/all-the-icon-font-families))
+       (defun fn/check-installed-font-families ()
+         "Check if `fn/all-the-icon-font-families' is intalled."
+         (mapc
+          (lambda (pair)
+            (pcase-let ((`(,family . ,_) pair))
+              (unless (member family (font-family-list))
+                (message "The %s is not installed, you might want it installed." family))))
+          fn/all-the-icon-font-families))
 
-         (defun fn/install-font-families-locally ()
-           "Install all-the-icons fonts in the `~/.local/share/fonts' folder.
+       (defun fn/install-font-families-locally ()
+         "Install all-the-icons fonts in the `~/.local/share/fonts' folder.
      Tested on Arch Linux."
-           (interactive)
-           (let ((local-font-folder (expand-file-name "~/.local/share/fonts/")))
-             (make-directory local-font-folder t)
-             (mapcar
-              (lambda (font-file)
-                (copy-file font-file local-font-folder t))
-              (directory-files fn/all-the-icon-font-dir  t ".ttf"))
+         (interactive)
+         (let ((local-font-folder (expand-file-name "~/.local/share/fonts/")))
+           (make-directory local-font-folder t)
+           (mapcar
+            (lambda (font-file)
+              (copy-file font-file local-font-folder t))
+            (directory-files fn/all-the-icon-font-dir  t ".ttf"))
 
-             (when (executable-find "fc-cache")
-               (shell-command "fc-cache"))))
+           (when (executable-find "fc-cache")
+             (shell-command "fc-cache"))))
 
-         (add-hook 'after-init-hook 'fn/check-installed-font-families)))
+       (add-hook 'after-init-hook 'fn/check-installed-font-families))
    #+END_SRC
 
-** Optional
-   Dependencies that aren't really required
+* Libraries
+  Libraries I wrote myself or copied mostly
 
    #+BEGIN_SRC emacs-lisp :block-id a79a8916-14f1-f6da-278f-48bb7915b472
      (use-package org-jekyll-blogger
@@ -9528,73 +9264,6 @@
          (insert (fn/relative-path source-path target-path))))
    #+END_SRC
 
-** Managed .gitignore
-   A quick DSL makes me feel good.
-
-   #+BEGIN_SRC emacs-lisp :block-id 32fbaff6-e859-4eea-25bf-cfd59fdf4644
-     (use-package magin
-       :load-path fn/custom-script-dir
-       :defer 1
-       :config
-       (magin-write-to-project
-        `(delimited
-          (context
-           (comment "Base files")
-           (file ,(format "%s.el" (file-name-base fn/config-file)))
-           (file ,(format "%s.el" (file-name-base fn/personal-file))))
-
-          (context
-           (comment "Base directory")
-           (dir ".cache")
-           (dir "extra"))
-
-          (context
-           (comment "Project specific")
-           (file "working-config.org")
-
-           (file ,(format "%s.el" (file-name-base fn/config-backup-file))))
-
-          (context
-           (comment "Library")
-           (path
-            "lib"
-            (context
-             (dir "sandbox")
-             (dir "packages"))
-            (include
-             (dir "modules")
-             (dir "scripts"))))
-
-          (block gtags)
-          (block emacs))
-        user-emacs-directory)
-       nil)
-   #+END_SRC
-
-** Managed .projectile
-   Copying =magin= for .projectile, might want to refactor.
-
-   #+BEGIN_SRC emacs-lisp :block-id 8d1d2ce7-1e9c-3162-ccbe-ac105f53a069
-     (use-package projin
-       :load-path fn/custom-script-dir
-       :after magin
-       :config
-       (projin-write-to-project
-        `(delimited
-          (context
-           (file "*.ttf")
-
-           (file "*.jar")
-           (file "*.tar"))
-
-          (context
-           (dir ,(file-name-base fn/cache-dir))
-           (dir ,(file-name-base fn/extra-dir))
-           (dir ,(file-name-base fn/package-dir)))
-
-          (block emacs))
-        user-emacs-directory))
-   #+END_SRC
 ** Org-Jekyll Blogger
 
    My blogging script

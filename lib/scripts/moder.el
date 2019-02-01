@@ -46,12 +46,8 @@
 ;;; Code:
 
 (require 'subr-x)
-
 (require 'all-the-icons)
-
 (require 'dash)
-
-
 (require 'xpm)
 
 
@@ -82,8 +78,7 @@
 
 
 (defcustom moder-note-notes
-  (list
-   "A failure is you."
+  '("A failure is you."
    "Your quest is lost."
    "And though I left."
    "I took with me... their lightning and their prayers"
