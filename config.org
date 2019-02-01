@@ -371,7 +371,7 @@
      (add-to-list
       'display-buffer-alist
       `(,(rx bos "*Bookmark List*" eos) .
-        (display-buffer-same-window .  ())))
+        (display-buffer-same-window . ())))
    #+END_SRC
 
 ** Others
@@ -796,7 +796,7 @@
        (all-the-icons)
        (fn/add-major-mode-icon
         'shell-mode
-        (list 'all-the-icons-faicon "terminal" :v-adjust 0.0)))
+        '(all-the-icons-faicon "terminal" :v-adjust 0.0)))
    #+END_SRC
 
 ** sh
@@ -808,8 +808,7 @@
        (use-package company-shell
          :ensure t
          :after company
-         :init
-         (add-hook 'sh-mode-hook 'company-mode)
+         :hook (sh-mode . company-mode)
          :config
          (add-to-list 'company-backends 'company-shell)))
    #+END_SRC
@@ -857,10 +856,10 @@
          (concat " λ "))
 
        (setq eshell-highlight-prompt nil
-          eshell-hist-ignoredups t
-          eshell-directory-name (expand-file-name "eshell" fn/cache-dir)
-          eshell-prefer-lisp-functions t
-          eshell-prompt-function #'fn/eshell-prompt-function))
+             eshell-hist-ignoredups t
+             eshell-directory-name (expand-file-name "eshell" fn/cache-dir)
+             eshell-prefer-lisp-functions t
+             eshell-prompt-function #'fn/eshell-prompt-function))
    #+END_SRC
 
 *** Autocompletion
@@ -900,7 +899,6 @@
        :ensure t
        :bind (:map fn/prodigy-map
                    ("P" . prodigy))
-       :defer t
        :commands (fn/prodigy-define-service)
        :config
        ;; Alias this command so that it can be adviced
@@ -909,46 +907,24 @@
        ;; Display prodigy buffers on the same windowx
        (add-to-list
         'display-buffer-alist
-        (cons
-         (rx bos "*prodigy*" eos)
-         (cons 'display-buffer-same-window (list))))
+        `(,(rx bos "*prodigy*" eos) .
+          (display-buffer-same-window . ())))
 
        (add-to-list
         'display-buffer-alist
-        (cons
-         (rx bos "*prodigy-" (* anything))
-         (cons 'display-buffer-same-window (list))))
+        `(,(rx bos "*prodigy-" (* anything)) .
+          (display-buffer-same-window . ())))
 
-       ;; Service restart shiv
-       (defun prodigy-find-service-by-buffer (&optional buffer)
-         "Find `prodigy' service based on BUFFER name."
-         (let* ((this-prodigy-buffer-name (buffer-name buffer))
-                (service (-find
-                          (lambda (service)
-                            (string= (prodigy-buffer-name service)
-                                     this-prodigy-buffer-name))
-                          (prodigy-services))))
-           service))
-
-       (defun prodigy-restart-view ()
-         "Restart a `prodigy-view-mode' buffer."
-         (interactive)
-         (-if-let (service (prodigy-find-service-by-buffer))
-             (prodigy-with-refresh
-              (prodigy-restart-service service))
-           (error "Current buffer is not a prodigy view buffer.")))
-
-       (define-key prodigy-view-mode-map (kbd "C-c r") #'prodigy-restart-view)
 
        (fn/use-feature prodigy-mode--mode-icon
          (all-the-icons)
          (fn/add-major-mode-icon
           'prodigy-mode
-          (list 'all-the-icons-faicon "cogs" :v-adjust -0.1))
+          '(all-the-icons-faicon "cogs" :v-adjust -0.1))
 
          (fn/add-major-mode-icon
           'prodigy-view-mode
-          (list 'all-the-icons-faicon "cog" :v-adjust -0.1))))
+          '(all-the-icons-faicon "cog" :v-adjust -0.1))))
    #+END_SRC
 
 *** Prodigy Cleanup
@@ -1311,37 +1287,6 @@
         nil)
     #+END_SRC
 
-** procred
-   Similarly, manage processes.
-
-   #+BEGIN_SRC emacs-lisp :block-id 0ae1df3b-b802-c3f2-4e17-450d5e8245f8
-     (use-package proced
-       :ensure t
-       :defer t
-       :bind (:map fn-standard-prefix-map
-                   ("C-M-p p" . proced)))
-   #+END_SRC
-
-** emamux
-   Work better with tmux
-
-   #+BEGIN_SRC emacs-lisp :block-id 13d23dc8-e0a7-3d2c-71b6-13cefdd9fb96
-     (fn/use-executables emamux-check
-       (tmux)
-       (use-package emamux
-         :ensure t
-         :defer t))
-   #+END_SRC
-
-** multi-term
-   Emacs and term
-
-   #+BEGIN_SRC emacs-lisp :block-id d9dc0195-7512-f1f8-b4c7-236b3754a637
-     (use-package multi-term
-       :ensure t
-       :defer t)
-   #+END_SRC
-
 ** docker
    Containers eh?
 
@@ -1364,19 +1309,8 @@
        :mode (("Dockerfile\\'" . dockerfile-mode)))
    #+END_SRC
 
-** vagrant
-   Vagrant tools
-
-   #+BEGIN_SRC emacs-lisp :block-id 19f81a53-b4c7-06cf-69f9-ab751d92f377
-     (use-package vagrant
-       :ensure t
-       :defer t
-       :config
-       nil)
-   #+END_SRC
-
 ** memory-usage
-   Nice to know if my baby is getting to fat to quick
+   Nice to know if my baby is getting too fat to quick
 
    #+BEGIN_SRC emacs-lisp :block-id 2f9e8622-448e-2a55-c269-285f71ec82bb
      (use-package memory-usage
