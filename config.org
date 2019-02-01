@@ -1454,7 +1454,7 @@
         (add-to-list 'company-backends 'company-capf)
         (add-to-list 'company-backends 'company-dabbrev)
         (add-to-list 'company-backends 'company-elisp)
-      v
+
         (defun fn/combine-backends (backend new-backend)
           "Combine BACKEND with NEW-BACKEND."
           (if (and (listp backend) (member new-backend backend))
@@ -1516,26 +1516,27 @@
 
 ** Jump
    Things to jump around with
+
 *** recentf
     Accessing the files recently
 
     #+BEGIN_SRC emacs-lisp :block-id 3f6c8b53-5f56-d1bb-8852-71807ad0c314
-      (unless noninteractive
-        (use-package recentf
-          :bind (("C-x C-r" . recentf-open-files))
-          :config
-          (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
+      (use-package recentf
+        :unless noninteractive
+        :bind (("C-x C-r" . recentf-open-files))
+        :config
+        (setq recentf-save-file (expand-file-name "recentf" fn/cache-dir)
 
-             recentf-max-menu-items 1000
-             recentf-max-saved-items 1000
+              recentf-max-menu-items 1000
+              recentf-max-saved-items 1000
 
-             recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
+              recentf-exclude '("TAGS" ".*-autoloads\\.el\\'"))
 
-          (recentf-mode t))
+        (recentf-mode t))
 
-        (use-package recentf-ext
-          :ensure t
-          :after recentf))
+      (use-package recentf-ext
+        :ensure t
+        :after recentf)
     #+END_SRC
 
 *** bookmark+
@@ -1549,7 +1550,6 @@
         (use-package bookmark+
           :load-path fn/bookmark+-module-dir
           :defer t
-          ;; :commands ()
           :config
           nil))
     #+END_SRC
@@ -1557,90 +1557,48 @@
 ** Windows
    Anything related to window management
 
-*** desktop
-    Managing buffers the Emacs way.
-
-    #+BEGIN_SRC emacs-lisp :block-id d638037a-5b8e-86de-e653-20b58c670c66
-      (defconst fn/desktop-map (fn/make-prefixed-keymap (kbd "d") fn-standard-prefix-map)
-        "My custom desktop bookmarked map.")
-
-      (use-package desktop
-        :defer t
-        :config
-        (defconst fn/desktop-dir (expand-file-name "desktop/" fn/cache-dir)
-          "My desktop dir")
-
-        (make-directory fn/desktop-dir t)
-
-        (setq desktop-path (list fn/desktop-dir)
-           desktop-dirname fn/desktop-dir
-           desktop-base-file-name "blank"
-           desktop-base-lock-name ".desk-lock"
-           desktop-save 'if-exists
-
-           desktop-restore-eager 15
-           desktop-lazy-idle-delay 10
-           desktop-lazy-verbose t)
-
-        (desktop-save-mode)
-
-        (fn/use-feature bookmarked-desktop
-          (bookmark+)
-          (define-key fn/desktop-map (kbd "s") 'bmkp-set-desktop-bookmark)
-
-          (setq bmkp-desktop-default-directory fn/desktop-dir
-             bmkp-desktop-jump-save-before-flag t)))
-
-      (use-package desktop+
-        :ensure t
-        :after desktop
-        :bind (:map fn/desktop-map
-                    ("s" . desktop+-create)
-                    ("l" . desktop+-load))
-        :config
-        (setq desktop+-base-dir fn/desktop-dir))
-    #+END_SRC
-
 *** workgroups
     Saving window state is very helpful specially when you move a lots
 
     #+BEGIN_SRC emacs-lisp :block-id 6c071d29-d448-f4fa-f1d4-63c347a9cb28
       (use-package workgroups2
         :ensure t
-        :defer t
+        :unless noninteractive
         :bind (("C-c w w" . workgroups-mode))
         :init
         (setq wg-prefix-key (kbd "C-c w")
-           wg-session-file (expand-file-name "workgroups" fn/cache-dir))
+              wg-session-file (expand-file-name "workgroups" fn/cache-dir))
 
         (add-hook 'after-init-hook #'workgroups-mode)
         :config
+        (require 'dash)
+
         (setq wg-morph-on nil
 
-           wg-mode-line-display-on nil
+              wg-mode-line-display-on nil
 
-           wg-mess-with-buffer-list nil
+              wg-mess-with-buffer-list nil
 
-           wg-buffer-auto-association-on nil
-           wg-undoify-window-configuration-change nil
+              wg-buffer-auto-association-on nil
+              wg-undoify-window-configuration-change nil
 
-           wg-buffer-local-variables-alist (list)
+              wg-buffer-local-variables-alist (list)
 
-           wg-restore-frame-position nil
-           wg-restore-scroll-bars nil
-           wg-restore-margins nil
+              wg-restore-frame-position nil
+              wg-restore-scroll-bars nil
+              wg-restore-margins nil
 
-           wg-restore-point t
-           wg-restore-point-max t
+              wg-restore-point t
+              wg-restore-point-max t
 
-           wg-restore-mark nil
-           wg-restore-window-dedicated-p nil
-           wg-remember-frame-for-each-wg nil
+              wg-restore-mark nil
+              wg-restore-window-dedicated-p nil
+              wg-remember-frame-for-each-wg nil
 
-           wg-load-last-workgroup nil
+              wg-load-last-workgroup nil
 
-           wg-emacs-exit-save-behavior           'save
-           wg-workgroups-mode-exit-save-behavior 'save)
+              wg-emacs-exit-save-behavior           'save
+              wg-workgroups-mode-exit-save-behavior 'save)
 
         (defun fn/wg-session-list-buffers (&optional frame)
           "Get the current session buffers."
@@ -1660,17 +1618,17 @@
           "Switch buffer with my custom workgroup."
           (interactive)
           (lexical-let* ((session-buffers (fn/wg-session-list-buffers))
-              (buffer-table (fn/list-to-hash-table session-buffers))
-              (predicate
-               (lambda (buffer-pair)
-                 (when (consp buffer-pair)
-                   (lexical-let* ((buffer (cdr buffer-pair)))
-                     (gethash buffer buffer-table nil)))))
-              (buffer (read-buffer
-                       "Switch to session buffer: "
-                       nil
-                       t
-                       predicate)))
+                         (buffer-table (fn/list-to-hash-table session-buffers))
+                         (predicate
+                          (lambda (buffer-pair)
+                            (when (consp buffer-pair)
+                              (lexical-let* ((buffer (cdr buffer-pair)))
+                                (gethash buffer buffer-table nil)))))
+                         (buffer (read-buffer
+                                  "Switch to session buffer: "
+                                  nil
+                                  t
+                                  predicate)))
             (switch-to-buffer buffer)))
 
         (defun fn/wg-create-workgroup ()
@@ -1683,9 +1641,9 @@
         (define-key wg-prefixed-map (kbd "s") #'wg-switch-to-workgroup)
 
         (run-with-idle-timer 0 nil (lambda  ()
-                                   (define-key workgroups-mode-map
-                                     (vector 'remap 'wg-create-workgroup)
-                                     #'fn/wg-create-workgroup)))
+                                     (define-key workgroups-mode-map
+                                       (vector 'remap 'wg-create-workgroup)
+                                       #'fn/wg-create-workgroup)))
 
 
         (defun fn/wg-cleanup ()
@@ -1775,158 +1733,111 @@
              nil)))
      #+END_SRC
 
-*** e2wm
-    Specific layouts for Emacs
-
-    #+BEGIN_SRC emacs-lisp :block-id 35932bb3-c241-0675-ae70-5a7c63dd3aaf
-      (use-package e2wm
-        :ensure t
-        :defer t
-        :config
-        (fn/use-feature e2em-disable-golden-ratio
-          (e2wm golden-ratio)
-          (defun fn/e2wm-disable-golden-ratio ()
-            "Disable `golden-ratio-mode' when layout is managed."
-            (golden-ratio-mode -1))
-
-          (add-hook 'e2wm:pre-start-hook #'fn/e2wm-disable-golden-ratio)))
-    #+END_SRC
-
 *** winner
     You got to have those window configuration
 
     #+BEGIN_SRC emacs-lisp :block-id 1bccc5be-c2b8-eca5-8158-9b40eccdbc8e
-      (unless noninteractive
-        (use-package winner
-          :ensure t
-          :config
-          (winner-mode t)))
+      (use-package winner
+        :ensure t
+        :unless noninteractive
+        :config
+        (winner-mode t))
     #+END_SRC
 
 *** window-numbering
     A must to navigate through windows with numbers.
 
     #+BEGIN_SRC emacs-lisp :block-id 8f1e9fc0-580e-1fdb-c8a1-f4c042ce0d68
-      (unless noninteractive
-        (use-package window-numbering
-          :ensure t
-          :demand t
-          :config
-          (window-numbering-mode t)
-
-          (global-set-key (kbd "M-`") #'other-frame)
-
-          (require 'dash)
-
-          (defun fn/get-window-by-number (window-number)
-            "Get window by WINDOW-NUMBER."
-            (-find
-             (lambda (window)
-               (= (window-numbering-get-number window) window-number))
-             (window-list)))
-
-          (defun fn/swap-windows (this-window that-window)
-            "Swap THIS-WINDOW and THAT-WINDOW"
-            (let ((this-buffer (window-buffer this-window))
-                (that-buffer (window-buffer that-window)))
-              (unless (eq this-buffer that-buffer)
-                (set-window-buffer this-window that-buffer)
-                (set-window-buffer that-window this-buffer))))
-
-          (defun fn/swap-with-numbered-window (window-number)
-            "Swap with current window with numbered window."
-            (interactive "NWhat window number? ")
-            (let ((this-window (selected-window))
-                (that-window (fn/get-window-by-number window-number)))
-              (if (null that-window)
-                  (message "Window %s does not exist"
-                           window-number)
-                (fn/swap-windows this-window that-window)
-                (select-window-by-number window-number))))))
-    #+END_SRC
-
-*** window-layout
-    Making window layouts
-
-    #+BEGIN_SRC emacs-lisp :block-id 1f3782e2-bdbf-c261-74b3-5ce6bbb064e6
-      (use-package window-layout
+      (use-package window-numbering
         :ensure t
+        :demand t
+        :unless noninteractive
         :config
-        (fn/use-feature window-numbered-layout
-          (window-numbering)
-          (require 'dash)
+        (window-numbering-mode t)
 
-          (defvar fn/current-window-layout nil
-            "The current window layout.")
+        (global-set-key (kbd "M-`") #'other-frame)
 
-          (defun fn/window-numbering-assign-func ()
-            "Window number assignment based on the current window layout."
-            (ignore-errors
-              (lexical-let ((this-window (selected-window)))
-                (when (wlf:wset-p fn/current-window-layout)
-                  (let ((layout-index
-                       (-find-index
-                        (lambda (winfo) (eq (wlf:window-window winfo) this-window))
-                        (wlf:wset-winfo-list fn/current-window-layout))))
-                    (if layout-index
-                        layout-index
-                      nil))))))
+        (require 'dash)
 
-          (setq window-numbering-assign-func 'fn/window-numbering-assign-func)))
+        (defun fn/get-window-by-number (window-number)
+          "Get window by WINDOW-NUMBER."
+          (-find
+           (lambda (window)
+             (= (window-numbering-get-number window) window-number))
+           (window-list)))
+
+        (defun fn/swap-windows (this-window that-window)
+          "Swap THIS-WINDOW and THAT-WINDOW"
+          (let ((this-buffer (window-buffer this-window))
+                (that-buffer (window-buffer that-window)))
+            (unless (eq this-buffer that-buffer)
+              (set-window-buffer this-window that-buffer)
+              (set-window-buffer that-window this-buffer))))
+
+        (defun fn/swap-with-numbered-window (window-number)
+          "Swap with current window with numbered window."
+          (interactive "NWhat window number? ")
+          (let ((this-window (selected-window))
+                (that-window (fn/get-window-by-number window-number)))
+            (if (null that-window)
+                (message "Window %s does not exist"
+                         window-number)
+              (fn/swap-windows this-window that-window)
+              (select-window-by-number window-number)))))
     #+END_SRC
 
 *** golden-ratio
     Makes windows large enough to see.
 
     #+BEGIN_SRC emacs-lisp :block-id dc0fe50a-04d2-ef04-47f4-fcbf8059e81a
-      (unless noninteractive
-        (use-package golden-ratio
-          :ensure t
-          :demand T
-          :after (window-numbering)
-          :diminish golden-ratio-mode
-          :bind (("C-c q" . golden-ratio)
-                 :map fn-standard-prefix-map
-                 ("q" . golden-ratio-mode))
-          :config
-          (golden-ratio-mode t)
+      (use-package golden-ratio
+        :ensure t
+        :demand t
+        :unless noninteractive
+        :after (window-numbering)
+        :diminish golden-ratio-mode
+        :bind (("C-c q" . golden-ratio)
+               :map fn-standard-prefix-map
+               ("q" . golden-ratio-mode))
+        :config
+        (golden-ratio-mode t)
 
-          (setq split-width-threshold nil
-                golden-ratio-adjust-factor 1.0)
-
-
-          ;; Frame entry exit fix
-          (add-hook 'focus-in-hook #'golden-ratio)
-          (add-hook 'focus-out-hook #'golden-ratio)
+        (setq split-width-threshold nil
+              golden-ratio-adjust-factor 1.0)
 
 
-          (fn/use-feature golden-workgroups
-            (workgroups2)
-            ;; When switching workgroups, make sure the screen is rationed correctly
-            (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
+        ;; Frame entry exit fix
+        (add-hook 'focus-in-hook #'golden-ratio)
+        (add-hook 'focus-out-hook #'golden-ratio)
 
 
-          (fn/use-feature golden-window-numbering
-            (window-numbering)
-            (defun fn/golden-ratio-after-select-window-by-number (&rest args)
-              (golden-ratio))
+        (fn/use-feature golden-workgroups
+          (workgroups2)
+          ;; When switching workgroups, make sure the screen is rationed correctly
+          (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
 
-            (advice-add
-             #'select-window-by-number
-             :after
-             #'fn/golden-ratio-after-select-window-by-number))))
+
+        (fn/use-feature golden-window-numbering
+          (window-numbering)
+          (defun fn/golden-ratio-after-select-window-by-number (&rest args)
+            (golden-ratio))
+
+          (advice-add
+           #'select-window-by-number
+           :after
+           #'fn/golden-ratio-after-select-window-by-number)))
     #+END_SRC
 
 *** uniquify
     Nicer naming convention
 
     #+BEGIN_SRC emacs-lisp :block-id 0daef306-f44a-5bc5-dead-1578ba3b8e9d
-      (unless noninteractive
-        (use-package uniquify
-          :if (version<= "24.3.1" emacs-version)
-          :demand t
-          :config
-          (setq uniquify-buffer-name-style 'post-forward-angle-brackets)))
+      (use-package uniquify
+        :unless (or noninteractive (version<= emacs-version "24.3.1"))
+        :demand t
+        :config
+        (setq uniquify-buffer-name-style 'post-forward-angle-brackets))
+
     #+END_SRC
 
 ** Interface
@@ -1936,177 +1847,177 @@
     Must have a project finder when using a project.
 
     #+BEGIN_SRC emacs-lisp :block-id 8ee23fbf-548c-e172-18e6-0df51729e123
-        (unless noninteractive
-          (use-package projectile
-            :ensure t
-            :defer 1
-            :diminish projectile-mode
-            :bind (("C-c p p" . projectile-switch-project)
-                   ("C-c p f" . projectile-find-file)
-                   ("C-c p d" . projectile-find-dir))
-            :init
-            (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
-                  projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir)
-                                                                               projectile-keymap-prefix (kbd "C-c p"))
-            :config
-            (defconst fn/project-file ".project.el"
-              "Project configuration file")
+      (use-package projectile
+        :ensure t
+        :defer 1
+        :diminish projectile-mode
+        :bind (("C-c p p" . projectile-switch-project)
+               ("C-c p f" . projectile-find-file)
+               ("C-c p d" . projectile-find-dir))
+        :init
+        (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
+              projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir)
+              projectile-keymap-prefix (kbd "C-c p"))
+        :config
+        (projectile-mode)
+        (setq projectile-indexing-method 'native
+              projectile-enable-caching t
+              projectile-enable-idle-timer nil)
 
-            (defconst fn/project-local-file ".project-locals.el"
-              "Project local setting file")
-
-            (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
-              "Project init files")
+        (setq projectile-sort-order 'modification-time)
 
 
-            (defun fn/load-project-file ()
-              "Loads the `fn/project-file' for a project.
+        (add-to-list 'projectile-project-root-files "config.xml")
+
+        (progn
+          (defconst fn/project-file ".project.el"
+            "Project configuration file")
+
+          (defconst fn/project-local-file ".project-locals.el"
+            "Project local setting file")
+
+          (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
+            "Project init files")
+
+
+          (defun fn/load-project-file ()
+            "Loads the `fn/project-file' for a project.
         This is run once after the project is loaded signifying project setup."
-              (interactive)
-              (when (projectile-project-p)
-                (let* ((current-project-root (projectile-project-root))
-                       (project-init-file (expand-file-name fn/project-file current-project-root)))
-                  (when (file-exists-p project-init-file)
-                    (message "Loading project init file for %s" (projectile-project-name))
-                    (condition-case ex
-                        (load project-init-file t)
-                      ('error
-                       (message
-                        "There was an error loading %s: %s"
-                        project-init-file
-                        (error-message-string ex))))))))
+            (interactive)
+            (when (projectile-project-p)
+              (let* ((current-project-root (projectile-project-root))
+                     (project-init-file (expand-file-name fn/project-file current-project-root)))
+                (when (file-exists-p project-init-file)
+                  (message "Loading project init file for %s" (projectile-project-name))
+                  (condition-case ex
+                      (load project-init-file t)
+                    ('error
+                     (message
+                      "There was an error loading %s: %s"
+                      project-init-file
+                      (error-message-string ex))))))))
 
-            (defun fn/load-project-local-file ()
-              "Loads the `fn/project-local-file' for a project.
+          (defun fn/load-project-local-file ()
+            "Loads the `fn/project-local-file' for a project.
         This is run for every time a file in a project is opened signifying per-file setup."
-              (interactive)
-              (when (projectile-project-p)
-                (let* ((current-project-root (projectile-project-root))
-                       (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
-                  (when (and (file-exists-p project-local-init-file)
-                             (not (member (buffer-file-name) fn/project-init-files)))
-                    (message
-                     "Loading project local file for %s on %s"
-                     (projectile-project-name)
-                     (buffer-name))
-                    (condition-case ex
-                        (load project-local-init-file t)
-                      ('error
-                       (message
-                        "There was an error loading %s: %s"
-                        project-local-init-file
-                        (error-message-string ex))))))))
+            (interactive)
+            (when (projectile-project-p)
+              (let* ((current-project-root (projectile-project-root))
+                     (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+                (when (and (file-exists-p project-local-init-file)
+                           (not (member (buffer-file-name) fn/project-init-files)))
+                  (message
+                   "Loading project local file for %s on %s"
+                   (projectile-project-name)
+                   (buffer-name))
+                  (condition-case ex
+                      (load project-local-init-file t)
+                    ('error
+                     (message
+                      "There was an error loading %s: %s"
+                      project-local-init-file
+                      (error-message-string ex))))))))
 
 
-            ;; Safety Loader
-            (defvar fn/checked-projects (list)
-              "Projects that are trusted with loading `fn/project-init-files' or not.")
+          ;; Safety Loader
+          (defvar fn/checked-projects (list)
+            "Projects that are trusted with loading `fn/project-init-files' or not.")
 
-            (defvar fn/loaded-projects (list)
-              "Projects that have been loaded by `fn/load-project-file'.")
+          (defvar fn/loaded-projects (list)
+            "Projects that have been loaded by `fn/load-project-file'.")
 
-            (unless (fboundp 'file-attribute-modification-time)
-              (defun file-attribute-modification-time (attributes)
-                "The last access time of ATTRIBUTES"
-                (nth 5 attributes)))
+          (unless (fboundp 'file-attribute-modification-time)
+            (defun file-attribute-modification-time (attributes)
+              "The last access time of ATTRIBUTES"
+              (nth 5 attributes)))
 
-            (defun fn/trust-project ()
-              "Trust current project."
-              (interactive)
-              (if (not (projectile-project-p))
-                  (message ("Not in a project."))
-                (let* ((project-root (projectile-project-root))
-                       (project-entry (assoc project-root fn/checked-projects)))
-                  (if project-entry
-                      (progn
-                        (setcdr
-                         project-entry
-                         (plist-put
-                          (cdr project-entry)
-                          :trusted
-                          t)))
-                    (add-to-list
-                     'fn/checked-projects
-                     (list project-root
-                           :last-modification-time (file-attribute-modification-time (file-attributes project-root))
-                           :project-root project-root
-                           :trusted t)))
-                  (message "Project %s trusted" project-root))))
+          (defun fn/trust-project ()
+            "Trust current project."
+            (interactive)
+            (if (not (projectile-project-p))
+                (message ("Not in a project."))
+              (let* ((project-root (projectile-project-root))
+                     (project-entry (assoc project-root fn/checked-projects)))
+                (if project-entry
+                    (progn
+                      (setcdr
+                       project-entry
+                       (plist-put
+                        (cdr project-entry)
+                        :trusted
+                        t)))
+                  (add-to-list
+                   'fn/checked-projects
+                   (list project-root
+                         :last-modification-time (file-attribute-modification-time (file-attributes project-root))
+                         :project-root project-root
+                         :trusted t)))
+                (message "Project %s trusted" project-root))))
 
-            (defun fn/safe-project-p (project-root)
-              "Check if PROJECT-ROOT can be trusted."
-              (let* ((last-modification-time
-                      (file-attribute-modification-time (file-attributes project-root)))
-                     (safe-project-properties
-                      (or (cdr (assoc project-root fn/checked-projects))
-                          (let* ((base-properties
-                                  (list :last-modification-time last-modification-time
-                                        :project-root project-root))
-                                 (trusted
-                                  (yes-or-no-p
-                                   (format "Do you ultimately trust the project at %s?" project-root)))
-                                 (new-properties
-                                  (plist-put base-properties :trusted trusted)))
-                            new-properties))))
-                (prog1
-                    (plist-get safe-project-properties :trusted)
-                  (add-to-list 'fn/checked-projects
-                               (cons project-root  safe-project-properties)))))
+          (defun fn/safe-project-p (project-root)
+            "Check if PROJECT-ROOT can be trusted."
+            (let* ((last-modification-time
+                    (file-attribute-modification-time (file-attributes project-root)))
+                   (safe-project-properties
+                    (or (cdr (assoc project-root fn/checked-projects))
+                        (let* ((base-properties
+                                (list :last-modification-time last-modification-time
+                                      :project-root project-root))
+                               (trusted
+                                (yes-or-no-p
+                                 (format "Do you ultimately trust the project at %s?" project-root)))
+                               (new-properties
+                                (plist-put base-properties :trusted trusted)))
+                          new-properties))))
+              (prog1
+                  (plist-get safe-project-properties :trusted)
+                (add-to-list 'fn/checked-projects
+                             (cons project-root  safe-project-properties)))))
 
-            (defun fn/safe-load-project-file ()
-              "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
-              (if (not (projectile-project-p))
-                  (message "Not in a project.")
-                (let ((project-root (projectile-project-root))
-                      (project-name (projectile-project-name)))
-                  (when (not (member project-root fn/loaded-projects))
-                    (if (not (fn/safe-project-p project-root))
-                        (message "Project script for %s is not trusted." project-name)
-                      (fn/load-project-file)
-                      (add-to-list 'fn/loaded-projects project-root))))))
-
-            (defun fn/safe-load-project-local-file ()
-              "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
-              (if (not (projectile-project-p))
-                  (message "Not in a project.")
-                (let ((project-root (projectile-project-root))
-                      (project-name (projectile-project-name)))
+          (defun fn/safe-load-project-file ()
+            "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
+            (if (not (projectile-project-p))
+                (message "Not in a project.")
+              (let ((project-root (projectile-project-root))
+                    (project-name (projectile-project-name)))
+                (when (not (member project-root fn/loaded-projects))
                   (if (not (fn/safe-project-p project-root))
-                      (message "Project local script for %s is not trusted." project-name)
-                    (fn/load-project-local-file)))))
+                      (message "Project script for %s is not trusted." project-name)
+                    (fn/load-project-file)
+                    (add-to-list 'fn/loaded-projects project-root))))))
+
+          (defun fn/safe-load-project-local-file ()
+            "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
+            (if (not (projectile-project-p))
+                (message "Not in a project.")
+              (let ((project-root (projectile-project-root))
+                    (project-name (projectile-project-name)))
+                (if (not (fn/safe-project-p project-root))
+                    (message "Project local script for %s is not trusted." project-name)
+                  (fn/load-project-local-file)))))
 
 
-            ;; Project root script should run before project file script
-            (add-hook 'find-file-hook #'fn/safe-load-project-file t)
-            (add-hook 'find-dired-hook #'fn/safe-load-project-file t)
-            (add-hook 'dired-mode-hook #'fn/safe-load-project-file t)
+          ;; Project root script should run before project file script
+          (add-hook 'find-file-hook #'fn/safe-load-project-file t)
+          (add-hook 'find-dired-hook #'fn/safe-load-project-file t)
+          (add-hook 'dired-mode-hook #'fn/safe-load-project-file t)
 
-            (add-hook 'find-file-hook #'fn/safe-load-project-local-file t)
-            (add-hook 'find-dired-hook #'fn/safe-load-project-local-file t)
-            (add-hook 'dired-mode-hook #'fn/safe-load-project-local-file t)
+          (add-hook 'find-file-hook #'fn/safe-load-project-local-file t)
+          (add-hook 'find-dired-hook #'fn/safe-load-project-local-file t)
+          (add-hook 'dired-mode-hook #'fn/safe-load-project-local-file t))
 
-            (with-eval-after-load 'savehist
-              (add-to-list 'savehist-additional-variables 'fn/checked-projects))
-
-
-            (defun fn/find-project-root ()
-              "Visit project root."
-              (interactive)
-              (dired-x-find-file (projectile-project-root)))
-
-            (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
-
-            (setq projectile-switch-project-action #'fn/find-project-root)
-
-            (projectile-mode)
-            (setq projectile-indexing-method 'native
-                  projectile-enable-caching t
-                  projectile-enable-idle-timer nil)
-
-            (setq projectile-sort-order 'modification-time)
+        (with-eval-after-load 'savehist
+          (add-to-list 'savehist-additional-variables 'fn/checked-projects))
 
 
-      (add-to-list 'projectile-project-root-files "config.xml")))
+        (defun fn/find-project-root ()
+          "Visit project root."
+          (interactive)
+          (dired-x-find-file (projectile-project-root)))
+
+        (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
+
+        (setq projectile-switch-project-action #'fn/find-project-root))
     #+END_SRC
 
 
@@ -2356,13 +2267,13 @@
        (defconst fn/helm-smex-module-dir (expand-file-name "helm-smex/" fn/custom-module-dir)
          "Archived `helm-smex' packages.")
 
-       (unless noninteractive
-         (use-package smex
-           :load-path fn/smex-module-dir
-           :demand t
-           :config
-           (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
-                 smex-history-length 100)))
+       (use-package smex
+         :load-path fn/smex-module-dir
+         :demand t
+         :unless noninteractive
+         :config
+         (setq smex-save-file (expand-file-name "smex-items" fn/cache-dir)
+               smex-history-length 100))
 
        (use-package helm-smex
          :load-path fn/helm-smex-module-dir
@@ -2373,19 +2284,6 @@
                smex-history-length (or helm-adaptive-history-length smex-history-length)))
      #+END_SRC
 
-*** ivy
-    A lighter and faster library than [[helm]] that uses the minibuffer
-    instead of a separate window.
-
-    #+BEGIN_SRC emacs-lisp :block-id a6d7d940-ad4f-97d2-3a24-48ae273f7add
-      (use-package ivy
-        :ensure t
-        :disabled t
-        :bind (("M-x" . counsel-M-x))
-        :config
-        (setq ivy-use-virtual-buffers t))
-    #+END_SRC
-
 ** Help
    Helper functions ere
 
@@ -2393,13 +2291,14 @@
     A command log when needed
 
     #+BEGIN_SRC emacs-lisp :block-id f36a2bde-d269-2571-e02f-c3998aaf439b
-      (unless noninteractive
-        (use-package command-log-mode
-          :ensure t
-          :diminish command-log-mode
-          :demand t
-          :config
-          (global-command-log-mode t)))
+      (use-package command-log-mode
+        :ensure t
+        :diminish command-log-mode
+        :unless noninteractive
+        :demand t
+        :config
+        (global-command-log-mode t))
+
     #+END_SRC
 
 *** keyfreq
@@ -2408,6 +2307,7 @@
     #+BEGIN_SRC emacs-lisp :block-id 5cc8b787-43f6-7250-72a5-c269c6dd8dc0
       (use-package keyfreq
         :ensure t
+        :unless noninteractive
         :bind (:map fn-standard-prefix-map
                     ("K" . keyfreq-show))
         :config
@@ -2422,104 +2322,104 @@
     A mnemonic for key bindings
 
     #+BEGIN_SRC emacs-lisp :block-id f7b62f99-7365-6e12-adc8-0a1a6e8eadda
-      (unless noninteractive
-        (use-package which-key
-          :ensure t
-          :diminish which-key-mode
-          :demand t
-          :config
-          (which-key-mode t)
-          (which-key-setup-side-window-bottom)
+      (use-package which-key
+        :ensure t
+        :unless noninteractive
+        :diminish which-key-mode
+        :demand t
+        :config
+        (which-key-mode t)
+        (which-key-setup-side-window-bottom)
 
-          (setq which-key-idle-delay 0.8
+        (setq which-key-idle-delay 0.8
 
-             which-key-separator " → "
-             which-key-unicode-correction 3
+              which-key-separator " → "
+              which-key-unicode-correction 3
 
-             which-key-prefix-prefix ""
-             which-key-show-prefix 'top
-             which-key-echo-keystrokes nil
+              which-key-prefix-prefix ""
+              which-key-show-prefix 'top
+              which-key-echo-keystrokes nil
 
-             which-key-show-remaining-keys nil
+              which-key-show-remaining-keys nil
 
-             which-key-sort-order 'which-key-description-order)
-
-
-          (defun fn/which-key-prefix-command-replacement (kb)
-            "My custom label for prefix command."
-            (cons (car kb)
-               (format
-                "/Σ-%2d/"
-                (let ((which-key--current-prefix
-                     (apply #'vector (listify-key-sequence (kbd (car kb))))))
-                  (length (which-key--get-current-bindings))))))
+              which-key-sort-order 'which-key-description-order)
 
 
-          ;; Mode Highlighting
-          (require 's)
+        (defun fn/which-key-prefix-command-replacement (kb)
+          "My custom label for prefix command."
+          (cons (car kb)
+                (format
+                 "/Σ-%2d/"
+                 (let ((which-key--current-prefix
+                        (apply #'vector (listify-key-sequence (kbd (car kb))))))
+                   (length (which-key--get-current-bindings))))))
 
-          ;; NOTE: Avoid changing height since it destroys the layout
-          (defface fn/which-key-active-mode-face '((t . (:underline t :foreground "#dddddd")))
-            "Face for active modes."
-            :group 'fn)
 
-          (defface fn/which-key-inactive-mode-face '((t . (:underline t :foreground "#444444")))
-            "Face for inactive modes."
-            :group 'fn)
+        ;; Mode Highlighting
+        (require 's)
 
-          (defun fn/which-key-highlight-modes ()
-            "Add active and inactive modes to `which-key-highlighted-command-list'."
-            (message "Updating which-key mode highlighting.")
-            (mapc
-             (lambda (command-option)
-               (when (and (consp command-option)
+        ;; NOTE: Avoid changing height since it destroys the layout
+        (defface fn/which-key-active-mode-face '((t . (:underline t :foreground "#dddddd")))
+          "Face for active modes."
+          :group 'fn)
+
+        (defface fn/which-key-inactive-mode-face '((t . (:underline t :foreground "#444444")))
+          "Face for inactive modes."
+          :group 'fn)
+
+        (defun fn/which-key-highlight-modes ()
+          "Add active and inactive modes to `which-key-highlighted-command-list'."
+          (message "Updating which-key mode highlighting.")
+          (mapc
+           (lambda (command-option)
+             (when (and (consp command-option)
                         (s-ends-with-p "-mode$" (car command-option)))
-                 (setcdr command-option 'fn/which-key-inactive-mode-face)))
-             which-key-highlighted-command-list)
-            (mapc
-             (lambda (minor-mode)
-               (lexical-let* ((mode-name (symbol-name minor-mode))
-                   (mode-regex (concat mode-name "$"))
-                   (command-option
-                    (assoc mode-regex which-key-highlighted-command-list)))
-                 (unless command-option
-                   (setq command-option
-                      (cons mode-regex 'italic))
-                   (push command-option which-key-highlighted-command-list))
-                 (when (consp command-option)
-                   (setcdr command-option
-                           (if (and (boundp minor-mode)
+               (setcdr command-option 'fn/which-key-inactive-mode-face)))
+           which-key-highlighted-command-list)
+          (mapc
+           (lambda (minor-mode)
+             (lexical-let* ((mode-name (symbol-name minor-mode))
+                            (mode-regex (concat mode-name "$"))
+                            (command-option
+                             (assoc mode-regex which-key-highlighted-command-list)))
+               (unless command-option
+                 (setq command-option
+                       (cons mode-regex 'italic))
+                 (push command-option which-key-highlighted-command-list))
+               (when (consp command-option)
+                 (setcdr command-option
+                         (if (and (boundp minor-mode)
                                   (symbol-value minor-mode))
-                               'fn/which-key-active-mode-face 'fn/which-key-inactive-mode-face
+                             'fn/which-key-active-mode-face 'fn/which-key-inactive-mode-face
                              )))))
-             minor-mode-list)
+           minor-mode-list)
 
 
-            (lexical-let* ((generic-mode-regex ".*-mode$")
-                (command-option (assoc generic-mode-regex which-key-highlighted-command-list)))
-              (unless command-option
-                (add-to-list 'which-key-highlighted-command-list
-                             (cons generic-mode-regex
-                                'fn/which-key-inactive-mode-face)
-                             t))))
+          (lexical-let* ((generic-mode-regex ".*-mode$")
+                         (command-option (assoc generic-mode-regex which-key-highlighted-command-list)))
+            (unless command-option
+              (add-to-list 'which-key-highlighted-command-list
+                           (cons generic-mode-regex
+                                 'fn/which-key-inactive-mode-face)
+                           t))))
 
-          (advice-add 'which-key--init-buffer :before #'fn/which-key-highlight-modes)
-          (add-hook 'after-init-hook #'fn/which-key-highlight-modes t)
-
-
-          ;; Namespace Highlighting
-          (defface fn/which-key-personal-namespace-face '((t . (:foreground "#9b59b6")))
-            "Face for my personal namespace."
-            :group 'fn)
-
-          (add-to-list 'which-key-highlighted-command-list
-                       (cons "^f.*/" 'fn/which-key-personal-namespace-face))
+        (advice-add 'which-key--init-buffer :before #'fn/which-key-highlight-modes)
+        (add-hook 'after-init-hook #'fn/which-key-highlight-modes t)
 
 
-          ;; Customized prefix display
-          (add-to-list 'which-key-replacement-alist
-                       (cons (cons nil "Prefix Command")
-                          #'fn/which-key-prefix-command-replacement))))
+        ;; Namespace Highlighting
+        (defface fn/which-key-personal-namespace-face '((t . (:foreground "#9b59b6")))
+          "Face for my personal namespace."
+          :group 'fn)
+
+        (add-to-list 'which-key-highlighted-command-list
+                     (cons "^f.*/" 'fn/which-key-personal-namespace-face))
+
+
+        ;; Customized prefix display
+        (add-to-list 'which-key-replacement-alist
+                     (cons (cons nil "Prefix Command")
+                           #'fn/which-key-prefix-command-replacement)))
     #+END_SRC
 
 *** which-function
@@ -2537,6 +2437,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id b1abbbf8-3b46-2d75-0cd8-9bce7ef92427
       (use-package eldoc
+        :unless noninteractive
         :diminish eldoc-mode
         :init
         (add-hook 'emacs-lisp-mode-hook 'turn-on-eldoc-mode)
@@ -2567,13 +2468,26 @@
         :after helm
         :config
         (global-set-key [remap describe-mode] #'helm-describe-modes))
-    #+END_SRC
+
+   #+END_SRC
+
+**** helm-flx
+     Flex matching is strong
+
+     #+BEGIN_SRC emacs-lisp :block-id 4d383ad6-7fce-9ac5-d57e-54c4310d0ffa
+       (use-package helm-flx
+         :ensure t
+         :after helm
+         :config
+         (helm-flx-mode t))
+     #+END_SRC
+
 ** Profiler
    Some things to help debug Emacs performance
 
    #+BEGIN_SRC emacs-lisp :block-id dbe3b540-57be-0cbc-4269-c04eaaa41eba
      (use-package profiler
-       :if (not noninteractive)
+       :unless noninteractive
        :init
        (defun fn/profiler-start ()
          "Start profiler with `cpu+mem'"
@@ -2593,6 +2507,7 @@
     #+BEGIN_SRC emacs-lisp :block-id 7cf4efda-7aa4-b9df-cbe0-826a5844e7c9
       (use-package paradox
         :ensure t
+        :unless noninteractive
         :bind (:map fn-standard-prefix-map
                     ("p" . paradox-list-packages))
         :config
@@ -2602,19 +2517,8 @@
           (all-the-icons)
           (fn/add-major-mode-icon
            'paradox-menu-mode
-           (list 'all-the-icons-octicon "package" :v-adjust 0.0))))
+           '(all-the-icons-octicon "package" :v-adjust 0.0))))
     #+END_SRC
-
-**** helm-flx
-     Flex matching is strong
-
-     #+BEGIN_SRC emacs-lisp :block-id 4d383ad6-7fce-9ac5-d57e-54c4310d0ffa
-       (use-package helm-flx
-         :ensure t
-         :after helm
-         :config
-         (helm-flx-mode t))
-     #+END_SRC
 
 *** elpa-mirror
     Just in case things are down.
@@ -2673,6 +2577,7 @@
                               package-file)))))
              backup-packages))))
     #+END_SRC
+
 * Artist
   Visual aesthetics is also a functional thing as well
 
