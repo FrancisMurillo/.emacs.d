@@ -1,6 +1,4 @@
 ;; The actual init file for my configuration
-
-
 ;; MVC Emacs
 (require 'server)
 (unless (eq (server-running-p) t)
@@ -95,21 +93,9 @@
                      fn/bootstrap-dir)))
 
 
-;; Preconfig
-(defcustom fn/pre-config-file "pre-config.el"
-  "File script to load before the main configuration loads, useful for setting options")
-
-(load (expand-file-name fn/pre-config-file user-emacs-directory) t)
-
-
-;; Structure Checking
-;; TODO
-
-
 ;; Block Tagging
 (defcustom fn/config-file (expand-file-name "config.org" user-emacs-directory)
   "Main org file to load")
-
 
 (defconst fn/code-block-id-symbol :block-id
   "My default tangler block id.")
