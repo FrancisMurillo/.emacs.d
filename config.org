@@ -1865,36 +1865,36 @@
           (setq fn/company-prog-backends (list 'company-dabbrev-code))
 
           (defun fn/backend-with-prog ()
-            (fn/append-to-backends 'company-keywords))))
+            (fn/append-to-backends 'company-keywords)))
     #+END_SRC
 
 *** yasnippet
     Snippet system along with autocomplete is awesome
 
     #+BEGIN_SRC emacs-lisp :block-id 26aea11a-6b42-e3c0-dc5f-a8ba5ceb6f42
-      (unless noninteractive
-        (use-package yasnippet
-          :ensure t
-          :defer t
-          :diminish yas-minor-mode
-          :bind (:map fn-standard-prefix-map
-                      ("y" . yas-new-snippet))
-          :init
-          (setq yas-verbosity 3
-                yas/root-directory (expand-file-name "snippets" fn/extra-dir)
-                yas--default-user-snippets-dir yas/root-directory
-                yas-snippet-dirs `(,yas/root-directory))
+      (use-package yasnippet
+        :ensure t
+        :unless noninteractive
+        :diminish yas-minor-mode
+        :bind (:map fn-standard-prefix-map
+                    ("y" . yas-new-snippet))
+        :hook (prog-mode . yas-minor-mode)
+        :init
+        (setq yas/root-directory (expand-file-name "snippets" fn/extra-dir)
+              yas--default-user-snippets-dir yas/root-directory
+              yas-snippet-dirs `(,yas/root-directory))
 
-          (make-directory yas--default-user-snippets-dir t)
-          (add-hook 'prog-mode-hook 'yas-minor-mode)
-          :config
-          (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
+        (make-directory yas--default-user-snippets-dir t)
+        :config
+        (setq yas-verbosity 3)
 
-          (defun fn/add-company-yasnippet ()
-            "Add yasnippet to company backends"
-            (fn/append-to-backends 'company-yasnippet))
+        (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
 
-          (add-hook 'after-init-hook 'fn/add-company-yasnippet)))
+        (defun fn/add-company-yasnippet ()
+          "Add yasnippet to company backends"
+          (fn/append-to-backends 'company-yasnippet))
+
+        (add-hook 'after-init-hook 'fn/add-company-yasnippet))
     #+END_SRC
 
 * Ergonomic
@@ -4615,17 +4615,15 @@
     Syntax checking is very important
 
     #+BEGIN_SRC emacs-lisp :block-id 0bd8c66a-906d-497b-c519-52c3cd914bfc
-      (unless noninteractive
-        (use-package flycheck
-          :ensure t
-          :defer  t
-          :diminish flycheck-mode
-          :init
-          (add-hook 'prog-mode-hook 'flycheck-mode)
-          :config
-          (setq flycheck-highlighting-mode 'lines
-                flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
-                flycheck-checker-error-threshold nil)))
+      (use-package flycheck
+        :ensure t
+        :unless noninteractive
+        :diminish flycheck-mode
+        :hook (prog-mode . flycheck-mode)
+        :config
+        (setq flycheck-highlighting-mode 'lines
+              flycheck-check-syntax-automatically '(save mode-enabled 'idle-change)
+              flycheck-checker-error-threshold nil))
 
       (use-package flycheck-pos-tip
         :ensure t
@@ -4637,12 +4635,11 @@
         :ensure t
         :after flycheck)
 
-      (with-eval-after-load 'elisp-mode
-        (use-package flycheck-package
-          :ensure t
-          :after flycheck
-          :config
-          (flycheck-package-setup)))
+      (use-package flycheck-package
+        :ensure t
+        :after flycheck
+        :config
+        (flycheck-package-setup))
     #+END_SRC
 
 *** magit
@@ -4881,17 +4878,6 @@
         :after helm
         :config
         (setq wgrep-auto-save-buffer t))
-    #+END_SRC
-
-*** wordgen
-    Random word generator for random test data.
-
-    #+BEGIN_SRC emacs-lisp :block-id f0300ef0-69cb-0157-dab6-59253b365cd4
-      (use-package wordgen
-        :ensure t
-        :defer t
-        :config
-        nil)
     #+END_SRC
 
 *** Generic Outline
@@ -6213,36 +6199,30 @@
     A linter is always needed
 
     #+BEGIN_SRC emacs-lisp :block-id 06d9fdcc-6c8d-a6b2-83ea-45179f85ca51
-      (fn/use-feature flycheck-elixir
-        (elixir-mode flycheck)
-        (use-package flycheck-credo
-          :ensure t
-          :defer t
-          :init
-          (add-hook 'elixir-mode-hook 'flycheck-credo-setup)))
-    #+END_SRC
+      (use-package flycheck-credo
+        :ensure t
+        :after flycheck
+        :demand t
+        :config
+        (flycheck-credo-setup))
 
-    Integration with =mix=
-
-    #+BEGIN_SRC emacs-lisp :block-id d41f5eeb-1f8a-46e1-8581-bb66d2722118
-      (fn/use-feature flycheck-mix
-        (elixir-mode flycheck)
-        (use-package flycheck-mix
-          :ensure t
-          :defer t
-          :after (flycheck)
-          :config
-          nil))
+      (use-package flycheck-mix
+        :ensure t
+        :after flycheck
+        :demand t
+        :config
+        (flycheck-mix-setup))
     #+END_SRC
 
 *** Snippets
     Snippets support via yasnippet
 
     #+BEGIN_SRC emacs-lisp :block-id c6da5fe6-e35e-6d0a-4cc0-efb35d46925f
-      (fn/use-feature elixir-yasnippets
-        (elixir-mode yasnippet)
-        (use-package elixir-yasnippets
-          :ensure t))
+      (use-package elixir-yasnippets
+        :ensure t
+        :after elixir-mode
+        :config
+        nil)
     #+END_SRC
 
 *** Tooling
@@ -6426,8 +6406,8 @@
     #+BEGIN_SRC emacs-lisp :block-id 779d9b22-60a5-9956-ea14-8bba646238f0
       (use-package projectile-rails
         :ensure t
-        :init
-        (add-hook 'projectile-mode-hook #'projectile-rails-global-mode)
+        :after ruby-mode
+        :hook (ruby-mode . projectile-rails-mode)
         :config
         (add-to-list
          'display-buffer-alist
@@ -6437,8 +6417,7 @@
 
       (use-package ruby-test-mode
         :ensure t
-        :init
-        (add-hook 'ruby-mode-hook #'ruby-test-mode)
+        :hook (ruby-mode  . ruby-test-mode)
         :config
         nil)
     #+END_SRC
