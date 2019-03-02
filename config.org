@@ -74,7 +74,8 @@
      (defconst fn/package-archives
        `(("gnu" "http://elpa.gnu.org/packages/" 10)
          ("org" "http://orgmode.org/elpa/" 0 )
-         ("melpa" "http://melpa.org/packages/" 20))
+         ("melpa" "http://melpa.org/packages/" 20)
+         ("elpa" "http://elpa.gnu.org/" 5))
        "List of my packages")
 
      (mapc
@@ -84,7 +85,6 @@
             (add-to-list 'package-archives (cons id location))
             (add-to-list 'package-archive-priorities (cons id priority)))))
       fn/package-archives)
-
    #+END_SRC
 
 ** Package Manager
@@ -863,8 +863,7 @@
    #+BEGIN_SRC emacs-lisp :block-id cf5a9ca5-1bd8-421b-d6f6-76a4cf5194fc
      (use-package auto-compile
        :ensure t
-       :init
-       (add-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
+       :hook (emacs-lisp-mode . auto-compile-mode)
        :config
        (auto-compile-on-load-mode)
        (auto-compile-on-save-mode))
@@ -1780,19 +1779,51 @@
     A replacement for =autocomplete=.
 
     #+BEGIN_SRC emacs-lisp :block-id 14b030d6-a17c-98ae-444f-7529560d8b4d
-      (unless noninteractive
-        (use-package company
-          :ensure t
-          :diminish company-mode
-          :defines company-backends
-          :demand t
-          :init
-          (add-hook 'prog-mode-hook 'company-mode)
-          :config
-          (setq company-idle-delay (/ 60.0)
-                company-minimum-prefix-length 3
+      (use-package company
+        :ensure t
+        :unless noninteractive
+        :diminish company-mode
+        :defines company-backends
+        :hook (prog-mode . company-mode)
+        :config
+        (setq company-idle-delay (/ 60.0)
+              company-minimum-prefix-length 3
 
-                company-begin-commands (list 'self-insert-command))
+              company-begin-commands (list 'self-insert-command))
+
+        (setq company-show-numbers t
+              company-tooltip-limit 20
+              company-tooltip-align-annotations t)
+
+        (setq company-dabbrev-time-limit 0.001
+              company-dabbrev-code-time-limit 0.001
+              company-dabbrev-downcase nil)
+
+        (setq company-backends (list))
+
+        (add-to-list 'company-backends 'company-capf)
+        (add-to-list 'company-backends 'company-dabbrev)
+        (add-to-list 'company-backends 'company-elisp)
+
+        (defun fn/combine-backends (backend new-backend)
+          "Combine BACKEND with NEW-BACKEND."
+          (if (and (listp backend) (member new-backend backend))
+              backend
+            (let* ((list-backend (if (consp backend)
+                                     backend
+                                   (list backend)))
+                   (with-backend (if (member ':with list-backend)
+                                     list-backend
+                                   (append list-backend '(:with)))))
+              (append with-backend (list new-backend)))))
+
+        (defun fn/append-to-backends (new-backend)
+          "Append NEW-BACKEND to company."
+          (setq company-backends
+                (mapcar
+                 (lambda (backend)
+                   (fn/combine-backends backend new-backend))
+                 company-backends)))
 
 
           (setq company-show-numbers t
@@ -4618,49 +4649,45 @@
     Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
 
     #+BEGIN_SRC emacs-lisp :block-id 25b4c3c1-0062-54ae-4d23-b3070fdcb4a2
-      (unless noninteractive
-        (fn/use-executables git-check
-          (git)
-          (use-package magit
-            :ensure t
-            :if (version<= "24.4.4" emacs-version)
-            :bind (("C-c g" . magit-status)
-                   ("M-g b" . magit-blame))
-            :init
-            (setq magit-push-always-verify t)
-            :config
-            (setq magit-repository-directories (list)
-                  magit-repository-directories-depth 1)
-
-            (when (file-exists-p (expand-file-name "Fakespace"))
-              (add-to-list 'magit-repository-directories (expand-file-name "Fakespace")))
-
-            (when (file-exists-p (expand-file-name "Modules"))
-              (add-to-list 'magit-repository-directories (expand-file-name "Modules")))
-
-            (defun fq/display-magit-on-same-buffer (buffer)
-              (if magit-display-buffer-noselect
-                  (magit-display-buffer-traditional buffer)
-                (display-buffer-same-window buffer nil)))
-
-            (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
-
-            (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
-
-            ;; Commit message same buffer
-            (add-to-list
-             'display-buffer-alist
-             (cons
-              (rx bos "COMMIT_EDITMSG")
-              (cons 'display-buffer-same-window (list)))))))
-
-      (unless noninteractive
-        (use-package git-timemachine
+      (fn/use-executables git-check
+        (git)
+        (use-package magit
           :ensure t
-          :defer t
-          :bind (("M-g t" . git-timemachine))
+          :if (and (version<= "24.4.4" emacs-version)
+                   (not noninteractive))
+          :bind (("C-c g" . magit-status)
+                 ("M-g b" . magit-blame))
+          :init
+          (setq magit-push-always-verify t)
           :config
-          nil))
+          (setq magit-repository-directories (list)
+                magit-repository-directories-depth 1)
+
+          (defun fq/display-magit-on-same-buffer (buffer)
+            (if magit-display-buffer-noselect
+                (magit-display-buffer-traditional buffer)
+              (display-buffer-same-window buffer nil)))
+
+          (setq magit-display-buffer-function #'fq/display-magit-on-same-buffer)
+
+          (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
+
+          ;; Commit message same buffer
+          (add-to-list
+           'display-buffer-alist
+           (cons
+            (rx bos "COMMIT_EDITMSG")
+            (cons 'display-buffer-same-window (list))))))
+
+      (use-package git-timemachine
+        :ensure t
+        :defer t
+        :unless noninteractive
+        :bind (("M-g t" . git-timemachine))
+        :config
+        nil)
+
+
     #+END_SRC
 
 **** magithub
@@ -4892,11 +4919,10 @@
     #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
       (use-package restclient
         :ensure t
+        :defer t
         :mode (("\\.rest\\'" . restclient-mode)
                ("\\.rst\\'" . restclient-mode))
-        :defer t
         :config
-        ;; Setting it up as editing mode
         (add-hook 'restclient-mode-hook 'whitespace-mode)
 
         (defun fn/restclient-indent-function ()
@@ -4906,38 +4932,31 @@
 
         (add-hook 'restclient-mode-hook 'fn/restclient-indent-function)
 
-
         (fn/use-feature restclient-mode--mode-icon
           (restclient all-the-icons)
           (fn/add-major-mode-icon
            'restclient-mode
            (list 'all-the-icons-faicon "arrow-circle-o-up" :v-adjust -0.1)))
 
-        (fn/use-feature restclient-smartpar
-          (restclient smartparens paredit)
-          (add-hook 'restclient-mode-hook 'paredit-mode)
+        (with-eval-after-load 'smartparens
           (add-hook 'restclient-mode-hook 'smartparens-mode))
 
+        (with-eval-after-load 'paredit
+          (add-hook 'restclient-mode-hook 'paredit-mode))
 
-        (fn/use-feature restclient-company
-          (restclient company)
-          (use-package company-restclient
-            :ensure t
-            :demand t
-            :config
-            (add-hook 'restclient-mode-hook 'company-mode)
-            (add-to-list 'company-backends 'company-restclient)))
+        (use-package company-restclient
+          :ensure t
+          :after (company restclient)
+          :config
+          (add-to-list 'company-backends 'company-restclient))
 
-        (fn/use-feature literate-restclient
-          (restclient org)
-          (use-package ob-restclient
-            :ensure t
-            :demand t
-            :config
-            (add-to-list 'org-babel-load-languages '(restclient . t))))
+        (use-package ob-restclient
+          :ensure t
+          :after (org restclient)
+          :config
+          (add-to-list 'org-babel-load-languages '(restclient . t)))
 
-        (fn/use-feature org-restclient
-          (restclient outline)
+        (with-eval-after-load 'outline
           (defun fn/outline-restclient-setup ()
             "Setup `outline' with `restclient'."
             (outline-minor-mode +1)
@@ -5595,49 +5614,6 @@
            (list 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
     #+END_SRC
 
-*** Autocomplete
-    A must have for Javascript development
-
-    Sadly, =tern= slows me down somehow so I will be temporarily
-    disabling it.
-
-    #+BEGIN_SRC emacs-lisp :block-id 160244e2-307f-c1cd-e968-71453bad9095
-      (defconst fn/tern-package-dir (expand-file-name "tern/" fn/custom-module-dir)
-        "My performance customization on tern")
-
-      (unless noninteractive
-        (fn/use-executables tern-check
-          (tern)
-          (use-package tern
-            :ensure t
-            :disabled t
-            :diminish tern-mode
-            :hook js2-mode-hook
-            :config
-            (setq tern-idle-time 10.0)
-
-            (use-package company-tern
-              :ensure t
-              :after company
-              :config
-              (add-to-list 'company-backends 'company-tern))
-
-            (fn/use-feature tern-prodigy
-              (tern)
-              (prodigy-define-tag
-                :name 'tern)))))
-
-
-      (unless noninteractive
-        (fn/use-feature company-flow
-          (js2-mode company)
-          (use-package company-flow
-            :ensure t
-            :demand t
-            :config
-            (add-to-list 'company-backends 'company-flow))))
-    #+END_SRC
-
 *** Linter
     My linter if you will for JS.
 
@@ -5726,30 +5702,6 @@
       (fn/use-feature org-js2-src
         (org js2-mode)
         (add-to-list 'org-babel-load-languages '(js . t)))
-    #+END_SRC
-
-** Scala
-   The functional JVM
-
-*** Mode
-    Must have a Scala mode
-
-    #+BEGIN_SRC emacs-lisp :block-id 93e592de-c08e-e6e1-c41f-8081dd6491f2
-      (use-package scala-mode
-        :ensure t
-        :defer t
-        :config
-        nil)
-    #+END_SRC
-
-*** IDE
-    Java really needs a IDE
-
-    #+BEGIN_SRC emacs-lisp :block-id f36cf09e-4f13-b2a5-049a-7945288157b3
-      (use-package ensime
-        :ensure t
-        :defer t
-        :after (scala-mode))
     #+END_SRC
 
 ** Python
@@ -6237,294 +6189,6 @@
         (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation))
     #+END_SRC
 
-** Clojure
-   Scheme would be nice but there is a modern alternative.
-
-*** Mode
-    The major mode
-
-    #+BEGIN_SRC emacs-lisp :block-id 8bfb19ba-f64b-82e3-f65f-a4a152320f8a
-      (fn/use-executables clojure-check
-        (clojure lein)
-        (use-package clojure-mode
-          :ensure t
-          :mode (("\\.clj\\'" . clojure-mode))
-          :config
-
-          (fn/use-feature clojure-mode--mode-icon
-            (all-the-icons)
-            (fn/add-major-mode-icon
-             'clojure-mode
-             (list 'all-the-icons-fileicon "scheme" :v-adjust 0.0)))))
-
-      (use-package clojure-mode-extra-font-locking
-        :ensure t
-        :after clojure-mode)
-    #+END_SRC
-
-*** Linter
-    Linter for clojure
-
-    #+BEGIN_SRC emacs-lisp :block-id 210b464a-e318-1597-a81a-8269f9e10187
-      (use-package flycheck-clojure
-        :ensure t
-        :after clojure-mode
-        :config
-        (flycheck-clojure-setup))
-    #+END_SRC
-
-*** REPL
-    What is Clojure without a REPL?
-
-    #+BEGIN_SRC emacs-lisp :block-id d3120ff7-28c7-215f-f0bc-d6ac6fa94a1a
-      (use-package cider
-        :ensure t
-        :defer t
-        :after clojure-mode
-        :config
-        (fn/use-feature cider-repl-paredit
-          (cider paredit)
-          (add-hook 'cider-repl-mode-hook 'paredit-mode))
-
-        (fn/use-feature cider-repl-mode--mode-icon
-          (cider all-the-icons)
-          (fn/add-major-mode-icon
-           'cider-repl-mode
-           (list 'all-the-icons-fileicon "clisp" :v-adjust 0.0)))
-
-        (fn/use-feature cider-repl-eldoc
-          (cider eldoc)
-          (add-hook 'cider-repl-mode-hook #'cider-eldoc-setup))
-
-
-        (setq cider-cljs-lein-repl
-           "(do (use 'figwheel-sidecar.repl-api) (start-figwheel!) (cljs-repl))")
-        (define-key cider-repl-mode-map (kbd "C-j") #'cider-repl-newline-and-indent))
-    #+END_SRC
-
-*** Integration
-    Lisp meets Lisp.
-
-    #+BEGIN_SRC emacs-lisp :block-id 0afcc21c-7f56-fca5-0eba-fc5d4272e54f
-      (use-package clomacs
-        :ensure t
-        :defer t
-        :after clojure-mode)
-    #+END_SRC
-
-*** Literate
-    Literacy for Clojure
-
-    #+BEGIN_SRC emacs-lisp :block-id 1df9ed0f-b6a9-bbf7-cd14-c0d8c2685669
-      (unless noninteractive
-        (fn/use-feature org-haskell
-          (clojure-mode cider org)
-
-          (defcustom fn/org-clojure-mode-hook nil
-            "Hook when org babel clojure block is opened."
-            :type 'hook)
-
-          (defun fn/org-clojure-buffer-p ()
-            "Check if buffer is an org  buffer predicate."
-            (and (org-src-edit-buffer-p)
-                     (eq major-mode 'clojure-mode)))
-
-          (defun fn/org-clojure-buffer ()
-            "Run hooks when the buffer is an org clojure buffer."
-            (when (fn/org-clojure-buffer-p)
-              (run-hooks 'fn/org-clojure-mode-hook)))
-
-
-          (defun fn/org-clojure-repl-start ()
-            "Start a REPL with no questions asked."
-            (unless (cider-connected-p)
-              "Starting REPL"
-              (cider-jack-in)))
-
-          (defun fn/org-clojure-repl-eval-buffer (&rest args)
-            "Eval buffer with the REPL."
-            (when (and (fn/org-clojure-buffer-p)
-                     (cider-connected-p))
-              (save-window-excursion
-                (switch-to-buffer (cider-current-repl-buffer))
-
-                (with-current-buffer (cider-current-repl-buffer)
-                  (cider-repl-clear-buffer)))
-              (cider-eval-buffer)
-
-              (message "REPL updated.")))
-
-          (defun fn/org-clojure-send-buffer-on-save ()
-            "On save, send the current buffer to the REPL it has."
-            (add-hook 'after-save-hook #'fn/org-clojure-repl-eval-buffer t t))
-
-          (add-hook 'org-src-mode-hook #'fn/org-clojure-buffer t)
-
-          (add-hook 'fn/org-clojure-mode-hook #'fn/org-clojure-repl-start t)
-
-          (advice-add 'org-edit-src-save :after #'fn/org-clojure-repl-eval-buffer)))
-    #+END_SRC
-
-** C
-   The base of all languages
-
-   #+BEGIN_SRC emacs-lisp :block-id 892cb575-f270-c080-6840-b8d52e52b535
-
-   #+END_SRC
-
-*** IDE
-    A lot of irony for an IDE
-
-    #+BEGIN_SRC emacs-lisp :block-id cbcaef17-718e-c364-2cb8-c46ef34bd4b5
-      (unless noninteractive
-        (use-package irony
-          :ensure t
-          :defer t
-          :config
-          (setq irony-user-dir (expand-file-name "irony" fn/cache-dir)
-                irony-server-install-prefix irony-user-dir)
-
-          (add-to-list 'exec-path (expand-file-name "bin" irony-user-dir))
-
-          (defun fn/irony-mode-setup ()
-            (define-key irony-mode-map [remap completion-at-point]
-              'irony-completion-at-point-async)
-            (define-key irony-mode-map [remap complete-symbol]
-              'irony-completion-at-point-async))
-
-          (add-hook 'irony-mode-hook 'fn/irony-mode-setup)
-
-          (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)))
-
-      (fn/use-feature irony-autocomplete
-        (company irony)
-        (use-package company-irony
-          :ensure t
-          :defer t
-          :after (company irony)
-          :config
-          (add-to-list 'company-backends 'company-irony)))
-    #+END_SRC
-
-*** Linter
-    Flycheck with irony works
-
-    #+BEGIN_SRC emacs-lisp :block-id 36a98771-3bc7-bf93-9605-354cf09b41bf
-      (fn/use-feature flycheck-irony
-        (flycheck irony)
-        (use-package flycheck-irony
-          :ensure t
-          :after flycheck
-          :init
-          (add-hook 'c-mode 'flycheck-mode)
-          :config
-          (flycheck-irony-setup)))
-    #+END_SRC
-
-** Guile
-   If Elisp is Guile, then I am prepared.
-
-*** Mode
-    A mode for Guile
-
-    #+BEGIN_SRC emacs-lisp :block-id 88d8f879-32ea-41bf-75fc-e2771b3976d7
-      (fn/use-feature scheme-mode
-        (scheme)
-
-        (fn/use-feature par-scheme
-          (scheme paredit)
-          (add-hook 'scheme-mode #'paredit-mode))
-
-        (fn/use-feature scheme-mode--mode-icon
-          (all-the-icons)
-          (fn/add-major-mode-icon
-           'scheme-mode
-           (list 'all-the-icons-fileicon "scheme" :v-adjust 0.0))))
-    #+END_SRC
-
-*** REPL
-    A must have
-
-    #+BEGIN_SRC emacs-lisp :block-id 2706d094-0482-a050-5de7-a5cc66d6b6bb
-      (use-package geiser
-        :ensure t
-        :after scheme
-        :config
-        (setq geiser-active-implementations (list 'guile)
-              geiser-default-implementation 'guile)
-
-        (fn/use-feature par-geiser
-          (paredit)
-          (add-hook 'geiser-repl-mode-hook #'paredit-mode)))
-    #+END_SRC
-*** Autocomplete
-    Company to the job.
-
-    #+BEGIN_SRC emacs-lisp :block-id 83cc4af3-3d96-4034-29f7-020a80cfa603
-      (fn/use-feature guile-company
-        (scheme company)
-        "(It')s all goodman")
-    #+END_SRC
-
-** Elm
-   Functional JavaScript frontend
-
-*** Mode
-    Elm major mode
-
-    #+BEGIN_SRC emacs-lisp :block-id 32b54390-5bb4-16e4-208d-f91567657a3b
-      (use-package elm-mode
-        :ensure t
-        :config
-        nil)
-    #+END_SRC
-
-*** Linter
-    Linter for Elm
-
-    #+BEGIN_SRC emacs-lisp :block-id a08741e2-92ba-25ef-5474-4e8a78116de8
-      (fn/use-feature flycheck-elm
-        (flycheck elm-mode)
-        (use-package flycheck-elm
-          :ensure t
-          :after elm-mode
-          :config
-          (flycheck-elm-setup)))
-    #+END_SRC
-
-*** Formatter
-    Formatter for Elm, requires =elm-format=
-
-    #+BEGIN_SRC emacs-lisp :block-id cb77963e-7a17-06c2-c461-1ab9fa6ec359
-      (fn/use-executables elm-format-check
-        (elm-format)
-        (fn/use-feature elm-mode-formatter
-          (elm-mode)
-          (setq elm-format-on-save t
-                elm-sort-imports-on-save t)))
-    #+END_SRC
-*** Autocomplete
-    A needed feature, requires =elm-oracle=
-
-    #+BEGIN_SRC emacs-lisp :block-id d86ddd6e-2eae-1b6f-9157-13eb41f40258
-      (fn/use-executables elm-oracle-check
-        (elm-oracle)
-        (fn/use-feature elm-mode-autocomplete
-          (elm-mode company)
-          (add-hook 'elm-mode-hook #'elm-oracle-setup-completion)
-          (add-to-list 'company-backends 'company-elm)))
-    #+END_SRC
-
-*** Snippets
-    Snippets too
-
-    #+BEGIN_SRC emacs-lisp :block-id 32323472-2919-f3d1-0ba9-627cbcb58a30
-      (fn/use-feature elm-yasnippets
-        (elm yasnippets)
-        (use-package elm-yasnippets
-          :ensure t))
-    #+END_SRC
-
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python or Ruby
 
@@ -6620,11 +6284,10 @@
     #+BEGIN_SRC emacs-lisp :block-id 9c0e8673-fae1-8385-7f86-b5fa2af4f2e1
       (use-package racer
         :ensure t
-        :disabled t
         :after company
-        :init
-        (add-hook 'rust-mode-hook #'racer-mode)
-        (add-hook 'racer-mode-hook #'company-mode))
+        :hook (rust-mode . racer-mode)
+        :config
+        nil)
     #+END_SRC
 
 *** Linter
@@ -8063,23 +7726,6 @@
          (define-key slack-edit-message-mode-map (kbd "C-c e c") #'slack-message-embed-channel)))
    #+END_SRC
 
-** sauron
-   The eye of all notifier
-
-   #+BEGIN_SRC emacs-lisp :block-id 17b26472-bee7-1712-9c92-ce929629a3e0
-     (use-package sauron
-       :ensure t
-       :defer t
-       :config
-       (setq sauron-modules (list 'sauron-erc
-                            'sauron-jabber
-                            'sauron-dbus))
-
-       (setq sauron-separate-frame nil
-          sauron-sticky-frame nil
-          sauron-hide-mode-line nil))
-   #+END_SRC
-
 ** sx
    Stack Exchange api
 
@@ -8281,35 +7927,6 @@
           ;; Remove default advice for vlc which does not work
           (advice-remove 'emms-player-vlc-start #'ad-Advice-emms-player-vlc-start)))
     #+END_SRC
-** figlet
-   Annoying people with text
-
-   #+BEGIN_SRC emacs-lisp :block-id 56abcdf0-af38-e683-134a-50861bf4674f
-     (use-package figlet
-       :ensure t
-       :defer t
-       :config
-       (setq figlet-default-font "slant"))
-   #+END_SRC
-
-** calibre
-
-   Something to manage my ebooks.
-
-   #+BEGIN_SRC emacs-lisp :block-id 0a8ea321-5fe8-376c-cca3-ad5851cbef14
-     (defconst fn/calibre-mode-package-dir (expand-file-name "calibre-mode/" fn/custom-module-dir)
-       "Calibre-mode package location.")
-
-     (use-package calibre-mode
-       :load-path fn/calibre-mode-package-dir
-       :commands (calibre-list calibre-find)
-       :config
-       (setq sql-sqlite-program "sqlite3")
-
-       (setq calibre-root-dir (expand-file-name "Books" "~'")
-             calibre-db (expand-file-name "metadata.db" calibre-root-dir)))
-   #+END_SRC
-
 * Scripts
 ** Clean Home
    Make sure my Emacs home is clean
