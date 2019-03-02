@@ -74,8 +74,7 @@
      (defconst fn/package-archives
        `(("gnu" "http://elpa.gnu.org/packages/" 10)
          ("org" "http://orgmode.org/elpa/" 0 )
-         ("melpa" "http://melpa.org/packages/" 20)
-         ("elpa" "http://elpa.gnu.org/" 5))
+         ("melpa" "http://melpa.org/packages/" 20))
        "List of my packages")
 
      (mapc
@@ -1145,6 +1144,20 @@
         :ensure t
         :after pcomplete)
     #+END_SRC
+
+** direnv
+   Env per directory. (Want to hack this with Emacs)
+
+   #+begin_src emacs-lisp :block-id 324f145e-a402-abaa-dab0-26b5de87697f
+     (fn/use-executables direnv-check
+       (direnv)
+       (use-package direnv
+         :ensure t
+         :unless noninteractive
+         :demand t
+         :config
+         (direnv-mode)))
+   #+end_src
 
 ** prodigy
    Living in the shell requires some genius
@@ -3970,7 +3983,10 @@
 
     #+begin_src emacs-lisp :block-id 261bdcb6-74e9-a07a-3855-329a8ec7cfba
       (with-eval-after-load 'org
-        (require 'org-tempo))
+        (require 'org-tempo)
+
+        ;;; Bug on first element ("n" "#+BEGIN_NOTES ? #+END_NOTES")
+        (setq org-structure-template-alist (cdr org-structure-template-alist)))
     #+end_src
 
 ** flyspell
@@ -3998,21 +4014,9 @@
    #+BEGIN_SRC emacs-lisp :block-id edb37fe1-f13c-60a5-6755-8fb7e6b5e2e6
      (fn/use-executables java-langtool
        (java languagetool)
-       (defun fn/java-version ()
-         "Check java version."
-         (when (executable-find "java")
-           (let* ((result (shell-command-to-string "java -showversion"))
-                  (start-index (string-match "\"" result)))
-             (if start-index
-                 (substring-no-properties
-                  result
-                  (1+ start-index)
-                  minor-index)
-               "0.0.0"))))
-
        (use-package langtool
          :ensure t
-         :if (and (version<= "1.8" (fn/java-version)) (not noninteractive))
+         :unless noninteractive
          :bind
          (:map fn-standard-prefix-map
                ("C-l c" . langtool-check-buffer)
@@ -4674,7 +4678,10 @@
            'display-buffer-alist
            (cons
             (rx bos "COMMIT_EDITMSG")
-            (cons 'display-buffer-same-window (list))))))
+            (cons 'display-buffer-same-window (list))))
+
+          (with-eval-after-load 'direnv
+             (add-to-list 'direnv-non-file-modes 'magit-process-mode))))
 
       (use-package git-timemachine
         :ensure t
