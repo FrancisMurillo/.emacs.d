@@ -1797,7 +1797,8 @@
         :unless noninteractive
         :diminish company-mode
         :defines company-backends
-        :hook (prog-mode . company-mode)
+        :init
+        (add-hook 'prog-mode-hook 'company-mode)
         :config
         (setq company-idle-delay (/ 60.0)
               company-minimum-prefix-length 3
@@ -1838,11 +1839,9 @@
                    (fn/combine-backends backend new-backend))
                  company-backends)))
 
-
           (setq company-show-numbers t
                 company-tooltip-limit 20
                 company-tooltip-align-annotations t)
-
 
           (setq company-dabbrev-time-limit 0.001
                 company-dabbrev-code-time-limit 0.001
@@ -1893,12 +1892,15 @@
                     ("y" . yas-new-snippet))
         :hook (prog-mode . yas-minor-mode)
         :init
+        (setq-default yas-snippet-dirs
+                      `(,(expand-file-name "snippets" fn/extra-dir)))
+        :config
         (setq yas/root-directory (expand-file-name "snippets" fn/extra-dir)
               yas--default-user-snippets-dir yas/root-directory
               yas-snippet-dirs `(,yas/root-directory))
 
         (make-directory yas--default-user-snippets-dir t)
-        :config
+
         (setq yas-verbosity 3)
 
         (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
@@ -1907,7 +1909,9 @@
           "Add yasnippet to company backends"
           (fn/append-to-backends 'company-yasnippet))
 
-        (add-hook 'after-init-hook 'fn/add-company-yasnippet))
+        (add-hook 'after-init-hook 'fn/add-company-yasnippet)
+
+        (yas-reload-all))
     #+END_SRC
 
 * Ergonomic
@@ -6252,51 +6256,34 @@
     #+END_SRC
 
 ** Rust
-   A close C alternative
+   A close C alternative that I can chew on
 
-*** Mode
-    Major mode for Rust
+   #+begin_src emacs-lisp :block-id 3461f079-e772-71d2-bdb2-ae1e84009f88
+     (use-package rust-mode
+       :ensure t
+       :config
+       (setq rust-format-on-save t))
 
-    #+BEGIN_SRC emacs-lisp :block-id 10bab1d8-1d69-5d81-e5ba-4c75dca5a291
-      (use-package rust-mode
-        :ensure t
-        :defer t
-        :config
-        (setq rust-format-on-save t))
-    #+END_SRC
+     (use-package racer
+       :ensure t
+       :after company
+       :hook (rust-mode . racer-mode)
+       :config
+       (setq racer-cmd (executable-find "racer")))
 
-*** Completion
-    Code completion for Rust
+     (use-package cargo
+       :ensure t
+       :hook (rust-mode . cargo-minor-mode)
+       :config
+       nil)
 
-    #+BEGIN_SRC emacs-lisp :block-id 9c0e8673-fae1-8385-7f86-b5fa2af4f2e1
-      (use-package racer
-        :ensure t
-        :after company
-        :hook (rust-mode . racer-mode)
-        :config
-        nil)
-    #+END_SRC
-
-*** Linter
-    Integrate rust with flycheck
-
-    #+BEGIN_SRC emacs-lisp :block-id c90a831d-97a8-bbef-0165-59740d87063e
-      (use-package flycheck-rust
-        :ensure t
-        :after rust
-        :config
-        (flycheck-rust-setup))
-    #+END_SRC
-
-*** Project Tooling
-    Cargo is the way to go
-
-    #+BEGIN_SRC emacs-lisp :block-id 56dd4258-4b58-e797-2436-b03da0f81ae2
-      (use-package cargo
-        :ensure t
-        :init
-        (add-hook 'rust-mode-hook 'cargo-minor-mode))
-    #+END_SRC
+     (use-package flycheck-rust
+       :ensure t
+       :after flycheck
+       :demand t
+       :config
+       (flycheck-rust-setup))
+   #+end_src
 
 ** PHP
 *** Mode
@@ -8987,7 +8974,6 @@
          (insert (fn/relative-path source-path target-path))))
    #+END_SRC
 
-** Managed .gitignore
    A quick DSL makes me feel good.
 
    #+BEGIN_SRC emacs-lisp :block-id 32fbaff6-e859-4eea-25bf-cfd59fdf4644
@@ -9030,30 +9016,6 @@
        nil)
    #+END_SRC
 
-** Managed .projectile
-   Copying =magin= for .projectile, might want to refactor.
-
-   #+BEGIN_SRC emacs-lisp :block-id 8d1d2ce7-1e9c-3162-ccbe-ac105f53a069
-     (use-package projin
-       :load-path fn/custom-script-dir
-       :after magin
-       :config
-       (projin-write-to-project
-        `(delimited
-          (context
-           (file "*.ttf")
-
-           (file "*.jar")
-           (file "*.tar"))
-
-          (context
-           (dir ,(file-name-base fn/cache-dir))
-           (dir ,(file-name-base fn/extra-dir))
-           (dir ,(file-name-base fn/package-dir)))
-
-          (block emacs))
-        user-emacs-directory))
-   #+END_SRC
 ** Org-Jekyll Blogger
 
    My blogging script
