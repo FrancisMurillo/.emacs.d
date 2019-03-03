@@ -6283,7 +6283,15 @@
        :ensure t
        :hook (rust-mode . cargo-minor-mode)
        :config
-       nil)
+       (defun fn/cargo-test-add-nocapture-flag (orig-fun &rest args)
+         "When running tests, add `--nocapture' flag to allow printing out variables."
+         (let ((cargo-process--command-flags
+                (append cargo-process--command-flags
+                        "-- --nocapture")))
+           (apply orig-fun args)))
+
+       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-add-nocapture-flag)
+       (advice-add 'cargo-process-test :around #'fn/cargo-test-add-nocapture-flag))
 
      (use-package flycheck-rust
        :ensure t
