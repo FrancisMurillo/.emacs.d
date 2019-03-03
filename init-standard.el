@@ -1,19 +1,20 @@
 ;; The actual init file for my configuration
 ;; MVC Emacs
-(require 'server)
-(unless (eq (server-running-p) t)
-  (server-start))
-
+(when (require 'server)
+  (unless (server-running-p)
+    (server-start)))
 
 ;; Turn off mouse interface early in startup to avoid momentary display
-(if (fboundp 'menu-bar-mode) (menu-bar-mode -1))
-(if (fboundp 'tool-bar-mode) (tool-bar-mode -1))
-(if (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
+(when (fboundp 'menu-bar-mode)
+  (menu-bar-mode -1))
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+(when (fboundp 'scroll-bar-mode)
+  (scroll-bar-mode -1))
 
 (unless (>= emacs-major-version 24)
   (message "This config works only for Emacs version 24 and higher")
   (kill-emacs))
-
 
 ;; Package Manager
 (require 'package)
@@ -26,7 +27,6 @@
   "Every cached or moving file should be here like with Spacemacs")
 
 (make-directory fn/cache-dir t)
-
 
 (when (version<= "25" emacs-version)
   (require 'nsm)
@@ -106,7 +106,6 @@
 (defconst fn/code-block-end-format   ";; --- end block:   %s ---"
   "The code block end format.")
 
-
 (defvar fn/current-org-block-info nil
   "The current block info being tangled by `org-babel-tangle-single-block'.
 Hacked on v9 since it is lexically binded.")
@@ -120,16 +119,29 @@ Hacked on v9 since it is lexically binded.")
 
 (advice-add 'org-babel-tangle-single-block :around #'fn/set-current-org-block-info)
 
+(defconst fn/counter-code-line-format "(setq fn/last-block-evaluated \"%s\")"
+  "The line to tag `fn/last-block-evaluated'")
+
+(defvar fn/last-block-evaluated nil
+  "If an error occurs with tangling, this variable is the last known block tangled
+for better debugging.")
+
 (defun fn/org-babel-tangle-wrap-block-info ()
   "Wraps a code block with `fn/code-block-id-symbol'."
   (let* ((block-params (nth 2 fn/current-org-block-info))  ;; org-babel-tangle binding
          (block-id (cdr (assoc fn/code-block-id-symbol block-params))))
     (when block-id
-      (let ((block-start (format fn/code-block-start-format block-id))
-            (block-end (format fn/code-block-end-format block-id)))
+      (let ((block-start
+             (format fn/code-block-start-format block-id))
+            (counter-line
+             (format fn/counter-code-line-format block-id))
+            (block-end
+             (format fn/code-block-end-format block-id)))
         (save-excursion
           (beginning-of-buffer)
           (insert block-start)
+          (insert "\n")
+          (insert counter-line)
           (insert "\n")
 
           (end-of-buffer)

@@ -1797,7 +1797,8 @@
         :unless noninteractive
         :diminish company-mode
         :defines company-backends
-        :hook (prog-mode . company-mode)
+        :init
+        (add-hook 'prog-mode-hook 'company-mode)
         :config
         (setq company-idle-delay (/ 60.0)
               company-minimum-prefix-length 3
@@ -1838,11 +1839,9 @@
                    (fn/combine-backends backend new-backend))
                  company-backends)))
 
-
           (setq company-show-numbers t
                 company-tooltip-limit 20
                 company-tooltip-align-annotations t)
-
 
           (setq company-dabbrev-time-limit 0.001
                 company-dabbrev-code-time-limit 0.001
@@ -1893,12 +1892,15 @@
                     ("y" . yas-new-snippet))
         :hook (prog-mode . yas-minor-mode)
         :init
+        (setq-default yas-snippet-dirs
+                      `(,(expand-file-name "snippets" fn/extra-dir)))
+        :config
         (setq yas/root-directory (expand-file-name "snippets" fn/extra-dir)
               yas--default-user-snippets-dir yas/root-directory
               yas-snippet-dirs `(,yas/root-directory))
 
         (make-directory yas--default-user-snippets-dir t)
-        :config
+
         (setq yas-verbosity 3)
 
         (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
@@ -1907,7 +1909,9 @@
           "Add yasnippet to company backends"
           (fn/append-to-backends 'company-yasnippet))
 
-        (add-hook 'after-init-hook 'fn/add-company-yasnippet))
+        (add-hook 'after-init-hook 'fn/add-company-yasnippet)
+
+        (yas-reload-all))
     #+END_SRC
 
 * Ergonomic
@@ -2335,179 +2339,183 @@
     Must have a project finder when using a project.
 
     #+BEGIN_SRC emacs-lisp :block-id 8ee23fbf-548c-e172-18e6-0df51729e123
-        (unless noninteractive
-          (use-package projectile
-            :ensure t
-            :defer 1
-            :diminish projectile-mode
-            :bind (("C-c p p" . projectile-switch-project)
-                   ("C-c p f" . projectile-find-file)
-                   ("C-c p d" . projectile-find-dir))
-            :init
-            (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
-                  projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir)
-                                                                               projectile-keymap-prefix (kbd "C-c p"))
-            :config
-            (defconst fn/project-file ".project.el"
-              "Project configuration file")
+      (use-package projectile
+        :ensure t
+        :defer 1
+        :unless noninteractive
+        :diminish projectile-mode
+        :bind (("C-c p p" . projectile-switch-project)
+               ("C-c p f" . projectile-find-file)
+               ("C-c p d" . projectile-find-dir))
+        :init
+        (setq projectile-cache-file (expand-file-name "projectile.cache" fn/cache-dir)
+              projectile-known-projects-file (expand-file-name "projectile-bookmarks.eld" fn/cache-dir)
+              projectile-keymap-prefix (kbd "C-c p"))
+        :config
+        (defun fn/find-project-root ()
+          "Visit project root."
+          (interactive)
+          (dired (projectile-project-root)))
 
-            (defconst fn/project-local-file ".project-locals.el"
-              "Project local setting file")
+        (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
 
-            (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
-              "Project init files")
+        (setq projectile-switch-project-action #'fn/find-project-root)
 
+        (projectile-mode)
+        (setq projectile-indexing-method 'native
+              projectile-enable-caching t
+              projectile-enable-idle-timer nil)
 
-            (defun fn/load-project-file ()
-              "Loads the `fn/project-file' for a project.
-        This is run once after the project is loaded signifying project setup."
-              (interactive)
-              (when (projectile-project-p)
-                (let* ((current-project-root (projectile-project-root))
-                       (project-init-file (expand-file-name fn/project-file current-project-root)))
-                  (when (file-exists-p project-init-file)
-                    (message "Loading project init file for %s" (projectile-project-name))
-                    (condition-case ex
-                        (load project-init-file t)
-                      ('error
-                       (message
-                        "There was an error loading %s: %s"
-                        project-init-file
-                        (error-message-string ex))))))))
+        (setq projectile-sort-order 'modification-time)
 
-            (defun fn/load-project-local-file ()
-              "Loads the `fn/project-local-file' for a project.
-        This is run for every time a file in a project is opened signifying per-file setup."
-              (interactive)
-              (when (projectile-project-p)
-                (let* ((current-project-root (projectile-project-root))
-                       (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
-                  (when (and (file-exists-p project-local-init-file)
-                             (not (member (buffer-file-name) fn/project-init-files)))
-                    (message
-                     "Loading project local file for %s on %s"
-                     (projectile-project-name)
-                     (buffer-name))
-                    (condition-case ex
-                        (load project-local-init-file t)
-                      ('error
-                       (message
-                        "There was an error loading %s: %s"
-                        project-local-init-file
-                        (error-message-string ex))))))))
-
-
-            ;; Safety Loader
-            (defvar fn/checked-projects (list)
-              "Projects that are trusted with loading `fn/project-init-files' or not.")
-
-            (defvar fn/loaded-projects (list)
-              "Projects that have been loaded by `fn/load-project-file'.")
-
-            (unless (fboundp 'file-attribute-modification-time)
-              (defun file-attribute-modification-time (attributes)
-                "The last access time of ATTRIBUTES"
-                (nth 5 attributes)))
-
-            (defun fn/trust-project ()
-              "Trust current project."
-              (interactive)
-              (if (not (projectile-project-p))
-                  (message ("Not in a project."))
-                (let* ((project-root (projectile-project-root))
-                       (project-entry (assoc project-root fn/checked-projects)))
-                  (if project-entry
-                      (progn
-                        (setcdr
-                         project-entry
-                         (plist-put
-                          (cdr project-entry)
-                          :trusted
-                          t)))
-                    (add-to-list
-                     'fn/checked-projects
-                     (list project-root
-                           :last-modification-time (file-attribute-modification-time (file-attributes project-root))
-                           :project-root project-root
-                           :trusted t)))
-                  (message "Project %s trusted" project-root))))
-
-            (defun fn/safe-project-p (project-root)
-              "Check if PROJECT-ROOT can be trusted."
-              (let* ((last-modification-time
-                      (file-attribute-modification-time (file-attributes project-root)))
-                     (safe-project-properties
-                      (or (cdr (assoc project-root fn/checked-projects))
-                          (let* ((base-properties
-                                  (list :last-modification-time last-modification-time
-                                        :project-root project-root))
-                                 (trusted
-                                  (yes-or-no-p
-                                   (format "Do you ultimately trust the project at %s?" project-root)))
-                                 (new-properties
-                                  (plist-put base-properties :trusted trusted)))
-                            new-properties))))
-                (prog1
-                    (plist-get safe-project-properties :trusted)
-                  (add-to-list 'fn/checked-projects
-                               (cons project-root  safe-project-properties)))))
-
-            (defun fn/safe-load-project-file ()
-              "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
-              (if (not (projectile-project-p))
-                  (message "Not in a project.")
-                (let ((project-root (projectile-project-root))
-                      (project-name (projectile-project-name)))
-                  (when (not (member project-root fn/loaded-projects))
-                    (if (not (fn/safe-project-p project-root))
-                        (message "Project script for %s is not trusted." project-name)
-                      (fn/load-project-file)
-                      (add-to-list 'fn/loaded-projects project-root))))))
-
-            (defun fn/safe-load-project-local-file ()
-              "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
-              (if (not (projectile-project-p))
-                  (message "Not in a project.")
-                (let ((project-root (projectile-project-root))
-                      (project-name (projectile-project-name)))
-                  (if (not (fn/safe-project-p project-root))
-                      (message "Project local script for %s is not trusted." project-name)
-                    (fn/load-project-local-file)))))
-
-
-            ;; Project root script should run before project file script
-            (add-hook 'find-file-hook #'fn/safe-load-project-file t)
-            (add-hook 'find-dired-hook #'fn/safe-load-project-file t)
-            (add-hook 'dired-mode-hook #'fn/safe-load-project-file t)
-
-            (add-hook 'find-file-hook #'fn/safe-load-project-local-file t)
-            (add-hook 'find-dired-hook #'fn/safe-load-project-local-file t)
-            (add-hook 'dired-mode-hook #'fn/safe-load-project-local-file t)
-
-            (with-eval-after-load 'savehist
-              (add-to-list 'savehist-additional-variables 'fn/checked-projects))
-
-
-            (defun fn/find-project-root ()
-              "Visit project root."
-              (interactive)
-              (dired-x-find-file (projectile-project-root)))
-
-            (define-key projectile-command-map (kbd "C-r") #'fn/find-project-root)
-
-            (setq projectile-switch-project-action #'fn/find-project-root)
-
-            (projectile-mode)
-            (setq projectile-indexing-method 'native
-                  projectile-enable-caching t
-                  projectile-enable-idle-timer nil)
-
-            (setq projectile-sort-order 'modification-time)
-
-
-      (add-to-list 'projectile-project-root-files "config.xml")))
+        (add-to-list 'projectile-project-root-files "config.xml"))
     #+END_SRC
 
+
+**** Per-Project Config
+     Use projectile to load per project config via =.project.el= and =.project-locals.el=
+
+     #+begin_src emacs-lisp
+       (with-eval-after-load 'projectile
+         (defconst fn/project-file ".project.el"
+           "Project configuration file")
+
+         (defconst fn/project-local-file ".project-locals.el"
+           "Project local setting file")
+
+         (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
+           "Project init files")
+
+
+         (defun fn/load-project-file ()
+           "Loads the `fn/project-file' for a project.
+         This is run once after the project is loaded signifying project setup."
+           (interactive)
+           (when (projectile-project-p)
+             (let* ((current-project-root (projectile-project-root))
+                    (project-init-file (expand-file-name fn/project-file current-project-root)))
+               (when (file-exists-p project-init-file)
+                 (message "Loading project init file for %s" (projectile-project-name))
+                 (condition-case ex
+                     (load project-init-file t)
+                   ('error
+                    (message
+                     "There was an error loading %s: %s"
+                     project-init-file
+                     (error-message-string ex))))))))
+
+         (defun fn/load-project-local-file ()
+           "Loads the `fn/project-local-file' for a project.
+         This is run for every time a file in a project is opened signifying per-file setup."
+           (interactive)
+           (when (projectile-project-p)
+             (let* ((current-project-root (projectile-project-root))
+                    (project-local-init-file (expand-file-name fn/project-local-file current-project-root)))
+               (when (and (file-exists-p project-local-init-file)
+                          (not (member (buffer-file-name) fn/project-init-files)))
+                 (message
+                  "Loading project local file for %s on %s"
+                  (projectile-project-name)
+                  (buffer-name))
+                 (condition-case ex
+                     (load project-local-init-file t)
+                   ('error
+                    (message
+                     "There was an error loading %s: %s"
+                     project-local-init-file
+                     (error-message-string ex))))))))
+
+
+         ;; Safety Loader
+         (defvar fn/checked-projects (list)
+           "Projects that are trusted with loading `fn/project-init-files' or not.")
+
+         (defvar fn/loaded-projects (list)
+           "Projects that have been loaded by `fn/load-project-file'.")
+
+         (unless (fboundp 'file-attribute-modification-time)
+           (defun file-attribute-modification-time (attributes)
+             "The last access time of ATTRIBUTES"
+             (nth 5 attributes)))
+
+         (defun fn/trust-project ()
+           "Trust current project."
+           (interactive)
+           (if (not (projectile-project-p))
+               (message ("Not in a project."))
+             (let* ((project-root (projectile-project-root))
+                    (project-entry (assoc project-root fn/checked-projects)))
+               (if project-entry
+                   (progn
+                     (setcdr
+                      project-entry
+                      (plist-put
+                       (cdr project-entry)
+                       :trusted
+                       t)))
+                 (add-to-list
+                  'fn/checked-projects
+                  (list project-root
+                        :last-modification-time (file-attribute-modification-time (file-attributes project-root))
+                        :project-root project-root
+                        :trusted t)))
+               (message "Project %s trusted" project-root))))
+
+         (defun fn/safe-project-p (project-root)
+           "Check if PROJECT-ROOT can be trusted."
+           (let* ((last-modification-time
+                   (file-attribute-modification-time (file-attributes project-root)))
+                  (safe-project-properties
+                   (or (cdr (assoc project-root fn/checked-projects))
+                       (let* ((base-properties
+                               (list :last-modification-time last-modification-time
+                                     :project-root project-root))
+                              (trusted
+                               (yes-or-no-p
+                                (format "Do you ultimately trust the project at %s?" project-root)))
+                              (new-properties
+                               (plist-put base-properties :trusted trusted)))
+                         new-properties))))
+             (prog1
+                 (plist-get safe-project-properties :trusted)
+               (add-to-list 'fn/checked-projects
+                            (cons project-root  safe-project-properties)))))
+
+         (defun fn/safe-load-project-file ()
+           "Safety wrapper around `fn/load-project-file' with `fn/safe-project-p'."
+           (if (not (projectile-project-p))
+               (message "Not in a project.")
+             (let ((project-root (projectile-project-root))
+                   (project-name (projectile-project-name)))
+               (when (not (member project-root fn/loaded-projects))
+                 (if (not (fn/safe-project-p project-root))
+                     (message "Project script for %s is not trusted." project-name)
+                   (fn/load-project-file)
+                   (add-to-list 'fn/loaded-projects project-root))))))
+
+         (defun fn/safe-load-project-local-file ()
+           "Safety wrapper around `fn/load-project-local-file' with `fn/safe-project-p'."
+           (if (not (projectile-project-p))
+               (message "Not in a project.")
+             (let ((project-root (projectile-project-root))
+                   (project-name (projectile-project-name)))
+               (if (not (fn/safe-project-p project-root))
+                   (message "Project local script for %s is not trusted." project-name)
+                 (fn/load-project-local-file)))))
+
+
+         ;; Project root script should run before project file script
+         (add-hook 'find-file-hook #'fn/safe-load-project-file t)
+         (add-hook 'find-dired-hook #'fn/safe-load-project-file t)
+         (add-hook 'dired-mode-hook #'fn/safe-load-project-file t)
+
+         (add-hook 'find-file-hook #'fn/safe-load-project-local-file t)
+         (add-hook 'find-dired-hook #'fn/safe-load-project-local-file t)
+         (add-hook 'dired-mode-hook #'fn/safe-load-project-local-file t)
+
+         (with-eval-after-load 'savehist
+           (add-to-list 'savehist-additional-variables 'fn/checked-projects)))
+     #+end_src
 
 **** Completion System
      Fix for the completion system being removed each time an upgrade is
@@ -4658,11 +4666,10 @@
                    (not noninteractive))
           :bind (("C-c g" . magit-status)
                  ("M-g b" . magit-blame))
-          :init
-          (setq magit-push-always-verify t)
           :config
           (setq magit-repository-directories (list)
-                magit-repository-directories-depth 1)
+                magit-repository-directories-depth 1
+                magit-push-always-verify t)
 
           (defun fq/display-magit-on-same-buffer (buffer)
             (if magit-display-buffer-noselect
@@ -4673,12 +4680,17 @@
 
           (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
 
-          ;; Commit message same buffer
           (add-to-list
            'display-buffer-alist
            (cons
             (rx bos "COMMIT_EDITMSG")
             (cons 'display-buffer-same-window (list))))
+
+          (with-eval-after-load 'projectile
+            (make-variable-buffer-local 'magit-git-environment)
+
+            (add-hook 'magit-process-mode-hook #'fn/safe-load-project-local-file)
+            (add-hook 'magit-status-mode-hook #'fn/safe-load-project-local-file))
 
           (with-eval-after-load 'direnv
              (add-to-list 'direnv-non-file-modes 'magit-process-mode))))
@@ -6252,51 +6264,34 @@
     #+END_SRC
 
 ** Rust
-   A close C alternative
+   A close C alternative that I can chew on
 
-*** Mode
-    Major mode for Rust
+   #+begin_src emacs-lisp :block-id 3461f079-e772-71d2-bdb2-ae1e84009f88
+     (use-package rust-mode
+       :ensure t
+       :config
+       (setq rust-format-on-save t))
 
-    #+BEGIN_SRC emacs-lisp :block-id 10bab1d8-1d69-5d81-e5ba-4c75dca5a291
-      (use-package rust-mode
-        :ensure t
-        :defer t
-        :config
-        (setq rust-format-on-save t))
-    #+END_SRC
+     (use-package racer
+       :ensure t
+       :after company
+       :hook (rust-mode . racer-mode)
+       :config
+       (setq racer-cmd (executable-find "racer")))
 
-*** Completion
-    Code completion for Rust
+     (use-package cargo
+       :ensure t
+       :hook (rust-mode . cargo-minor-mode)
+       :config
+       nil)
 
-    #+BEGIN_SRC emacs-lisp :block-id 9c0e8673-fae1-8385-7f86-b5fa2af4f2e1
-      (use-package racer
-        :ensure t
-        :after company
-        :hook (rust-mode . racer-mode)
-        :config
-        nil)
-    #+END_SRC
-
-*** Linter
-    Integrate rust with flycheck
-
-    #+BEGIN_SRC emacs-lisp :block-id c90a831d-97a8-bbef-0165-59740d87063e
-      (use-package flycheck-rust
-        :ensure t
-        :after rust
-        :config
-        (flycheck-rust-setup))
-    #+END_SRC
-
-*** Project Tooling
-    Cargo is the way to go
-
-    #+BEGIN_SRC emacs-lisp :block-id 56dd4258-4b58-e797-2436-b03da0f81ae2
-      (use-package cargo
-        :ensure t
-        :init
-        (add-hook 'rust-mode-hook 'cargo-minor-mode))
-    #+END_SRC
+     (use-package flycheck-rust
+       :ensure t
+       :after flycheck
+       :demand t
+       :config
+       (flycheck-rust-setup))
+   #+end_src
 
 ** PHP
 *** Mode
@@ -8987,7 +8982,6 @@
          (insert (fn/relative-path source-path target-path))))
    #+END_SRC
 
-** Managed .gitignore
    A quick DSL makes me feel good.
 
    #+BEGIN_SRC emacs-lisp :block-id 32fbaff6-e859-4eea-25bf-cfd59fdf4644
@@ -9030,30 +9024,6 @@
        nil)
    #+END_SRC
 
-** Managed .projectile
-   Copying =magin= for .projectile, might want to refactor.
-
-   #+BEGIN_SRC emacs-lisp :block-id 8d1d2ce7-1e9c-3162-ccbe-ac105f53a069
-     (use-package projin
-       :load-path fn/custom-script-dir
-       :after magin
-       :config
-       (projin-write-to-project
-        `(delimited
-          (context
-           (file "*.ttf")
-
-           (file "*.jar")
-           (file "*.tar"))
-
-          (context
-           (dir ,(file-name-base fn/cache-dir))
-           (dir ,(file-name-base fn/extra-dir))
-           (dir ,(file-name-base fn/package-dir)))
-
-          (block emacs))
-        user-emacs-directory))
-   #+END_SRC
 ** Org-Jekyll Blogger
 
    My blogging script
