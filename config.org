@@ -4671,9 +4671,6 @@
                 magit-repository-directories-depth 1
                 magit-push-always-verify t)
 
-          (make-variable-buffer-local 'magit-git-environment)
-          (add-to-list 'safe-local-variable-values '(magit-git-environment))
-
           (defun fq/display-magit-on-same-buffer (buffer)
             (if magit-display-buffer-noselect
                 (magit-display-buffer-traditional buffer)
@@ -4683,12 +4680,17 @@
 
           (remove-hook 'magit-pre-display-buffer-hook 'magit-save-window-configuration)
 
-          ;; Commit message same buffer
           (add-to-list
            'display-buffer-alist
            (cons
             (rx bos "COMMIT_EDITMSG")
             (cons 'display-buffer-same-window (list))))
+
+          (with-eval-after-load 'projectile
+            (make-variable-buffer-local 'magit-git-environment)
+
+            (add-hook 'magit-process-mode-hook #'fn/safe-load-project-local-file)
+            (add-hook 'magit-status-mode-hook #'fn/safe-load-project-local-file))
 
           (with-eval-after-load 'direnv
              (add-to-list 'direnv-non-file-modes 'magit-process-mode))))
