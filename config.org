@@ -528,6 +528,15 @@
      (setq comint-input-ignoredups t)
    #+END_SRC
 
+** Request
+   Some basic configuration with =url=.
+
+   #+begin_src emacs-lisp :block-id 07553c47-e83a-a14e-db94-9ad3812fd926
+     (with-eval-after-load 'url
+       (setq url-configuration-directory
+             (expand-file-name "url" fn/cache-dir)))
+   #+end_src
+
 ** Others
    Some other configurations that I can't classify yet
 
@@ -4745,7 +4754,19 @@
     #+BEGIN_SRC emacs-lisp :block-id c32da544-1578-c114-de7c-f36600444768
       (use-package gist
         :ensure t
-        :defer t)
+        :defer t
+        :commands (gist-list gist-buffer-private gist-buffer)
+        :config
+        (defun fn/ignore-gnutls (orig-fun &rest args)
+          "Due to `https://github.com/sigma/gh.el/issues/73', ignore only `gnutls-available-p'
+      for every relevant command."
+          (advice-add 'gnutls-available-p :around #'ignore)
+          (apply orig-fun args)
+          (advice-remove 'gnutls-available-p #'ignore))
+
+        (advice-add 'gist-list :around #'fn/ignore-gnutls)
+        (advice-add 'gist-buffer :around #'fn/ignore-gnutls)
+        (advice-add 'gist-buffer-private :around #'fn/ignore-gnutls))
     #+END_SRC
 
 *** pastebin
