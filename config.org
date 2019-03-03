@@ -9244,41 +9244,6 @@
          (add-to-list 'flycheck-checkers 'fn/diction-checker)))
    #+END_SRC
 
-** Checksum Directory
-   Use =sha1dee= to hash a directory quickly.
-
-   #+BEGIN_SRC emacs-lisp :block-id 0aea2570-3e23-2d41-9788-7f6fbebaca44
-     (fn/use-executables checksum-check
-       (sha1deep)
-       (defcustom fn/checksum-file-name "sha1sums.txt"
-         "Checksum file name.")
-
-       (defcustom fn/checksum-command "sha1deep"
-         "Checksum command.")
-
-       (defcustom fn/checksum-command-args (list "-lr" "*")
-         "Checksum command arguments")
-
-       (defun fn/checksum-current-directory ()
-         "Checksum the current directory using `fn/checksum-command'."
-         (interactive)
-         (let ((checksum-file
-              (expand-file-name fn/checksum-file-name default-directory))
-             (dir
-              (expand-file-name default-directory)))
-           (when (file-exists-p checksum-file)
-             (delete-file checksum-file t))
-           (prog1
-               (start-process-shell-command
-                (concat dir "->" fn/checksum-command)
-                (concat dir "->" fn/checksum-command)
-                fn/checksum-command
-                (string-join
-                 (append fn/checksum-command-args
-                         (list ">" (concat "\"" fn/checksum-file-name "\"")))
-                 " "))
-             (message "Computing the checksum of \"%s\"" default-directory)))))
-   #+END_SRC
 ** Open in Sudo
    Use =tramp= to open a file as root
 
