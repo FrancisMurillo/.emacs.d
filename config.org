@@ -1069,8 +1069,7 @@
        (use-package company-shell
          :ensure t
          :after company
-         :init
-         (add-hook 'sh-mode-hook 'company-mode)
+         :hook (sh-mode . company-mode)
          :config
          (add-to-list 'company-backends 'company-shell)))
    #+END_SRC
@@ -1795,6 +1794,7 @@
       (use-package company
         :ensure t
         :unless noninteractive
+        :demand t
         :diminish company-mode
         :defines company-backends
         :init
