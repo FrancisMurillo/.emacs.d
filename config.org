@@ -6305,7 +6305,16 @@
        :after rust-mode
        :hook (rust-mode . cargo-minor-mode)
        :config
-       nil)
+       (defun fn/cargo-test-nocapture-flag (orig-fun &rest args)
+         "For test commands, add `--nocapture' and `--quiet' flags."
+         (let ((cargo-process--command-flags
+                (append cargo-process--command-flags
+                        "-- --nocapture --quiet")))
+           (apply orig-fun args)))
+
+       (advice-add 'cargo-process--command-test :around #'fn/cargo-test-nocapture-flag)
+       (advice-add 'cargo-process-test :around #'fn/cargo-test-nocapture-flag)
+       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag))
 
      (use-package flycheck-rust
        :ensure t
