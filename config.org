@@ -6295,13 +6295,14 @@
 
      (use-package racer
        :ensure t
-       :after company
+       :after (rust-mode company)
        :hook (rust-mode . racer-mode)
        :config
        (setq racer-cmd (executable-find "racer")))
 
      (use-package cargo
        :ensure t
+       :after rust-mode
        :hook (rust-mode . cargo-minor-mode)
        :config
        nil)
