@@ -6305,6 +6305,10 @@
        :after rust-mode
        :hook (rust-mode . cargo-minor-mode)
        :config
+       (setq cargo-process--command-add "install")
+
+       (add-to-list 'cargo-process--no-manifest-commands "Add")
+
        (defun fn/cargo-test-nocapture-flag (orig-fun &rest args)
          "For test commands, add `--nocapture' and `--quiet' flags."
          (let ((cargo-process--command-flags
@@ -6314,7 +6318,13 @@
 
        (advice-add 'cargo-process--command-test :around #'fn/cargo-test-nocapture-flag)
        (advice-add 'cargo-process-test :around #'fn/cargo-test-nocapture-flag)
-       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag))
+       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag)
+
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*Cargo" (* anything))
+         (cons 'display-buffer-same-window (list)))))
 
      (use-package flycheck-rust
        :ensure t
@@ -6445,7 +6455,7 @@
         (add-to-list
          'display-buffer-alist
          (cons
-          (rx bos "*projectile-rails-server*" eos)
+          (rx bos "*rails" (* anything))
           (cons 'display-buffer-same-window (list)))))
 
       (use-package ruby-test-mode
