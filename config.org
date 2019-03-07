@@ -6445,7 +6445,7 @@
         (add-to-list
          'display-buffer-alist
          (cons
-          (rx bos "*projectile-rails-server*" eos)
+          (rx bos "*rails" (* anything))
           (cons 'display-buffer-same-window (list)))))
 
       (use-package ruby-test-mode
