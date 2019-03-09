@@ -1073,14 +1073,13 @@
    More things for sh-mode
 
    #+BEGIN_SRC emacs-lisp :block-id f5c18b8e-734c-f4e2-e191-f7ef929289fa
-     (fn/use-feature company-shell
-       (shell)
-       (use-package company-shell
-         :ensure t
-         :after company
-         :hook (sh-mode . company-mode)
-         :config
-         (add-to-list 'company-backends 'company-shell)))
+     (use-package company-shell
+       :ensure t
+       :after (shell company)
+       :hook (sh-mode . company-mode)
+       :config
+       (add-to-list 'company-backends 'company-shell))
+
    #+END_SRC
 
 ** term
@@ -5573,14 +5572,12 @@
     #+END_SRC
 
 ** Web
-*** Mode
-    The defacto mode for web development
+   The defacto mode for web development
 
     #+BEGIN_SRC emacs-lisp :block-id bd6a4ce6-0ec8-7977-cec4-2a9e0c66e2e9
       (use-package web-mode
         :ensure t
-        :defer t
-        :mode (("\\.html'" . web-mode))
+        :mode ("\\.html\\'" . web-mode)
         :config
         (setq web-mode-enable-auto-pairing t
               web-mode-enable-auto-closing t
@@ -5589,38 +5586,33 @@
 
       (use-package company-web
         :ensure t
-        :defer t
-        :after web-mode)
-    #+END_SRC
+        :after (company web-mode)
+        :config
+        (add-to-list 'company-backends 'company-web-html))
 
-*** Editing
-    I do a lot of HTML editing, YASnippet can do but emmet is better
-
-    #+BEGIN_SRC emacs-lisp :block-id 25e01dcb-860b-9e0b-4fb9-b4d84c5a149d
       (use-package emmet-mode
         :ensure t
-        :defer t
-        :init
-        (add-hook 'web-mode-hook 'emmet-mode)
-        (add-hook 'css-mode-hook 'emmet-mode)
+        :hook ((web-mode . emmet-mode)
+               (css-mode . emmet-mode))
         :config
         (setq emmet-self-closing-tag-style " /")
 
-        (fn/use-feature jsx-emmet
-          (js2-mode emmet-mode)
+        (with-eval-after-load 'js2-mode
           (setq emmet-expand-jsx-className? t)))
-    #+END_SRC
 
-*** CSS
-    I use [[http://sass-lang.com/][sass]] for my jekyll blog
-
-    #+BEGIN_SRC emacs-lisp :block-id 3de49f28-8f02-15e9-53f6-b8253b66114b
       (use-package sass-mode
         :ensure t
         :defer t
         :config
-        ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
+        nil)
+
+      (use-package scss-mode
+        :ensure t
+        :defer t
+        :config
+        nil)
     #+END_SRC
+
 ** JavaScript
 *** Mode
     The ultimate JS mode
