@@ -4766,7 +4766,18 @@
 
         (advice-add 'gist-list :around #'fn/ignore-gnutls)
         (advice-add 'gist-buffer :around #'fn/ignore-gnutls)
-        (advice-add 'gist-buffer-private :around #'fn/ignore-gnutls))
+        (advice-add 'gist-buffer-private :around #'fn/ignore-gnutls)
+
+        (advice-add 'gist-list-reload :around #'fn/ignore-gnutls)
+        (advice-add 'gist-fetch-current :around #'fn/ignore-gnutls)
+        (advice-add 'gist-edit-current-description :around #'fn/ignore-gnutls)
+        (advice-add 'gist-kill-current :around #'fn/ignore-gnutls)
+
+        (fn/use-feature gist-list--mode-icon
+          (all-the-icons)
+          (fn/add-major-mode-icon
+           'gist-list-mode
+           (list 'all-the-icons-octicon "checklist" :v-adjust 0.0))))
     #+END_SRC
 
 *** pastebin
