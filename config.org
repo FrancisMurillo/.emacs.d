@@ -1613,7 +1613,9 @@
        (tmux)
        (use-package emamux
          :ensure t
-         :defer t))
+         :defer 1
+         :config
+         (async-shell-command "tmux -2 -C new -s emamux")))
    #+END_SRC
 
 ** multi-term
