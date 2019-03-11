@@ -3179,7 +3179,7 @@
     #+BEGIN_SRC emacs-lisp :block-id c9b2ccf5-a84f-2315-50f9-9f3b6e6f216a
       (use-package rainbow-mode
         :ensure t
-        :defer t
+        :hook (prog-mode . rainbow-mode)
         :commands (rainbow-mode)
         :bind (:map fn-standard-prefix-map
                     ("R" . rainbow-mode))
@@ -6218,74 +6218,68 @@
         (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation))
     #+END_SRC
 
+** Erlang
+   Some minor support for working with Erlang
+
+   #+begin_src emacs-lisp
+     (use-package erlang
+       :ensure t
+       :defer t
+       :config
+       nil)
+
+     (use-package company-erlang
+       :ensure t
+       :after (company erlang)
+       :init
+       (add-hook 'erlang-mode-hook #'company-erlang-init))
+   #+end_src
+
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python or Ruby
 
-*** Mode
-    Main mode for Elixir
+   #+begin_src emacs-lisp
+     (use-package elixir-mode
+       :ensure t
+       :defer t
+       :hook (elixir-mode . subword-mode)
+       :config
+       (with-eval-after-load 'all-the-icons
+         (fn/add-major-mode-icon
+          'elixir-mode
+          (list 'all-the-icons-faicon "flask" :v-adjust -0.1))))
 
-    #+BEGIN_SRC emacs-lisp :block-id a0fed229-124a-f2fd-78fb-bcc8e91f05ce
-      (use-package elixir-mode
-        :ensure t
-        :defer t
-        :config
-        (add-hook 'elixir-mode-hook 'subword-mode)
+     (use-package flycheck-credo
+       :ensure t
+       :after flycheck
+       :demand t
+       :config
+       (flycheck-credo-setup))
 
-        (fn/use-feature elixir-mode--mode-icon
-          (elixir-mode all-the-icons)
-          (fn/add-major-mode-icon
-           'elixir-mode
-           (list 'all-the-icons-faicon "flask" :v-adjust -0.1))))
-    #+END_SRC
+     (use-package flycheck-mix
+       :ensure t
+       :after flycheck
+       :demand t
+       :config
+       (flycheck-mix-setup))
 
-*** Linter
-    A linter is always needed
+     (use-package elixir-yasnippets
+       :ensure t
+       :after elixir-mode
+       :config
+       nil)
 
-    #+BEGIN_SRC emacs-lisp :block-id 06d9fdcc-6c8d-a6b2-83ea-45179f85ca51
-      (use-package flycheck-credo
-        :ensure t
-        :after flycheck
-        :demand t
-        :config
-        (flycheck-credo-setup))
-
-      (use-package flycheck-mix
-        :ensure t
-        :after flycheck
-        :demand t
-        :config
-        (flycheck-mix-setup))
-    #+END_SRC
-
-*** Snippets
-    Snippets support via yasnippet
-
-    #+BEGIN_SRC emacs-lisp :block-id c6da5fe6-e35e-6d0a-4cc0-efb35d46925f
-      (use-package elixir-yasnippets
-        :ensure t
-        :after elixir-mode
-        :config
-        nil)
-    #+END_SRC
-
-*** Tooling
-    Build tool for Elixir
-
-    #+BEGIN_SRC emacs-lisp :block-id ce3e7a1d-a1c7-f983-a3a8-db499704136f
       (use-package alchemist
         :ensure t
-        :defer t
-        :init
-        (add-hook 'elixir-mode-hook #'alchemist-mode)
+        :hook (elixir-mode . alchemist-mode)
         :config
         (setq alchemist-test-status-modeline nil
               alchemist-hooks-compile-on-save t
               alchemist-iex-program-name "iex")
 
-        (fn/use-feature alchemist-iex-company
-          (alchemist company)
+        (with-eval-after-load 'company
           (add-hook 'alchemist-iex-mode-hook 'company-mode)))
-    #+END_SRC
+   #+end_src
 
 ** Rust
    A close C alternative that I can chew on
