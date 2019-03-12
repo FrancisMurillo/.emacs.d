@@ -1786,6 +1786,8 @@
         :init
         (add-hook 'prog-mode-hook 'company-mode)
         :config
+        (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+
         (setq company-idle-delay (/ 60.0)
               company-minimum-prefix-length 3
 
@@ -6230,7 +6232,7 @@
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python or Ruby
 
-   #+begin_src emacs-lisp
+   #+begin_src emacs-lisp :block-id 626850b6-2af8-fdb6-0949-d4595523fff7
      (use-package elixir-mode
        :ensure t
        :defer t
