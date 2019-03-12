@@ -8607,24 +8607,6 @@
            (fn/start-battery-monitor))))
    #+END_SRC
 
-** starup and shutdown hook
-   Small script to update my org files
-
-   #+BEGIN_SRC emacs-lisp :block-id b1fd9c85-3b45-96b6-3659-ce907e106fba
-     (defun fn/startup ()
-       (interactive)
-       (shell-command "cd ~/Modules/nobody-library && git pull origin master"))
-
-     (defun fn/cleanup ()
-       (interactive)
-       (shell-command "cd ~/Modules/nobody-library\
-      && git add diary/*\
-      && git commit -a -m \"Home Update\"\
-      && git push origin master"))
-
-     (define-key fn-custom-prefix-map (kbd "C-c m s") 'fn/startup)
-     (define-key fn-custom-prefix-map (kbd "C-c m c") 'fn/cleanup)
-   #+END_SRC
 ** Create media diary
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
 
