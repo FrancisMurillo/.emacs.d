@@ -1049,14 +1049,13 @@
    More things for sh-mode
 
    #+BEGIN_SRC emacs-lisp :block-id f5c18b8e-734c-f4e2-e191-f7ef929289fa
-     (fn/use-feature company-shell
-       (shell)
-       (use-package company-shell
-         :ensure t
-         :after company
-         :hook (sh-mode . company-mode)
-         :config
-         (add-to-list 'company-backends 'company-shell)))
+     (use-package company-shell
+       :ensure t
+       :after (shell company)
+       :hook (sh-mode . company-mode)
+       :config
+       (add-to-list 'company-backends 'company-shell))
+
    #+END_SRC
 
 ** term
@@ -3158,7 +3157,7 @@
     #+BEGIN_SRC emacs-lisp :block-id c9b2ccf5-a84f-2315-50f9-9f3b6e6f216a
       (use-package rainbow-mode
         :ensure t
-        :defer t
+        :hook (prog-mode . rainbow-mode)
         :commands (rainbow-mode)
         :bind (:map fn-standard-prefix-map
                     ("R" . rainbow-mode))
@@ -5551,14 +5550,12 @@
     #+END_SRC
 
 ** Web
-*** Mode
-    The defacto mode for web development
+   The defacto mode for web development
 
     #+BEGIN_SRC emacs-lisp :block-id bd6a4ce6-0ec8-7977-cec4-2a9e0c66e2e9
       (use-package web-mode
         :ensure t
-        :defer t
-        :mode (("\\.html'" . web-mode))
+        :mode ("\\.html\\'" . web-mode)
         :config
         (setq web-mode-enable-auto-pairing t
               web-mode-enable-auto-closing t
@@ -5567,38 +5564,33 @@
 
       (use-package company-web
         :ensure t
-        :defer t
-        :after web-mode)
-    #+END_SRC
+        :after (company web-mode)
+        :config
+        (add-to-list 'company-backends 'company-web-html))
 
-*** Editing
-    I do a lot of HTML editing, YASnippet can do but emmet is better
-
-    #+BEGIN_SRC emacs-lisp :block-id 25e01dcb-860b-9e0b-4fb9-b4d84c5a149d
       (use-package emmet-mode
         :ensure t
-        :defer t
-        :init
-        (add-hook 'web-mode-hook 'emmet-mode)
-        (add-hook 'css-mode-hook 'emmet-mode)
+        :hook ((web-mode . emmet-mode)
+               (css-mode . emmet-mode))
         :config
         (setq emmet-self-closing-tag-style " /")
 
-        (fn/use-feature jsx-emmet
-          (js2-mode emmet-mode)
+        (with-eval-after-load 'js2-mode
           (setq emmet-expand-jsx-className? t)))
-    #+END_SRC
 
-*** CSS
-    I use [[http://sass-lang.com/][sass]] for my jekyll blog
-
-    #+BEGIN_SRC emacs-lisp :block-id 3de49f28-8f02-15e9-53f6-b8253b66114b
       (use-package sass-mode
         :ensure t
         :defer t
         :config
-        ((add-to-list 'auto-mode-alist '("\\.sass\\'" . sass-mode))))
+        nil)
+
+      (use-package scss-mode
+        :ensure t
+        :defer t
+        :config
+        nil)
     #+END_SRC
+
 ** JavaScript
 *** Mode
     The ultimate JS mode
@@ -6204,74 +6196,68 @@
         (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation))
     #+END_SRC
 
+** Erlang
+   Some minor support for working with Erlang
+
+   #+begin_src emacs-lisp
+     (use-package erlang
+       :ensure t
+       :defer t
+       :config
+       nil)
+
+     (use-package company-erlang
+       :ensure t
+       :after (company erlang)
+       :init
+       (add-hook 'erlang-mode-hook #'company-erlang-init))
+   #+end_src
+
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python or Ruby
 
-*** Mode
-    Main mode for Elixir
+   #+begin_src emacs-lisp
+     (use-package elixir-mode
+       :ensure t
+       :defer t
+       :hook (elixir-mode . subword-mode)
+       :config
+       (with-eval-after-load 'all-the-icons
+         (fn/add-major-mode-icon
+          'elixir-mode
+          (list 'all-the-icons-faicon "flask" :v-adjust -0.1))))
 
-    #+BEGIN_SRC emacs-lisp :block-id a0fed229-124a-f2fd-78fb-bcc8e91f05ce
-      (use-package elixir-mode
-        :ensure t
-        :defer t
-        :config
-        (add-hook 'elixir-mode-hook 'subword-mode)
+     (use-package flycheck-credo
+       :ensure t
+       :after flycheck
+       :demand t
+       :config
+       (flycheck-credo-setup))
 
-        (fn/use-feature elixir-mode--mode-icon
-          (elixir-mode all-the-icons)
-          (fn/add-major-mode-icon
-           'elixir-mode
-           (list 'all-the-icons-faicon "flask" :v-adjust -0.1))))
-    #+END_SRC
+     (use-package flycheck-mix
+       :ensure t
+       :after flycheck
+       :demand t
+       :config
+       (flycheck-mix-setup))
 
-*** Linter
-    A linter is always needed
+     (use-package elixir-yasnippets
+       :ensure t
+       :after elixir-mode
+       :config
+       nil)
 
-    #+BEGIN_SRC emacs-lisp :block-id 06d9fdcc-6c8d-a6b2-83ea-45179f85ca51
-      (use-package flycheck-credo
-        :ensure t
-        :after flycheck
-        :demand t
-        :config
-        (flycheck-credo-setup))
-
-      (use-package flycheck-mix
-        :ensure t
-        :after flycheck
-        :demand t
-        :config
-        (flycheck-mix-setup))
-    #+END_SRC
-
-*** Snippets
-    Snippets support via yasnippet
-
-    #+BEGIN_SRC emacs-lisp :block-id c6da5fe6-e35e-6d0a-4cc0-efb35d46925f
-      (use-package elixir-yasnippets
-        :ensure t
-        :after elixir-mode
-        :config
-        nil)
-    #+END_SRC
-
-*** Tooling
-    Build tool for Elixir
-
-    #+BEGIN_SRC emacs-lisp :block-id ce3e7a1d-a1c7-f983-a3a8-db499704136f
       (use-package alchemist
         :ensure t
-        :defer t
-        :init
-        (add-hook 'elixir-mode-hook #'alchemist-mode)
+        :hook (elixir-mode . alchemist-mode)
         :config
         (setq alchemist-test-status-modeline nil
               alchemist-hooks-compile-on-save t
               alchemist-iex-program-name "iex")
 
-        (fn/use-feature alchemist-iex-company
-          (alchemist company)
+        (with-eval-after-load 'company
           (add-hook 'alchemist-iex-mode-hook 'company-mode)))
-    #+END_SRC
+   #+end_src
 
 ** Rust
    A close C alternative that I can chew on
@@ -6294,6 +6280,10 @@
        :after rust-mode
        :hook (rust-mode . cargo-minor-mode)
        :config
+       (setq cargo-process--command-add "install")
+
+       (add-to-list 'cargo-process--no-manifest-commands "Add")
+
        (defun fn/cargo-test-nocapture-flag (orig-fun &rest args)
          "For test commands, add `--nocapture' and `--quiet' flags."
          (let ((cargo-process--command-flags
@@ -6303,7 +6293,13 @@
 
        (advice-add 'cargo-process--command-test :around #'fn/cargo-test-nocapture-flag)
        (advice-add 'cargo-process-test :around #'fn/cargo-test-nocapture-flag)
-       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag))
+       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag)
+
+       (add-to-list
+        'display-buffer-alist
+        (cons
+         (rx bos "*Cargo" (* anything))
+         (cons 'display-buffer-same-window (list)))))
 
      (use-package flycheck-rust
        :ensure t
