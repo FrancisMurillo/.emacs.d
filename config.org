@@ -1786,6 +1786,8 @@
         :init
         (add-hook 'prog-mode-hook 'company-mode)
         :config
+        (global-set-key (kbd "TAB") #'company-indent-or-complete-common)
+
         (setq company-idle-delay (/ 60.0)
               company-minimum-prefix-length 3
 
@@ -2361,7 +2363,7 @@
 **** Per-Project Config
      Use projectile to load per project config via =.project.el= and =.project-locals.el=
 
-     #+begin_src emacs-lisp
+     #+begin_src emacs-lisp :block-id 79cf3115-f556-78b5-c11f-d9da06e94c9f
        (with-eval-after-load 'projectile
          (defconst fn/project-file ".project.el"
            "Project configuration file")
@@ -2369,9 +2371,8 @@
          (defconst fn/project-local-file ".project-locals.el"
            "Project local setting file")
 
-         (defconst fn/project-init-files (list fn/project-file fn/project-local-file)
+         (defconst fn/project-init-files `(,fn/project-file ,fn/project-local-file)
            "Project init files")
-
 
          (defun fn/load-project-file ()
            "Loads the `fn/project-file' for a project.
@@ -2410,6 +2411,22 @@
                      "There was an error loading %s: %s"
                      project-local-init-file
                      (error-message-string ex))))))))
+
+         (defun fn/find-project-file ()
+           "Find the project's `.project.el'."
+           (interactive)
+           (when (projectile-project-p)
+             (let* ((current-project-root (projectile-project-root))
+                    (project-file (expand-file-name fn/project-file current-project-root)))
+               (find-file project-file))))
+
+         (defun fn/find-project-locals-file ()
+           "Find the project's `.project-locals.el'."
+           (interactive)
+           (when (projectile-project-p)
+             (let* ((current-project-root (projectile-project-root))
+                    (project-locals-file (expand-file-name fn/project-local-file current-project-root)))
+               (find-file project-locals-file))))
 
 
          ;; Safety Loader
@@ -2499,7 +2516,7 @@
          (add-hook 'find-dired-hook #'fn/safe-load-project-local-file t)
          (add-hook 'dired-mode-hook #'fn/safe-load-project-local-file t)
 
-         (with-eval-after-load 'savehist
+         (when (require 'savehist)
            (add-to-list 'savehist-additional-variables 'fn/checked-projects)))
      #+end_src
 
@@ -2553,54 +2570,53 @@
     The revolutionary package to find
 
     #+BEGIN_SRC emacs-lisp :block-id c632c3e5-f6f1-819f-7739-ae22cdda46a2
-      (unless noninteractive
-        (use-package helm
-          :ensure t
-          :defer 3
-          :diminish helm-mode
-          :bind (("M-x" . helm-M-x)
-                 ("C-c f" . helm-recentf)
-                 ("C-h a" . helm-apropos)
-                 ("C-h r" . helm-info-emacs)
-                 ("C-x b" . helm-mini)
-                 ("C-x C-f" . helm-find-files)
-                 ("M-s o" . helm-occur)
-                 ("M-s i" . helm-imenu)
-                 ("C-c C-/" . helm-dabbrev))
-          :config
-          (require 'helm-config)
+      (use-package helm
+        :ensure t
+        :unless noninteractive
+        :defer 3
+        :diminish helm-mode
+        :bind (("M-x" . helm-M-x)
+               ("C-c f" . helm-recentf)
+               ("C-h a" . helm-apropos)
+               ("C-h r" . helm-info-emacs)
+               ("C-x b" . helm-mini)
+               ("C-x C-f" . helm-find-files)
+               ("M-s o" . helm-occur)
+               ("M-s i" . helm-imenu)
+               ("C-c C-/" . helm-dabbrev))
+        :config
+        (require 'helm-config)
 
-          (helm-mode t)
+        (helm-mode t)
 
-          ;; core & utils
-          (setq helm-yank-symbol-first t
+        ;; core & utils
+        (setq helm-yank-symbol-first t
 
-             helm-mode-fuzzy-match nil
+              helm-mode-fuzzy-match nil
 
-             helm-su-or-sudo "sudo"
+              helm-su-or-sudo "sudo"
 
-             helm-input-idle-delay (/ 1 60.0) ;; 60fps
-             helm-exit-idle-delay (/ 1 60.0)  ;; ditto
+              helm-input-idle-delay (/ 1 60.0) ;; 60fps
+              helm-exit-idle-delay (/ 1 60.0)  ;; ditto
 
-             helm-echo-input-in-header-line nil ;; If the theme does not block it
+              helm-echo-input-in-header-line nil ;; If the theme does not block it
 
-             helm-split-window-default-side 'same
+              helm-split-window-default-side 'same
 
-             helm-debug-root-directory fn/cache-dir)
+              helm-debug-root-directory fn/cache-dir)
 
+        ;; files & command
+        (setq helm-ff-file-name-history-use-recentf t
+              helm-ff-auto-update-initial-value t
 
-          ;; files & command
-          (setq helm-ff-file-name-history-use-recentf t
-             helm-ff-auto-update-initial-value t
+              helm-M-x-always-save-history t)
 
-             helm-M-x-always-save-history t)
+        ;; adaptive
+        (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
+              helm-adaptive-history-length 100)
 
+        (helm-adaptive-mode t))
 
-          ;; adaptive
-          (setq helm-adaptive-history-file (expand-file-name "helm-adaptive-history" fn/cache-dir)
-             helm-adaptive-history-length 100)
-
-          (helm-adaptive-mode t)))
     #+END_SRC
 
 **** helm-projectile
@@ -6216,7 +6232,7 @@
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python or Ruby
 
-   #+begin_src emacs-lisp
+   #+begin_src emacs-lisp :block-id 626850b6-2af8-fdb6-0949-d4595523fff7
      (use-package elixir-mode
        :ensure t
        :defer t
