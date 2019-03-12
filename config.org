@@ -98,36 +98,12 @@
         use-package-always-defer t
         use-package-always-defer-install nil)
 
-     (progn ;; :fn-hook keyword
-       (add-to-list 'use-package-keywords :fn-hook t)
-
-       (defun use-package-normalize/:fn-hook (name-symbol keyword args)
-         "`use-package' normalizer for `:fn-hook'."
-         (use-package-only-one (symbol-name keyword) args
-           (lambda (label arg)
-             (cond
-              ((symbolp arg) arg)
-              (t
-               (use-package-error
-                ":fn-hook should be a symbol hook"))))))
-
-       (defun use-package-handler/:fn-hook  (name-symbol keyword hook-symbol rest state)
-         (let* ((body (use-package-process-keywords name-symbol rest state))
-             (package-hook-symbol
-              (intern
-               (concat
-                "fn/use-package--fn-hook--"
-                (symbol-name name-symbol)
-                "--"
-                (symbol-name hook-symbol))))
-             (package-hook
-              (fset package-hook-symbol
-                    `(lambda ()
-                       ,(format "`fn-hook' require hook for `%s' with `%s'"
-                                (symbol-name name-symbol) (symbol-name hook-symbol))
-                       (require (quote ,name-symbol))))))
-           (add-hook hook-symbol package-hook-symbol)
-           body)))
+     (defun fn/remove-byte-compiled-files ()
+       "Remove byte compiles from emacs directory"
+       (interactive)
+       (shell-command
+        (format "cd '%s' && find . -name '*.elc' -type f | xargs rm -f"
+                (expand-file-name user-emacs-directory))))
    #+END_SRC
 
 ** Org Src
@@ -1615,7 +1591,7 @@
          :ensure t
          :defer 1
          :config
-         (async-shell-command "tmux -2 -C new -s emamux")))
+         (shell-command "tmux -2 -C new -s emamux")))
    #+END_SRC
 
 ** multi-term
@@ -6588,6 +6564,18 @@
 
 * Random Was Alone
   Anything that just does something useful
+
+** Redis
+   Some redis support
+
+   #+begin_src emacs-lisp
+     (use-package eredis
+       :ensure t
+       :defer t
+       :commands (eredis-connect)
+       :config
+       (setq main (eredis-connect "localhost" 6379)))
+   #+end_src
 
 ** w3m
    Web browsing is a must
