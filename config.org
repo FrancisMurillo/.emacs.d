@@ -2777,6 +2777,17 @@
                smex-history-length (or helm-adaptive-history-length smex-history-length)))
      #+END_SRC
 
+**** helm-flx
+     Flex matching is strong
+
+     #+BEGIN_SRC emacs-lisp :block-id 4d383ad6-7fce-9ac5-d57e-54c4310d0ffa
+       (use-package helm-flx
+         :ensure t
+         :after helm
+         :config
+         (helm-flx-mode t))
+     #+END_SRC
+
 *** ivy
     A lighter and faster library than [[helm]] that uses the minibuffer
     instead of a separate window.
@@ -3010,17 +3021,6 @@
            (list 'all-the-icons-octicon "package" :v-adjust 0.0))))
     #+END_SRC
 
-**** helm-flx
-     Flex matching is strong
-
-     #+BEGIN_SRC emacs-lisp :block-id 4d383ad6-7fce-9ac5-d57e-54c4310d0ffa
-       (use-package helm-flx
-         :ensure t
-         :after helm
-         :config
-         (helm-flx-mode t))
-     #+END_SRC
-
 *** elpa-mirror
     Just in case things are down.
 
@@ -3029,6 +3029,8 @@
         :ensure t
         :demand t
         :config ;; Configuration in personal.el
+        ;; Configure `elpamr-default-output-directory'
+
         (require 'rx)
         (require 's)
 
