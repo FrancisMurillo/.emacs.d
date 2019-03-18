@@ -2198,17 +2198,16 @@
     A must to navigate through windows with numbers.
 
     #+BEGIN_SRC emacs-lisp :block-id 8f1e9fc0-580e-1fdb-c8a1-f4c042ce0d68
-      (unless noninteractive
-        (use-package window-numbering
-          :ensure t
-          :demand t
-          :config
-          (window-numbering-mode t)
+      (use-package window-numbering
+        :ensure t
+        :unless noninteractive
+        :demand t
+        :config
+        (window-numbering-mode t)
 
-          (global-set-key (kbd "M-`") #'other-frame)
+        (global-set-key (kbd "M-`") #'other-frame)
 
-          (require 'dash)
-
+        (when (require 'dash)
           (defun fn/get-window-by-number (window-number)
             "Get window by WINDOW-NUMBER."
             (-find
@@ -2219,7 +2218,7 @@
           (defun fn/swap-windows (this-window that-window)
             "Swap THIS-WINDOW and THAT-WINDOW"
             (let ((this-buffer (window-buffer this-window))
-                (that-buffer (window-buffer that-window)))
+                  (that-buffer (window-buffer that-window)))
               (unless (eq this-buffer that-buffer)
                 (set-window-buffer this-window that-buffer)
                 (set-window-buffer that-window this-buffer))))
@@ -2228,7 +2227,7 @@
             "Swap with current window with numbered window."
             (interactive "NWhat window number? ")
             (let ((this-window (selected-window))
-                (that-window (fn/get-window-by-number window-number)))
+                  (that-window (fn/get-window-by-number window-number)))
               (if (null that-window)
                   (message "Window %s does not exist"
                            window-number)
@@ -2270,42 +2269,38 @@
     Makes windows large enough to see.
 
     #+BEGIN_SRC emacs-lisp :block-id dc0fe50a-04d2-ef04-47f4-fcbf8059e81a
-      (unless noninteractive
-        (use-package golden-ratio
-          :ensure t
-          :demand T
-          :after (window-numbering)
-          :diminish golden-ratio-mode
-          :bind (("C-c q" . golden-ratio)
-                 :map fn-standard-prefix-map
-                 ("q" . golden-ratio-mode))
-          :config
-          (golden-ratio-mode t)
+      (use-package golden-ratio
+        :ensure t
+        :demand t
+        :unless noninteractive
+        :diminish golden-ratio-mode
+        :bind (("C-c q" . golden-ratio)
+               :map fn-standard-prefix-map
+               ("q" . golden-ratio-mode))
+        :config
+        (golden-ratio-mode t)
 
-          (setq split-width-threshold nil
-                golden-ratio-adjust-factor 1.0)
+        (run-with-idle-timer 3 nil #'golden-ratio-mode)
 
+        (setq split-width-threshold nil
+              golden-ratio-adjust-factor 1.0)
 
-          ;; Frame entry exit fix
-          (add-hook 'focus-in-hook #'golden-ratio)
-          (add-hook 'focus-out-hook #'golden-ratio)
+        ;; Frame entry exit fix
+        (add-hook 'focus-in-hook #'golden-ratio)
+        (add-hook 'focus-out-hook #'golden-ratio)
 
+        (with-eval-after-load 'workgroups2
+          ;; When switching workgroups, make sure the screen is rationed correctly
+          (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
 
-          (fn/use-feature golden-workgroups
-            (workgroups2)
-            ;; When switching workgroups, make sure the screen is rationed correctly
-            (add-hook 'wg-after-switch-to-workgroup-hook #'golden-ratio))
+        (with-eval-after-load 'window-numbering
+          (defun fn/golden-ratio-after-select-window-by-number (&rest args)
+            (golden-ratio))
 
-
-          (fn/use-feature golden-window-numbering
-            (window-numbering)
-            (defun fn/golden-ratio-after-select-window-by-number (&rest args)
-              (golden-ratio))
-
-            (advice-add
-             #'select-window-by-number
-             :after
-             #'fn/golden-ratio-after-select-window-by-number))))
+          (advice-add
+           #'select-window-by-number
+           :after
+           #'fn/golden-ratio-after-select-window-by-number)))
     #+END_SRC
 
 *** uniquify
