@@ -2999,11 +2999,12 @@
         :ensure t
         :bind (:map fn-standard-prefix-map
                     ("p" . paradox-list-packages))
+        :init
+        (setq package-gnupghome-dir (expand-file-name "gnupg" fn/cache-dir))
         :config
         (setq paradox-github-token t)
 
-        (fn/use-feature paradox-menu-mode--mode-icon
-          (all-the-icons)
+        (with-eval-after-load 'all-the-icons
           (fn/add-major-mode-icon
            'paradox-menu-mode
            (list 'all-the-icons-octicon "package" :v-adjust 0.0))))
