@@ -5490,6 +5490,22 @@
         :diminish 'overseer-mode)
     #+END_SRC
 
+** XML
+   =nxml-mode= the default please.
+
+   #+begin_src emacs-lisp
+     (use-package nxml-mode
+       :mode ("\\.xml\\'" . nxml-mode)
+       :hook (nxml-mode . company-mode)
+       :config
+       (defun fn/nxml-prettify-on-save ()
+         (when (and (eq major-mode 'nxml-mode)
+                    (require 'sgml-mode))
+           (sgml-pretty-print (point-min) (point-max))))
+
+       (add-hook 'before-save-hook #'fn/nxml-prettify-on-save))
+   #+end_src
+
 ** SQL
 
 *** Client
