@@ -45,6 +45,7 @@
   "A library for my Emacs packages.")
 
 (setq package-user-dir fn/package-dir
+      package-gnupghome-dir (expand-file-name "gnupg" fn/package-dir)
       package-enable-at-startup nil)
 
 (package-initialize nil)
