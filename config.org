@@ -273,24 +273,23 @@
 
      (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
 
-
      (defvar fn/my-lightning (concat
-                         (propertize
-                          " MY LIGHTNING "
-                          'face '(:background "#ff1e02" :foreground "#110200"
-                                              :box (:line-width 0 :color "#ff1e02")))
-                         "...")
+                              (propertize
+                               " MY LIGHTNING "
+                               'face '(:background "#ff1e02" :foreground "#110200"
+                                                   :box (:line-width 0 :color "#ff1e02")))
+                              "...")
        "A reference to continue?987654321.
      May I accept the lightning.")
 
      (defvar fn/my-prayer (format "%s %s"
-                             fn/my-lightning
-                             (concat
-                              (propertize
-                               " MY PRAYER "
-                               'face '(:background "#ffffff" :foreground "#121212"
-                                                   :box (:line-width 0 :color "#ffffff")))
-                              "..."))
+                                  fn/my-lightning
+                                  (concat
+                                   (propertize
+                                    " MY PRAYER "
+                                    'face '(:background "#ffffff" :foreground "#121212"
+                                                        :box (:line-width 0 :color "#ffffff")))
+                                   "..."))
        "The closing message for garbage collection.
      May I be lift up.")
 
@@ -299,7 +298,7 @@
      (defun fn/continue-gc (orig-gc &rest args)
        "Wrap some message with ORIG-GC."
        (let ((start-time (current-time)))
-         (if (minibuffer-prompt)
+         (if (or (minibuffer-prompt) (current-message))
              (apply orig-gc args)
            (prog2
                (message fn/my-lightning)
@@ -315,9 +314,8 @@
      ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
      (run-with-idle-timer 30 t #'garbage-collect)
 
-
      (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-        initial-scratch-message nil)
+           initial-scratch-message nil)
    #+END_SRC
 
 ** Environment
