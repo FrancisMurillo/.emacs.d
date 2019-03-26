@@ -1874,6 +1874,7 @@
         :ensure t
         :unless noninteractive
         :diminish yas-minor-mode
+        :disabled t
         :bind (:map fn-standard-prefix-map
                     ("y" . yas-new-snippet))
         :hook (prog-mode . yas-minor-mode)
@@ -3326,8 +3327,6 @@
         :defer t
         :bind (:map fn-standard-prefix-map
                     ("f" . focus-mode))
-        :init
-        (add-hook 'prog-mode-hook #'focus-mode)
         :config
         nil)
     #+END_SRC
@@ -3413,10 +3412,12 @@
    The mode line customization.
 
    #+BEGIN_SRC emacs-lisp :block-id 671f4309-6508-0ce6-97b4-3bb6060ab82d
-     (unless noninteractive
-       (use-package moder
-         :load-path fn/custom-script-dir
-         :demand t))
+     (use-package moder
+       :load-path fn/custom-script-dir
+       :unless noninteractive
+       :demand t
+       :config
+       nil)
    #+END_SRC
 
 * Organizer
