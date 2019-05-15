@@ -835,7 +835,7 @@
 (defvar moder-header-line-format nil
   "My moder header format.")
 
-(setq-local moder-header-line-format
+(setq-default moder-header-line-format
       (list "%e"
             (list :eval
                   (quote
