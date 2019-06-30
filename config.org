@@ -5764,18 +5764,6 @@
         :after python)
     #+END_SRC
 
-*** REPL
-    Using =Ipython= for this
-
-    #+BEGIN_SRC emacs-lisp :block-id 7bb24e8e-08b5-3d37-9b73-8bb1c742b638
-      (use-package ein
-        :ensure t
-        :defer t
-        :config
-        (setq ein:use-auto-complete t
-              ein:use-smartrep t))
-    #+END_SRC
-
 *** Autocomplete
     The newer Python IDE, [[https://github.com/davidhalter/jedi][Jedi]], much easier to grok.
 
@@ -6302,7 +6290,8 @@
        :after (rust-mode company)
        :hook (rust-mode . racer-mode)
        :config
-       (setq racer-cmd (executable-find "racer")))
+       (setq racer-cmd (executable-find "racer"))
+       (add-hook 'racer-mode-hook #'eldoc-mode))
 
      (use-package cargo
        :ensure t
@@ -6327,6 +6316,12 @@
        (add-to-list
         'display-buffer-alist
         (cons
+         (rx bos "*Cargo Test*" eos)
+         (cons 'display-buffer-use-some-window (list))))
+
+       (add-to-list
+        'display-buffer-alist
+        (cons
          (rx bos "*Cargo" (* anything))
          (cons 'display-buffer-same-window (list)))))
 
@@ -6335,7 +6330,9 @@
        :after flycheck
        :demand t
        :config
-       (flycheck-rust-setup))
+       (flycheck-rust-setup)
+       (flycheck-add-next-checker 'rust 'rust-clippy)
+       (flycheck-add-next-checker 'rust-cargo 'rust-clippy))
    #+end_src
 
 ** PHP
