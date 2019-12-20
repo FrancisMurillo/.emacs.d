@@ -7424,7 +7424,7 @@
 
         (defun fn/w3m-auto-bookmark-arrived-url ()
           "Check whether to auto bookmark a page."
-          (when (w3m-arrived-get url 'title) ;; Check if url is not private
+          (when w3m-current-url ;; Check if url is not private
             (lexical-let* ((url w3m-current-url)
                 (title w3m-current-title))
               (when (and (not (fn/w3m-bookmarked-p url))
