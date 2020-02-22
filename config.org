@@ -3868,24 +3868,6 @@
         (add-hook 'org-after-todo-state-change-hook #'fn/clock-todo-change))
     #+END_SRC
 
-*** org-drill
-    Flash cards are a must
-
-    #+BEGIN_SRC emacs-lisp :block-id ff080889-3108-6353-b008-70a78290ef1c
-      (unless noninteractive
-        (fn/use-feature org-drill
-          (org)
-          (use-package org-drill
-            :after org
-            :bind (:map fn-standard-prefix-map
-                        ("D" . org-drill))
-            :demand t
-            :config
-            (add-to-list 'org-modules 'org-drill)
-
-            ;; More at personal.el
-            )))
-    #+END_SRC
 *** org-mobile
     Mobile org document
 
@@ -5083,7 +5065,10 @@
       (use-package markdown-mode
         :ensure t
         :defer t
-        :config nil)
+        :config
+        (when (executable-find "multimarkdown")
+          (setq markdown-command "multimarkdown"
+                markdown-command-needs-filename nil)))
     #+END_SRC
 
 *** evalator
@@ -6311,19 +6296,7 @@
 
        (advice-add 'cargo-process--command-test :around #'fn/cargo-test-nocapture-flag)
        (advice-add 'cargo-process-test :around #'fn/cargo-test-nocapture-flag)
-       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag)
-
-       (add-to-list
-        'display-buffer-alist
-        (cons
-         (rx bos "*Cargo Test*" eos)
-         (cons 'display-buffer-use-some-window (list))))
-
-       (add-to-list
-        'display-buffer-alist
-        (cons
-         (rx bos "*Cargo" (* anything))
-         (cons 'display-buffer-same-window (list)))))
+       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag))
 
      (use-package flycheck-rust
        :ensure t
@@ -6586,6 +6559,17 @@
 
 * Random Was Alone
   Anything that just does something useful
+
+** synonyms
+
+   #+begin_src emacs-lisp
+     (unless noninteractive
+       (fn/use-executables wn-check
+         (wn)
+         (use-package synosaurus
+           :ensure t
+           :defer t)))
+   #+end_src
 
 ** redis
    Some redis support
@@ -7642,6 +7626,19 @@
          (display-buffer-same-window (get-buffer fn/jabber-roster-buffer-name) nil)))
    #+END_SRC
 
+** elfeed
+
+   Reading RSS feeds in Emacs than in your email
+
+   #+begin_src emacs-lisp
+     (unless noninteractive
+       (use-package elfeed
+         :ensure t
+         :defer t
+         :config
+         nil))
+   #+end_src
+
 ** slack
    =Slack= is awesome.
 
@@ -7942,7 +7939,7 @@
            :bind-map fn/prodigy-map
            :bind (kbd "m m"))
 
-          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
+v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
     #+END_SRC
 
 *** COMMENT VLC Integration
