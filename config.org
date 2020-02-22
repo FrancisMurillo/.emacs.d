@@ -7634,9 +7634,19 @@
      (unless noninteractive
        (use-package elfeed
          :ensure t
+         :bind (:map fn-standard-prefix-map
+                        ("E E" . elfeed)
+                        ("E u" . elfeed-update))
          :defer t
          :config
-         nil))
+         ;; Feeds are loaded externally
+
+         (defconst fn/elfeed-db-dir (expand-file-name ".elfeed" fn/cache-dir)
+           "Elfeed db dir")
+
+         (setq elfeed-db-directory fn/elfeed-db-dir)
+
+         (elfeed-update)))
    #+end_src
 
 ** slack
