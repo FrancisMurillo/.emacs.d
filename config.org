@@ -1866,41 +1866,6 @@
             (fn/append-to-backends 'company-keywords)))
     #+END_SRC
 
-*** yasnippet
-    Snippet system along with autocomplete is awesome
-
-    #+BEGIN_SRC emacs-lisp :block-id 26aea11a-6b42-e3c0-dc5f-a8ba5ceb6f42
-      (use-package yasnippet
-        :ensure t
-        :unless noninteractive
-        :diminish yas-minor-mode
-        :disabled t
-        :bind (:map fn-standard-prefix-map
-                    ("y" . yas-new-snippet))
-        :hook (prog-mode . yas-minor-mode)
-        :init
-        (setq-default yas-snippet-dirs
-                      `(,(expand-file-name "snippets" fn/extra-dir)))
-        :config
-        (setq yas/root-directory (expand-file-name "snippets" fn/extra-dir)
-              yas--default-user-snippets-dir yas/root-directory
-              yas-snippet-dirs `(,yas/root-directory))
-
-        (make-directory yas--default-user-snippets-dir t)
-
-        (setq yas-verbosity 3)
-
-        (push 'yas-hippie-try-expand hippie-expand-try-functions-list)
-
-        (defun fn/add-company-yasnippet ()
-          "Add yasnippet to company backends"
-          (fn/append-to-backends 'company-yasnippet))
-
-        (add-hook 'after-init-hook 'fn/add-company-yasnippet)
-
-        (yas-reload-all))
-    #+END_SRC
-
 * Ergonomic
   Things to assist in managing Emacs
 
@@ -1996,8 +1961,7 @@
 
     #+BEGIN_SRC emacs-lisp :block-id 6c071d29-d448-f4fa-f1d4-63c347a9cb28
       (use-package workgroups2
-        :ensure t
-        :defer t
+        :disabled t
         :bind (("C-c w w" . workgroups-mode))
         :init
         (setq wg-prefix-key (kbd "C-c w")
@@ -3972,10 +3936,7 @@
 
     #+begin_src emacs-lisp :block-id 261bdcb6-74e9-a07a-3855-329a8ec7cfba
       (with-eval-after-load 'org
-        (require 'org-tempo)
-
-        ;;; Bug on first element ("n" "#+BEGIN_NOTES ? #+END_NOTES")
-        (setq org-structure-template-alist (cdr org-structure-template-alist)))
+        (require 'org-tempo))
     #+end_src
 
 ** flyspell
@@ -5303,8 +5264,7 @@
     Support for making diagrams
 
     #+BEGIN_SRC emacs-lisp :block-id d21de630-e067-119b-6961-49102cadb0aa
-      (defconst fn/plantuml-file (expand-file-name "plantuml.jar" "~"))
-      ;;; Download link: http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
+      (defconst fn/plantuml-file (expand-file-name "~/Modules/plantuml.jar" ))
 
       (when (file-exists-p fn/plantuml-file)
         (use-package plantuml-mode
@@ -5322,7 +5282,9 @@
         (with-eval-after-load 'org
           (require 'ob-plantuml)
 
+          (add-to-list 'org-src-lang-modes '("plantuml" . plantuml))
           (add-to-list 'org-babel-load-languages '(plantuml . t))
+
           (setq org-plantuml-jar-path fn/plantuml-file)))
     #+END_SRC
 
@@ -6163,41 +6125,6 @@
             )))
     #+END_SRC
 
-** Purescript
-*** Mode
-    A major mode for purescript.
-
-    #+BEGIN_SRC emacs-lisp :block-id f586336d-6a0d-4260-efea-5db7b72b7142
-      (use-package purescript-mode
-        :ensure t
-        :config
-        nil)
-    #+END_SRC
-
-*** Linter
-    Flycheck for the win
-
-    #+BEGIN_SRC emacs-lisp :block-id f8cbb541-8fb2-2ddb-be99-eaa883f23e07
-      (use-package flycheck-purescript
-        :ensure t
-        :after (flycheck purescript)
-        :config
-        (flycheck-purescript-setup))
-    #+END_SRC
-
-*** IDE
-    The default IDE support for purescript.
-
-    #+BEGIN_SRC emacs-lisp :block-id fe9e4bdf-831e-b991-6727-4357f3083f60
-      (use-package psc-ide
-        :ensure t
-        :hook (purescript-mode . psc-ide-mode)
-        :config
-        (setq psc-ide-use-npm-bin t)
-
-        (add-hook 'purescript-mode-hook #'turn-on-purescript-indentation))
-    #+END_SRC
-
 ** Erlang
    Some minor support for working with Erlang
 
@@ -6235,13 +6162,6 @@
        :demand t
        :config
        (flycheck-credo-setup))
-
-     (use-package flycheck-mix
-       :ensure t
-       :after flycheck
-       :demand t
-       :config
-       (flycheck-mix-setup))
 
      (use-package elixir-yasnippets
        :ensure t
@@ -6805,7 +6725,7 @@
             (list 'all-the-icons-faicon "globe" :v-adjust -0.1)))))
    #+END_SRC
 
-*** Privacy Proxy
+*** COMMENT Privacy Proxy
     I want w3m to use tor at least.
 
     #+BEGIN_SRC emacs-lisp :block-id 024bb8e1-c51e-c67b-b36b-77e031e445e5
@@ -7637,7 +7557,7 @@
          :bind (:map fn-standard-prefix-map
                         ("E E" . elfeed)
                         ("E u" . elfeed-update))
-         :defer t
+         :defer 5
          :config
          ;; Feeds are loaded externally
 

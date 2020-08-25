@@ -49,7 +49,7 @@
 (require 'all-the-icons)
 (require 'dash)
 (require 'xpm)
-
+(require 'projectile)
 
 (defcustom moder-separator-height 16
   "Moder height.")
@@ -244,64 +244,12 @@
        (format " %s " major-mode)
        (moder-default-text-style)))))
 
-(defun moder-piece-workgroup-icon ()
-  "A piece for the workgroup name."
-  (when (and (fboundp 'wg-current-workgroup)
-             (fboundp 'wg-workgroup-name)
-             (fboundp 'workgroups-mode)
-             (fboundp 'fn/workgroups-layout-workgroup-icon)
-             (not (null workgroups-mode))
-             (not (null (ignore-errors (wg-current-workgroup))))) ;; NOTE: Seems hacky
-    (-if-let (workgroup-icon (fn/workgroups-layout-workgroup-icon))
-        (format " %s " workgroup-icon)
-      (format " %s " (wg-workgroup-name (wg-current-workgroup))))))
-
 (defun moder-piece-project-name ()
   "A piece for the projectile project name."
   (when (and (fboundp 'projectile-project-name)
              (fboundp 'projectile-project-p)
              (projectile-project-p))
     (format " %s " (projectile-project-name))))
-
-(defun moder-piece-host ()
-  "A piece for the host name."
-  (when (and (fboundp 'with-parsed-tramp-file-name)
-             (boundp 'tramp-default-host))
-    (condition-case ex
-        (with-parsed-tramp-file-name
-            (or (buffer-file-name) default-directory)
-            props
-          (format " %s " (tramp-file-name-real-host props)))
-      ('error (format " %s " tramp-default-host)))))
-
-(defun moder-piece-user ()
-  "A piece for the tramp connection type."
-  (when (and (fboundp 'with-parsed-tramp-file-name)
-             (boundp 'tramp-default-user))
-    (condition-case ex
-        (with-parsed-tramp-file-name
-            (or (buffer-file-name) default-directory)
-            props
-          (format " %s " (tramp-file-name-real-user props)))
-      ('error (format " %s " tramp-default-user)))))
-
-(defun moder-piece-connection-type ()
-  "A piece for the user name."
-  (when (fboundp 'with-parsed-tramp-file-name)
-    (condition-case ex
-        (with-parsed-tramp-file-name
-            (or (buffer-file-name) default-directory)
-            props
-          (format " %s " (tramp-file-name-method props)))
-      ('error nil))))
-
-(defun moder-piece-directory ()
-  "A piece for the project directory."
-  (when (and (boundp 'tramp-current-host)
-             (boundp 'tramp-default-host))
-    (format " %s "
-            (or tramp-current-host
-                tramp-default-host))))
 
 (defun moder-piece-buffer-name ()
   "A piece for the buffer name."
@@ -312,14 +260,7 @@
   (when (and (fboundp 'projectile-project-root)
              (fboundp 'projectile-project-p)
              (projectile-project-p))
-    (if (and (fboundp 'with-parsed-tramp-file-name)
-             (fboundp 'tramp-file-name-localname))
-        (condition-case ex
-            (with-parsed-tramp-file-name (projectile-project-root)
-                props
-              (format " %s " (tramp-file-name-localname props)))
-          ('error (format " %s " (projectile-project-root))))
-      (format " %s " (projectile-project-root)))))
+    (format " %s " (projectile-project-root))))
 
 (defun moder-piece-projectile-project-file ()
   "A piece for the project file."
@@ -333,14 +274,8 @@
 
 (defun moder-piece-buffer-filename ()
   "A piece for the buffer filename."
-  (condition-case ex
-      (with-parsed-tramp-file-name
-          (or (buffer-file-name)
-              (expand-file-name default-directory))
-          props
-        (format " %s " (tramp-file-name-localname props)))
-    ('error (format " %s " (or (buffer-file-name)
-                               (expand-file-name default-directory))))))
+(format " %s " (or (buffer-file-name)
+                   (expand-file-name default-directory))))
 
 
 (defun moder-piece-slack-unread-notification ()
@@ -704,7 +639,7 @@
 
 
 ;;* Main configuration
-(setq-local mode-line-format
+(setq-default mode-line-format
               (list "%e"
                     (list :eval
                           (quote
@@ -736,9 +671,6 @@
                                      (->> (moder-piece-project-name)
                                           (moder-default-text-style)
                                           (moder-background "#e67e22"))
-                                     (->> (moder-piece-workgroup-icon)
-                                          (moder-default-text-style)
-                                          (moder-background "#f1c40f"))
                                      (->> (moder-piece-mode)
                                           (moder-background "#27ae60"))
                                      (->> (moder-piece-process)
@@ -831,7 +763,6 @@
                                 (moder-starting-separator #'moder-piece-right-separator))
                              ('error (error-message-string ex)))))))
 
-
 (defvar moder-header-line-format nil
   "My moder header format.")
 
@@ -843,20 +774,6 @@
                        (->>
                         (moder-separated
                          #'moder-piece-right-separator
-                         (->> (moder-piece-user)
-                              (moder-default-text-style)
-                              (moder-background "#2980b9")
-                              (moder-weight 'ultra-bold))
-                         (moder-separated
-                          #'moder-piece-inner-right-separator
-                          (->> (moder-piece-host)
-                               (moder-default-text-style)
-                               (moder-background "#4b8812")
-                               (moder-weight 'ultra-bold))
-                          (->> (moder-piece-connection-type)
-                               (moder-default-text-style)
-                               (moder-background "#27ae60")
-                               (moder-weight 'ultra-bold)))
                          (if (and (fboundp 'projectile-project-p)
                                   (projectile-project-p))
                              (moder-separated
