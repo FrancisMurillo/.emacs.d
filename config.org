@@ -1866,6 +1866,18 @@
             (fn/append-to-backends 'company-keywords)))
     #+END_SRC
 
+*** lsp
+    LSP support
+
+    #+begin_src emacs-lisp
+      (unless noninteractive
+        (use-package lsp-mode
+          :ensure t
+          :config
+          nil))
+
+    #+end_src
+
 * Ergonomic
   Things to assist in managing Emacs
 
@@ -2898,16 +2910,6 @@
           (add-to-list 'which-key-replacement-alist
                        (cons (cons nil "Prefix Command")
                           #'fn/which-key-prefix-command-replacement))))
-    #+END_SRC
-
-*** which-function
-    Likewise with key and functions
-
-    #+BEGIN_SRC emacs-lisp :block-id a98dab72-3b51-2570-059c-7b17519d0d00
-      (unless noninteractive
-        (fn/use-feature which-function
-          nil
-          (which-function-mode t)))
     #+END_SRC
 
 *** eldoc
@@ -6010,18 +6012,6 @@
           nil))
     #+END_SRC
 
-*** Snippets
-    Easy snippets for Haskell
-
-    #+BEGIN_SRC emacs-lisp :block-id 5f1b278b-5b7e-5d87-7f25-f5af49d9230d
-      (unless noninteractive
-        (fn/use-feature haskell-snippets
-          (yasnippet haskell-mode)
-          (use-package haskell-snippets
-            :ensure t
-            :demand t)))
-    #+END_SRC
-
 *** Build Tools
     Maybe stack or hack?
 *** Literate Programming
@@ -6163,12 +6153,6 @@
        :config
        (flycheck-credo-setup))
 
-     (use-package elixir-yasnippets
-       :ensure t
-       :after elixir-mode
-       :config
-       nil)
-
       (use-package alchemist
         :ensure t
         :hook (elixir-mode . alchemist-mode)
@@ -6185,47 +6169,23 @@
    A close C alternative that I can chew on
 
    #+begin_src emacs-lisp :block-id 3461f079-e772-71d2-bdb2-ae1e84009f88
-     (use-package rust-mode
+     (use-package rustic
        :ensure t
        :config
-       (setq rust-format-on-save t))
+       (setq rustic-format-on-save t
+             rustic-lsp-server 'rls)
 
-     (use-package racer
-       :ensure t
-       :after (rust-mode company)
-       :hook (rust-mode . racer-mode)
-       :config
-       (setq racer-cmd (executable-find "racer"))
-       (add-hook 'racer-mode-hook #'eldoc-mode))
-
-     (use-package cargo
-       :ensure t
-       :after rust-mode
-       :hook (rust-mode . cargo-minor-mode)
-       :config
-       (setq cargo-process--command-add "install")
-
-       (add-to-list 'cargo-process--no-manifest-commands "Add")
-
-       (defun fn/cargo-test-nocapture-flag (orig-fun &rest args)
-         "For test commands, add `--nocapture' and `--quiet' flags."
-         (let ((cargo-process--command-flags
-                (append cargo-process--command-flags
-                        "-- --nocapture --quiet")))
-           (apply orig-fun args)))
-
-       (advice-add 'cargo-process--command-test :around #'fn/cargo-test-nocapture-flag)
-       (advice-add 'cargo-process-test :around #'fn/cargo-test-nocapture-flag)
-       (advice-add 'cargo-process-current-test :around #'fn/cargo-test-nocapture-flag))
+       (define-key rustic-mode-map (kbd "C-c C-c r") #'rustic-cargo-test-rerun)
+       (define-key rustic-cargo-test-mode-map (kbd "r") #'rustic-cargo-test-rerun)
+       (define-key rustic-compilation-mode-map (kbd "r") #'rustic-cargo-test-rerun))
 
      (use-package flycheck-rust
        :ensure t
        :after flycheck
        :demand t
        :config
-       (flycheck-rust-setup)
-       (flycheck-add-next-checker 'rust 'rust-clippy)
-       (flycheck-add-next-checker 'rust-cargo 'rust-clippy))
+       (setq rustic-flycheck-clippy-params "--message-format=json")
+       (push 'rustic-clippy flycheck-checkers))
    #+end_src
 
 ** PHP
