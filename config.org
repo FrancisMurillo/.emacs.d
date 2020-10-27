@@ -38,185 +38,214 @@
 
    Or with an function instead
 
-   #+BEGIN_SRC emacs-lisp :block-id 45501e2d-cc25-e41b-bceb-8c40d2bf7450
-     (defun fn/reload-config ()
-       "Reload my configuration again"
-       (interactive)
-       (org-babel-load-file
-        (expand-file-name fn/config-file user-emacs-directory)))
+   #+BEGIN_SRC emacs-lisp
+     (progn
+       (defun fn/reload-config ()
+         "Reload my configuration again"
+         (interactive)
+         (org-babel-load-file
+          (expand-file-name fn/config-file user-emacs-directory)))
 
-     (defun fn/dired-emacs-dir ()
-       "Quickly visit emacs directory"
-       (interactive)
-       (dired user-emacs-directory))
+       (defun fn/dired-emacs-dir ()
+         "Quickly visit emacs directory"
+         (interactive)
+         (dired user-emacs-directory)))
    #+END_SRC
 
 * Bootstrap
-** No Byte Compile
-   Do not byte compile a file.
+  Basic configuration to allow for this configuration style
 
-   #+BEGIN_SRC emacs-lisp :block-id 516d1b9f-3fde-f2fc-754f-8135200d7251
-     (setq-local no-byte-compile t)
+  #+begin_src emacs-lisp
+    (progn
+      ;; Prevent byte compilation of this file
+      (setq-local no-byte-compile t)
+
+      ;; Guarantee lexical scoping
+      (setq lexical-binding t)
+
+      ;; Set package repositoreis
+      (defconst fn/package-archives
+        `(("gnu" "http://elpa.gnu.org/packages/" 10)
+          ("org" "http://orgmode.org/elpa/" 0 )
+          ("melpa" "http://melpa.org/packages/" 20))
+        "List of my packages")
+
+      (mapc
+       (lambda (package-archive)
+         (pcase-let ((`(,id ,location ,priority) package-archive))
+           (unless (assoc-default id package-archives)
+             (add-to-list 'package-archives (cons id location))
+             (add-to-list 'package-archive-priorities (cons id priority)))))
+       fn/package-archives))
+
+    (progn
+      (require 'use-package)
+
+      (setq use-package-verbose t
+            use-package-check-before-init t
+            use-package-minimum-reported-time 0.025
+            use-package-always-defer t
+            use-package-always-defer-install nil)
+
+      (defun fn/remove-byte-compiled-files ()
+        "Remove byte compiles from emacs directory"
+        (interactive)
+        (shell-command
+         (format "cd '%s' && find . -name '*.elc' -type f | xargs rm -f"
+                 (expand-file-name user-emacs-directory))))
+
+      (setq org-confirm-babel-evaluate nil
+            org-src-fontify-natively t
+            org-src-tab-acts-natively t))
+
+  #+end_src
+
+* Constants
+  Global constants important to this configuration
+
+   #+BEGIN_SRC emacs-lisp
+     (progn
+       (defconst fn/cache-dir-name ".cache"
+         "Place every moving file in this directory")
+
+       (defconst fn/cache-dir (expand-file-name fn/cache-dir-name user-emacs-directory)
+         "Every cached or moving file should be here like with Spacemacs")
+
+       (make-directory fn/cache-dir t))
+
+     (progn
+       (defconst fn/setting-dir-name ".setting"
+         "Just like `fn/cache-dir-name' but for my persistent setting.")
+
+       (defconst fn/setting-dir (expand-file-name fn/setting-dir-name user-emacs-directory)
+         "Just like `fn/cache-dir' but for persistent settings.")
+
+       (make-directory fn/setting-dir t))
+
+     (progn
+       (defconst fn/lib-dir-name "lib"
+         "External non-standard files directory")
+
+       (defconst fn/lib-dir (expand-file-name fn/lib-dir-name user-emacs-directory)
+         "External library directory")
+
+       (make-directory fn/lib-dir t))
+
+
+     (progn
+       (defconst fn/system-dir-name "system"
+         "System library dependencies directory")
+
+       (defconst fn/system-dir (expand-file-name fn/system-dir-name user-emacs-directory)
+         "System library for external files.")
+
+       (make-directory fn/system-dir t))
+
+     (progn
+       (defconst fn/font-dir-name "fonts"
+         "Font dependencies directory")
+
+       (defconst fn/font-dir (expand-file-name fn/font-dir-name fn/system-dir)
+         "External font directory.")
+
+       (make-directory fn/font-dir t))
+
+     (progn
+       (defconst fn/conf-dir-name "conf"
+         "Config dependencies directory")
+
+       (defconst fn/conf-dir (expand-file-name fn/conf-dir-name fn/system-dir)
+         "External conf directory.")
+
+       (make-directory fn/conf-dir t))
+
+     (progn
+       (defconst fn/extra-dir-name "extra"
+         "Anything under the sun you can put here")
+
+       (defconst fn/extra-dir (expand-file-name fn/extra-dir-name user-emacs-directory)
+         "Anything under the sun directory")
+
+       (make-directory fn/extra-dir t))
+
+     (progn
+       (defconst fn/custom-module-dir-name "modules"
+         "Custom elisp packages directory name")
+
+       (defconst fn/custom-module-dir (expand-file-name fn/custom-module-dir-name fn/library-dir)
+         "Custom elisp packages directory")
+
+       (make-directory fn/custom-module-dir t))
+
+     (progn
+       (defconst fn/custom-script-dir-name "scripts"
+         "Custom elisp script directory name")
+
+       (defconst fn/custom-script-dir (expand-file-name fn/custom-script-dir-name fn/library-dir)
+         "Custom elisp script directory")
+
+       (make-directory fn/custom-script-dir t)
+       (add-to-list 'load-path fn/custom-script-dir))
    #+END_SRC
 
-** Lexical Binding
-   This makes it so that the file that is produced from tangling this
-   file uses lexical scoping and all succeeding files
+* Base
+  Configuration for Vanilla Emacs
 
-   #+BEGIN_SRC emacs-lisp :block-id 857ce296-7ba0-9163-25e5-ce16c40bae9c
-     (setq lexical-binding t)
-   #+END_SRC
+  #+begin_src emacs-lisp
+    (progn
+      ;; No need for startup screen
+      (setq inhibit-startup-screen t
+            initial-scratch-message nil)
 
-** Package Sources
-   Add package sources if not present and reload, this should have been added in the =init.el= but checked here again for completion.
+      ;; Ignore customization via `customize-group'
+      (setq custom-file (expand-file-name "custom-file.el" fn/cache-dir))
 
-   #+BEGIN_SRC emacs-lisp :block-id 8ec65bd3-dc31-0455-99d0-301267fdd059
-     (defconst fn/package-archives
-       `(("gnu" "http://elpa.gnu.org/packages/" 10)
-         ("org" "http://orgmode.org/elpa/" 0 )
-         ("melpa" "http://melpa.org/packages/" 20))
-       "List of my packages")
+      ;; UTF-8 should be the enivorment
+      (set-language-environment "UTF-8")
 
-     (mapc
-      (lambda (package-archive)
-        (pcase-let ((`(,id ,location ,priority) package-archive))
-          (unless (assoc-default id package-archives)
-            (add-to-list 'package-archives (cons id location))
-            (add-to-list 'package-archive-priorities (cons id priority)))))
-      fn/package-archives)
-   #+END_SRC
+      ;; Visual bell for me since audio is a bit more distractive
+      (setq visible-bell t)
 
-** Package Manager
-   The package manager of this whole configuration
+      (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
 
-   #+BEGIN_SRC emacs-lisp :block-id 363333a0-026e-ebda-9692-2dfed8316172
-     (require 'use-package)
+      (setq gc-cons-threshold (* 256 1024 1024))
+      (run-with-idle-timer 30 t #'garbage-collect))
 
-     (setq use-package-verbose t
-        use-package-check-before-init t
-        use-package-minimum-reported-time 0.025
-        use-package-always-defer t
-        use-package-always-defer-install nil)
+    (progn
+      (defconst fn/backup-dir-name "backups/"
+        "Backup directory name")
 
-     (defun fn/remove-byte-compiled-files ()
-       "Remove byte compiles from emacs directory"
-       (interactive)
-       (shell-command
-        (format "cd '%s' && find . -name '*.elc' -type f | xargs rm -f"
-                (expand-file-name user-emacs-directory))))
-   #+END_SRC
-
-** Org Src
-   Configuration for using the tangling nature of this configuration
-
-   #+BEGIN_SRC emacs-lisp :block-id 0e5504a8-93dd-d412-b479-a18198b0a9f2
-     (setq org-confirm-babel-evaluate nil
-           org-src-fontify-natively t
-           org-src-tab-acts-natively t)
-   #+END_SRC
-
-** Constants
-   Some constants to work with
-
-   #+BEGIN_SRC emacs-lisp :block-id 0830626b-8d70-6934-e7ed-d5b0a42c34e2
-     (defconst fn/minute-per-second 60
-       "Obviously converting minutes to seconds")
-
-     (defconst fn/cache-dir-name ".cache"
-       "Place every moving file in this directory")
-
-     (defconst fn/cache-dir (expand-file-name fn/cache-dir-name user-emacs-directory)
-       "Every cached or moving file should be here like with Spacemacs")
-
-     (make-directory fn/cache-dir t)
+      (defconst fn/backup-dir (expand-file-name fn/backup-dir-name fn/cache-dir)
+        "Backup directory")
 
 
-     (defconst fn/setting-dir-name ".setting"
-       "Just like `fn/cache-dir-name' but for my persistent setting.")
+      (defconst fn/auto-save-dir-name "auto-save-list/"
+        "Auto save directory name")
 
-     (defconst fn/setting-dir (expand-file-name fn/setting-dir-name user-emacs-directory)
-       "Just like `fn/cache-dir' but for persistent settings.")
+      (defconst fn/auto-save-dir (expand-file-name fn/auto-save-dir-name fn/cache-dir)
+        "Auto save directory")
 
-     (make-directory fn/setting-dir t)
+      ;; Save the files
+      (setq auto-save-timeout 15
+            auto-save-list-file-name fn/auto-save-dir
 
+            delete-old-versions t
+            version-control t
+            vc-make-backup-files t
+            backup-by-copying t
+            kept-new-versions 10
+            kept-old-versions 50
 
-     (defconst fn/lib-dir-name "lib"
-       "External non-standard files directory")
+            backup-directory-alist `(("." . ,fn/backup-dir))
 
-     (defconst fn/lib-dir (expand-file-name fn/lib-dir-name user-emacs-directory)
-       "External library directory")
-
-     (make-directory fn/lib-dir t)
-
-
-     (defconst fn/system-dir-name "system"
-       "System library dependencies directory")
-
-     (defconst fn/system-dir (expand-file-name fn/system-dir-name user-emacs-directory)
-       "System library for external files.")
-
-     (make-directory fn/system-dir t)
-
-
-     (defconst fn/font-dir-name "fonts"
-       "Font dependencies directory")
-
-     (defconst fn/font-dir (expand-file-name fn/font-dir-name fn/system-dir)
-       "External font directory.")
-
-     (make-directory fn/font-dir t)
-
-
-     (defconst fn/conf-dir-name "conf"
-       "Config dependencies directory")
-
-     (defconst fn/conf-dir (expand-file-name fn/conf-dir-name fn/system-dir)
-       "External conf directory.")
-
-     (make-directory fn/conf-dir t)
-
-
-
-     (defconst fn/extra-dir-name "extra"
-       "Anything under the sun you can put here")
-
-     (defconst fn/extra-dir (expand-file-name fn/extra-dir-name user-emacs-directory)
-       "Anything under the sun directory")
-
-     (make-directory fn/extra-dir t)
-
-
-     (defconst fn/custom-module-dir-name "modules"
-       "Custom elisp packages directory name")
-
-     (defconst fn/custom-module-dir (expand-file-name fn/custom-module-dir-name fn/library-dir)
-       "Custom elisp packages directory")
-
-     (make-directory fn/custom-module-dir t)
-
-     (defconst fn/custom-script-dir-name "scripts"
-       "Custom elisp script directory name")
-
-     (defconst fn/custom-script-dir (expand-file-name fn/custom-script-dir-name fn/library-dir)
-       "Custom elisp script directory")
-
-
-     (make-directory fn/custom-script-dir t)
-
-     (add-to-list 'load-path fn/custom-script-dir)
-   #+END_SRC
-
-* Basic Setup
-  Basic configurations anyone can do for vanilla Emacs
+            auto-save-list-file-prefix fn/auto-save-dir
+            auto-save-file-name-transforms `((".*" ,fn/auto-save-dir t))))
+  #+end_src
 
 ** Customization
    Basis for configuration
 
-   #+BEGIN_SRC emacs-lisp :block-id 8e36f9f4-4f43-646d-eb41-4ff7d425d03e
-     ;; Don't really care about custom file
-     (setq custom-file (expand-file-name "custom-file.el" fn/cache-dir))
-
-
+   #+BEGIN_SRC emacs-lisp
      (defgroup fn nil
        "My namespace for customizing my configuration")
 
@@ -264,109 +293,57 @@
      (global-set-key (kbd "C-c m") fn-custom-prefix-map)
    #+END_SRC
 
-** Startup
+** Custom GC Message
    Everything related to the startup state
 
-   #+BEGIN_SRC emacs-lisp :block-id e3857d2d-0e50-e886-7186-cd58a7fd80ee
-     (defconst fn/gc-cons-threshold (* 256 1024 1024)
-       "A high limit for garbage colection.")
-
-     (setq gc-cons-threshold fn/gc-cons-threshold) ;; High memory for Emacs
-
-     (defvar fn/my-lightning (concat
-                              (propertize
-                               " MY LIGHTNING "
-                               'face '(:background "#ff1e02" :foreground "#110200"
-                                                   :box (:line-width 0 :color "#ff1e02")))
-                              "...")
-       "A reference to continue?987654321.
+   #+BEGIN_SRC emacs-lisp
+     (progn
+       (defvar fn/my-lightning (concat
+                                (propertize
+                                 " MY LIGHTNING "
+                                 'face '(:background "#ff1e02" :foreground "#110200"
+                                                     :box (:line-width 0 :color "#ff1e02")))
+                                "...")
+         "A reference to continue?987654321.
      May I accept the lightning.")
 
-     (defvar fn/my-prayer (format "%s %s"
-                                  fn/my-lightning
-                                  (concat
-                                   (propertize
-                                    " MY PRAYER "
-                                    'face '(:background "#ffffff" :foreground "#121212"
-                                                        :box (:line-width 0 :color "#ffffff")))
-                                   "..."))
-       "The closing message for garbage collection.
+       (defvar fn/my-prayer (format "%s %s"
+                                    fn/my-lightning
+                                    (concat
+                                     (propertize
+                                      " MY PRAYER "
+                                      'face '(:background "#ffffff" :foreground "#121212"
+                                                          :box (:line-width 0 :color "#ffffff")))
+                                     "..."))
+         "The closing message for garbage collection.
      May I be lift up.")
 
-     (setq garbage-collection-messages nil) ;; My lightning... my prayer
+       (setq garbage-collection-messages nil) ;; My lightning... my prayer
 
-     (defun fn/continue-gc (orig-gc &rest args)
-       "Wrap some message with ORIG-GC."
-       (let ((start-time (current-time)))
-         (if (or (minibuffer-prompt) (current-message))
-             (apply orig-gc args)
-           (prog2
-               (message fn/my-lightning)
+       (defun fn/continue-gc (orig-gc &rest args)
+         "Wrap some message with ORIG-GC."
+         (let ((start-time (current-time)))
+           (if (or (minibuffer-prompt) (current-message))
                (apply orig-gc args)
-             (message "%s %s"
-                      fn/my-prayer
-                      (format "(%.4fs)"
-                              (float-time (time-subtract (current-time) start-time))))))))
+             (prog2
+                 (message fn/my-lightning)
+                 (apply orig-gc args)
+               (message "%s %s"
+                        fn/my-prayer
+                        (format "(%.4fs)"
+                                (float-time (time-subtract (current-time) start-time))))))))
 
-     (advice-add 'garbage-collect :around #'fn/continue-gc)
-
-
-     ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
-     (run-with-idle-timer 30 t #'garbage-collect)
-
-     (setq inhibit-startup-screen t ;; No need for the awesome startup screen.
-           initial-scratch-message nil)
-   #+END_SRC
-
-** Environment
-   Some environment configuration.
-
-   #+BEGIN_SRC emacs-lisp :block-id e0adbf59-f7d8-f4c2-281d-4cabc523a47e
-     (set-language-environment "UTF-8") ;; UTF-8 should be the enivorment
-
-     (setq visible-bell t) ;; Visual bell for me since audio is a bit more distractive
-
-     (fset 'yes-or-no-p 'y-or-n-p) ;; Y or N
-   #+END_SRC
-
-** Backups
-   Backups are good, just annoying when things are good
-
-   #+BEGIN_SRC emacs-lisp :block-id 99737619-18ed-431b-bca5-4d2cce5f20fe
-     (defconst fn/backup-dir-name "backups/"
-       "Backup directory name")
-
-     (defconst fn/backup-dir (expand-file-name fn/backup-dir-name fn/cache-dir)
-       "Backup directory")
+       (advice-add 'garbage-collect :around #'fn/continue-gc)
 
 
-     (defconst fn/auto-save-dir-name "auto-save-list/"
-       "Auto save directory name")
-
-     (defconst fn/auto-save-dir (expand-file-name fn/auto-save-dir-name fn/cache-dir)
-       "Auto save directory")
-
-
-     (setq auto-save-timeout 15
-           auto-save-list-file-name fn/auto-save-dir
-
-           delete-old-versions t
-           version-control t
-           vc-make-backup-files t
-           backup-by-copying t
-           kept-new-versions 10
-           kept-old-versions 50
-
-           backup-directory-alist `(("." . ,fn/backup-dir))
-
-           auto-save-list-file-prefix fn/auto-save-dir
-           auto-save-file-name-transforms `((".*" ,fn/auto-save-dir t)))
+       ;; Since the limit is high, it might never gc. So if I am idle, do some cleanup.
+       )
    #+END_SRC
 
 ** History
    Save minibuffer history
 
-   #+BEGIN_SRC emacs-lisp :block-id e5b95f5c-2062-2e1d-981b-a709f39da9d7
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/savehist-file-name "savehist"
        "Save history file name")
 
@@ -400,7 +377,7 @@
 ** Editing
    Some editing configurations
 
-   #+BEGIN_SRC emacs-lisp :block-id b761153a-62c3-05c4-7231-89856bbae249
+   #+BEGIN_SRC emacs-lisp
      (setq whitespace-line-column 10000 ;; No line too long font locking please
 
            ;; C-M-a should go to the beginning of a sentence
@@ -417,7 +394,7 @@
 ** Bookmark
    Bookmark configuration
 
-   #+BEGIN_SRC emacs-lisp :block-id 3730e40d-63fb-3b03-1830-a85c557fe522
+   #+BEGIN_SRC emacs-lisp
      (setq bookmark-default-file (expand-file-name "bookmarks" fn/cache-dir)
         bookmark-save-flag t)
    #+END_SRC
@@ -425,7 +402,7 @@
 ** Search
    You must have this setup, it's like butter and you're the bread.
 
-   #+BEGIN_SRC emacs-lisp :block-id 7d1d92eb-2c93-53fe-e24f-dfcb94509754
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/default-search-whitespace-regexp search-whitespace-regexp
        "Store the default whitespace option")
 
@@ -453,7 +430,7 @@
 ** Coding
    Some programming configuration that make sense
 
-   #+BEGIN_SRC emacs-lisp :block-id 0654a092-0c78-f18e-e9bb-515041e26a3a
+   #+BEGIN_SRC emacs-lisp
      (setq save-interprogram-paste-before-kill t)
 
      ;; Please indent after newline to maintain sanity
@@ -492,20 +469,20 @@
 ** Mouse
    I better be a cat
 
-   #+BEGIN_SRC emacs-lisp :block-id 218a476d-ce2f-a92a-cf26-54576622e00a
+   #+BEGIN_SRC emacs-lisp
      (mouse-avoidance-mode 'cat-and-mouse)
    #+END_SRC
 ** Shell
    Some minor shell enhancement
 
-   #+BEGIN_SRC emacs-lisp :block-id 185a0a15-d659-6d03-bcf2-3eef1997af21
+   #+BEGIN_SRC emacs-lisp
      (setq comint-input-ignoredups t)
    #+END_SRC
 
 ** Request
    Some basic configuration with =url=.
 
-   #+begin_src emacs-lisp :block-id 07553c47-e83a-a14e-db94-9ad3812fd926
+   #+begin_src emacs-lisp
      (with-eval-after-load 'url
        (setq url-configuration-directory
              (expand-file-name "url" fn/cache-dir)))
@@ -514,7 +491,7 @@
 ** Others
    Some other configurations that I can't classify yet
 
-   #+BEGIN_SRC emacs-lisp :block-id 0bf9bac3-a449-98ef-8936-fa7e6d1f4205
+   #+BEGIN_SRC emacs-lisp
      (setq auth-sources (list (list  :source "~/.authinfo.gpg")))
 
      (setq browse-url-browser-function 'browse-url-generic
@@ -524,7 +501,7 @@
 ** Commands
    Unlock some commands I need
 
-   #+BEGIN_SRC emacs-lisp :block-id 2ff0370d-50fa-3ca8-7b00-e9e8b9a3e850
+   #+BEGIN_SRC emacs-lisp
      (put 'narrow-to-region 'disabled nil)
      (put 'downcase-region 'disabled nil)
      (put 'upcase-region 'disabled nil)
@@ -532,7 +509,7 @@
 ** Local Variables
    Allow safe local variables
 
-   #+begin_src emacs-lisp :block-id 23665247-784f-6b8d-a296-9a8b7c834fe6
+   #+begin_src emacs-lisp
      (setq enable-local-variables :safe)
 
      (add-to-list 'safe-local-variable-values '(major-mode))
@@ -547,7 +524,7 @@
 ** dash
    Functionally elisp
 
-   #+BEGIN_SRC emacs-lisp :block-id fd8d45fa-ef70-5322-8ec6-04d8fc1e13d5
+   #+BEGIN_SRC emacs-lisp
      (use-package dash
        :ensure t
        :defer t)
@@ -560,7 +537,7 @@
 ** async
    Not really builtin but should be
 
-   #+BEGIN_SRC emacs-lisp :block-id bfae8c52-4b79-e605-1b26-7da4ae8eeade
+   #+BEGIN_SRC emacs-lisp
      (use-package async
        :ensure t
        :defer t)
@@ -569,21 +546,21 @@
 ** s
    A string library, everyone needs that
 
-   #+BEGIN_SRC emacs-lisp :block-id 80387d51-f9a0-25ab-75ea-a36947dbeb03
+   #+BEGIN_SRC emacs-lisp
      (use-package s
        :ensure t)
    #+END_SRC
 ** f
    File manipulation library for Emacs
 
-   #+BEGIN_SRC emacs-lisp :block-id bad34a22-8eab-ea19-6a8b-da30a258fff8
+   #+BEGIN_SRC emacs-lisp
      (use-package f
        :ensure t)
    #+END_SRC
 ** promise
    Something to help with package configuration
 
-   #+BEGIN_SRC emacs-lisp :block-id e0719481-70d9-9187-00c6-a424983cef0e
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-module-dir)
        "Promise package location")
 
@@ -636,11 +613,10 @@
 ** unicode-fonts
    Unicode is an required aesthetic
 
-   #+BEGIN_SRC emacs-lisp :block-id 0e75a034-c275-fe20-35db-c9d18176e817
+   #+BEGIN_SRC emacs-lisp
      (use-package pcache ;; Required by unicode-fonts
        :ensure t
        :init
-       ;; Mentioned here to redirect directory
        (setq pcache-directory (expand-file-name "pcache/" fn/cache-dir)))
 
      (use-package unicode-fonts
@@ -653,7 +629,7 @@
 ** persistent-soft
    Nice to have some persistence.
 
-   #+BEGIN_SRC emacs-lisp :block-id 5ae1d8f2-f9b7-4eff-d903-020af5b5a9b3
+   #+BEGIN_SRC emacs-lisp
      (use-package persistent-soft
        :ensure t
        :demand t
@@ -693,7 +669,7 @@
 ** exec-path-from-shell
    The path variable from the shell is need to run commands
 
-   #+BEGIN_SRC emacs-lisp :block-id ad0dfafc-912b-1abc-12bb-fa6c5bbea607
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/exec-path-from-shell-package-dir
        (expand-file-name "exec-path-from-shell/" fn/custom-module-dir)
        "Exec package dir")
@@ -720,7 +696,7 @@
 ** htmlize
    My custom library for exporting.
 
-   #+BEGIN_SRC emacs-lisp :block-id b05ead3c-6bc6-be20-949f-da7437b935b4
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/htmlize-package-dir
        (expand-file-name "htmlize/" fn/custom-module-dir)
        "Htmlize package dir")
@@ -733,7 +709,7 @@
 ** log4e
    Nice logging library
 
-   #+BEGIN_SRC emacs-lisp :block-id e8344e55-09ff-27a8-a6c0-8d76e44cd3f0
+   #+BEGIN_SRC emacs-lisp
      (unless noninteractive
        (use-package log4e
          :ensure t
@@ -842,7 +818,7 @@
 ** auto-compile
    Automatic compilation of package files
 
-   #+BEGIN_SRC emacs-lisp :block-id cf5a9ca5-1bd8-421b-d6f6-76a4cf5194fc
+   #+BEGIN_SRC emacs-lisp
      (use-package auto-compile
        :ensure t
        :hook (emacs-lisp-mode . auto-compile-mode)
@@ -857,7 +833,7 @@
    Sadly, this has to be placed here because =fn/use-feature= cannot load
    it properly.
 
-   #+BEGIN_SRC emacs-lisp :block-id 1c07422d-833b-c29a-44dd-3c62d3498e7f
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/all-the-icon-font-dir (expand-file-name "all-the-icons-font" fn/custom-module-dir)
        "All the icon font library.")
 
@@ -949,7 +925,7 @@
 ** Optional
    Dependencies that aren't really required
 
-   #+BEGIN_SRC emacs-lisp :block-id a79a8916-14f1-f6da-278f-48bb7915b472
+   #+BEGIN_SRC emacs-lisp
 *** (use-package text-candy
        :load-path fn/custom-script-dir
        :defer 5)
@@ -965,7 +941,7 @@
 
   Checking for missing executables.
 
-  #+BEGIN_SRC emacs-lisp :block-id cd0b6b61-3b2e-b28e-756a-f26b585d6309
+  #+BEGIN_SRC emacs-lisp
     (defvar fn/missing-executables (list)
       "Executables that could not be found.")
 
@@ -1025,7 +1001,7 @@
 ** shell
    Some configurations on the terminal
 
-   #+BEGIN_SRC emacs-lisp :block-id da6d7eb9-45f4-ee00-154d-11e39b59d7bf
+   #+BEGIN_SRC emacs-lisp
      (setq async-shell-command-buffer 'new-buffer)
 
      (fn/use-feature shell-mode--mode-icon
@@ -1038,7 +1014,7 @@
 ** sh
    More things for sh-mode
 
-   #+BEGIN_SRC emacs-lisp :block-id f5c18b8e-734c-f4e2-e191-f7ef929289fa
+   #+BEGIN_SRC emacs-lisp
      (use-package company-shell
        :ensure t
        :after (shell company)
@@ -1051,7 +1027,7 @@
 ** term
    An enhancement for =term=
 
-   #+BEGIN_SRC emacs-lisp :block-id 539bc87d-8763-f0fb-47de-4620fa090f43
+   #+BEGIN_SRC emacs-lisp
      (use-package term
        :bind (:map fn-standard-prefix-map
                    ("x t" . ansi-term))
@@ -1081,7 +1057,7 @@
 ** eshell
    Another enhancement for the shell
 
-   #+BEGIN_SRC emacs-lisp :block-id 8365fbc6-47af-b2ac-e913-af5aa85cb479
+   #+BEGIN_SRC emacs-lisp
      (use-package eshell
        :bind (:map fn-standard-prefix-map
                    ("x e" . eshell))
@@ -1100,7 +1076,7 @@
 *** Autocompletion
     We got completion here
 
-    #+BEGIN_SRC emacs-lisp :block-id 114da1f2-d600-af5b-af05-f5097502456d
+    #+BEGIN_SRC emacs-lisp
       (use-package pcomplete
         :ensure t
         :after eshell)
@@ -1121,7 +1097,7 @@
 ** direnv
    Env per directory. (Want to hack this with Emacs)
 
-   #+begin_src emacs-lisp :block-id 324f145e-a402-abaa-dab0-26b5de87697f
+   #+begin_src emacs-lisp
      (fn/use-executables direnv-check
        (direnv)
        (use-package direnv
@@ -1135,7 +1111,7 @@
 ** prodigy
    Living in the shell requires some genius
 
-   #+BEGIN_SRC emacs-lisp :block-id dc93746e-c346-c682-730d-a3d26b5e258a
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/prodigy-map (fn/make-prefixed-keymap (kbd "P") fn-standard-prefix-map)
        "My custom prodigy map.")
 
@@ -1202,7 +1178,7 @@
 *** Prodigy Cleanup
     Ensure when Emacs closes, kill all processes
 
-    #+BEGIN_SRC emacs-lisp :block-id 9fd74263-24d5-5341-6be7-f94ff27a0be4
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature prodigy-auto-kill
         (prodigy)
         (defvar fn/prodigy-processes (list)
@@ -1235,7 +1211,7 @@
 *** Customized Prodigy
     A dependency to customize prodigy, giving the command =fn/prodigy-define-service=.
 
-    #+BEGIN_SRC emacs-lisp :block-id 8943bce9-9886-c9c1-7c4e-cba4f7a62a6f
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature prodigy-custom
         (prodigy)
         (defmacro fn/prodigy-with-buffer (&rest body)
@@ -1334,7 +1310,7 @@
 *** Service Tags
     Some commands that can be refactored out
 
-    #+BEGIN_SRC emacs-lisp :block-id 365a7524-2f54-39ed-ebdf-dabf38392152
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature prodigy-command-tags
         (prodigy)
         (fn/use-executables prodigy-polipo
@@ -1551,7 +1527,7 @@
     Services are grouped together, starting and stopping together or in
     sequence.
 
-    #+BEGIN_SRC emacs-lisp :block-id 1b36d539-6882-8a58-5206-512adfd9118e
+    #+BEGIN_SRC emacs-lisp
       (use-package prodigy-set
         :load-path fn/custom-script-dir
         :after prodigy
@@ -1562,7 +1538,7 @@
 ** procred
    Similarly, manage processes.
 
-   #+BEGIN_SRC emacs-lisp :block-id 0ae1df3b-b802-c3f2-4e17-450d5e8245f8
+   #+BEGIN_SRC emacs-lisp
      (use-package proced
        :ensure t
        :defer t
@@ -1573,7 +1549,7 @@
 ** emamux
    Work better with tmux
 
-   #+BEGIN_SRC emacs-lisp :block-id 13d23dc8-e0a7-3d2c-71b6-13cefdd9fb96
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables emamux-check
        (tmux)
        (use-package emamux
@@ -1586,7 +1562,7 @@
 ** multi-term
    Emacs and term
 
-   #+BEGIN_SRC emacs-lisp :block-id d9dc0195-7512-f1f8-b4c7-236b3754a637
+   #+BEGIN_SRC emacs-lisp
      (use-package multi-term
        :ensure t
        :defer t)
@@ -1595,7 +1571,7 @@
 ** docker
    Containers eh?
 
-   #+BEGIN_SRC emacs-lisp :block-id e9ab7472-6b2b-33b2-93e4-19113b3dff15
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables docker-check
        (docker)
        (use-package docker
@@ -1608,7 +1584,7 @@
 
    Something to edit =Dockerfile=
 
-   #+BEGIN_SRC emacs-lisp :block-id f2ccee62-1618-98e4-ca5c-1fe84800ccd4
+   #+BEGIN_SRC emacs-lisp
      (use-package dockerfile-mode
        :ensure t
        :mode (("Dockerfile\\'" . dockerfile-mode)))
@@ -1617,7 +1593,7 @@
 ** vagrant
    Vagrant tools
 
-   #+BEGIN_SRC emacs-lisp :block-id 19f81a53-b4c7-06cf-69f9-ab751d92f377
+   #+BEGIN_SRC emacs-lisp
      (use-package vagrant
        :ensure t
        :defer t
@@ -1628,7 +1604,7 @@
 ** memory-usage
    Nice to know if my baby is getting to fat to quick
 
-   #+BEGIN_SRC emacs-lisp :block-id 2f9e8622-448e-2a55-c269-285f71ec82bb
+   #+BEGIN_SRC emacs-lisp
      (use-package memory-usage
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -1643,7 +1619,7 @@
     Visual lines make more sense than the hard lines, what you see is
     what you get. Besides, I use syntax motions
 
-    #+BEGIN_SRC emacs-lisp :block-id c1dad918-e45c-608c-f71c-66922e5aa4ec
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature visual-line-mode
         nil
         (global-visual-line-mode t)
@@ -1653,7 +1629,7 @@
 *** auto-fill
     Useful mode when writing, keeps things under 80 characters.
 
-    #+BEGIN_SRC emacs-lisp :block-id 6be4492f-5e2a-4cbb-fcc4-31baf82851e1
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature auto-fill-mode
         nil
         (add-hook 'text-mode-hook 'turn-on-auto-fill)
@@ -1664,7 +1640,7 @@
 *** auto-revert
     The more generic revert
 
-    #+BEGIN_SRC emacs-lisp :block-id f2576d89-b810-5cf0-f398-7b530420997d
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature auto-revert
         nil
         (global-auto-revert-mode t)
@@ -1678,7 +1654,7 @@
 *** autorevert
     Enhancement for log reading
 
-    #+BEGIN_SRC emacs-lisp :block-id 30faefd0-5219-3cd8-1ae0-8ea74ab7cf7b
+    #+BEGIN_SRC emacs-lisp
       (use-package autorevert
         :diminish auto-revert-mode
         :mode (("\\.log\\'" . auto-revert-tail-mode)));
@@ -1688,7 +1664,7 @@
 *** hungry-delete
     Very useful default delete functionality
 
-    #+BEGIN_SRC emacs-lisp :block-id 3fd0ecbe-3c3a-10f8-c4d5-8bb9fdbea9a5
+    #+BEGIN_SRC emacs-lisp
       (use-package hungry-delete
         :ensure t
         :diminish hungry-delete-mode
@@ -1700,7 +1676,7 @@
 *** expand-region
     Another great feature for marking
 
-    #+BEGIN_SRC emacs-lisp :block-id d4f2e1bb-e7a6-1ef8-5fc0-99eb5712ce71
+    #+BEGIN_SRC emacs-lisp
       (use-package expand-region
         :ensure t
         :bind (("C-=" . er/expand-region)))
@@ -1709,7 +1685,7 @@
 *** multiple-cursors
     This functions does not get too much attention
 
-    #+BEGIN_SRC emacs-lisp :block-id 46dc1c91-1847-19d5-981e-6b68a22b3b16
+    #+BEGIN_SRC emacs-lisp
       (use-package multiple-cursors
         :ensure t
         :bind (("C-S-c C-S-c" . mc/edit-lines)
@@ -1720,7 +1696,7 @@
 *** undo-tree
     Visualizing undo like vi
 
-    #+BEGIN_SRC emacs-lisp :block-id 30703a30-7eb6-884f-b69c-ec5e4ab5b73a
+    #+BEGIN_SRC emacs-lisp
       (use-package undo-tree
         :ensure t
         :defer t
@@ -1732,7 +1708,7 @@
 *** glasses
     I don't like the camelCase convention  so I make it more like Emacs.
 
-    #+BEGIN_SRC emacs-lisp :block-id bc2bb876-e2b5-ac90-acd0-07047d7487ea
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (with-eval-after-load 'glasses
           (setq glasses-separator "~")))
@@ -1742,7 +1718,7 @@
 *** hippie-exp
     Hippie expand rocks
 
-    #+BEGIN_SRC emacs-lisp :block-id 04958daf-7aa0-94ab-8038-98ea3e2e7e05
+    #+BEGIN_SRC emacs-lisp
       (use-package hippie-exp
         :bind (("M-/" . hippie-expand))
         :config
@@ -1766,7 +1742,7 @@
 *** company
     A replacement for =autocomplete=.
 
-    #+BEGIN_SRC emacs-lisp :block-id 14b030d6-a17c-98ae-444f-7529560d8b4d
+    #+BEGIN_SRC emacs-lisp
       (use-package company
         :ensure t
         :unless noninteractive
@@ -1866,7 +1842,7 @@
 *** recentf
     Accessing the files recently
 
-    #+BEGIN_SRC emacs-lisp :block-id 3f6c8b53-5f56-d1bb-8852-71807ad0c314
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package recentf
           :bind (("C-x C-r" . recentf-open-files))
@@ -1888,7 +1864,7 @@
 *** bookmark+
     Enhancement for normal bookmarking
 
-    #+BEGIN_SRC emacs-lisp :block-id 3165bffb-1127-0d5d-0a4f-7ff0b07d7612
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/bookmark+-module-dir (expand-file-name "bookmark+/" fn/custom-module-dir)
         "Archived `bookmark+' packages.")
 
@@ -1907,7 +1883,7 @@
 *** desktop
     Managing buffers the Emacs way.
 
-    #+BEGIN_SRC emacs-lisp :block-id d638037a-5b8e-86de-e653-20b58c670c66
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/desktop-map (fn/make-prefixed-keymap (kbd "d") fn-standard-prefix-map)
         "My custom desktop bookmarked map.")
 
@@ -1951,7 +1927,7 @@
 *** workgroups
     Saving window state is very helpful specially when you move a lots
 
-    #+BEGIN_SRC emacs-lisp :block-id 6c071d29-d448-f4fa-f1d4-63c347a9cb28
+    #+BEGIN_SRC emacs-lisp
       (use-package workgroups2
         :disabled t
         :bind (("C-c w w" . workgroups-mode))
@@ -2078,7 +2054,7 @@
 **** workgroup-layouts
      Hooks for each workgroup
 
-     #+BEGIN_SRC emacs-lisp :block-id 08386167-3bce-0e3e-43cd-e6b20f8d0bbf
+     #+BEGIN_SRC emacs-lisp
        (use-package workgroups-layout
          :load-path fn/custom-script-dir
          :defer t
@@ -2124,7 +2100,7 @@
 *** e2wm
     Specific layouts for Emacs
 
-    #+BEGIN_SRC emacs-lisp :block-id 35932bb3-c241-0675-ae70-5a7c63dd3aaf
+    #+BEGIN_SRC emacs-lisp
       (use-package e2wm
         :ensure t
         :defer t
@@ -2141,7 +2117,7 @@
 *** winner
     You got to have those window configuration
 
-    #+BEGIN_SRC emacs-lisp :block-id 1bccc5be-c2b8-eca5-8158-9b40eccdbc8e
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package winner
           :ensure t
@@ -2152,7 +2128,7 @@
 *** window-numbering
     A must to navigate through windows with numbers.
 
-    #+BEGIN_SRC emacs-lisp :block-id 8f1e9fc0-580e-1fdb-c8a1-f4c042ce0d68
+    #+BEGIN_SRC emacs-lisp
       (use-package window-numbering
         :ensure t
         :unless noninteractive
@@ -2193,7 +2169,7 @@
 *** window-layout
     Making window layouts
 
-    #+BEGIN_SRC emacs-lisp :block-id 1f3782e2-bdbf-c261-74b3-5ce6bbb064e6
+    #+BEGIN_SRC emacs-lisp
       (use-package window-layout
         :ensure t
         :config
@@ -2223,7 +2199,7 @@
 *** golden-ratio
     Makes windows large enough to see.
 
-    #+BEGIN_SRC emacs-lisp :block-id dc0fe50a-04d2-ef04-47f4-fcbf8059e81a
+    #+BEGIN_SRC emacs-lisp
       (use-package golden-ratio
         :ensure t
         :demand t
@@ -2261,7 +2237,7 @@
 *** uniquify
     Nicer naming convention
 
-    #+BEGIN_SRC emacs-lisp :block-id 0daef306-f44a-5bc5-dead-1578ba3b8e9d
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package uniquify
           :if (version<= "24.3.1" emacs-version)
@@ -2276,7 +2252,7 @@
 *** projectile
     Must have a project finder when using a project.
 
-    #+BEGIN_SRC emacs-lisp :block-id 8ee23fbf-548c-e172-18e6-0df51729e123
+    #+BEGIN_SRC emacs-lisp
       (use-package projectile
         :ensure t
         :defer 1
@@ -2313,7 +2289,7 @@
 **** Per-Project Config
      Use projectile to load per project config via =.project.el= and =.project-locals.el=
 
-     #+begin_src emacs-lisp :block-id 79cf3115-f556-78b5-c11f-d9da06e94c9f
+     #+begin_src emacs-lisp
        (with-eval-after-load 'projectile
          (defconst fn/project-file ".project.el"
            "Project configuration file")
@@ -2474,7 +2450,7 @@
      Fix for the completion system being removed each time an upgrade is
      completed.
 
-     #+BEGIN_SRC emacs-lisp :block-id 98315fa2-0cb4-6f9e-4ce6-e58001e1e45a
+     #+BEGIN_SRC emacs-lisp
        (with-eval-after-load 'projectile
          (cl-defun projectile-completing-read (prompt choices &key initial-input action)
            "Present a project tailored PROMPT with CHOICES."
@@ -2519,7 +2495,7 @@
 *** helm
     The revolutionary package to find
 
-    #+BEGIN_SRC emacs-lisp :block-id c632c3e5-f6f1-819f-7739-ae22cdda46a2
+    #+BEGIN_SRC emacs-lisp
       (use-package helm
         :ensure t
         :unless noninteractive
@@ -2572,7 +2548,7 @@
 **** helm-projectile
      A nice assist for projectile
 
-     #+BEGIN_SRC emacs-lisp :block-id 4ef689e2-64b3-3e3e-90da-3227eeb127bf
+     #+BEGIN_SRC emacs-lisp
        (defconst fn/helm-projectile-package-dir (expand-file-name "helm-projectile/" fn/custom-module-dir)
          "My custom helm projectile package")
 
@@ -2708,7 +2684,7 @@
 **** helm-smex
      =smex= is faster than =helm-M-x=
 
-     #+BEGIN_SRC emacs-lisp :block-id 7f1cc404-a888-5187-4df6-dcba60ae2373
+     #+BEGIN_SRC emacs-lisp
        (defconst fn/smex-module-dir (expand-file-name "smex/" fn/custom-module-dir)
          "Archived `smex' packages.")
 
@@ -2735,7 +2711,7 @@
 **** helm-flx
      Flex matching is strong
 
-     #+BEGIN_SRC emacs-lisp :block-id 4d383ad6-7fce-9ac5-d57e-54c4310d0ffa
+     #+BEGIN_SRC emacs-lisp
        (use-package helm-flx
          :ensure t
          :after helm
@@ -2747,7 +2723,7 @@
     A lighter and faster library than [[helm]] that uses the minibuffer
     instead of a separate window.
 
-    #+BEGIN_SRC emacs-lisp :block-id a6d7d940-ad4f-97d2-3a24-48ae273f7add
+    #+BEGIN_SRC emacs-lisp
       (use-package ivy
         :ensure t
         :disabled t
@@ -2762,7 +2738,7 @@
 *** command-log
     A command log when needed
 
-    #+BEGIN_SRC emacs-lisp :block-id f36a2bde-d269-2571-e02f-c3998aaf439b
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package command-log-mode
           :ensure t
@@ -2775,7 +2751,7 @@
 *** keyfreq
     Nice to know what key's I press the most
 
-    #+BEGIN_SRC emacs-lisp :block-id 5cc8b787-43f6-7250-72a5-c269c6dd8dc0
+    #+BEGIN_SRC emacs-lisp
       (use-package keyfreq
         :ensure t
         :bind (:map fn-standard-prefix-map
@@ -2791,7 +2767,7 @@
 *** which-key
     A mnemonic for key bindings
 
-    #+BEGIN_SRC emacs-lisp :block-id f7b62f99-7365-6e12-adc8-0a1a6e8eadda
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package which-key
           :ensure t
@@ -2895,7 +2871,7 @@
 *** eldoc
     Nice to have the documentation at any time in the buffer.
 
-    #+BEGIN_SRC emacs-lisp :block-id b1abbbf8-3b46-2d75-0cd8-9bce7ef92427
+    #+BEGIN_SRC emacs-lisp
       (use-package eldoc
         :diminish eldoc-mode
         :init
@@ -2909,7 +2885,7 @@
 *** helm-descbinds
     Another way to check bindings
 
-    #+BEGIN_SRC emacs-lisp :block-id 9f63032d-0622-95b7-8b0c-bbd391e3626a
+    #+BEGIN_SRC emacs-lisp
       (use-package helm-descbinds
         :ensure t
         :after helm
@@ -2921,7 +2897,7 @@
 *** helm-describe-modes
     A nice way to describe the current modes
 
-    #+BEGIN_SRC emacs-lisp :block-id f260bfd0-c52b-798c-c838-26051a51a8b4
+    #+BEGIN_SRC emacs-lisp
       (use-package helm-describe-modes
         :ensure t
         :after helm
@@ -2931,7 +2907,7 @@
 ** Profiler
    Some things to help debug Emacs performance
 
-   #+BEGIN_SRC emacs-lisp :block-id dbe3b540-57be-0cbc-4269-c04eaaa41eba
+   #+BEGIN_SRC emacs-lisp
      (use-package profiler
        :if (not noninteractive)
        :init
@@ -2945,12 +2921,12 @@
    #+END_SRC
 
 ** Packages
-   Anything to manage packages
+   Packages to help manage packages
 
 *** paradox
     The package management improvement
 
-    #+BEGIN_SRC emacs-lisp :block-id 7cf4efda-7aa4-b9df-cbe0-826a5844e7c9
+    #+BEGIN_SRC emacs-lisp
       (use-package paradox
         :ensure t
         :bind (:map fn-standard-prefix-map
@@ -2969,13 +2945,16 @@
 *** elpa-mirror
     Just in case things are down.
 
-    #+BEGIN_SRC emacs-lisp :block-id d9ff5d65-9c4a-24ee-d9e8-81459f7851d3
+    #+BEGIN_SRC emacs-lisp
       (use-package elpa-mirror
         :ensure t
-        :demand t
-        :config ;; Configuration in personal.el
-        ;; Configure `elpamr-default-output-directory'
+        :commands (elpamr-create-mirror-for-installed)
+        :init
+        (defconst fn/elpamr-directory (expand-file-name "../.elpamr" user-emacs-directory)
+          "Default `elpamr-default-output-directory' if none is set")
 
+        (setq-default elpamr-default-output-directory fn/elpamr-directory)
+        :config
         (require 'rx)
         (require 's)
 
@@ -3031,7 +3010,7 @@
 ** Font
    I like fixed font specially DejaVu Mono
 
-   #+BEGIN_SRC emacs-lisp :block-id bbcd3af3-f5e6-c215-4497-52fa53348966
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/primary-font-name "DejaVu Sans Mono"
        "My ideal font.")
 
@@ -3062,7 +3041,7 @@
 ** Screen
    I prefer no clutter in my screen so I disable majority of the niceties.
 
-   #+BEGIN_SRC emacs-lisp :block-id bae2df75-ec24-6d95-b368-4496329ec3db
+   #+BEGIN_SRC emacs-lisp
      (defun fn/optimize-visual-space ()
        (let ((try-set-mode (lambda (mode value)
                              (when (fboundp 'mode)
@@ -3082,7 +3061,7 @@
 
    My chosen themes
 
-   #+BEGIN_SRC emacs-lisp :block-id 3223619e-5554-3bc0-f00c-3cbc1d8b0507
+   #+BEGIN_SRC emacs-lisp
      (use-package apropospriate-theme
        :ensure t)
 
@@ -3102,7 +3081,7 @@
 
    Load the theme if it is a terminal or desktop.
 
-   #+BEGIN_SRC emacs-lisp :block-id ce022e28-6f80-1566-89e8-ea2d1ac41d47
+   #+BEGIN_SRC emacs-lisp
      (load-theme 'tronesque t)
      (tronesque-mode-line)
    #+END_SRC
@@ -3113,7 +3092,7 @@
 *** rainbow-mode
     Just to view hex quicker.
 
-    #+BEGIN_SRC emacs-lisp :block-id c9b2ccf5-a84f-2315-50f9-9f3b6e6f216a
+    #+BEGIN_SRC emacs-lisp
       (use-package rainbow-mode
         :ensure t
         :hook (prog-mode . rainbow-mode)
@@ -3127,7 +3106,7 @@
 *** whitespace
     Got to love that whitespace display
 
-    #+BEGIN_SRC emacs-lisp :block-id 8b11bd1d-9022-358b-e3d3-aaba6be1cc1e
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-feature global-whitespace
           nil
@@ -3137,7 +3116,7 @@
 *** hl-line
     Highlight the current line
 
-    #+BEGIN_SRC emacs-lisp :block-id c4334465-c317-da19-f340-c4f45d90325f
+    #+BEGIN_SRC emacs-lisp
       (use-package hl-line
         :diminish hl-line-mode
         :init
@@ -3150,7 +3129,7 @@
 *** fireplace
     Warm and cozy feeling
 
-    #+BEGIN_SRC emacs-lisp :block-id 92ab3c0e-66f5-d2ec-37ed-53d2076254a0
+    #+BEGIN_SRC emacs-lisp
       (use-package fireplace
         :bind (:map fn-standard-prefix-map
                     ("F" . fireplace))
@@ -3167,9 +3146,12 @@
 *** zone
     I love to zone out from time to time.
 
-    #+BEGIN_SRC emacs-lisp :block-id cf05aaab-bb91-8f2a-0589-b4545ffcee56
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/zone-animation-dir (expand-file-name "custom-zone/" fn/custom-module-dir)
         "Custom zone animation directory")
+
+      (defconst fn/minute-per-second 60
+        "Obviously converting minutes to seconds")
 
       (unless noninteractive
         (use-package zone
@@ -3251,7 +3233,7 @@
 *** Scratch
     Making *scratch* behave better.
 
-    #+BEGIN_SRC emacs-lisp :block-id 13c9501f-b096-0655-b454-55f245ff7742
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package scratch
           :ensure t
@@ -3267,7 +3249,7 @@
 *** Focus Mode
     Seems like a good mode
 
-    #+BEGIN_SRC emacs-lisp :block-id 2141a379-9505-12c0-a682-edba8c2a3b58
+    #+BEGIN_SRC emacs-lisp
       (use-package focus
         :ensure t
         :defer t
@@ -3280,7 +3262,7 @@
 *** font-lock
     Syntax highlighting is a requirement
 
-    #+BEGIN_SRC emacs-lisp :block-id 2627498a-5181-8620-ba8a-70744aaa36d1
+    #+BEGIN_SRC emacs-lisp
       (global-font-lock-mode t)
 
       (setq font-lock-support-mode 'jit-lock-mode)
@@ -3289,7 +3271,7 @@
 *** rainbow-delimeter
     Visual aid helps with very nested code
 
-    #+BEGIN_SRC emacs-lisp :block-id 33344847-5b8c-bb8f-614a-816e2b6bc0f8
+    #+BEGIN_SRC emacs-lisp
       (use-package rainbow-delimiters
         :ensure t
         :defer t
@@ -3309,7 +3291,7 @@
 *** color-identifiers-mode
     Make things easier to see
 
-    #+BEGIN_SRC emacs-lisp :block-id 5d8818b5-f936-2499-d201-41dc8f6b3c69
+    #+BEGIN_SRC emacs-lisp
       (use-package color-identifiers-mode
         :ensure t
         :defer t
@@ -3319,7 +3301,7 @@
 *** show-paren
     Also a vital thing to keeping things highlighted
 
-    #+BEGIN_SRC emacs-lisp :block-id 6c4e0031-3547-ac8a-ce02-b64f5d0e5de0
+    #+BEGIN_SRC emacs-lisp
       (show-paren-mode t)
 
       (setq show-paren-style 'expression)
@@ -3327,7 +3309,7 @@
 ** Display Buffer
    My modification on =display-buffer=.
 
-   #+BEGIN_SRC emacs-lisp :block-id 8372b341-c122-bf85-8837-f3eab3c1c801
+   #+BEGIN_SRC emacs-lisp
      (progn
        (add-to-list
         'display-buffer-alist
@@ -3357,7 +3339,7 @@
 ** Mode Line
    The mode line customization.
 
-   #+BEGIN_SRC emacs-lisp :block-id 671f4309-6508-0ce6-97b4-3bb6060ab82d
+   #+BEGIN_SRC emacs-lisp
      (use-package moder
        :load-path fn/custom-script-dir
        :unless noninteractive
@@ -3373,7 +3355,7 @@
    Since Emacs doesn't have dialog boxes, it is sufficient to have
    fringe or message alerts.
 
-   #+BEGIN_SRC emacs-lisp :block-id 87b106b9-401f-cf0e-35ef-366900cc6198
+   #+BEGIN_SRC emacs-lisp
      (use-package alert
        :ensure t
        :demand t
@@ -3440,7 +3422,7 @@
    Encryption is needed when working with sensitive files for personal
    or work.
 
-   #+BEGIN_SRC emacs-lisp :block-id 6d18d023-ad50-2b2d-ee64-7e227cc1ad57
+   #+BEGIN_SRC emacs-lisp
      ;; Reference: http://conornash.com/2014/03/transparently-encrypt-org-files-in-emacs/
 
      (use-package epa-file
@@ -3468,7 +3450,7 @@
 
    Primarily I use =org-drill= and =org-journal=
 
-   #+BEGIN_SRC emacs-lisp :block-id 4f5f3d2b-61ae-d33b-8316-4c20b3e9c8c0
+   #+BEGIN_SRC emacs-lisp
      (use-package org
        :ensure t
        :bind (("C-c l" . org-store-link)
@@ -3507,7 +3489,7 @@
 *** org-src
     Configuration for =org-src=
 
-    #+BEGIN_SRC emacs-lisp :block-id 1763cf1c-2a1f-1dc3-f38a-d027209d7bab
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-src
         (org)
         (setq org-src-window-setup 'current-window)
@@ -3581,7 +3563,7 @@
 *** org-capture
     More configurations for the capture
 
-    #+BEGIN_SRC emacs-lisp :block-id 42c9d746-9fe2-506f-2f27-a44df1f38666
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-capture
         (org)
         nil ;; Configuration in personal.el
@@ -3591,7 +3573,7 @@
 *** org-agenda
     More configuration for org-agenda
 
-    #+BEGIN_SRC emacs-lisp :block-id 9ef84ce7-49a3-4194-b3f1-4f7c0ac99aff
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-agenda
         (org)
         (setq org-agenda-span 14 ;; Fortnight
@@ -3639,7 +3621,7 @@
 *** org-refile
     Some refiling actions perhaps?
 
-    #+BEGIN_SRC emacs-lisp :block-id feb2e234-a068-32db-88fc-46455f786fa4
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-archive
         (org)
         (setq org-log-refile 'time
@@ -3649,7 +3631,7 @@
 *** org-archiving
     Archiving is needed to avoid bloating.
 
-    #+BEGIN_SRC emacs-lisp :block-id e28c5744-034d-3b02-dba6-908cb8af9bb9
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-refile
         (org)
         (when (boundp 'fn/org-dir))
@@ -3673,7 +3655,7 @@
 *** org-journal
     Having a journal is good
 
-    #+BEGIN_SRC emacs-lisp :block-id 8001477c-95ea-ea34-54a7-094ad6f5ff4c
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package org-journal
           :ensure t
@@ -3752,7 +3734,7 @@
 *** org-reveal
     A nice presentation framework
 
-    #+BEGIN_SRC emacs-lisp :block-id 3f6d71ed-f861-c6a4-d043-820b5f369b1d
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (defconst fn/org-reveal-module-dir (expand-file-name "~/Modules/reveal.js")
           "reveal.js directory")
@@ -3800,7 +3782,7 @@
 *** org-clock
     Configuration for org-clock
 
-    #+BEGIN_SRC emacs-lisp :block-id 1baf9871-3051-5af4-88be-83bbb6acd865
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-clock
         (org)
         (setq org-log-done 'time)
@@ -3818,7 +3800,7 @@
 *** org-mobile
     Mobile org document
 
-    #+BEGIN_SRC emacs-lisp :block-id 0a711e82-e427-fbe9-3af4-e0b075b6236d
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (when (boundp 'fn/org-dir)
           (fn/use-feature org-mobile
@@ -3845,7 +3827,7 @@
 *** org-helm
     Using =helm= to navigate =org-mode=.
 
-    #+BEGIN_SRC emacs-lisp :block-id 0bb62bd0-fed3-06de-a7dd-1dd2c4e07034
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-helm-completing-read
         (helm org)
         ;; Thanks to :
@@ -3917,7 +3899,7 @@
 *** org-tempo
     Assist library when working with code blocks
 
-    #+begin_src emacs-lisp :block-id 261bdcb6-74e9-a07a-3855-329a8ec7cfba
+    #+begin_src emacs-lisp
       (with-eval-after-load 'org
         (require 'org-tempo))
     #+end_src
@@ -3925,7 +3907,7 @@
 ** flyspell
    Having a good spell checker is a must. I use =flyspell= although I have read issues about it
 
-   #+BEGIN_SRC emacs-lisp :block-id d49639d7-14d6-68a0-5afa-25bae73f3762
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables flyspell-check
        (aspell)
        (use-package flyspell
@@ -3944,7 +3926,7 @@
 ** langtool
    Also a good grammar checker.
 
-   #+BEGIN_SRC emacs-lisp :block-id edb37fe1-f13c-60a5-6755-8fb7e6b5e2e6
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables java-langtool
        (java languagetool)
        (use-package langtool
@@ -3998,7 +3980,7 @@
 ** dired
    Directory management for Emacs
 
-   #+BEGIN_SRC emacs-lisp :block-id 8a7ec4af-3627-97ac-62d0-bb3e2f54f512
+   #+BEGIN_SRC emacs-lisp
      (require 'dired-x) ;; Allows multi open marked files
 
      (setq dired-dwim-target t
@@ -4026,7 +4008,7 @@
 *** image-dired
     Text is not enough, images are important too
 
-    #+BEGIN_SRC emacs-lisp :block-id cf2771df-8638-4516-f99e-ece5acfa3100
+    #+BEGIN_SRC emacs-lisp
       (use-package image-dired
         :ensure t
         :unless noninteractive
@@ -4046,7 +4028,7 @@
 ** tramp
    Tramp is too good to pass up
 
-   #+BEGIN_SRC emacs-lisp :block-id 842e3219-547e-cef9-5564-15541c881dc4
+   #+BEGIN_SRC emacs-lisp
      (use-package tramp
        :after eshell
        :config
@@ -4063,7 +4045,7 @@
 ** ledger
    Something to keep track of my finances
 
-   #+BEGIN_SRC emacs-lisp :block-id 4e3b93da-bda6-0881-7e81-3e23e833f1cc
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables ledger-check
        (ledger)
        (use-package ledger-mode
@@ -4101,7 +4083,7 @@
 ** woman
    Man pages are nice
 
-   #+BEGIN_SRC emacs-lisp :block-id 515a39e1-ca17-43ac-aea5-2de31b5005de
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables man-check
        (man)
        (use-package woman
@@ -4115,7 +4097,7 @@
 ** Mail
    Reading mail in Emacs
 
-   #+BEGIN_SRC emacs-lisp :block-id 188b9d05-dd2e-1564-0453-b638bd6e103e
+   #+BEGIN_SRC emacs-lisp
      (with-eval-after-load 'prodigy
        (prodigy-define-tag
          :name 'imap)
@@ -4200,7 +4182,7 @@
 *** gnus
     The ultimate mail browser, majority of the configuration is in =~/.gnus=
 
-    #+BEGIN_SRC emacs-lisp :block-id ee1ad1cc-2dcc-df04-b3d3-20a710a335ea
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (when (file-exists-p (expand-file-name ".gnus" "~"))
           (use-package gnus
@@ -4216,7 +4198,7 @@
 *** mu4e
    A quick alternative for =gnus=
 
-   #+BEGIN_SRC emacs-lisp :block-id 4b99ca89-ec33-86b9-fac0-3e0dbc7d5424
+   #+BEGIN_SRC emacs-lisp
      (unless noninteractive
        (fn/use-executables mu4e-check
          (mu)
@@ -4335,7 +4317,7 @@
 *** wanderlust
     Alternative to =gnus=
 
-    #+BEGIN_SRC emacs-lisp :block-id 5cb8e831-3e7a-4919-a0cf-fa4b7361f621
+    #+BEGIN_SRC emacs-lisp
       (use-package wanderlust
         :ensure t
         :defer t)
@@ -4344,7 +4326,7 @@
 *** smtpmail
     Sending mail is just as important
 
-    #+BEGIN_SRC emacs-lisp :block-id 1ada7b46-4f27-a627-7cb8-d0eea39325ca
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package smtpmail ;; Requires gnutls for ArchLinux
           :defer t
@@ -4376,7 +4358,7 @@
 ** emacsshot
    Sometimes when you just need proof
 
-   #+BEGIN_SRC emacs-lisp :block-id 00293c55-daab-3649-b480-7b000eb0a216
+   #+BEGIN_SRC emacs-lisp
      (use-package emacsshot
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -4397,7 +4379,7 @@
 ** camcorder
    Making demonstrations in Emacs is a must. My thanks to [[http://blog.yitang.uk/2015/09/24/how-to-create-a-screencast-gif-in-emacs/][this blog post.]]
 
-   #+BEGIN_SRC emacs-lisp :block-id 1ecfd02f-87eb-6c8a-0e20-68780b2e1e7b
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables camcorder-check
        (recordmydesktop)
        (use-package camcorder
@@ -4491,7 +4473,7 @@
 ** list-processes+
    A better way of viewing processes
 
-   #+BEGIN_SRC emacs-lisp :block-id b627e0fd-bda7-5a5a-cec1-ecba55ba606d
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/list-processes+-module-dir (expand-file-name "list-processes+/" fn/custom-module-dir)
        "Archived `list-processes+' packages.")
 
@@ -4512,7 +4494,7 @@
 *** Whitespace Cleanup
     Some nice whitespace cleanup.
 
-    #+BEGIN_SRC emacs-lisp :block-id 177ce3cd-1ce9-388e-0edb-22c0a08ec60b
+    #+BEGIN_SRC emacs-lisp
       (use-package ws-butler
         :ensure t
         :defer t
@@ -4526,7 +4508,7 @@
 *** Literate Programming
     Enable some literate programming
 
-    #+BEGIN_SRC emacs-lisp :block-id 385aba9b-e54b-b801-e5e8-43ac0017be00
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-literate
         (org)
         (require 'ob-shell))
@@ -4535,7 +4517,7 @@
 *** smartparens
     This is as handy as =paredit=
 
-    #+BEGIN_SRC emacs-lisp :block-id 6dd6ef74-ec81-2ed7-f9d2-a02fc27bb4f0
+    #+BEGIN_SRC emacs-lisp
       (use-package smartparens
         :diminish smartparens-mode
         :ensure t
@@ -4551,7 +4533,7 @@
 *** flycheck
     Syntax checking is very important
 
-    #+BEGIN_SRC emacs-lisp :block-id 0bd8c66a-906d-497b-c519-52c3cd914bfc
+    #+BEGIN_SRC emacs-lisp
       (use-package flycheck
         :ensure t
         :unless noninteractive
@@ -4582,7 +4564,7 @@
 *** magit
     Enough said, [[https://github.com/magit/magit][magit]] is the best git client you can get anywhere.
 
-    #+BEGIN_SRC emacs-lisp :block-id 25b4c3c1-0062-54ae-4d23-b3070fdcb4a2
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables git-check
         (git)
         (use-package magit
@@ -4634,7 +4616,7 @@
 **** magithub
      A tool to help with github.
 
-     #+BEGIN_SRC emacs-lisp :block-id 87ac7ebd-43ae-febe-d9e7-634d5b811f5d
+     #+BEGIN_SRC emacs-lisp
        ;; Dubious extension for the meantime
        (use-package magithub
          :ensure t
@@ -4648,7 +4630,7 @@
 **** magit-svn
      Support for SVN with the awesome =magit= interface
 
-     #+BEGIN_SRC emacs-lisp :block-id 4d87550e-fd6c-1c90-f8a4-115430c57e63
+     #+BEGIN_SRC emacs-lisp
        (use-package magit-svn
          :ensure t
          :after magit)
@@ -4675,7 +4657,7 @@
 *** Folding
     Code folding is helpful
 
-    #+BEGIN_SRC emacs-lisp :block-id 6e8bf9e9-5e41-0601-090e-348a2c3c77e8
+    #+BEGIN_SRC emacs-lisp
       (use-package origami
         :ensure t
         :defer t
@@ -4686,7 +4668,7 @@
 *** gist
     GitHub integration with gists
 
-    #+BEGIN_SRC emacs-lisp :block-id c32da544-1578-c114-de7c-f36600444768
+    #+BEGIN_SRC emacs-lisp
       (use-package gist
         :ensure t
         :defer t
@@ -4718,7 +4700,7 @@
 *** pastebin
     Paste bin integration
 
-    #+BEGIN_SRC emacs-lisp :block-id 5fdd0f40-7058-106a-2aa2-d2025fea8502
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/emacs-pastebin-package-dir (expand-file-name "emacs-pastebin/" fn/custom-module-dir)
         "My emacs pastebin package directory.")
 
@@ -4735,7 +4717,7 @@
 *** ag
     The silver searcher is a fine tool
 
-    #+BEGIN_SRC emacs-lisp :block-id 8038dda0-39ce-19f3-21bd-7ab7acccfb25
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-executables ag-check
           (ag)
@@ -4764,7 +4746,7 @@
 
     With [[helm]]
 
-    #+BEGIN_SRC emacs-lisp :block-id 7905e7f3-3641-4831-c407-209cf00ee1c4
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature helm-ag
         (helm ag)
         (use-package helm-ag
@@ -4777,7 +4759,7 @@
 *** ripgrep
     Allow for ripgrep
 
-    #+BEGIN_SRC emacs-lisp :block-id de06748b-2d12-d328-5f56-4d23d61b177f
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-executables ripgrep-check
           (rg)
@@ -4802,7 +4784,7 @@
 *** dumb-jump
     Dump jumping with =ag=
 
-    #+BEGIN_SRC emacs-lisp :block-id 7903e306-7bfa-6492-4d48-0ff52268ebe4
+    #+BEGIN_SRC emacs-lisp
       (use-package dumb-jump
         :ensure t
         :bind (:map fn-standard-prefix-map
@@ -4813,7 +4795,7 @@
 *** ggtags
     Jump and go is really a must needed feature
 
-    #+BEGIN_SRC emacs-lisp :block-id 6fd3ec7a-1687-195e-c6d4-93cb1f00cb8c
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables global-check
         (ggtags global)
         (use-package ggtags
@@ -4842,7 +4824,7 @@
 *** helm-swoop
     Something to speed up searching
 
-    #+BEGIN_SRC emacs-lisp :block-id 881b51d2-4f5b-5e1c-5149-4d44603a0acc
+    #+BEGIN_SRC emacs-lisp
       (require 'dash)
 
       (use-package helm-swoop
@@ -4869,7 +4851,7 @@
 *** Generic Outline
     Generic support for outlining.
 
-    #+BEGIN_SRC emacs-lisp :block-id c70d45d4-2ce4-94c6-f7ff-6657f33be30c
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package outline
           :ensure t
@@ -4888,7 +4870,7 @@
 *** REST Client
     I need REST.
 
-    #+BEGIN_SRC emacs-lisp :block-id e318e40f-91a1-846d-f12e-677e088bbc60
+    #+BEGIN_SRC emacs-lisp
       (use-package restclient
         :ensure t
         :defer t
@@ -4940,7 +4922,7 @@
 *** smerge
     Resolving diffs the nice way.
 
-    #+BEGIN_SRC emacs-lisp :block-id 388f67b8-dbd6-d93c-b004-77770634d1ae
+    #+BEGIN_SRC emacs-lisp
       (use-package smerge-mode
         :defer t
         :config
@@ -4960,7 +4942,7 @@
 *** YAML
     YAML editing
 
-    #+BEGIN_SRC emacs-lisp :block-id d33121e6-bc01-1990-3e5a-c98f230b5b43
+    #+BEGIN_SRC emacs-lisp
       (use-package yaml-mode
         :ensure t
         :defer t)
@@ -4969,7 +4951,7 @@
 *** TOML
     TOML editing
 
-    #+BEGIN_SRC emacs-lisp :block-id 475c10b4-bd99-cc34-0658-1aecf963b49a
+    #+BEGIN_SRC emacs-lisp
       (use-package toml-mode
         :ensure t
         :defer t)
@@ -4978,7 +4960,7 @@
 *** JSON
     JSON support
 
-    #+BEGIN_SRC emacs-lisp :block-id 0005bae8-c985-4a30-f746-d395929415dc
+    #+BEGIN_SRC emacs-lisp
       (use-package json-mode
         :ensure t
         :defer t
@@ -5015,7 +4997,7 @@
 *** GraphQL
     GraphQL support
 
-    #+BEGIN_SRC emacs-lisp :block-id d41152e2-aa5a-bc66-2e4f-eaf8b4d9c2a6
+    #+BEGIN_SRC emacs-lisp
       (use-package graphql-mode
         :ensure t
         :defer t)
@@ -5024,7 +5006,7 @@
 *** Markdown
     Markdown editing
 
-    #+BEGIN_SRC emacs-lisp :block-id 9f29863c-e970-6161-ca7f-96c383d1893f
+    #+BEGIN_SRC emacs-lisp
       (use-package markdown-mode
         :ensure t
         :defer t
@@ -5037,7 +5019,7 @@
 *** evalator
     Expression building.
 
-    #+BEGIN_SRC emacs-lisp :block-id d7cad15b-578c-ac0c-b468-060442a5550a
+    #+BEGIN_SRC emacs-lisp
       (use-package evalator
         :ensure t
         :defer t
@@ -5053,7 +5035,7 @@
 *** quick-run
     Quickly evaluate regions
 
-    #+BEGIN_SRC emacs-lisp :block-id 1c2e55d3-532d-3320-664d-aa9a09a0f24f
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package quickrun
           :ensure t
@@ -5067,7 +5049,7 @@
 
     =speedbar= is a built-in default.
 
-    #+BEGIN_SRC emacs-lisp :block-id d1c4a74d-3098-f6ef-2636-3b6af0d39cbc
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package speedbar
           :defer t
@@ -5119,7 +5101,7 @@
 *** =rx= Converter
     I hope the =rx= syntax can be ported to other languages.
 
-    #+BEGIN_SRC emacs-lisp :block-id 5e337070-17b4-bb7a-7035-f65032b4dbcc
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package pcre2el
           :ensure t
@@ -5132,7 +5114,7 @@
 *** RedMine
     Using =Redmine= in any means necessary.
 
-    #+BEGIN_SRC emacs-lisp :block-id 6a7adfd0-aacf-09f1-4cdb-02eb32de28f3
+    #+BEGIN_SRC emacs-lisp
       (use-package org-redmine
         :ensure t
         :defer t
@@ -5155,7 +5137,7 @@
 
     Need Jira support
 
-    #+BEGIN_SRC emacs-lisp :block-id f5ff629c-ac2a-dcc1-0ac2-d4eafe9d9150
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (defconst org-jira-keymap (make-sparse-keymap)
           "Shiv keymap for org-jira")
@@ -5191,7 +5173,7 @@
 *** Translate
     Google Translate support for those RTL times
 
-    #+BEGIN_SRC emacs-lisp :block-id cf724186-d0c5-d350-e050-d7ef52cd5224
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package google-translate
           :ensure t
@@ -5220,7 +5202,7 @@
 
     CSV moder
 
-    #+BEGIN_SRC emacs-lisp :block-id 92c5b0a9-a99d-2404-5877-f5e96a847049
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package csv-mode
           :ensure t
@@ -5232,7 +5214,7 @@
 
     Support for rotating between camel case and what not
 
-    #+BEGIN_SRC emacs-lisp :block-id 9133b0b9-3170-4a75-980e-abefd1f497ec
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package string-inflection
           :ensure t
@@ -5245,7 +5227,7 @@
 *** EditorConfig
     Support editor config for some project.
 
-    #+BEGIN_SRC emacs-lisp :block-id 56b6bea0-b629-0a0d-52a3-990d009757b3
+    #+BEGIN_SRC emacs-lisp
       (use-package editorconfig
         :ensure t
         :hook (prog-mode . editorconfig-mode)
@@ -5256,7 +5238,7 @@
 *** Thesaurus
     A little thesaurus help.
 
-    #+BEGIN_SRC emacs-lisp :block-id abd98313-2523-3476-e1e0-cad8fdb875d1
+    #+BEGIN_SRC emacs-lisp
       (use-package powerthesaurus
         :ensure t
         :commands (powerthesaurus-lookup-word))
@@ -5265,7 +5247,7 @@
 *** PlantUML
     Support for making diagrams
 
-    #+BEGIN_SRC emacs-lisp :block-id d21de630-e067-119b-6961-49102cadb0aa
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/plantuml-file (expand-file-name "~/Modules/plantuml.jar" ))
 
       (when (file-exists-p fn/plantuml-file)
@@ -5295,7 +5277,7 @@
 
 *** npm
     Call npm with Emacs
-    #+BEGIN_SRC emacs-lisp :block-id d913e8d0-203e-b6cc-8415-5249a36691ba
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables npm-check
         (node npm)
         (use-package npm-mode
@@ -5311,7 +5293,7 @@
 *** Mode
     This editor is the mode
 
-    #+BEGIN_SRC emacs-lisp :block-id d58ae96e-8259-6f89-a9cc-781cd5dc5411
+    #+BEGIN_SRC emacs-lisp
       (require 'dash)
 
       (defun fn/find-definition-at-point ()
@@ -5337,7 +5319,7 @@
 *** Motion
     Makes you a good lisp developer and quite addictive to have
 
-    #+BEGIN_SRC emacs-lisp :block-id 078952f1-01a4-261b-8409-f97b32f4c594
+    #+BEGIN_SRC emacs-lisp
       (use-package paredit
         :ensure t
         :defer t
@@ -5358,7 +5340,7 @@
 *** Refactor
     Emacs Lisp refactor mode
 
-    #+BEGIN_SRC emacs-lisp :block-id 4a347303-6e5c-e930-9be0-04e140652c6f
+    #+BEGIN_SRC emacs-lisp
       (use-package emr
         :ensure t
         :defer t
@@ -5369,7 +5351,7 @@
 *** Formatter
     Not really but nice to have for a lisp language
 
-    #+BEGIN_SRC emacs-lisp :block-id 99328d86-830f-d570-c069-4cec1be23aab
+    #+BEGIN_SRC emacs-lisp
       (use-package elisp-format
         :ensure t
         :defer t
@@ -5393,7 +5375,7 @@
 *** Testing
     Some testing libraries
 
-    #+BEGIN_SRC emacs-lisp :block-id ae82d02d-86fd-b37b-1489-6b873c8ec326
+    #+BEGIN_SRC emacs-lisp
       (use-package buttercup
         :ensure t
         :defer t)
@@ -5402,7 +5384,7 @@
 *** Project
     Some packages to help making packages
 
-    #+BEGIN_SRC emacs-lisp :block-id 08cd7439-df60-4b11-e8a1-17917ed8dd26
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/header2-module-dir (expand-file-name "header2/" fn/custom-module-dir)
         "Archived `header2' packages.")
 
@@ -5459,7 +5441,7 @@
 *** Client
     If enterprise grade support is needed.
 
-    #+BEGIN_SRC emacs-lisp :block-id ac79d4bb-f43a-6895-98c0-387a01f4dbfe
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables lein-check
         (lein)
         (use-package ejc-sql
@@ -5476,7 +5458,7 @@
 *** Literate Programming
     Sometimes it's just easier to get a scratch pad.
 
-    #+BEGIN_SRC emacs-lisp :block-id 7564fa01-38ae-c6c0-8425-7f3790553612
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-literate-sql
         (org sql)
         (require 'ob-sql) ;; Default
@@ -5494,7 +5476,7 @@
 
     Some utility when editing SQL files
 
-    #+BEGIN_SRC emacs-lisp :block-id dda929e1-ef59-31e2-6cbd-480077675efe
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-executables ruby-sql-formatter
           (anbt-sql-formatter) ;; gem install anbt-sql-formatter
@@ -5519,7 +5501,7 @@
 ** Web
    The defacto mode for web development
 
-    #+BEGIN_SRC emacs-lisp :block-id bd6a4ce6-0ec8-7977-cec4-2a9e0c66e2e9
+    #+BEGIN_SRC emacs-lisp
       (use-package web-mode
         :ensure t
         :mode ("\\.html\\'" . web-mode)
@@ -5562,7 +5544,7 @@
 *** Mode
     The ultimate JS mode
 
-    #+BEGIN_SRC emacs-lisp :block-id f4f7c05b-8948-6331-8550-71e06225c233
+    #+BEGIN_SRC emacs-lisp
       (use-package js2-mode
         :ensure t
         :interpreter (("node" . js2-mode))
@@ -5591,7 +5573,7 @@
 *** Linter
     My linter if you will for JS.
 
-    #+BEGIN_SRC emacs-lisp :block-id da802e8e-8302-f301-51f5-6042384a98a7
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-feature flycheck-eslint-relative
           (flycheck js2-mode)
@@ -5613,7 +5595,7 @@
 *** Formatter
     Formatter for js, choose your poison. I tried the three and still am.
 
-    #+BEGIN_SRC emacs-lisp :block-id 11615658-000c-3d87-133c-a9c522788fef
+    #+BEGIN_SRC emacs-lisp
       (use-package web-beautify
         :ensure t
         :after js2-mode)
@@ -5640,7 +5622,7 @@
 *** REPL
     Got to have those REPLs
 
-    #+BEGIN_SRC emacs-lisp :block-id db197f38-5070-3f18-4777-273017d4f5bd
+    #+BEGIN_SRC emacs-lisp
       (use-package nodejs-repl
         :ensure t
         :bind (("C-c C-n C-c" . nodejs-repl-send-buffer)
@@ -5662,7 +5644,7 @@
 *** JSON
     JSON support
 
-    #+BEGIN_SRC emacs-lisp :block-id 9838a8ac-2f50-077f-0f9e-bfc5262e318d
+    #+BEGIN_SRC emacs-lisp
       (use-package json-snatcher
         :ensure t
         :after js2-mode
@@ -5672,7 +5654,7 @@
 *** Literate Programming
     Let's support literate programming for JS
 
-    #+BEGIN_SRC emacs-lisp :block-id 90e86021-a01f-7f97-2ca9-a076a0facb83
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-js2-src
         (org js2-mode)
         (add-to-list 'org-babel-load-languages '(js . t)))
@@ -5682,7 +5664,7 @@
 *** Mode
     My favorite programming language, unassuming like Marcy from Peanuts
 
-    #+BEGIN_SRC emacs-lisp :block-id 80645685-5d34-4543-7d76-4012fe9fd8bd
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables python-check
         (python pip)
         (use-package python
@@ -5695,7 +5677,7 @@
 *** Formatter
     Pep me bro
 
-    #+BEGIN_SRC emacs-lisp :block-id ec04abb4-3b9f-ff58-ced2-580f751074ca
+    #+BEGIN_SRC emacs-lisp
       (use-package py-autopep8
         :ensure t
         :defer t
@@ -5707,7 +5689,7 @@
 
     This requires [[https://pypi.python.org/pypi/pip/][pip]] and the packages  [[https://pypi.python.org/pypi/virtualenv][virtualenv]].
 
-    #+BEGIN_SRC emacs-lisp :block-id db37815b-78ce-9edb-06f4-c64867ed184b
+    #+BEGIN_SRC emacs-lisp
       (use-package jedi
         :ensure t
         :after elpy
@@ -5724,7 +5706,7 @@
 *** IDE
     Making Python an IDE
 
-    #+BEGIN_SRC emacs-lisp :block-id dbef41da-2171-e211-8dc6-3107bbfcb0dd
+    #+BEGIN_SRC emacs-lisp
       (use-package elpy
         :ensure t
         :defer t
@@ -5750,14 +5732,14 @@
 *** Project
     =virtualenv= is a must
 
-    #+BEGIN_SRC emacs-lisp :block-id 5097aecd-7c47-1ef8-fe02-e42d51efdbce
+    #+BEGIN_SRC emacs-lisp
       (use-package python-environment
         :ensure t
         :init
         (setq python-environment-directory (expand-file-name "python-environments" fn/cache-dir)))
     #+END_SRC
 
-    #+BEGIN_SRC emacs-lisp :block-id 30bb91ea-4a08-ff9e-4cd9-d685297ea5e7
+    #+BEGIN_SRC emacs-lisp
       (use-package virtualenv
         :ensure t
         :after python)
@@ -5765,7 +5747,7 @@
 
     Or the most updated
 
-    #+BEGIN_SRC emacs-lisp :block-id a972e38b-bf74-c106-baeb-4fb534a6fa1d
+    #+BEGIN_SRC emacs-lisp
       (use-package virtualenvwrapper
         :ensure t
         :after python)
@@ -5774,7 +5756,7 @@
 *** Literate Programming
     Let's add a link to =org-babel=
 
-    #+BEGIN_SRC emacs-lisp :block-id 1dd091f3-1060-774c-3435-7187c7bf15f9
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature org-python-src
         (org python)
         (add-to-list 'org-babel-load-languages '(python .t)))
@@ -5783,7 +5765,7 @@
 *** Mode
     The defacto for Haskell development
 
-    #+BEGIN_SRC emacs-lisp :block-id 7b20b3c8-e4d0-7bcc-2013-9f12a6bb4aba
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables haskell-check
         (ghci)
         (use-package haskell-mode
@@ -5857,7 +5839,7 @@
 
 **** Haskell Process Load Fix
 
-     #+BEGIN_SRC emacs-lisp :block-id 2c21cd5d-7397-9c9f-cedb-6cdfcb92ae2e
+     #+BEGIN_SRC emacs-lisp
        (with-eval-after-load 'haskell-mode
          ;;;  https://github.com/haskell/haskell-mode/pull/1605
          (defun haskell-process-load-complete (session process buffer reload module-buffer &optional cont)
@@ -5916,7 +5898,7 @@
 *** Motion
     The paredit for haskell, this weirdly needs [[exec-path-from-shell]] to work
 
-    #+BEGIN_SRC emacs-lisp :block-id 3ebe801f-52f6-35a4-35bd-b41deec624ba
+    #+BEGIN_SRC emacs-lisp
       (use-package shm
         :ensure t
         :disabled t
@@ -5947,7 +5929,7 @@
 *** Autocomplete
     Company for Haskell
 
-    #+BEGIN_SRC emacs-lisp :block-id dba28809-a145-d57f-9414-702cd3759be1
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-feature company-haskell
           (haskell-mode company)
@@ -5967,7 +5949,7 @@
 *** Formatter
     Formatter for Haskell
 
-    #+BEGIN_SRC emacs-lisp :block-id c3d7d5c4-f3cb-17b5-c372-3003b2947cff
+    #+BEGIN_SRC emacs-lisp
       (use-package hindent
         :ensure t
         :after haskell-mode
@@ -5985,7 +5967,7 @@
 *** Linter
     Syntax checker for Haskell
 
-    #+BEGIN_SRC emacs-lisp :block-id 883aefd1-ca75-0635-3c06-d0a08e537f1f
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature flycheck-haskell
         (flycheck haskell-mode)
         (use-package flycheck-haskell
@@ -6006,7 +5988,7 @@
 *** Literate Programming
     Literate programming for ease
 
-    #+BEGIN_SRC emacs-lisp :block-id 15965ab3-0934-edf8-da0d-a33886b982c9
+    #+BEGIN_SRC emacs-lisp
       (defconst fn/ob-haskell-package-dir (expand-file-name "ob-haskell/" fn/custom-module-dir)
         "My ob-haskell package dir.")
 
@@ -6124,7 +6106,7 @@
 ** Elixir
    The dynamic Haskell in my opinion... or was it Python or Ruby
 
-   #+begin_src emacs-lisp :block-id 626850b6-2af8-fdb6-0949-d4595523fff7
+   #+begin_src emacs-lisp
      (use-package elixir-mode
        :ensure t
        :defer t
@@ -6157,7 +6139,7 @@
 ** Rust
    A close C alternative that I can chew on
 
-   #+begin_src emacs-lisp :block-id 3461f079-e772-71d2-bdb2-ae1e84009f88
+   #+begin_src emacs-lisp
      (use-package rustic
        :ensure t
        :config
@@ -6182,7 +6164,7 @@
 *** Mode
     The major mode for PHP
 
-    #+BEGIN_SRC emacs-lisp :block-id a890aa5f-d3bb-c125-8744-7505b075f354
+    #+BEGIN_SRC emacs-lisp
       (use-package php-mode
         :ensure t
         :defer t
@@ -6196,7 +6178,7 @@
 *** Completion
     The usual completion
 
-    #+BEGIN_SRC emacs-lisp :block-id 15ea6c5c-ad5a-c50f-d37e-f2ffa78c0539
+    #+BEGIN_SRC emacs-lisp
       (use-package company-php
         :ensure t
         :defer t
@@ -6211,7 +6193,7 @@
 *** Formatter
     Formatter via =phpcbf=
 
-    #+BEGIN_SRC emacs-lisp :block-id c479998c-21d4-3f55-b22e-e619550d9eb7
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-executables php-formatter-check
           (phpcbf)
@@ -6229,7 +6211,7 @@
 *** Linter
     Flycheck to the rescue
 
-    #+BEGIN_SRC emacs-lisp :block-id 1767707b-bdba-a830-9dec-8131d1fb23cc
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature flycheck-php
         (flycheck php-mode)
         (fn/use-executables php-linter-check
@@ -6248,7 +6230,7 @@
 *** Completion
     Still using [[company]] with [[robe]]
 
-    #+BEGIN_SRC emacs-lisp :block-id bd7bd68d-d482-cc97-7f3c-291b81169358
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (fn/use-feature company-robe
           (robe company)
@@ -6258,7 +6240,7 @@
 *** Linter
     Integrating =rubocop= here
 
-    #+BEGIN_SRC emacs-lisp :block-id 72aee93d-2dee-3827-4c54-663cafcb9f97
+    #+BEGIN_SRC emacs-lisp
       (use-package rubocop
         :ensure t
         :init
@@ -6277,7 +6259,7 @@
 *** Editing
     Some editing tools
 
-    #+BEGIN_SRC emacs-lisp :block-id ba8a6b52-0db9-adf4-4f91-4f8757ae86d0
+    #+BEGIN_SRC emacs-lisp
       (unless noninteractive
         (use-package ruby-tools
           :ensure t
@@ -6290,7 +6272,7 @@
 *** Project
     Ruby has it's own environment
 
-    #+BEGIN_SRC emacs-lisp :block-id 779d9b22-60a5-9956-ea14-8bba646238f0
+    #+BEGIN_SRC emacs-lisp
       (use-package projectile-rails
         :ensure t
         :after ruby-mode
@@ -6315,7 +6297,7 @@
 *** Mode
     Actual mode to do the job
 
-    #+BEGIN_SRC emacs-lisp :block-id 7dcc691e-16df-540c-0843-822d99c01e35
+    #+BEGIN_SRC emacs-lisp
       (with-eval-after-load 'latex
         (add-hook 'latex-mode-hook 'flyspell-mode)
 
@@ -6338,7 +6320,7 @@
 *** Autocomplete
     Autocomplete obviously
 
-    #+BEGIN_SRC  emacs-lisp :block-id a501dfe3-49d4-6074-bccf-2b2eac38944c
+    #+BEGIN_SRC  emacs-lisp
       (use-package company-auctex
         :ensure t
         :after auctex
@@ -6349,7 +6331,7 @@
 *** Linter
     Something similar but for spelling
 
-    #+BEGIN_SRC emacs-lisp :block-id d38ac398-91d1-affa-263e-e204695a8689
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature flyspell-auctex
         (flyspell auctex)
         (add-hook 'latex-mode-hook #'flyspell-mode))
@@ -6358,7 +6340,7 @@
 *** REPL
     Something like that but rather a preview for every edit
 
-    #+BEGIN_SRC emacs-lisp :block-id 079d8d3b-fb51-b7ea-9c03-690217637c5b
+    #+BEGIN_SRC emacs-lisp
       (use-package latex-preview-pane
         :ensure t
         :after auctex
@@ -6369,7 +6351,7 @@
 *** Git Gutter
     Git gutter support for Emacs
 
-    #+BEGIN_SRC emacs-lisp :block-id 7e3ab6c8-050f-9112-3b81-95fa8f85452f
+    #+BEGIN_SRC emacs-lisp
       (use-package git-gutter
         :ensure t
         :defer t
@@ -6394,7 +6376,7 @@
 ** w3m
    Web browsing is a must
 
-   #+BEGIN_SRC emacs-lisp :block-id 4ef8aaa9-5b2f-30e3-c126-323935e0f9f6
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables w3m-check
        (w3m)
        (use-package w3m
@@ -6616,7 +6598,7 @@
 *** COMMENT Privacy Proxy
     I want w3m to use tor at least.
 
-    #+BEGIN_SRC emacs-lisp :block-id 024bb8e1-c51e-c67b-b36b-77e031e445e5
+    #+BEGIN_SRC emacs-lisp
       (with-eval-after-load 'w3m
         (fn/use-executables w3m-privacy-proxy
           (w3m tor polipo privoxy)
@@ -6871,7 +6853,7 @@
 *** External Video Player
     Hook up =vlc= and =w3m= when visiting certain sites
 
-    #+BEGIN_SRC emacs-lisp :block-id df45cf24-5006-946a-eac3-a2a4f934a9b7
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature w3m-vlc
         (w3m)
         (fn/use-executables w3m-vlc-check
@@ -6976,7 +6958,7 @@
 *** Page Summarizer
     Hooking up =vlc= and =sumy= to aid in reading web pages.
 
-    #+BEGIN_SRC emacs-lisp :block-id a04713ce-840b-7a81-2152-2bad7626e089
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature w3m-sumy
         (w3m)
         (fn/use-executables w3m-sumy-check
@@ -7087,7 +7069,7 @@
 *** Loading Screen
     At attempt to zone out while waiting to render
 
-    #+BEGIN_SRC emacs-lisp :block-id 9c509261-9bfe-3ef2-eea2-ea41e0fed74b
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature w3m-zone
         (w3m)
         (defun fn/w3m-zone-retrieve (&rest args)
@@ -7137,7 +7119,7 @@
 *** Auto Bookmarking
     Auto bookmark pages when I seem to visit it frequently
 
-    #+BEGIN_SRC emacs-lisp :block-id 100731bb-4369-0570-8042-cf21a37b049c
+    #+BEGIN_SRC emacs-lisp
       (fn/use-feature w3m-auto-bookmarking
         (w3m)
         (defcustom fn/w3m-auto-bookmark-check-functions (list)
@@ -7242,7 +7224,7 @@
 ** erc
    Connecting with the brothers
 
-   #+BEGIN_SRC emacs-lisp :block-id 7cf5dadb-eb6b-a004-1566-eb12464e2e44
+   #+BEGIN_SRC emacs-lisp
      (use-package erc
        :ensure t
        :defer t
@@ -7312,7 +7294,7 @@
 
    Listen to chat notifications
 
-   #+BEGIN_SRC emacs-lisp :block-id 9893f144-27ee-c367-13cb-188e6cef258e
+   #+BEGIN_SRC emacs-lisp
      (use-package jabber
        :ensure t
        :bind (:map fn-standard-prefix-map
@@ -7445,7 +7427,7 @@
 ** slack
    =Slack= is awesome.
 
-   #+BEGIN_SRC emacs-lisp :block-id 2f91f506-c8a6-85b4-769d-3fb460019887
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/slack-map (fn/make-prefixed-keymap (kbd "s") fn-standard-prefix-map)
        "My custom slack map.")
 
@@ -7564,7 +7546,7 @@
 ** emms
    This controls the music player.
 
-   #+BEGIN_SRC emacs-lisp :block-id 0ebc0aed-f749-2d71-297a-692d5ab3b0a6
+   #+BEGIN_SRC emacs-lisp
      (defconst fn/emms-map (fn/make-prefixed-keymap (kbd "C-p") fn-standard-prefix-map)
        "My custom prodigy map.")
 
@@ -7633,7 +7615,7 @@
 *** MPD Integration
     I prefer =mpd= as a music player as it is more stable.
 
-    #+BEGIN_SRC emacs-lisp :block-id 1f4faf52-204f-8d79-a1a6-60c474d30480
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables mpd-check
         (mpd)
         (fn/use-feature emms-mpd
@@ -7721,7 +7703,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 *** COMMENT VLC Integration
     A good fallback but not that I depend on it.
 
-    #+BEGIN_SRC emacs-lisp :block-id 2a94f5b0-ad91-2061-13ea-a693b18903fa
+    #+BEGIN_SRC emacs-lisp
       (fn/use-executables vlc-check
         (vlc)
         (fn/use-feature emms-vlc
@@ -7750,7 +7732,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Clean Home
    Make sure my Emacs home is clean
 
-   #+BEGIN_SRC emacs-lisp :block-id 8f1e63f0-f81c-3a52-5f37-b194db21d050
+   #+BEGIN_SRC emacs-lisp
      (require 'f)
 
      (defconst fn/user-emacs-home-files
@@ -7802,7 +7784,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 *** Configurable
     Let's bootstrap from different configurations dynamically
 
-    #+BEGIN_SRC emacs-lisp  :block-id c0819554-346d-461b-dbc6-7c0ec4f398d0
+    #+BEGIN_SRC emacs-lisp
       (defun fn/bootstrap-from-dir ()
         (interactive)
         (setq new-home (read-directory-name "What Emacs config would you like to boot?" "~"))
@@ -7828,7 +7810,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 
     Load another copy of this configuration for vanity sake I suppose?
 
-    #+BEGIN_SRC emacs-lisp :block-id 41b5319b-c982-bcd7-516b-39d81c4bc266
+    #+BEGIN_SRC emacs-lisp
       (defun fn/bootstrap-itself ()
         (interactive)
         (fn/bootstrap-new-emacs nil))
@@ -7837,7 +7819,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 *** Experimental
     Just a random build for myself
 
-    #+BEGIN_SRC emacs-lisp :block-id cf5c64b3-cfeb-67d2-1877-e4392dd0f8b1
+    #+BEGIN_SRC emacs-lisp
       (setq fn/experimental-home "~/.fmacs.d/")
 
       (defun fn/bootstrap-experimental ()
@@ -7848,7 +7830,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 *** Spacemacs
     The love child of Emacs and Vim, what does it hold?
 
-    #+BEGIN_SRC emacs-lisp :block-id 063f9764-edfd-d3ff-af43-1dabb6e0aacc
+    #+BEGIN_SRC emacs-lisp
       (setq fn/spacemacs-home "~/Modules/.spacemacs.d/")
 
       (defun fn/bootstrap-spacemacs ()
@@ -7859,7 +7841,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Quick Config Tangler
    I don't need to tangle the whole file. Maybe just one block if I can.
 
-   #+BEGIN_SRC emacs-lisp :block-id 72a91420-792d-82c0-b2a7-4f95c7442384
+   #+BEGIN_SRC emacs-lisp
      (require 'f)
 
      (random t)
@@ -8066,7 +8048,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
    Split the windows into a nice four panel division. This works even
    well with [[golden-ratio]].
 
-   #+BEGIN_SRC emacs-lisp :block-id 269509fe-2f84-78ef-d8e0-b34bf7d9e605
+   #+BEGIN_SRC emacs-lisp
      (require 'dash)
 
      (defconst fmw/empty-buffer "*unchained buffer*"
@@ -8173,7 +8155,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Utility Commands
    Some commands to get me here and there
 
-   #+BEGIN_SRC emacs-lisp :block-id 699368f6-d870-cfdc-c7a7-56142502caa6
+   #+BEGIN_SRC emacs-lisp
      (defun fn/insert-date ()
        "Insert time at point, useful when you want to put a date.
         TODO: Would be useful if you can change formats too"
@@ -8198,7 +8180,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
    When editiing gpg or sensitve files, I would like to avoid backing it
    up so here is a [[http://anirudhsasikumar.net/blog/2005.01.21.html][minor mode]] to do so.
 
-   #+BEGIN_SRC emacs-lisp :block-id 2d63832e-d21c-e020-d3a4-f00e6d3be7bf
+   #+BEGIN_SRC emacs-lisp
      (define-minor-mode fq/sensitive-mode
        "For sensitive files like password lists.
      It disables backup creation and auto saving.
@@ -8230,7 +8212,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Dired Shortcuts
    Some shortcuts with the common folder
 
-   #+BEGIN_SRC emacs-lisp :block-id 41197e3d-c256-224b-3d97-7eb3f1b039d5
+   #+BEGIN_SRC emacs-lisp
      (defun fn/dired-download-dir ()
        "Just a quick shortcut to my directory folder"
        (interactive)
@@ -8265,7 +8247,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Performance Indicator
    Check if Emacs is running fast.
 
-   #+BEGIN_SRC emacs-lisp :block-id 1c95aa79-5f9f-abcf-7d28-a9110a32d753
+   #+BEGIN_SRC emacs-lisp
      (run-at-time nil 60 #'force-mode-line-update)
 
      (fn/use-feature frame-delay
@@ -8420,7 +8402,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Create media diary
    A personal script to bundle my journal, recordings and images into one org file. Not to be consumed by anyone else
 
-   #+BEGIN_SRC emacs-lisp :block-id 74c6588f-2f87-0d6a-b2b0-a1d2edf3eb15
+   #+BEGIN_SRC emacs-lisp
      (require 's)
 
 
@@ -8721,7 +8703,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Open standard buffers
    Nice to see the standard buffers
 
-   #+BEGIN_SRC emacs-lisp :block-id eb9c2508-1f1d-46af-a5cf-783926916691
+   #+BEGIN_SRC emacs-lisp
      (defun fn/open-message-buffer ()
        (interactive)
        (switch-to-buffer "*Messages*"))
@@ -8730,7 +8712,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Open config file
    This is just a convenience to open this config file
 
-   #+BEGIN_SRC emacs-lisp :block-id 6d82f337-90f7-8583-6845-c305c7285f95
+   #+BEGIN_SRC emacs-lisp
      (defun fn/find-config-file ()
        (interactive)
        (find-file (expand-file-name "config.org" user-emacs-directory)))
@@ -8739,7 +8721,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Insert relative path
    Makes it easier to insert relative paths
 
-   #+BEGIN_SRC emacs-lisp :block-id a3d6cc8d-a9ee-e266-bd29-54a77a6cc68f
+   #+BEGIN_SRC emacs-lisp
      (require 'f)
 
 
@@ -8804,7 +8786,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 
    A quick DSL makes me feel good.
 
-   #+BEGIN_SRC emacs-lisp :block-id 32fbaff6-e859-4eea-25bf-cfd59fdf4644
+   #+BEGIN_SRC emacs-lisp
      (use-package magin
        :load-path fn/custom-script-dir
        :defer 1
@@ -8844,27 +8826,10 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
        nil)
    #+END_SRC
 
-** Org-Jekyll Blogger
-
-   My blogging script
-
-   #+BEGIN_SRC emacs-lisp :block-id 8041bf29-7026-2f87-21c3-e589b8cb6027
-     (defconst fn/org-jekyll-blogger-map (fn/make-prefixed-keymap (kbd "B") fn-standard-prefix-map)
-       "My custom org-jekyll-blogger map.")
-
-
-     (use-package org-jekyll-blogger
-       :load-path fn/custom-script-dir
-       :defer t
-       :bind (:map fn/org-jekyll-blogger-map
-                   ("d" . org-jekyll-blogger-create-draft)
-                   ("f" . org-jekyll-blogger-find-post)
-                   ("p" . org-jekyll-blogger-post-draft)))
-   #+END_SRC
 ** Custom Buffer Select
    I need some keybindings to select buffers quickly.
 
-   #+BEGIN_SRC emacs-lisp :block-id 01be910a-0180-2e64-258a-f63ab68d00b4
+   #+BEGIN_SRC emacs-lisp
      (defun fn/list-buffers-by (prompt pred)
        "Like `list-buffers' but specialized by a predicate."
        (completing-read
@@ -8929,7 +8894,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Text-To-Speech
    Some contrivances
 
-   #+BEGIN_SRC emacs-lisp :block-id 2fa9e396-3cb3-4b55-356b-c5c688147cc5
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables espeak-check
        (espeak)
        (defcustom fn/espeak-executable "espeak"
@@ -8956,7 +8921,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** GNU Diction Flycheck
    A quick definition for diction checking.
 
-   #+BEGIN_SRC emacs-lisp :block-id 8cb1da0c-628a-211f-f009-ea0827f592d8
+   #+BEGIN_SRC emacs-lisp
      (fn/use-executables diction-check
        (diction)
        (fn/use-feature flycheck-diction
@@ -9037,7 +9002,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Open in Sudo
    Use =tramp= to open a file as root
 
-   #+BEGIN_SRC emacs-lisp :block-id 04e5806a-60cb-3e33-700b-3a28144d6aa7
+   #+BEGIN_SRC emacs-lisp
      (defun fn/sudo-edit (&optional arg)
        "Edit currently visited file as root.
 
@@ -9054,7 +9019,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 ** Clean Async Buffers
    Just utilities to remove async buffers.
 
-   #+BEGIN_SRC emacs-lisp :block-id f8d2f890-e03e-2045-f6a3-a6ca82357577
+   #+BEGIN_SRC emacs-lisp
      (progn
        (require 'cl)
 
@@ -9075,7 +9040,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
 * Key Bindings
   Here is where all the key binding I mapped to
 
-  #+BEGIN_SRC emacs-lisp :block-id af4279a7-a5d4-a700-1248-a5e0ae50e962
+  #+BEGIN_SRC emacs-lisp
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
       (lexical-let* ((key-trigger key)
