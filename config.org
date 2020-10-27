@@ -950,15 +950,7 @@
    Dependencies that aren't really required
 
    #+BEGIN_SRC emacs-lisp :block-id a79a8916-14f1-f6da-278f-48bb7915b472
-     (use-package org-jekyll-blogger
-       :load-path fn/custom-script-dir
-       :defer t)
-
-     (use-package prodigy-set
-       :load-path fn/custom-script-dir
-       :defer t)
-
-     (use-package text-candy
+*** (use-package text-candy
        :load-path fn/custom-script-dir
        :defer 5)
 
@@ -1865,18 +1857,6 @@
           (defun fn/backend-with-prog ()
             (fn/append-to-backends 'company-keywords)))
     #+END_SRC
-
-*** lsp
-    LSP support
-
-    #+begin_src emacs-lisp
-      (unless noninteractive
-        (use-package lsp-mode
-          :ensure t
-          :config
-          nil))
-
-    #+end_src
 
 * Ergonomic
   Things to assist in managing Emacs
@@ -3396,6 +3376,7 @@
    #+BEGIN_SRC emacs-lisp :block-id 87b106b9-401f-cf0e-35ef-366900cc6198
      (use-package alert
        :ensure t
+       :demand t
        :unless noninteractive
        :commands (alert fn/alert-color)
        :config
@@ -4672,6 +4653,25 @@
          :ensure t
          :after magit)
      #+END_SRC
+
+*** lsp
+    LSP support
+
+    #+begin_src emacs-lisp
+      (unless noninteractive
+        (use-package lsp-mode
+          :ensure t
+          :config
+          (setq lps-session-file  (expand-file-name ".lsp-session-v1" fn/cache-dir)))
+
+        (use-package lsp-ui
+          :ensure t
+          :after lsp-mode
+          :hook (lsp-mode . lsp-ui-mode)
+          :config
+          (setq lsp-ui-doc-enable t)))
+    #+end_src
+
 *** Folding
     Code folding is helpful
 
@@ -5516,17 +5516,6 @@
             :defer t
             :commands (format-sql-buffer format-sql-region))))
     #+END_SRC
-** NoSQL
-*** Literate Programming
-    I need me some SQL support for NoSQL types
-
-    #+BEGIN_SRC emacs-lisp :block-id 52ced2ee-3888-35f1-e88b-2f3564b97a63
-      (use-package ob-mongo
-        :ensure t
-        :defer t
-        :after org)
-    #+END_SRC
-
 ** Web
    The defacto mode for web development
 
@@ -6173,7 +6162,8 @@
        :ensure t
        :config
        (setq rustic-format-on-save t
-             rustic-lsp-server 'rls)
+             rustic-lsp-server 'rls
+             rustic-format-display-method 'ignore)
 
        (define-key rustic-mode-map (kbd "C-c C-c r") #'rustic-cargo-test-rerun)
        (define-key rustic-cargo-test-mode-map (kbd "r") #'rustic-cargo-test-rerun)
@@ -6319,45 +6309,6 @@
         nil)
     #+END_SRC
 
-** Solidity
-   Block chain development.
-
-   #+begin_src emacs-lisp :block-id aec6aa60-e781-0b7e-3a98-5974f72cae6b
-     (use-package solidity-mode
-       :ensure t
-       :config
-       nil)
-
-     (use-package solidity-flycheck
-       :ensure t
-       :hook solidity
-       :config
-       nil)
-
-     (use-package company-solidity
-       :ensure t
-       :hook solidity
-       :config
-       nil)
-   #+end_src
-
-** dotNet
-*** omnisharp
-    For C# development
-
-    #+BEGIN_SRC emacs-lisp :block-id 3bc5942f-19ba-a159-7e5c-ab1eb1a24858
-      (use-package omnisharp
-        :ensure t
-        :defer t
-        :init
-        (add-hook 'csharp-mode-hook 'omnisharp-mode)
-        :config
-        (setq omnisharp-root-dir
-              (expand-file-name "~/Fakespace/omnisharp-server"))
-        (setq omnisharp-server-executable-path
-              (expand-file-name "OmniSharp/bin/Debug/" omnisharp-root-dir)))
-    #+END_SRC
-
 ** LaTeX
    LaTeX editing for my files
 
@@ -6439,29 +6390,6 @@
 
 * Random Was Alone
   Anything that just does something useful
-
-** synonyms
-
-   #+begin_src emacs-lisp
-     (unless noninteractive
-       (fn/use-executables wn-check
-         (wn)
-         (use-package synosaurus
-           :ensure t
-           :defer t)))
-   #+end_src
-
-** redis
-   Some redis support
-
-   #+begin_src emacs-lisp
-     (use-package eredis
-       :ensure t
-       :defer t
-       :commands (eredis-connect)
-       :config
-       (setq main (eredis-connect "localhost" 6379)))
-   #+end_src
 
 ** w3m
    Web browsing is a must
@@ -7311,21 +7239,6 @@
         (add-hook 'w3m-fontify-after-hook #'fn/w3m-auto-bookmark-arrived-url))
     #+END_SRC
 
-** twittering
-   Integrating with emacs is very fun via [[https://github.com/hayamiz/twittering-mode][twittering]]
-
-   #+BEGIN_SRC emacs-lisp :block-id 9da6d0ba-1c96-a8e5-b8c9-1b5fabac58ee
-     (use-package twittering-mode
-       :ensure t
-       :defer t
-       :commands (twittering-mode)
-       :init
-       (setq twittering-auth-method 'oauth)
-       (setq twittering-use-master-password t)
-       :config
-       (twittering-icon-mode t)
-       (setq twittering-convert-fix-size 24))
-   #+END_SRC
 ** erc
    Connecting with the brothers
 
@@ -7648,33 +7561,6 @@
          (define-key slack-edit-message-mode-map (kbd "C-c e c") #'slack-message-embed-channel)))
    #+END_SRC
 
-** sx
-   Stack Exchange api
-
-   #+BEGIN_SRC emacs-lisp :block-id aaf558e6-6cab-fbee-9135-c26b1f2cb157
-     (use-package sx
-       :bind (:map fn-standard-prefix-map
-                   ("S q" . sx-tab-all-questions)
-                   ("S i" . sx-inbox)
-                   ("S o" . sx-open-link)
-                   ("S u" . sx-tab-unanswered-my-tags)
-                   ("S a" . sx-ask)
-                   ("S s" . sx-search))
-       :config
-       (setq sx-cache-directory (expand-file-name ".sx" fn/cache-dir)))
-   #+END_SRC
-** bbdb
-   People organization
-
-   #+BEGIN_SRC emacs-lisp :block-id 88354fe4-6152-2230-89e0-ab6199decc18
-     (use-package bbdb
-       :ensure t
-       :defer t
-       :config
-       (bbdb-initialize)
-       (add-hook 'gnus-startup-hook 'bbdb-insinuate-gnus))
-   #+END_SRC
-
 ** emms
    This controls the music player.
 
@@ -7849,6 +7735,17 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
           ;; Remove default advice for vlc which does not work
           (advice-remove 'emms-player-vlc-start #'ad-Advice-emms-player-vlc-start)))
     #+END_SRC
+** zola
+   Quasi-zola blogging support
+
+   #+begin_src emacs-lisp
+     (use-package ox-hugo
+       :ensure t
+       :after ox
+       :config
+       (setq org-hugo-footer ""))
+   #+end_src
+
 * Scripts
 ** Clean Home
    Make sure my Emacs home is clean
