@@ -49,7 +49,6 @@
 (require 'all-the-icons)
 (require 'dash)
 (require 'xpm)
-(require 'projectile)
 
 (defcustom moder-separator-height 16
   "Moder height.")
