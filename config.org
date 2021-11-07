@@ -551,7 +551,7 @@
 
     #+begin_src emacs-lisp
       (setq browse-url-browser-function 'browse-url-generic
-            browse-url-generic-program "firefox")
+            browse-url-generic-program "firefox-esr")
     #+end_src
 
 ** Modes
@@ -1194,6 +1194,24 @@
        :ensure t
        :if (and (not noninteractive)
                 (executable-find "vagrant"))
+       :config
+       nil)
+   #+end_src
+
+** ansible
+   Ansible support if possible
+
+   #+begin_src emacs-lisp
+     (use-package ansible
+       :ensure t
+       :if (and noninteractive
+                (executable-find "ansible"))
+       :config
+       nil)
+
+     (use-package ansible-vault
+       :ensure t
+       :after ansible
        :config
        nil)
    #+end_src
@@ -2496,6 +2514,23 @@
         (advice-add 'org-agenda-get-restriction-and-command :around #'fn/org-ignore-delete-other-windows))
     #+end_src
 
+*** org-roam
+    A knowledge base is nice.
+
+    #+begin_src emacs-lisp
+      (use-package org-roam
+        :ensure t
+        :after org
+        :bind (("C-c C-o l" . org-roam-buffer-toggle)
+               ("C-c C-o f" . org-roam-note-find)
+               ("C-c C-o i" . org-roam-note-insert))
+        :custom
+        ;; Personal setup elsewhere
+        (setq org-roam-directory nil)
+        :config
+        (org-roam-setup))
+    #+end_src
+
 *** org-refile
     Some refiling actions perhaps?
 
@@ -2812,6 +2847,10 @@
                    ("C-l c" . langtool-check-buffer)
                    ("C-l n" . langtool-goto-next-error)
                    ("C-l p" . langtool-goto-previous-error))
+       :init
+       ;;; Configure langtool as you need
+       (setq langtool-java-classpath
+             "/usr/share/languagetool:/usr/share/java/languagetool/*")
        :config
        (setq langtool-default-language "en"
              langtool-mother-tongue "en"
@@ -2992,6 +3031,10 @@
          (cons "\\`COMMIT_EDITMSG"
                (cons 'display-buffer-same-window (list))))
 
+        (with-eval-after-load 'transient
+          ;; Allow GPG signing in transient popup
+          (setq transient-default-level 5))
+
         (with-eval-after-load 'projectile
           (make-variable-buffer-local 'magit-git-environment)
 
@@ -3022,6 +3065,7 @@
               lsp-print-performance t
               lsp-log-io nil
 
+              lsp-headerline-breadcrumb-enable nil
               lsp-enable-file-watchers t
               lsp-file-watch-threshold 100000
               lsp-enable-xref t
@@ -3390,6 +3434,18 @@
       (use-package powerthesaurus
         :ensure t
         :commands (powerthesaurus-lookup-word))
+    #+end_src
+
+*** OpenGL
+    OpenGL shader writing support
+
+    #+begin_src emacs-lisp
+      (use-package glsl-mode
+        :ensure t
+        :unless noninteractive
+        :config
+        nil
+        )
     #+end_src
 
 *** PlantUML
@@ -4712,10 +4768,12 @@
                    ("E E" . elfeed)
                    ("E u" . elfeed-update))
        :config
-       ;; Feeds are loaded externally
-       (setq elfeed-db-directory (expand-file-name ".elfeed" fn/cache-dir))
+       (setq elfeed-db-directory (expand-file-name ".elfeed" fn/cache-dir)))
 
-       (elfeed-update))
+     (use-package elfeed-org
+       :after elfeed
+       :config
+       (elfeed-org))
    #+end_src
 
 ** slack
