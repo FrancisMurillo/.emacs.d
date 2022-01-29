@@ -69,7 +69,7 @@
   #+begin_src emacs-lisp
     (defconst fn/package-archives
       `(("gnu" "http://elpa.gnu.org/packages/" 10)
-        ("org" "http://orgmode.org/elpa/" 0 )
+        ("org" "http://orgmode.org/elpa/" 30)
         ("melpa" "http://melpa.org/packages/" 20))
       "List of my packages")
 
@@ -2525,8 +2525,9 @@
                ("C-c C-o f" . org-roam-note-find)
                ("C-c C-o i" . org-roam-note-insert))
         :custom
+        nil
         ;; Personal setup elsewhere
-        (setq org-roam-directory nil)
+        ;; (setq org-roam-directory nil)
         :config
         (org-roam-setup))
     #+end_src

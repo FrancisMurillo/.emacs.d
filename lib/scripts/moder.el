@@ -236,8 +236,7 @@
           " %s "
           (propertize
            icon
-           'help-echo (format "Major-mode: `%s`" major-mode)
-           'face (list :family (all-the-icons-icon-family-for-buffer))))
+           'help-echo (format "Major-mode: `%s`" major-mode)))
          (moder-weight 'normal))
       (->>
        (format " %s " major-mode)
@@ -671,6 +670,7 @@
                                           (moder-default-text-style)
                                           (moder-background "#e67e22"))
                                      (->> (moder-piece-mode)
+                                          (moder-foreground "#000000")
                                           (moder-background "#27ae60"))
                                      (->> (moder-piece-process)
                                           (moder-default-text-style)
