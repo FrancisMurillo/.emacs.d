@@ -2348,7 +2348,6 @@
 
    #+begin_src emacs-lisp
      (use-package org
-       :ensure t
        :bind (("C-c l" . org-store-link)
               ("C-c a" . org-agenda)
               ("C-c h" . helm-org-in-buffer-headings)
@@ -2561,9 +2560,10 @@
           (org-save-all-org-buffers))
 
         ;; Archive done tasks on load
-        (add-hook
-         'after-init-hook
-         (apply-partially 'run-with-idle-timer 0 nil 'fn/org-archive-done-agenda-tasks)))
+        ;; (add-hook
+        ;;  'after-init-hook
+        ;;  (apply-partially 'run-with-idle-timer 0 nil 'fn/org-archive-done-agenda-tasks))
+        )
     #+end_src
 
 *** org-journal
