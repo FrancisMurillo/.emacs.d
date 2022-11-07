@@ -2520,15 +2520,41 @@
       (use-package org-roam
         :ensure t
         :after org
-        :bind (("C-c C-o l" . org-roam-buffer-toggle)
-               ("C-c C-o f" . org-roam-note-find)
-               ("C-c C-o i" . org-roam-note-insert))
+        :bind (("C-c C-i l" . org-roam-buffer-toggle)
+               ("C-c C-i f" . org-roam-note-find)
+               ("C-c C-i i" . org-roam-note-insert))
         :custom
         nil
         ;; Personal setup elsewhere
         ;; (setq org-roam-directory nil)
         :config
-        (org-roam-setup))
+        (setq org-roam-db-location (expand-file-name "org-roam.db" fn/cache-dir)
+              org-roam-db-gc-threshold most-positive-fixnum)
+
+        (org-roam-setup)
+
+        (require 'org-download))
+
+      (use-package deft
+        :ensure t
+        :after org
+        :bind ("C-c n d" . deft)
+        :config
+        (setq deft-recursive t
+              deft-use-filter-string-for-filename t
+              deft-default-extension "org"
+              deft-directory org-roam-directory))
+
+      (use-package org-download
+        :ensure t
+        :after org
+        :bind( :map org-mode-map
+               (("s-Y" . org-download-screenshot)
+                ("s-y" . org-download-yank)))
+        :config
+        (setq org-image-actual-width 250)
+
+        (add-hook 'dired-mode-hook 'org-download-enable))
     #+end_src
 
 *** org-refile
