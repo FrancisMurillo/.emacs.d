@@ -51,7 +51,7 @@
     (edit-indirect . "edit-indirect.tar")
     (diminish . "diminish.tar")
     (use-package . "use-package.tar")
-    (org-plus-contrib . "org-plus-contrib.tar"))
+    (org . "org.tar"))
   "Required bootstrap packages.")
 
 (progn ;; Use Package & Dependencies
@@ -69,6 +69,11 @@
     (package-install-file
      (expand-file-name (cdr (assoc 'use-package fn/bootstrap-packages))
                        fn/bootstrap-dir))))
+
+(unless (package-installed-p 'org) ;; org-mode
+  (package-install-file
+   (expand-file-name (cdr (assoc 'org fn/bootstrap-packages))
+                     fn/bootstrap-dir)))
 
 (defcustom fn/config-file (expand-file-name "config.org" user-emacs-directory)
   "Main org file to load")
@@ -90,7 +95,6 @@
   (interactive)
   (org-babel-load-file fn/config-backup-file))
 
-(require 'org)
 (org-babel-load-file fn/config-file)
 
 (add-hook 'after-init-hook #'fn/backup-config-file)

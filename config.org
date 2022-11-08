@@ -423,47 +423,47 @@
     Use =Source Code Pro Regular= and =Courier= as default
 
     #+begin_src emacs-lisp
-     2(defconst fn/primary-font-name "Source Code Pro"
-       "Primary font.")
+      (defconst fn/primary-font-name "Source Code Pro"
+        "Primary font.")
 
-     (defconst fn/secondary-font-name "DejaVu Sans Mono"
-       "Secondary font.")
+      (defconst fn/secondary-font-name "DejaVu Sans Mono"
+        "Secondary font.")
 
-     (defconst fn/font-size 10
-       "Font size")
+      (defconst fn/font-size 10
+        "Font size")
 
-     (defconst fn/font-dir-name "fonts"
-       "Font dependencies directory")
+      (defconst fn/font-dir-name "fonts"
+        "Font dependencies directory")
 
-     (defconst fn/font-dir (expand-file-name fn/font-dir-name fn/system-dir)
-       "External font directory.")
+      (defconst fn/font-dir (expand-file-name fn/font-dir-name fn/system-dir)
+        "External font directory.")
 
-     (defun fn/install-fonts ()
-       "Install preferred fonts in the `~/.local/share/fonts' folder.
-     Tested on Arch Linux."
-       (interactive)
-       (let ((local-font-folder (expand-file-name "~/.local/share/fonts/")))
-         (make-directory local-font-folder t)
-         (mapc
-          (lambda (font-file)
-            (copy-file font-file local-font-folder t))
-          (directory-files fn/font-dir  t ".ttf"))
+      (defun fn/install-fonts ()
+        "Install preferred fonts in the `~/.local/share/fonts' folder.
+      Tested on Arch Linux."
+        (interactive)
+        (let ((local-font-folder (expand-file-name "~/.local/share/fonts/")))
+          (make-directory local-font-folder t)
+          (mapc
+           (lambda (font-file)
+             (copy-file font-file local-font-folder t))
+           (directory-files fn/font-dir  t ".ttf"))
 
-         (when (executable-find "fc-cache")
-           (shell-command "fc-cache -f"))))
+          (when (executable-find "fc-cache")
+            (shell-command "fc-cache -f"))))
 
-     (let (font-list (font-family-list))
-       (when (and (eq system-type 'gnu/linux)
-                  (or (eq (member fn/primary-font-name (font-family-list)) nil)
-                      (eq (member fn/secondary-font-name (font-family-list)) nil))
-                  (yes-or-no-p "It seems one of the nice fonts you want are missing. Try to install it with `fn/install-fonts'?"))
-         (fn/install-fonts))
-       (cond
-        ((member fn/primary-font-name font-list)
-         (set-frame-font (format "%s %s" fn/primary-font-name fn/font-size) t t))
-        ((member fn/secondary-font-name font-list)
-         (set-frame-font (format "%s %s" fn/secondary-font-name fn/font-size) t t))
-        (t nil)))
+      (let (font-list (font-family-list))
+        (when (and (eq system-type 'gnu/linux)
+                   (or (eq (member fn/primary-font-name (font-family-list)) nil)
+                       (eq (member fn/secondary-font-name (font-family-list)) nil))
+                   (yes-or-no-p "It seems one of the nice fonts you want are missing. Try to install it with `fn/install-fonts'?"))
+          (fn/install-fonts))
+        (cond
+         ((member fn/primary-font-name font-list)
+          (set-frame-font (format "%s %s" fn/primary-font-name fn/font-size) t t))
+         ((member fn/secondary-font-name font-list)
+          (set-frame-font (format "%s %s" fn/secondary-font-name fn/font-size) t t))
+         (t nil)))
 
     #+end_src
 
@@ -962,9 +962,9 @@
    #+begin_src emacs-lisp
      (use-package direnv
        :ensure t
+       :ensure-system-package direnv
        :demand t
-       :if (and (not noninteractive)
-                (executable-find "direnv"))
+       :if (not noninteractive)
        :config
        (direnv-mode))
    #+end_src
@@ -1215,8 +1215,8 @@
    #+begin_src emacs-lisp
      (use-package docker
        :ensure t
-       :if (and (not noninteractive)
-                (executable-find "docker"))
+       :ensure-system-package docker
+       :if (not noninteractive)
        :commands (docker-images docker-containers docker-volumes docker-networks docker-machines)
        :config
        nil)
@@ -1232,8 +1232,8 @@
    #+begin_src emacs-lisp
      (use-package vagrant
        :ensure t
-       :if (and (not noninteractive)
-                (executable-find "vagrant"))
+       :ensure-system-package vagrant
+       :if (not noninteractive)
        :config
        nil)
    #+end_src
@@ -1244,8 +1244,8 @@
    #+begin_src emacs-lisp
      (use-package ansible
        :ensure t
-       :if (and noninteractive
-                (executable-find "ansible"))
+       :ensure-system-package ansible
+       :if (not noninteractive)
        :config
        nil)
 
@@ -1262,8 +1262,8 @@
    #+begin_src emacs-lisp
      (use-package nix-mode
        :ensure t
-       :if (and (not noninteractive)
-                (executable-find "nix"))
+       :ensure-system-package nix
+       :if (not noninteractive)
        :mode "\\.nix\\'"
        :config
        (require 'woman nil t))
@@ -2191,7 +2191,9 @@
                      (message "Updating bootstrapped package %s from %s"
                               package-name
                               package-file)))))
-             backup-packages))))
+             backup-packages)))
+
+        (advice-add 'elpamr-create-mirror-for-installed :after #'fn/update-bootstrapped-packages))
     #+end_src
 * Artist
   Visual aesthetics is also a functional thing as well
@@ -2388,7 +2390,8 @@
 
    #+begin_src emacs-lisp
      (use-package org
-       :pin manual
+       :ensure t
+       :pin gnu
        :bind (("C-c l" . org-store-link)
               ("C-c a" . org-agenda)
               ("C-c h" . helm-org-in-buffer-headings)
@@ -2415,11 +2418,12 @@
              (apply orig-fun args)
            (advice-remove 'delete-other-windows #'ignore))))
 
-     (use-package org-plus-contrib
-       :ensure t
-       :after org
-       :config
-       nil)
+     ;; (use-package org-plus-contrib
+     ;;   :ensure t
+     ;;   :pin gnu
+     ;;   :after org
+     ;;   :config
+     ;;   nil)
    #+end_src
 
 *** org-src
@@ -2573,9 +2577,7 @@
         ;; (setq org-roam-directory nil)
         :config
         (org-roam-setup)
-        (org-roam-db-sync)
-
-        (require 'org-download))
+        (run-with-idle-timer 0 nil #'org-roam-db-sync))
 
       (use-package deft
         :ensure t
@@ -2590,9 +2592,11 @@
       (use-package org-download
         :ensure t
         :after org
+        :commands (org-download-screenshot org-download-yank)
         :bind( :map org-mode-map
                (("s-Y" . org-download-screenshot)
                 ("s-y" . org-download-yank)))
+
         :config
         (setq org-image-actual-width 250)
 
@@ -2892,14 +2896,13 @@
    #+begin_src emacs-lisp
      (use-package flyspell
        :ensure t
+       :ensure-system-package aspell
        :if (and (not noninteractive)
-                (not (eq system-type 'windows-nt))
-                (executable-find "aspell"))
+                (not (eq system-type 'windows-nt)))
        :diminish flyspell-mode
        :hook (org-mode . flyspell-mode)
        :config
        (setq flyspell-default-dictionary "en_US"
-
              ispell-program-name "aspell"
              ispell-cmd-args  '("--sug-mode=ultra")))
    #+end_src
@@ -2910,16 +2913,13 @@
    #+begin_src emacs-lisp
      (use-package langtool
        :ensure t
-       :if (and (not noninteractive)
-                (executable-find "languagetool"))
+       :ensure-system-package languagetool
+       :if (not noninteractive)
        :bind (:map fn-standard-prefix-map
                    ("C-l c" . langtool-check-buffer)
                    ("C-l n" . langtool-goto-next-error)
                    ("C-l p" . langtool-goto-previous-error))
-       :init
-       ;;; Configure langtool as you need
-       (setq langtool-java-classpath
-             "/usr/share/languagetool:/usr/share/java/languagetool/*")
+
        :config
        (setq langtool-default-language "en"
              langtool-mother-tongue "en"
@@ -2954,8 +2954,8 @@
    #+begin_src emacs-lisp
      (use-package ledger-mode
        :ensure t
-       :if (and (not noninteractive)
-                (executable-find "ledger"))
+       :ensure-system-package ledger
+       :if (not noninteractive)
        :config
        (setq ledger-clear-whole-transactions t)
 
@@ -2976,6 +2976,7 @@
 
      (use-package flycheck-ledger
        :ensure t
+       :after (ledger flycheck)
        :hook (ledger-mode . flycheck-mode)
        :config
        (add-to-list 'flycheck-enabled-checkers 'ledger))
@@ -3076,9 +3077,9 @@
     #+begin_src emacs-lisp
       (use-package magit
         :ensure t
+        :ensure-system-package git
         :if (and (version<= "24.4.4" emacs-version)
-                 (not noninteractive)
-                 (executable-find "git"))
+                 (not noninteractive))
         :bind (("C-c g" . magit-status)
                ("M-g b" . magit-blame))
         :config
@@ -3229,8 +3230,7 @@
         :ensure t
         :ensure-system-package (ag . the_silver_searcher)
         :commands (ag)
-        :if (and (not noninteractive)
-                 (executable-find "ag"))
+        :if (not noninteractive)
         :config
         (setq ag-highlight-search t
               ag-reuse-window t
@@ -3260,8 +3260,8 @@
     #+begin_src emacs-lisp
       (use-package ripgrep
         :ensure t
-        :if (and (not noninteractive)
-                 (executable-find "rg"))
+        :ensure-system-package (rg . ripgrep)
+        :if (not noninteractive)
         :config
         nil)
     #+end_src
@@ -3387,8 +3387,8 @@
     #+begin_src emacs-lisp
       (use-package protobuf-mode
         :ensure t
-        :if (and (not noninteractive)
-                 (executable-find "protoc"))
+        :ensure-system-package protoc
+        :if (not noninteractive)
         :config
         nil)
     #+end_src
