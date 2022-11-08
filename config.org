@@ -94,6 +94,46 @@
            use-package-always-defer t
            use-package-always-defer-install nil)
 
+     (use-package system-packages
+       :ensure t
+       :config
+       (setq system-packages-noconfirm t)
+
+       (when (and (executable-find "pacman"))
+         (cond
+          ((executable-find "yay")
+           (add-to-list 'system-packages-supported-package-managers
+                        '(yay .
+                              ((default-sudo . nil)
+                               (install . "yay -S")
+                               (search . "yay -Ss")
+                               (uninstall . "yay -Rs")
+                               (update . "yay -Syu")
+                               (clean-cache . "yay -Sc")
+                               (log . "cat /var/log/pacman.log")
+                               (change-log . "yay -Qc")
+                               (get-info . "yay -Qi")
+                               (get-info-remote . "yay -Si")
+                               (list-files-provided-by . "yay -Ql")
+                               (owning-file . "yay -Qo")
+                               (owning-file-remote . "yay -F")
+                               (verify-all-packages . "yay -Qkk")
+                               (verify-all-dependencies . "yay -Dk")
+                               (remove-orphaned . "yay -Rns $(pacman -Qtdq)")
+                               (list-installed-packages . "yay -Qe")
+                               (list-installed-packages-all . "yay -Q")
+                               (list-dependencies-of . "yay -Qi")
+                               (noconfirm . "--noconfirm"))))
+
+           (setq system-packages-package-manager 'yay
+                 system-packages-use-sudo nil))
+          ((executable-find "pacaur") (setq system-packages-package-manager 'pacaur))
+          (t nil))))
+
+     (use-package use-package-ensure-system-package
+       :ensure t
+       :demand t)
+
      (defun fn/remove-byte-compiled-files ()
        "Remove byte compiles from emacs directory"
        (interactive)
@@ -2348,6 +2388,7 @@
 
    #+begin_src emacs-lisp
      (use-package org
+       :pin manual
        :bind (("C-c l" . org-store-link)
               ("C-c a" . org-agenda)
               ("C-c h" . helm-org-in-buffer-headings)
@@ -2523,15 +2564,16 @@
         :bind (("C-c C-i l" . org-roam-buffer-toggle)
                ("C-c C-i f" . org-roam-note-find)
                ("C-c C-i i" . org-roam-note-insert))
+        :init
+        (setq org-roam-db-location (expand-file-name "org-roam.db" fn/cache-dir)
+              org-roam-db-gc-threshold most-positive-fixnum)
         :custom
         nil
         ;; Personal setup elsewhere
         ;; (setq org-roam-directory nil)
         :config
-        (setq org-roam-db-location (expand-file-name "org-roam.db" fn/cache-dir)
-              org-roam-db-gc-threshold most-positive-fixnum)
-
         (org-roam-setup)
+        (org-roam-db-sync)
 
         (require 'org-download))
 
@@ -3185,6 +3227,7 @@
     #+begin_src emacs-lisp
       (use-package ag
         :ensure t
+        :ensure-system-package (ag . the_silver_searcher)
         :commands (ag)
         :if (and (not noninteractive)
                  (executable-find "ag"))
@@ -3648,17 +3691,17 @@
     If enterprise grade support is needed.
 
     #+begin_src emacs-lisp
-      (fn/use-executables lein-check
-        (lein)
-        (use-package ejc-sql
-          :ensure t
-          :defer t
-          :after (sql)
-          :functions (ejc-create-connection)
-          :commands (ejc-connect)
-          :config
-          (setq ejc-set-rows-limit 1000
-                nrepl-sync-request-timeout 60)))
+      (use-package ejc-sql
+        :ensure t
+        :ensure-system-package lein
+        :defer t
+        :after (sql)
+        :functions (ejc-create-connection)
+        :commands (ejc-connect)
+        :config
+        (setq ejc-set-rows-limit 1000
+              nrepl-sync-request-timeout 60))
+
     #+end_src
 
 *** Literate Programming
@@ -3683,26 +3726,12 @@
     Some utility when editing SQL files
 
     #+begin_src emacs-lisp
-      (unless noninteractive
-        (fn/use-executables ruby-sql-formatter
-          (anbt-sql-formatter) ;; gem install anbt-sql-formatter
-          (defun fn/sql-beautify-region (beg end)
-            "Beautify SQL in region between beg and END."
-            (interactive "r")
-            (save-excursion
-              (shell-command-on-region beg end "anbt-sql-formatter" nil t)))
-
-          (defun fn/sql-beautify-buffer ()
-            "Beautify SQL in buffer."
-            (interactive)
-            (fn/sql-beautify-region (point-min) (point-max))))
-
-        (fn/use-executables python-sql-formatter
-          (format-sql) ;; pip install --user format-sql
-          (use-package format-sql
-            :ensure t
-            :defer t
-            :commands (format-sql-buffer format-sql-region))))
+      (use-package format-sql
+        :ensure t
+        :ensure-system-package format-sql
+        :defer t
+        :if (not noninteractive)
+        :commands (format-sql-buffer format-sql-region))
     #+end_src
 ** Web
    The defacto mode for web development
@@ -3885,13 +3914,12 @@
     My favorite programming language, unassuming like Marcy from Peanuts
 
     #+begin_src emacs-lisp
-      (fn/use-executables python-check
-        (python pip)
-        (use-package python
-          :ensure t
-          :defer t
-          :config
-          nil))
+      (use-package python
+        :ensure t
+        :ensure-system-package (python)
+        :defer t
+        :config
+        nil)
     #+end_src
 
 *** Formatter
@@ -3986,10 +4014,9 @@
     The defacto for Haskell development
 
     #+begin_src emacs-lisp
-      (fn/use-executables haskell-check
-        (ghci)
-        (use-package haskell-mode
+      (use-package haskell-mode
           :ensure t
+          :ensure-system-package ghci
           :defer t
           :init
           ;; (add-hook 'haskell-mode-hook 'interactive-haskell-mode)
@@ -4037,23 +4064,20 @@
              haskell-process-type 'stack-ghci
              haskell-interactive-mode-eval-mode 'haskell-mode)
 
-
           (add-hook 'haskell-interactive-mode-hook 'smartparens-mode)
-          (fn/use-executables haskell-hoogle-check
-            (hoogle)
+
+          (when (executable-find "hoogle")
             (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
 
-            (fn/use-feature helm-hoogle
-              (helm haskell-mode)
-              (use-package helm-hoogle
-                :ensure t
-                :demand t)))
+            (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
 
-          (advice-add 'haskell-process-load-file :after 'haskell-interactive-mode-clear)
+            ;; Hoogle
+            (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
+            (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle)))
 
-          ;; Hoogle
-          (define-key haskell-mode-map (kbd "C-c b h") 'hoogle)
-          (define-key interactive-haskell-mode-map (kbd "C-c b h") 'hoogle)))
+      (use-package helm-hoogle
+        :ensure t
+        :after (haskell-mode helm))
 
     #+end_src
 
@@ -4929,76 +4953,68 @@
      (defconst fn/emms-map (fn/make-prefixed-keymap (kbd "C-p") fn-standard-prefix-map)
        "My custom prodigy map.")
 
-     (fn/use-executables emms-player-check
-       (vlc mpd)
-       (use-package emms
-         :ensure t
-         :defer t
-         :init
-         (setq emms-directory (expand-file-name "emms" fn/cache-dir))
-         :bind (:map fn/emms-map
-                     ("C-p" . emms)
-                     ("p n" . emms-next)
-                     ("p p" . emms-previous)
-                     ("p q" . emms-pause)
-                     ("p s" . emms-start)
-                     ("p S" . emms-stop))
-         :config
-         (emms-minimalistic)
-         (emms-standard)
+     (use-package emms
+       :ensure t
+       :ensure-system-package (vlc mpd mp3info ogginfo)
+       :defer t
+       :init
+       (setq emms-directory (expand-file-name "emms" fn/cache-dir))
+       :bind (:map fn/emms-map
+                   ("C-p" . emms)
+                   ("p n" . emms-next)
+                   ("p p" . emms-previous)
+                   ("p q" . emms-pause)
+                   ("p s" . emms-start)
+                   ("p S" . emms-stop))
+       :config
+       (emms-minimalistic)
+       (emms-standard)
 
-         (when (require 'emms-player-simple))
+       (when (require 'emms-player-simple))
 
-         (setq emms-player-list nil)
+       (setq emms-player-list nil)
 
-         (setq emms-source-file-default-directory (expand-file-name "~/Musicbox/"))
+       (setq emms-source-file-default-directory (expand-file-name "~/Musicbox/"))
 
-         (setq emms-info-asynchronously nil
-               emms-playlist-buffer-name "*Music*")
+       (setq emms-info-asynchronously nil
+             emms-playlist-buffer-name "*Music*")
 
-         (setq emms-playlist-default-major-mode 'emms-playlist-mode)
+       (setq emms-playlist-default-major-mode 'emms-playlist-mode)
 
-         (when (require 'emms-mark)
-           (add-hook 'emms-playlist-mode-hook #'emms-mark-mode))
+       (when (require 'emms-mark)
+         (add-hook 'emms-playlist-mode-hook #'emms-mark-mode))
 
-         (when (require 'emms-history)
-           (emms-history-load))
+       (when (require 'emms-history)
+         (emms-history-load))
 
-         (when (require 'emms-browser))
+       (when (require 'emms-browser))
 
-         (when (require 'emms-volume)
-           (emms-volume-minor-mode t)
+       (when (require 'emms-volume)
+         (emms-volume-minor-mode t)
 
-           (setq emms-volume-mode-timeout 1))
+         (setq emms-volume-mode-timeout 1))
 
-         (fn/use-executables emms-mp3info
-           (mp3info)
-           (add-to-list 'emms-info-functions 'emms-info-mp3info))
+       (add-to-list 'emms-info-functions 'emms-info-mp3info)
+       (add-to-list 'emms-info-functions 'emms-info-ogginfo)
 
-         (fn/use-executables emms-ogginfo
-           (ogginfo)
-           (add-to-list 'emms-info-functions 'emms-info-ogginfo))
+       (fn/add-major-mode-icon
+        'emms-playlist-mode
+        (list 'all-the-icons-faicon "music" :v-adjust -0.1))
 
-         (fn/add-major-mode-icon
-          'emms-playlist-mode
-          (list 'all-the-icons-faicon "music" :v-adjust -0.1))
+       (progn
+         (global-set-key (kbd "C-c -") 'emms-volume-mode-plus)
+         (global-set-key (kbd "C-c +") 'emms-volume-mode-minus)
 
-         (progn
-           (global-set-key (kbd "C-c -") 'emms-volume-mode-plus)
-           (global-set-key (kbd "C-c +") 'emms-volume-mode-minus)
-
-           (global-set-key (kbd "C-c n C-e s") 'emms-start)
-           (global-set-key (kbd "C-c n C-e S") 'emms-stop))))
+         (global-set-key (kbd "C-c n C-e s") 'emms-start)
+         (global-set-key (kbd "C-c n C-e S") 'emms-stop)))
    #+end_src
 
 *** MPD Integration
     I prefer =mpd= as a music player as it is more stable.
 
     #+begin_src emacs-lisp
-      (fn/use-executables mpd-check
-        (mpd)
-        (fn/use-feature emms-mpd
-          (emms)
+      (when (executable-find "mpd")
+        (with-eval-after-load 'emms
           (require 'emms-player-mpd)
 
           (setq emms-player-mpd-supported-regexp
@@ -5007,86 +5023,84 @@
                               ".rm" ".rmvb" ".mp4" ".flac" ".vob" ".m4a" ".flv" ".ogv" ".pls")))
 
           (add-to-list 'emms-info-functions 'emms-info-mpd)
-          (add-to-list 'emms-player-list 'emms-player-mpd))
+          (add-to-list 'emms-player-list 'emms-player-mpd)
 
-        (fn/use-feature prodigy-emms-mpd
-          (prodigy emms)
-          (defcustom fn/emms-mpd-cache-dir (expand-file-name "emms-mpd" fn/cache-dir)
-            "Emms cache directory."
-            :type 'directory)
+          (fn/use-feature prodigy-emms-mpd
+            (prodigy emms)
+            (defcustom fn/emms-mpd-cache-dir (expand-file-name "emms-mpd" fn/cache-dir)
+              "Emms cache directory."
+              :type 'directory)
 
-          (defcustom fn/emms-mpd-config-file (expand-file-name "mpd.conf" fn/emms-mpd-cache-dir)
-            "Mpd config file"
-            :type 'file)
+            (defcustom fn/emms-mpd-config-file (expand-file-name "mpd.conf" fn/emms-mpd-cache-dir)
+              "Mpd config file"
+              :type 'file)
 
-          (defcustom fn/emms-mpd-port 38700
-            "Mpd port config file"
-            :type 'number)
+            (defcustom fn/emms-mpd-port 38700
+              "Mpd port config file"
+              :type 'number)
 
-          (defun fn/emms-mpd-update-conf (&rest args)
-            "Create/update `fn/emms-mpd-config-file' with new
-      configurations."
-            (interactive)
-            (make-directory fn/emms-mpd-cache-dir t)
+            (defun fn/emms-mpd-update-conf (&rest args)
+              "Create/update `fn/emms-mpd-config-file' with new
+            configurations."
+              (interactive)
+              (make-directory fn/emms-mpd-cache-dir t)
 
-            (setq emms-player-mpd-server-port nil
-                  emms-player-mpd-server-name (expand-file-name "socket" fn/emms-mpd-cache-dir))
+              (setq emms-player-mpd-server-port nil
+                    emms-player-mpd-server-name (expand-file-name "socket" fn/emms-mpd-cache-dir))
 
-            (fn/prodigy-create-mpd-conf
-             fn/emms-mpd-config-file
-             `(("music_directory" . ,(expand-file-name emms-source-file-default-directory))
-               ("playlist_directory" . ,(expand-file-name "Playlist"))
-               ("connection_timeout" . 30)
-               ("state_file" . ,(expand-file-name "state" fn/emms-mpd-cache-dir))
-               ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
-               ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
-               ("port" . ,fn/emms-mpd-port)
-               ("bind_to_address" . ,emms-player-mpd-server-name)
-               ("audio_output" . (("type" . "pulse")
-                                  ("name" . "My PULSE Device")))
-               ("database" . (("plugin" . "simple")
-                              ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
+              (fn/prodigy-create-mpd-conf
+               fn/emms-mpd-config-file
+               `(("music_directory" . ,(expand-file-name emms-source-file-default-directory))
+                 ("playlist_directory" . ,(expand-file-name "Playlist"))
+                 ("connection_timeout" . 30)
+                 ("state_file" . ,(expand-file-name "state" fn/emms-mpd-cache-dir))
+                 ("pid_file" . ,(expand-file-name "pid" fn/emms-mpd-cache-dir))
+                 ("sticker_file" . ,(expand-file-name "sticker.sql" fn/emms-mpd-cache-dir))
+                 ("port" . ,fn/emms-mpd-port)
+                 ("bind_to_address" . ,emms-player-mpd-server-name)
+                 ("audio_output" . (("type" . "pulse")
+                                    ("name" . "My PULSE Device")))
+                 ("database" . (("plugin" . "simple")
+                                ("path" . ,(expand-file-name "db" fn/emms-mpd-cache-dir)))))))
 
-          (defun fn/emms-mpd-on-start (&rest args)
-            "On start of mpd server.."
-            (setq emms-volume-change-function 'emms-volume-mpd-change)
-            (emms-player-mpd-connect)
-            (emms-cache-set-from-mpd-all))
+            (defun fn/emms-mpd-on-start (&rest args)
+              "On start of mpd server.."
+              (setq emms-volume-change-function 'emms-volume-mpd-change)
+              (emms-player-mpd-connect)
+              (emms-cache-set-from-mpd-all))
 
-          (defun fn/emms-mpd-on-stop (&rest args)
-            "On stop of mpd server."
-            (setq emms-volume-change-function 'emms-volume-mpd-change)
-            (emms-player-mpd-disconnect))
+            (defun fn/emms-mpd-on-stop (&rest args)
+              "On stop of mpd server."
+              (setq emms-volume-change-function 'emms-volume-mpd-change)
+              (emms-player-mpd-disconnect))
 
-          (defconst fn/emms-mpd-service-name "emms-mpd"
-            "Emms mpd prodigy service name.")
+            (defconst fn/emms-mpd-service-name "emms-mpd"
+              "Emms mpd prodigy service name.")
 
-          (fn/prodigy-define-service
-           :name fn/emms-mpd-service-name
-           :tags '(mpd emms)
-           :init #'fn/emms-mpd-update-conf
-           :on-start #'fn/emms-mpd-on-stop
-           :on-stop #'emms-player-mpd-disconnect
-           :args `("--no-daemon"
-                   "--stderr"
-                   "--verbose"
-                   ,fn/emms-mpd-config-file)
+            (fn/prodigy-define-service
+             :name fn/emms-mpd-service-name
+             :tags '(mpd emms)
+             :init #'fn/emms-mpd-update-conf
+             :on-start #'fn/emms-mpd-on-stop
+             :on-stop #'emms-player-mpd-disconnect
+             :args `("--no-daemon"
+                     "--stderr"
+                     "--verbose"
+                     ,fn/emms-mpd-config-file)
 
-           :bind-name "emms-mpd"
-           :bind-map fn/prodigy-map
-           :bind (kbd "m m"))
+             :bind-name "emms-mpd"
+             :bind-map fn/prodigy-map
+             :bind (kbd "m m"))
 
-v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name))))
+            (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name)))))
     #+end_src
 
-*** COMMENT VLC Integration
+*** VLC Integration
     A good fallback but not that I depend on it.
 
     #+begin_src emacs-lisp
-      (fn/use-executables vlc-check
-        (vlc)
-        (fn/use-feature emms-vlc
-          (emms)
+      (when (executable-find "vlc")
+        (with-eval-after-load 'emms
           (require 'emms-player-vlc)
 
           ;; Fallback
@@ -5283,9 +5297,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
    #+begin_src emacs-lisp
      (run-at-time nil 60 #'force-mode-line-update)
 
-     (progn
-       (require 'deferred)
-
+     (when (require 'deferred)
        (defvar fn/-previous-time (current-time)
          "Previous time recording.  Not to be used directly.")
 
@@ -5311,124 +5323,122 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
        (add-hook 'pre-command-hook #'fn/-mark-time))
 
      (unless (eq system-type 'windows-nt) ;; Windows requires powershell just to poll it. WTF!?
-       (require 'deferred)
+       (when (and (require 'deferred)
+                  (executable-find "grep")
+                  (executable-find "awk"))
+         (defvar fn/current-cpu-usage 0.0
+           "Cpu recording.")
 
-       (fn/use-executables cpu-check
-         (grep awk)
-         (fn/use-feature cpu-usage
-           (deferred)
-           (defvar fn/current-cpu-usage 0.0
-             "Cpu recording.")
+         (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
 
-           (defconst fn/cpu-usage-command "grep 'cpu ' /proc/stat | awk '{usage=($2+$4)*100/($2+$4+$5)} END {print usage}'")
+         (defun fn/record-cpu-usage ()
+           "Record cpu usage."
+           (deferred:error
+             (deferred:nextc
+               (deferred:process-shell
+                 fn/cpu-usage-command)
+               (lambda (value)
+                 (setq fn/current-cpu-usage (string-to-number value))))
+             (lambda ()
+               (setq fn/cpu-timer
+                     (cancel-timer fn/cpu-timer))
 
-           (defun fn/record-cpu-usage ()
-             "Record cpu usage."
-             (deferred:error
-               (deferred:nextc
-                 (deferred:process-shell
-                   fn/cpu-usage-command)
-                 (lambda (value)
-                   (setq fn/current-cpu-usage (string-to-number value))))
-               (lambda ()
-                 (setq fn/cpu-timer
-                    (cancel-timer fn/cpu-timer))
+               (makunbound 'fn/current-cpu-usage)
+               (message "Error with CPU monitor, shutting it down"))))
 
-                 (makunbound 'fn/current-cpu-usage)
-                 (message "Error with CPU monitor, shutting it down"))))
+         (defvar fn/cpu-timer nil
+           "A cpu timer if you ever want to quit it.")
 
-           (defvar fn/cpu-timer nil
-             "A cpu timer if you ever want to quit it.")
+         (defun fn/start-cpu-monitor ()
+           "Start cpu monitor"
+           (interactive)
 
-           (defun fn/start-cpu-monitor ()
-             "Start cpu monitor"
-             (interactive)
+           (when (timerp fn/cpu-timer)
+             (cancel-timer fn/cpu-timer))
 
-             (when (timerp fn/cpu-timer)
-               (cancel-timer fn/cpu-timer))
+           (setq fn/cpu-timer
+                 (run-with-idle-timer 1 t #'fn/record-cpu-usage)))
 
-             (setq fn/cpu-timer
-                (run-with-idle-timer 1 t #'fn/record-cpu-usage)))
+         (fn/start-cpu-monitor))
 
-           (fn/start-cpu-monitor)))
 
-       (fn/use-executables memory-check
-         (free grep awk)
-         (fn/use-feature memory-usage
-           (deferred)
-           (defvar fn/current-memory-usage 0.0
-             "Memory recording.")
+       (when (and (require 'deferred)
+                  (executable-find "grep")
+                  (executable-find "awk")
+                  (executable-find "free"))
+         (defvar fn/current-memory-usage 0.0
+           "Memory recording.")
 
-           (defconst fn/memory-usage-command
-             "free | grep Mem | awk '{print $3/$2 * 100.0}'")
+         (defconst fn/memory-usage-command
+           "free | grep Mem | awk '{print $3/$2 * 100.0}'")
 
-           (defun fn/record-memory-usage ()
-             "Record memory usage."
-             (deferred:error
-               (deferred:nextc
-                 (deferred:process-shell
-                   fn/memory-usage-command)
-                 (lambda (value)
-                   (setq fn/current-memory-usage (string-to-number value))))
-               (lambda ()
-                 (setq fn/memory-timer
-                    (cancel-timer fn/memory-timer))
+         (defun fn/record-memory-usage ()
+           "Record memory usage."
+           (deferred:error
+             (deferred:nextc
+               (deferred:process-shell
+                 fn/memory-usage-command)
+               (lambda (value)
+                 (setq fn/current-memory-usage (string-to-number value))))
+             (lambda ()
+               (setq fn/memory-timer
+                     (cancel-timer fn/memory-timer))
 
-                 (makunbound 'fn/current-memory-usage)
-                 (message "Error with RAM monitor, shutting it down"))))
+               (makunbound 'fn/current-memory-usage)
+               (message "Error with RAM monitor, shutting it down"))))
 
-           (defvar fn/memory-timer nil
-             "A memory timer.")
+         (defvar fn/memory-timer nil
+           "A memory timer.")
 
-           (defun fn/start-memory-monitor ()
-             "Start memory monitor."
-             (interactive)
-             (when (timerp fn/memory-timer)
-               (cancel-timer fn/memory-timer))
+         (defun fn/start-memory-monitor ()
+           "Start memory monitor."
+           (interactive)
+           (when (timerp fn/memory-timer)
+             (cancel-timer fn/memory-timer))
 
-             (setq fn/memory-timer
-                (run-with-idle-timer 1 t #'fn/record-memory-usage)))
+           (setq fn/memory-timer
+                 (run-with-idle-timer 1 t #'fn/record-memory-usage)))
 
-           (fn/start-memory-monitor)))
+         (fn/start-memory-monitor))
 
-       (fn/use-executables battery-check
-         (acpi awk)
-         (fn/use-feature battery-usage
-           (deferred)
-           (defvar fn/current-battery-usage 0.0
-             "Battery usage.")
+       (when (and (require 'deferred)
+                  (executable-find "grep")
+                  (executable-find "awk")
+                  (executable-find "free"))
+         (defvar fn/current-battery-usage 0.0
+           "Battery usage.")
 
-           (defconst fn/battery-usage-command "acpi -b | awk -F , '{print substr( $2, 1 , length($2) - 1) / 100}'"
-             "Battery usage command.")
+         (defconst fn/battery-usage-command "acpi -b | awk -F , '{print substr( $2, 1 , length($2) - 1) / 100}'"
+           "Battery usage command.")
 
-           (defun fn/record-battery-usage ()
-             "Record battery usage."
-             (deferred:error
-               (deferred:nextc
-                 (deferred:process-shell
-                   fn/battery-usage-command)
-                 (lambda (value)
-                   (setq fn/current-battery-usage (string-to-number value))))
-               (lambda ()
-                 (setq fn/battery-timer
-                    (cancel-timer fn/battery-timer))
+         (defun fn/record-battery-usage ()
+           "Record battery usage."
+           (deferred:error
+             (deferred:nextc
+               (deferred:process-shell
+                 fn/battery-usage-command)
+               (lambda (value)
+                 (setq fn/current-battery-usage (string-to-number value))))
+             (lambda ()
+               (setq fn/battery-timer
+                     (cancel-timer fn/battery-timer))
 
-                 (makunbound 'fn/current-battery-usage)
-                 (message "Error with Battery monitor, shutting it down"))))
+               (makunbound 'fn/current-battery-usage)
+               (message "Error with Battery monitor, shutting it down"))))
 
-           (defvar fn/battery-timer nil
-             "A battery timer.")
+         (defvar fn/battery-timer nil
+           "A battery timer.")
 
-           (defun fn/start-battery-monitor ()
-             "Start the battery monitor."
-             (interactive)
-             (when (timerp fn/battery-timer)
-               (cancel-timer fn/battery-timer))
+         (defun fn/start-battery-monitor ()
+           "Start the battery monitor."
+           (interactive)
+           (when (timerp fn/battery-timer)
+             (cancel-timer fn/battery-timer))
 
-             (setq fn/battery-timer
-                (run-with-idle-timer 1 t #'fn/record-battery-usage)))
+           (setq fn/battery-timer
+                 (run-with-idle-timer 1 t #'fn/record-battery-usage)))
 
-           (fn/start-battery-monitor))))
+         (fn/start-battery-monitor)))
    #+end_src
 
 ** Open buffers
@@ -5448,8 +5458,7 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
    Some contrivances
 
    #+begin_src emacs-lisp
-     (fn/use-executables espeak-check
-       (espeak)
+     (when (system-packages-ensure "espeak")
        (defcustom fn/espeak-executable "espeak"
          "The speech voicer.")
 
@@ -5460,10 +5469,10 @@ v          (prodigy-start-service (prodigy-find-service fn/emms-mpd-service-name
          "Speak up."
          (interactive "sWhat do you want to say? ")
          (apply #'start-process
-            (append
-             (list fn/espeak-executable nil fn/espeak-executable)
-             fn/espeak-args
-             (list text))))
+                (append
+                 (list fn/espeak-executable nil fn/espeak-executable)
+                 fn/espeak-args
+                 (list text))))
 
        (defun fn/espeak-region ()
          "Speak up in the region."
