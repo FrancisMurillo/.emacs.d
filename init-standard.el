@@ -28,6 +28,8 @@
         (expand-file-name "network-security" fn/cache-dir)
         network-security-level 'high))
 
+(when (boundp 'native-comp-eln-load-path)
+  (startup-redirect-eln-cache (expand-file-name "eln-cache" fn/cache-dir)))
 
 (setq load-prefer-newer t)
 

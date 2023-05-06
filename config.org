@@ -674,91 +674,21 @@
   Everything needed to support this more complex configurations
 
   #+begin_src emacs-lisp
-     (use-package dash
-       :ensure t)
+    (use-package dash
+      :ensure t)
 
-     (use-package dash-functional
-       :ensure t
-       :after dash)
+    (use-package dash-functional
+      :ensure t)
 
-     (use-package async
-       :ensure t)
+    (use-package async
+      :ensure t)
 
-     (use-package s
-       :ensure t)
+    (use-package s
+      :ensure t)
 
-     (use-package f
-       :ensure t)
+    (use-package f
+      :ensure t)
   #+end_src
-
-** promise
-   Something to help with package configuration
-
-   #+begin_src emacs-lisp
-     (defconst fn/promise-package-dir (expand-file-name "promise/" fn/custom-module-dir)
-       "Promise package location")
-
-     (use-package promise
-       :load-path fn/promise-package-dir
-       :demand t
-       :config
-       (defmacro fn/use-function (name function &rest body)
-         (let ((function-name-var (make-symbol "function-name")))
-           `(let ((,function-name-var ,(symbol-name name)))
-              (message "Checking function %s" ,function-name-var)
-              (if (not (fboundp (quote ,function)))
-                  (message "Function does not exist")
-                (message "Loading function %s" ,function-name-var)
-                ,@body
-                (message "Configured function %s" ,function-name-var)))))
-
-       (put 'fn/use-function 'lisp-indent-function 'defun)
-
-
-       (defmacro fn/use-feature (name features &rest body)
-         "The equivalent for `use-package' but for combining features as promises."
-         (let ((now-var (make-symbol "now"))
-             (elapsed-var (make-symbol "elapsed"))
-             (feature-name-var (make-symbol "feature-name")))
-           `(promise-then
-             (apply #'promise-all-features (list ,@(if features
-                                                (mapcar (lambda (feature) (list 'quote feature)) features)
-                                              (list (list 'quote 'use-package)))))
-             (lambda (loaded-features)
-               (let ((,feature-name-var ,(symbol-name name))
-                   (,now-var (current-time)))
-                 (message "Loading feature package %s" ,feature-name-var)
-                 ,@body
-                 (let ((,elapsed-var (float-time (time-subtract (current-time) ,now-var))))
-                   (if (> ,elapsed-var ,use-package-minimum-reported-time)
-                       (message
-                        "Configuring feature package %s ... done (%.3fs)"
-                        ,feature-name-var
-                        ,elapsed-var)
-                     (message
-                      "Configuring feature package %s... done"
-                      ,feature-name-var))
-                   nil))))))
-
-       (put 'fn/use-feature 'lisp-indent-function 'defun)
-     )
-   #+end_src
-
-** unicode-fonts
-   Unicode is an required aesthetic
-
-   #+begin_src emacs-lisp
-     (use-package pcache ;; Required by unicode-fonts
-       :ensure t
-       :init
-       (setq pcache-directory (expand-file-name "pcache/" fn/cache-dir)))
-
-     (use-package unicode-fonts
-       :ensure t
-       :demand t
-       :config
-       (unicode-fonts-setup))
-   #+end_src
 
 ** exec-path-from-shell
    The path variable from the shell is need to run commands
@@ -789,9 +719,6 @@
 
 ** all-the-icons
    Making Emacs more modern.
-
-   Sadly, this has to be placed here because =fn/use-feature= cannot load
-   it properly.
 
    #+begin_src emacs-lisp
      (use-package all-the-icons
@@ -879,8 +806,7 @@
    #+begin_src emacs-lisp
      (setq async-shell-command-buffer 'new-buffer)
 
-     (fn/use-feature shell-mode--mode-icon
-       (all-the-icons)
+     (with-eval-after-load 'all-the-icons
        (fn/add-major-mode-icon
         'shell-mode
         (list 'all-the-icons-faicon "terminal" :v-adjust 0.0)))
@@ -912,7 +838,7 @@
 
        (add-hook 'term-mode-hook 'goto-address-mode)
        (add-hook 'term-exec-hook
-                 '(lambda ()
+                 #'(lambda ()
                     (set-buffer-process-coding-system 'utf-8-unix 'utf-8-unix))))
    #+end_src
 
@@ -1024,8 +950,7 @@
 
        (define-key prodigy-view-mode-map (kbd "C-c r") #'prodigy-restart-view)
 
-       (fn/use-feature prodigy-mode--mode-icon
-         (all-the-icons)
+       (with-eval-after-load 'all-the-icons
          (fn/add-major-mode-icon
           'prodigy-mode
           (list 'all-the-icons-faicon "cogs" :v-adjust -0.1))
@@ -1058,7 +983,7 @@
         (defun fn/prodigy-add-to-processes (service &rest _args)
           "Add SERVICE process to `fn/prodigy-processes'."
           (setq fn/prodigy-processes (cl-remove-if-not #'process-live-p fn/prodigy-processes))
-          (lexical-let ((process (plist-get service :process)))
+          (let ((process (plist-get service :process)))
             (when (process-live-p process)
               (add-to-list 'fn/prodigy-processes process))))
 
@@ -1071,8 +996,7 @@
     A dependency to customize prodigy, giving the command =fn/prodigy-define-service=.
 
     #+begin_src emacs-lisp
-      (fn/use-feature prodigy-custom
-        (prodigy)
+      (with-eval-after-load 'prodigy
         (defmacro fn/prodigy-with-buffer (&rest body)
           "Execute BODY within an exisiting prodigy buffer."
           `(progn
@@ -1103,12 +1027,12 @@
 
         (defun fn/prodigy-prepared-switch-to-process-buffer (service)
           "Another wrapper to make specific functions for viewing SERVICE."
-          (lexical-let* ((service-name (plist-get service :name))
-              (command-name (or (plist-get service :bind-command-name)
-                               (symbol-name (gensym "prodigy-view-"))))
-              (prefix "fmpv/")
-              (function-symbol (intern (format "%s%s" prefix command-name)))
-              (service service))
+          (let* ((service-name (plist-get service :name))
+                 (command-name (or (plist-get service :bind-command-name)
+                                   (symbol-name (gensym "prodigy-view-"))))
+                 (prefix "fmpv/")
+                 (function-symbol (intern (format "%s%s" prefix command-name)))
+                 (service service))
             (fset function-symbol
                   `(lambda ()
                      ,(format "A prodigy view function for %s" service-name)
@@ -1122,10 +1046,10 @@
           (let ((result (apply orig-fun args)))
             (prog1
                 result
-              (lexical-let* ((service (car result))
-                  (name (plist-get service :name))
-                  (bind (plist-get service :bind))
-                  (bind-map (or (plist-get service :bind-map) global-map)))
+              (let* ((service (car result))
+                     (name (plist-get service :name))
+                     (bind (plist-get service :bind))
+                     (bind-map (or (plist-get service :bind-map) global-map)))
                 (when bind
                   (message "Creating binding for %s" name)
                   (define-key bind-map bind (fn/prodigy-prepared-switch-to-process-buffer service)))))))
@@ -1137,14 +1061,14 @@
         (defun fn/prodigy-stop-service (service &rest args)
           "Like `prodigy-stop-service' but also checks for
            `:on-stop' which runs before it."
-          (lexical-let ((on-stop (prodigy-service-or-first-tag-with service :on-stop)))
+          (let ((on-stop (prodigy-service-or-first-tag-with service :on-stop)))
             (when (functionp on-stop)
               (apply on-stop (list :service service)))))
 
         (defun fn/prodigy-start-service (service &rest args)
           "Like `prodigy-start-service' but also checks for
            `:on-start' which runs after it."
-          (lexical-let ((on-start (prodigy-service-or-first-tag-with service :on-start)))
+          (let ((on-start (prodigy-service-or-first-tag-with service :on-start)))
             (when (functionp on-start)
               (apply on-start (list :service service)))))
 
@@ -1154,9 +1078,9 @@
           (let ((result (apply orig-fun args)))
             (prog1
                 result
-              (lexical-let* ((service (car result))
-                  (on-stop (plist-get args :on-stop))
-                  (on-start (plist-get args :on-start)))
+              (let* ((service (car result))
+                             (on-stop (plist-get args :on-stop))
+                             (on-start (plist-get args :on-start)))
                 (when (functionp on-stop)
                   (nconc service (list :on-stop on-stop)))
                 (when (functionp on-start)
@@ -1337,8 +1261,7 @@
                 try-complete-lisp-symbol-partially
                 try-complete-lisp-symbol))
 
-        (fn/use-feature hippie-ggtags
-          (ggtags)
+        (with-eval-after-load ggtags
           (add-to-list 'hippie-expand-try-functions-list 'ggtags-try-complete-tag)))
     #+end_src
 
@@ -1541,8 +1464,7 @@
       (use-package window-layout
         :ensure t
         :config
-        (fn/use-feature window-numbered-layout
-          (window-numbering)
+        (with-eval-after-load 'window-numbering
           (require 'dash)
 
           (defvar fn/current-window-layout nil
@@ -1551,7 +1473,7 @@
           (defun fn/window-numbering-assign-func ()
             "Window number assignment based on the current window layout."
             (ignore-errors
-              (lexical-let ((this-window (selected-window)))
+              (let ((this-window (selected-window)))
                 (when (wlf:wset-p fn/current-window-layout)
                   (let ((layout-index
                        (-find-index
@@ -1751,7 +1673,6 @@
                ("C-c C-/" . helm-dabbrev))
         :config
         (require 'projectile nil t)
-        (require 'helm-config)
 
         (helm-mode t)
 
@@ -1762,6 +1683,7 @@
               helm-exit-idle-delay (/ 1 60.0)  ;; ditto
               helm-echo-input-in-header-line nil ;; If the theme does not block it
               helm-split-window-default-side 'same
+              helm-display-function 'display-buffer
               helm-debug-root-directory fn/cache-dir)
 
         (setq helm-ff-file-name-history-use-recentf t
@@ -1810,14 +1732,14 @@
 
            (defun fmc/uniquify-project-paths (project-paths)
              "Customize how projectile files and more are displayed"
-             (lexical-let*
+             (let*
                  ((fn-notation
                    (lambda (path)
-                     (lexical-let ((fn-pieces (f-split path)))
+                     (let ((fn-pieces (f-split path)))
                        (string-join (reverse fn-pieces) fmc/reverse-notation-separator))))
                   (relative-parent-path
                    (lambda (path relative-path)
-                     (lexical-let
+                     (let
                          ((split-path (f-split path))
                           (split-relative-path (f-split relative-path)))
                        (string-join
@@ -1834,7 +1756,7 @@
                            (cdr pair))))
                   (pair-as-label
                    (lambda (pairs)
-                     (lexical-let*
+                     (let*
                          ((display-formatter
                            (lambda (name description)
                              (format "%-s %s %-s"
@@ -1842,7 +1764,7 @@
                                      (propertize fmc/completion-separator 'font-lock-face 'fmc/completion-delimiter)
                                      (propertize description 'font-lock-face 'fmc/completion-description)))))
                        (lambda (pair)
-                         (lexical-let*
+                         (let*
                              ((unique-path (car pair))
                               (full-path (cdr pair))
                               (parent-path
@@ -1863,7 +1785,7 @@
                   (uniquify-paths
                    (lambda (paths)
                      ;; Ideally, this is just f-uniquify-alist but there is a minor contrivance
-                     (lexical-let*
+                     (let*
                          ((is-dir
                            (lambda (path)
                              (string-equal (f-path-separator)
@@ -1957,104 +1879,103 @@
     A mnemonic for key bindings
 
     #+begin_src emacs-lisp
-      (unless noninteractive
-        (use-package which-key
-          :ensure t
-          :diminish which-key-mode
-          :demand t
-          :config
-          (which-key-mode t)
-          (which-key-setup-side-window-bottom)
+      (use-package which-key
+        :ensure t
+        :diminish which-key-mode
+        :demand t
+        :unless noninteractive
+        :config
+        (which-key-mode t)
+        (which-key-setup-side-window-bottom)
 
-          (setq which-key-idle-delay 0.8
+        (setq which-key-idle-delay 0.8
 
-             which-key-separator " → "
-             which-key-unicode-correction 3
+              which-key-separator " → "
+              which-key-unicode-correction 3
 
-             which-key-prefix-prefix ""
-             which-key-show-prefix 'top
-             which-key-echo-keystrokes nil
+              which-key-prefix-prefix ""
+              which-key-show-prefix 'top
+              which-key-echo-keystrokes nil
 
-             which-key-show-remaining-keys nil
+              which-key-show-remaining-keys nil
 
-             which-key-sort-order 'which-key-description-order)
-
-
-          (defun fn/which-key-prefix-command-replacement (kb)
-            "My custom label for prefix command."
-            (cons (car kb)
-               (format
-                "/Σ-%2d/"
-                (let ((which-key--current-prefix
-                     (apply #'vector (listify-key-sequence (kbd (car kb))))))
-                  (length (which-key--get-current-bindings))))))
+              which-key-sort-order 'which-key-description-order)
 
 
-          ;; Mode Highlighting
-          (require 's)
+        (defun fn/which-key-prefix-command-replacement (kb)
+          "My custom label for prefix command."
+          (cons (car kb)
+                (format
+                 "/Σ-%2d/"
+                 (let ((which-key--current-prefix
+                        (apply #'vector (listify-key-sequence (kbd (car kb))))))
+                   (length (which-key--get-current-bindings))))))
 
-          ;; NOTE: Avoid changing height since it destroys the layout
-          (defface fn/which-key-active-mode-face '((t . (:underline t :foreground "#dddddd")))
-            "Face for active modes."
-            :group 'fn)
 
-          (defface fn/which-key-inactive-mode-face '((t . (:underline t :foreground "#444444")))
-            "Face for inactive modes."
-            :group 'fn)
+        ;; Mode Highlighting
+        (require 's)
 
-          (defun fn/which-key-highlight-modes ()
-            "Add active and inactive modes to `which-key-highlighted-command-list'."
-            (message "Updating which-key mode highlighting.")
-            (mapc
-             (lambda (command-option)
-               (when (and (consp command-option)
+        ;; NOTE: Avoid changing height since it destroys the layout
+        (defface fn/which-key-active-mode-face '((t . (:underline t :foreground "#dddddd")))
+          "Face for active modes."
+          :group 'fn)
+
+        (defface fn/which-key-inactive-mode-face '((t . (:underline t :foreground "#444444")))
+          "Face for inactive modes."
+          :group 'fn)
+
+        (defun fn/which-key-highlight-modes ()
+          "Add active and inactive modes to `which-key-highlighted-command-list'."
+          (message "Updating which-key mode highlighting.")
+          (mapc
+           (lambda (command-option)
+             (when (and (consp command-option)
                         (s-ends-with-p "-mode$" (car command-option)))
-                 (setcdr command-option 'fn/which-key-inactive-mode-face)))
-             which-key-highlighted-command-list)
-            (mapc
-             (lambda (minor-mode)
-               (lexical-let* ((mode-name (symbol-name minor-mode))
-                   (mode-regex (concat mode-name "$"))
-                   (command-option
-                    (assoc mode-regex which-key-highlighted-command-list)))
-                 (unless command-option
-                   (setq command-option
-                      (cons mode-regex 'italic))
-                   (push command-option which-key-highlighted-command-list))
-                 (when (consp command-option)
-                   (setcdr command-option
-                           (if (and (boundp minor-mode)
+               (setcdr command-option 'fn/which-key-inactive-mode-face)))
+           which-key-highlighted-command-list)
+          (mapc
+           (lambda (minor-mode)
+             (let* ((mode-name (symbol-name minor-mode))
+                            (mode-regex (concat mode-name "$"))
+                            (command-option
+                             (assoc mode-regex which-key-highlighted-command-list)))
+               (unless command-option
+                 (setq command-option
+                       (cons mode-regex 'italic))
+                 (push command-option which-key-highlighted-command-list))
+               (when (consp command-option)
+                 (setcdr command-option
+                         (if (and (boundp minor-mode)
                                   (symbol-value minor-mode))
-                               'fn/which-key-active-mode-face 'fn/which-key-inactive-mode-face
+                             'fn/which-key-active-mode-face 'fn/which-key-inactive-mode-face
                              )))))
-             minor-mode-list)
+           minor-mode-list)
 
 
-            (lexical-let* ((generic-mode-regex ".*-mode$")
-                (command-option (assoc generic-mode-regex which-key-highlighted-command-list)))
-              (unless command-option
-                (add-to-list 'which-key-highlighted-command-list
-                             (cons generic-mode-regex
-                                'fn/which-key-inactive-mode-face)
-                             t))))
+          (let* ((generic-mode-regex ".*-mode$")
+                         (command-option (assoc generic-mode-regex which-key-highlighted-command-list)))
+            (unless command-option
+              (add-to-list 'which-key-highlighted-command-list
+                           (cons generic-mode-regex
+                                 'fn/which-key-inactive-mode-face)
+                           t))))
 
-          (advice-add 'which-key--init-buffer :before #'fn/which-key-highlight-modes)
-          (add-hook 'after-init-hook #'fn/which-key-highlight-modes t)
+        (advice-add 'which-key--init-buffer :before #'fn/which-key-highlight-modes)
+        (add-hook 'after-init-hook #'fn/which-key-highlight-modes t)
+
+        ;; Namespace Highlighting
+        (defface fn/which-key-personal-namespace-face '((t . (:foreground "#9b59b6")))
+          "Face for my personal namespace."
+          :group 'fn)
+
+        (add-to-list 'which-key-highlighted-command-list
+                     (cons "^f.*/" 'fn/which-key-personal-namespace-face))
 
 
-          ;; Namespace Highlighting
-          (defface fn/which-key-personal-namespace-face '((t . (:foreground "#9b59b6")))
-            "Face for my personal namespace."
-            :group 'fn)
-
-          (add-to-list 'which-key-highlighted-command-list
-                       (cons "^f.*/" 'fn/which-key-personal-namespace-face))
-
-
-          ;; Customized prefix display
-          (add-to-list 'which-key-replacement-alist
-                       (cons (cons nil "Prefix Command")
-                          #'fn/which-key-prefix-command-replacement))))
+        ;; Customized prefix display
+        (add-to-list 'which-key-replacement-alist
+                     (cons (cons nil "Prefix Command")
+                           #'fn/which-key-prefix-command-replacement)))
     #+end_src
 
 *** eldoc
@@ -2313,10 +2234,10 @@
        ;; HACK: Bug #30 in alert to allow default style override
        (alert-add-rule)
 
-       (defun* fn/alert-color (message &rest args &key color &allow-other-keys)
+       (cl-defun fn/alert-color (message &rest args &key color &allow-other-keys)
          "A custom alert that focuses on defining a fringe with COLOR key
      with a hex value."
-         (lexical-let* ((hex-color (replace-regexp-in-string "#" "" color))
+         (let* ((hex-color (replace-regexp-in-string "#" "" color))
                         (hex-symbol-name (format "alert-color--%s" hex-color))
                         (hex-symbol (or (intern-soft hex-symbol-name)
                                         (intern hex-symbol-name))))
@@ -2328,7 +2249,7 @@
            (unless (cdr (assoc hex-symbol alert-severity-colors))
              (add-to-list 'alert-severity-colors (cons hex-symbol color)))
 
-           (lexical-let ((color-properties
+           (let ((color-properties
                           (list
                            :style 'fringe
                            :severity hex-symbol))
@@ -2430,8 +2351,7 @@
     Configuration for =org-src=
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-src
-        (org)
+      (with-eval-after-load 'org
         (setq org-src-window-setup 'current-window)
 
         (defun fn/org-src-inhibit-save-window-configuration ()
@@ -2441,12 +2361,7 @@
 
         (add-hook 'org-src-mode-hook #'fn/org-src-inhibit-save-window-configuration))
 
-      (fn/use-feature org-src-alert
-        (org alert)
-        nil)
-
-      (fn/use-feature org-todo
-        (org)
+      (with-eval-after-load 'org
         (setq org-todo-keywords
               `((sequence "TODO(t)" "PENDING(p)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")
                 (sequence "EVENT(e)" "|" "ACCEPT(a)" "DECLINE(D)" )))
@@ -2459,13 +2374,12 @@
                 ("DONE" :background "#2ecc71" :foreground "#000000" :weight bold :box (:line-width 2 :style released-button))
                 ("CANCELLED" :background "lime green" :foreground "black" :weight bold :box (:line-width 2 :style released-button)))))
 
-      (fn/use-feature org-src-desktop
-        (org desktop)
-        (add-to-list 'desktop-modes-not-to-save 'org-src-mode))
+      (with-eval-after-load 'org
+        (with-eval-after-load 'desktop
+          (add-to-list 'desktop-modes-not-to-save 'org-src-mode)))
 
 
-      (fn/use-feature org-src-edit
-        (org)
+      (with-eval-after-load 'org
         (require 'dash)
         (make-variable-buffer-local
          (defvar fn/org-babel-get-src-block-info-mapper nil
@@ -2485,14 +2399,14 @@
         (defun fn/org-info-file-to-tangle-mapper (info)
           "Defaults an empty `:tangle' option to its `:file' parameter which may be manipulated by `:output-dir'."
           (let* ((null-or-no-p
-               (lambda (value) (if (or (null value) (string= value "no")) nil value)))
-              (params (nth 2 info))
-              (tangle-param
-               (funcall null-or-no-p (cdr (assoc :tangle params))))
-              (file-param
-               (funcall null-or-no-p (cdr (assoc :file params))))
-              (new-tangle-param
-               (if (and file-param (null tangle-param)) file-param nil)))
+                  (lambda (value) (if (or (null value) (string= value "no")) nil value)))
+                 (params (nth 2 info))
+                 (tangle-param
+                  (funcall null-or-no-p (cdr (assoc :tangle params))))
+                 (file-param
+                  (funcall null-or-no-p (cdr (assoc :file params))))
+                 (new-tangle-param
+                  (if (and file-param (null tangle-param)) file-param nil)))
             (if new-tangle-param
                 (-replace-at 2 (cons (cons :tangle new-tangle-param) params) info)
               info)))
@@ -2504,8 +2418,7 @@
     More configurations for the capture
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-capture
-        (org)
+      (with-eval-after-load 'org
         nil ;; Configuration in personal.el
         )
     #+end_src
@@ -2514,8 +2427,7 @@
     More configuration for org-agenda
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-agenda
-        (org)
+      (with-eval-after-load 'org
         (setq org-agenda-span 14 ;; Fortnight
               org-agenda-window-setup 'current-window)
 
@@ -2607,8 +2519,7 @@
     Some refiling actions perhaps?
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-archive
-        (org)
+      (with-eval-after-load 'org
         (setq org-log-refile 'time
               org-refile-targets nil))
     #+end_src
@@ -2617,8 +2528,7 @@
     Archiving is needed to avoid bloating.
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-refile
-        (org)
+      (with-eval-after-load 'org
         (when (boundp 'fn/org-dir))
 
         (defun fn/org-archive-done-agenda-tasks ()
@@ -2629,13 +2539,7 @@
              (when (org-entry-is-done-p)
                (org-archive-subtree)))
            t 'agenda)
-          (org-save-all-org-buffers))
-
-        ;; Archive done tasks on load
-        ;; (add-hook
-        ;;  'after-init-hook
-        ;;  (apply-partially 'run-with-idle-timer 0 nil 'fn/org-archive-done-agenda-tasks))
-        )
+          (org-save-all-org-buffers)))
     #+end_src
 
 *** org-journal
@@ -2710,7 +2614,7 @@
           (add-to-list 'auto-insert-alist '(".*\.private.org\\'" . fm/insert-private-file-headers))
           (add-to-list 'auto-insert-alist '(".*\.journal.org.gpg\\'" . fmj/insert-org-journal-headers))
 
-          (fn/use-feature org-journal-mode--mode-icon
+          (with-eval-after-load 'all-the-icons
             (all-the-icons)
             (fn/add-major-mode-icon
              'org-journal-mode
@@ -2725,8 +2629,7 @@
         (defconst fn/org-reveal-module-dir (expand-file-name "~/Modules/reveal.js")
           "reveal.js directory")
 
-        (fn/use-feature ox-reveal
-          (org)
+        (with-eval-after-load 'org
           (use-package ox-reveal
             :ensure t
             :if (file-exists-p fn/org-reveal-module-dir)
@@ -2769,8 +2672,7 @@
     Configuration for org-clock
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-clock
-        (org)
+      (with-eval-after-load 'org
         (setq org-log-done 'time)
 
         (defun fn/clock-todo-change ()
@@ -2789,8 +2691,7 @@
     #+begin_src emacs-lisp
       (unless noninteractive
         (when (boundp 'fn/org-dir)
-          (fn/use-feature org-mobile
-            (org)
+          (with-eval-after-load 'org
             (defconst fn/org-mobile-directory (expand-file-name "mobile" fn/org-dir)
               "My org mobile directory")
 
@@ -2814,49 +2715,49 @@
     Using =helm= to navigate =org-mode=.
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-helm-completing-read
-        (helm org)
-        ;; Thanks to :
-        ;; https://gist.githubusercontent.com/alphapapa/a3433c54a631b693ba9d/raw/f4f2462c8ccff7352037a12b720e5ccccaf94a7e/helm-org-tag-completion.el
-        (add-to-list 'helm-completing-read-handlers-alist '(org-capture . fq/org-completing-read-tags))
-        (add-to-list 'helm-completing-read-handlers-alist '(org-set-tags . fq/org-completing-read-tags))
+      (with-eval-after-load 'org
+        (with-eval-after-load 'helm
+          ;; Thanks to :
+          ;; https://gist.githubusercontent.com/alphapapa/a3433c54a631b693ba9d/raw/f4f2462c8ccff7352037a12b720e5ccccaf94a7e/helm-org-tag-completion.el
+          (add-to-list 'helm-completing-read-handlers-alist '(org-capture . fq/org-completing-read-tags))
+          (add-to-list 'helm-completing-read-handlers-alist '(org-set-tags . fq/org-completing-read-tags))
 
-        (defun fq/org-completing-read-tags (prompt coll pred req initial hist def inh)
-          (if (not (string= "Tags: " prompt))
-              ;; Not a tags prompt.  Use normal completion by calling
-              ;; `org-icompleting-read' again without this function in
-              ;; `helm-completing-read-handlers-alist'
-              (let ((helm-completing-read-handlers-alist (rassq-delete-all
-                                                          'fj/org-completing-read-tags
-                                                          helm-completing-read-handlers-alist)))
-                (org-icompleting-read prompt coll pred req initial hist def inh))
-            ;; Tags prompt
-            (let* ((initial (and (stringp initial)
-                                 (not (string= initial ""))
-                                 initial))
-                   (curr (when initial
-                           (org-split-string initial ":")))
-                   (table (org-uniquify
-                           (mapcar 'car org-last-tags-completion-table)))
-                   (table (if curr
-                              ;; Remove current tags from list
-                              (cl-delete-if (lambda (x)
-                                              (member x curr))
-                                            table)
-                            table))
-                   (prompt (if initial
-                               (concat "Tags " initial)
-                             prompt)))
-              (concat initial (mapconcat 'identity
-                                         (nreverse (fq/helm-completing-read-multiple
-                                                    prompt table pred nil nil hist def
-                                                    t "Org tags" "*Helm org tags*" ":"))
-                                         ":")))))
+          (defun fq/org-completing-read-tags (prompt coll pred req initial hist def inh)
+            (if (not (string= "Tags: " prompt))
+                ;; Not a tags prompt.  Use normal completion by calling
+                ;; `org-icompleting-read' again without this function in
+                ;; `helm-completing-read-handlers-alist'
+                (let ((helm-completing-read-handlers-alist (rassq-delete-all
+                                                            'fj/org-completing-read-tags
+                                                            helm-completing-read-handlers-alist)))
+                  (org-icompleting-read prompt coll pred req initial hist def inh))
+              ;; Tags prompt
+              (let* ((initial (and (stringp initial)
+                                   (not (string= initial ""))
+                                   initial))
+                     (curr (when initial
+                             (org-split-string initial ":")))
+                     (table (org-uniquify
+                             (mapcar 'car org-last-tags-completion-table)))
+                     (table (if curr
+                                ;; Remove current tags from list
+                                (cl-delete-if (lambda (x)
+                                                (member x curr))
+                                              table)
+                              table))
+                     (prompt (if initial
+                                 (concat "Tags " initial)
+                               prompt)))
+                (concat initial (mapconcat 'identity
+                                           (nreverse (fq/helm-completing-read-multiple
+                                                      prompt table pred nil nil hist def
+                                                      t "Org tags" "*Helm org tags*" ":"))
+                                           ":")))))
 
-        (defun fq/helm-completing-read-multiple (prompt choices
-                                                        &optional predicate require-match initial-input hist def
-                                                        inherit-input-method name buffer sentinel)
-          "Read multiple items with `helm-completing-read-default-1'. Reading stops
+          (defun fq/helm-completing-read-multiple (prompt choices
+                                                          &optional predicate require-match initial-input hist def
+                                                          inherit-input-method name buffer sentinel)
+            "Read multiple items with `helm-completing-read-default-1'. Reading stops
       when the user enters SENTINEL. By default, SENTINEL is
       \"*done*\". SENTINEL is disambiguated with clashing completions
       by appending _ to SENTINEL until it becomes unique. So if there
@@ -2864,22 +2765,22 @@
       most _ at the end is the actual sentinel value. See
       documentation for `ido-completing-read' for details on the
       other parameters."
-          (let ((sentinel (or sentinel "*done*"))
-                this-choice res done-reading)
-            ;; Uniquify the SENTINEL value
-            (while (cl-find sentinel choices)
-              (setq sentinel (concat sentinel "_")))
-            (setq choices (cons sentinel choices))
-            ;; Read choices
-            (while (not done-reading)
-              (setq this-choice (helm-completing-read-default-1 prompt choices
-                                                                predicate require-match initial-input hist def
-                                                                inherit-input-method name buffer nil t))
-              (if (equal this-choice sentinel)
-                  (setq done-reading t)
-                (setq res (cons this-choice res))
-                (setq prompt (concat prompt this-choice ":"))))
-            res)))
+            (let ((sentinel (or sentinel "*done*"))
+                  this-choice res done-reading)
+              ;; Uniquify the SENTINEL value
+              (while (cl-find sentinel choices)
+                (setq sentinel (concat sentinel "_")))
+              (setq choices (cons sentinel choices))
+              ;; Read choices
+              (while (not done-reading)
+                (setq this-choice (helm-completing-read-default-1 prompt choices
+                                                                  predicate require-match initial-input hist def
+                                                                  inherit-input-method name buffer nil t))
+                (if (equal this-choice sentinel)
+                    (setq done-reading t)
+                  (setq res (cons this-choice res))
+                  (setq prompt (concat prompt this-choice ":"))))
+              res))))
     #+end_src
 
 *** org-tempo
@@ -3020,24 +2921,8 @@
     Enable some literate programming
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-literate
-        (org)
+      (with-eval-after-load 'org
         (require 'ob-shell))
-    #+end_src
-
-*** smartparens
-    This is as handy as =paredit=
-
-    #+begin_src emacs-lisp
-      (use-package smartparens
-        :diminish smartparens-mode
-        :ensure t
-        :hook (prog-mode . smartparens-mode)
-        :config
-        (require 'smartparens-config)
-
-        (define-key smartparens-mode-map (kbd "C-<left>") 'sp-forward-slurp-sexp)
-        (define-key smartparens-mode-map (kbd "C-<up>") 'sp-splice-sexp))
     #+end_src
 
 *** flycheck
@@ -3118,9 +3003,11 @@
         :ensure t
         :bind (("M-g t" . git-timemachine))
         :config
-        nil)
+        (progn
+          (defun fn/noop (orig-fun &rest args)
+            nil)
 
-
+          (advice-add 'git-timemachine--erm-workaround :around #'fn/noop)))
     #+end_src
 
 *** lsp
@@ -3131,6 +3018,8 @@
         :ensure t
         :unless noninteractive
         :config
+        (setq read-process-output-max (* 4 1024 1024))
+
         (setq lsp-session-file (expand-file-name ".lsp-session-v1" fn/cache-dir)
               lsp-print-performance t
               lsp-log-io nil
@@ -3198,8 +3087,7 @@
         (advice-add 'gist-edit-current-description :around #'fn/ignore-gnutls)
         (advice-add 'gist-kill-current :around #'fn/ignore-gnutls)
 
-        (fn/use-feature gist-list--mode-icon
-          (all-the-icons)
+        (with-eval-after-load 'all-the-icons
           (fn/add-major-mode-icon
            'gist-list-mode
            (list 'all-the-icons-octicon "checklist" :v-adjust 0.0))))
@@ -3328,17 +3216,11 @@
 
         (add-hook 'restclient-mode-hook 'fn/restclient-indent-function)
 
-        (fn/use-feature restclient-mode--mode-icon
-          (restclient all-the-icons)
-          (fn/add-major-mode-icon
-           'restclient-mode
-           (list 'all-the-icons-faicon "arrow-circle-o-up" :v-adjust -0.1)))
-
-        (with-eval-after-load 'smartparens
-          (add-hook 'restclient-mode-hook 'smartparens-mode))
-
-        (with-eval-after-load 'paredit
-          (add-hook 'restclient-mode-hook 'paredit-mode))
+        (with-eval-after-load 'restclient
+          (with-eval-after-load 'all-the-icons
+            (fn/add-major-mode-icon
+             'restclient-mode
+             (list 'all-the-icons-faicon "arrow-circle-o-up" :v-adjust -0.1))))
 
         (use-package company-restclient
           :ensure t
@@ -3486,17 +3368,6 @@
           nil))
     #+end_src
 
-*** EditorConfig
-    Support editor config for some project.
-
-    #+begin_src emacs-lisp
-      (use-package editorconfig
-        :ensure t
-        :hook (prog-mode . editorconfig-mode)
-        :config
-        nil)
-    #+end_src
-
 *** Thesaurus
     A little thesaurus help.
 
@@ -3576,27 +3447,6 @@
         (define-key custom-keymap (kbd "j") #'fn/find-definition-at-point))
     #+end_src
 
-*** Motion
-    Makes you a good lisp developer and quite addictive to have
-
-    #+begin_src emacs-lisp
-      (use-package paredit
-        :ensure t
-        :defer t
-        :diminish paredit-mode
-        :init
-        (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
-        (add-hook 'ielm-mode-hook #'enable-paredit-mode)
-        (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-        (add-hook 'lisp-mode-hook #'enable-paredit-mode)
-        (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode))
-
-      (fn/use-feature paredit-eldoc
-        (eldoc)
-        (eldoc-add-command 'paredit-backward-delete
-                           'paredit-close-round))
-    #+end_src
-
 *** Formatter
     Not really but nice to have for a lisp language
 
@@ -3648,8 +3498,7 @@
         :ensure t
         :defer t)
 
-      (fn/use-feature cask-mode--mode-icon
-        (all-the-icons)
+      (with-eval-after-load 'all-the-icons
         (fn/add-major-mode-icon
          'cask-mode
          (list 'all-the-icons-faicon "glass" :v-adjust 0.1)))
@@ -3708,17 +3557,17 @@
     Sometimes it's just easier to get a scratch pad.
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-literate-sql
-        (org sql)
-        (require 'ob-sql) ;; Default
+      (with-eval-after-load 'org
+        (with-eval-after-load 'sql
+          (require 'ob-sql) ;; Default
 
-        (use-package ob-sql-mode
-          :ensure t
-          :defer t
-          :after (org sql)
-          :config
-          nil ;; None yet
-          ))
+          (use-package ob-sql-mode
+            :ensure t
+            :defer t
+            :after (org sql)
+            :config
+            nil ;; None yet
+            )))
     #+end_src
 
 *** Formatting
@@ -3798,8 +3647,7 @@
               js2-include-node-externs t
               js2-include-browser-externs t)
 
-        (fn/use-feature js2-jsx-mode--mode-icon
-          (all-the-icons)
+        (with-eval-after-load 'all-the-icons
           (fn/add-major-mode-icon
            'js2-jsx-mode
            (list 'all-the-icons-alltheicon "javascript" :v-adjust 0.1))))
@@ -3824,21 +3672,21 @@
 
     #+begin_src emacs-lisp
       (unless noninteractive
-        (fn/use-feature flycheck-eslint-relative
-          (flycheck js2-mode)
-          ;; Thanks to https://emacs.stackexchange.com/questions/21205/flycheck-with-file-relative-eslint-executable
-          (defun fq/use-eslint-from-node-modules ()
-            (let* ((root (locate-dominating-file
-                          (or (buffer-file-name) default-directory)
-                          ".projectile"))
-                   (eslint (and root
-                                (expand-file-name "node_modules/eslint/bin/eslint.js"
-                                                  root))))
-              (when (and eslint (file-executable-p eslint))
-                (setq-local flycheck-javascript-eslint-executable eslint))))
+        (with-eval-after-load 'flycheck
+          (with-eval-after-load 'js2-mode
+            ;; Thanks to https://emacs.stackexchange.com/questions/21205/flycheck-with-file-relative-eslint-executable
+            (defun fq/use-eslint-from-node-modules ()
+              (let* ((root (locate-dominating-file
+                            (or (buffer-file-name) default-directory)
+                            ".projectile"))
+                     (eslint (and root
+                                  (expand-file-name "node_modules/eslint/bin/eslint.js"
+                                                    root))))
+                (when (and eslint (file-executable-p eslint))
+                  (setq-local flycheck-javascript-eslint-executable eslint))))
 
-          (add-to-list 'flycheck-checkers 'javascript-eslint)
-          (add-hook 'flycheck-mode-hook #'fq/use-eslint-from-node-modules)))
+            (add-to-list 'flycheck-checkers 'javascript-eslint)
+            (add-hook 'flycheck-mode-hook #'fq/use-eslint-from-node-modules))))
     #+end_src
 
 *** Formatter
@@ -3904,9 +3752,9 @@
     Let's support literate programming for JS
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-js2-src
-        (org js2-mode)
-        (add-to-list 'org-babel-load-languages '(js . t)))
+      (with-eval-after-load 'org
+        (with-eval-after-load 'js2-mode
+          (add-to-list 'org-babel-load-languages '(js . t))))
     #+end_src
 
 ** Python
@@ -4005,9 +3853,9 @@
     Let's add a link to =org-babel=
 
     #+begin_src emacs-lisp
-      (fn/use-feature org-python-src
-        (org python)
-        (add-to-list 'org-babel-load-languages '(python .t)))
+      (with-eval-after-load 'org
+        (with-eval-after-load 'python
+          (add-to-list 'org-babel-load-languages '(python .t))))
     #+end_src
 ** Haskell
 *** Mode
@@ -4063,8 +3911,6 @@
              haskell-process-suggest-hoogle-imports t
              haskell-process-type 'stack-ghci
              haskell-interactive-mode-eval-mode 'haskell-mode)
-
-          (add-hook 'haskell-interactive-mode-hook 'smartparens-mode)
 
           (when (executable-find "hoogle")
             (add-hook 'haskell-interactive-mode-hook 'haskell-hoogle-start-server)
@@ -4175,19 +4021,19 @@
 
     #+begin_src emacs-lisp
       (unless noninteractive
-        (fn/use-feature company-haskell
-          (haskell-mode company)
-          (use-package company-ghc
-            :ensure t
-            :after company
-            :config
-            (add-to-list 'company-backends 'company-ghc))
+        (with-eval-after-load 'haskell-mode
+          (with-eval-after-load 'company
+            (use-package company-ghc
+              :ensure t
+              :after company
+              :config
+              (add-to-list 'company-backends 'company-ghc))
 
-          (use-package company-ghci
-            :ensure t
-            :after company
-            :config
-            (add-to-list 'company-backends 'company-ghci))))
+            (use-package company-ghci
+              :ensure t
+              :after company
+              :config
+              (add-to-list 'company-backends 'company-ghci)))))
     #+end_src
 
 *** Formatter
@@ -4212,19 +4058,19 @@
     Syntax checker for Haskell
 
     #+begin_src emacs-lisp
-      (fn/use-feature flycheck-haskell
-        (flycheck haskell-mode)
-        (use-package flycheck-haskell
-          :ensure t
-          :demand t
-          :config
-          (flycheck-haskell-setup))
+      (with-eval-after-load 'haskell-mode
+        (with-eval-after-load 'flycheck
+          (use-package flycheck-haskell
+            :ensure t
+            :demand t
+            :config
+            (flycheck-haskell-setup))
 
-        (use-package flycheck-stack
-          :ensure t
-          :after flycheck-haskell
-          :config
-          nil))
+          (use-package flycheck-stack
+            :ensure t
+            :after flycheck-haskell
+            :config
+            nil)))
     #+end_src
 
 *** Build Tools
@@ -4237,97 +4083,84 @@
         "My ob-haskell package dir.")
 
       (unless noninteractive
-        (fn/use-feature org-haskell
-          (haskell-mode org)
-          (use-package ob-haskell
-            :load-path fn/ob-haskell-package-dir
-            :disabled t
-            :demand t
-            :config
-            (add-to-list 'org-babel-load-languages '(haskell . t)))
+        (with-eval-after-load 'haskell-mode
+          (with-eval-after-load 'org
+            (use-package ob-haskell
+              :load-path fn/ob-haskell-package-dir
+              :disabled t
+              :demand t
+              :config
+              (add-to-list 'org-babel-load-languages '(haskell . t)))
 
-          (defconst fn/haskell-file-extension ".hs"
-            "The de facto haskell file extension.")
+            (defconst fn/haskell-file-extension ".hs"
+              "The de facto haskell file extension.")
 
-          (defun fn/add-haskell-file-extension (name)
-            "Add the extension of .hs to a file or buffer NAME."
-            (if (string/ends-with name fn/haskell-file-extension)
-                name (concat name fn/haskell-file-extension)))
+            (defun fn/add-haskell-file-extension (name)
+              "Add the extension of .hs to a file or buffer NAME."
+              (if (string/ends-with name fn/haskell-file-extension)
+                  name (concat name fn/haskell-file-extension)))
 
-          (defvar fn/org-haskell-mode-hook nil
-            "Hook when buffer is haskellized.")
+            (defvar fn/org-haskell-mode-hook nil
+              "Hook when buffer is haskellized.")
 
-          (defun fn/haskellize-buffer-file (&optional buffer)
-            "Renames an BUFFER with a .hs extension if it doesn't have one."
-            (interactive)
-            (with-current-buffer (or buffer (current-buffer))
-              (save-buffer)
-              (lexical-let ((name (buffer-name))
-                  (file-name (buffer-file-name)))
-                (if (not (and file-name (file-exists-p file-name)))
-                    (error "Buffer '%s' has no backing file" name)
-                  (lexical-let ((haskellized-name (fn/add-haskell-file-extension name))
-                      (haskellized-file-name (fn/add-haskell-file-extension file-name)))
-                    (cond
-                     ((get-buffer haskellized-name)
-                      (error "A buffer named '%s' already exists" haskellized-name))
-                     ((string-equal name haskellized-name)
-                      (message "Buffer %s is already haskellized" haskellized-name))
-                     (t
-                      (rename-file file-name haskellized-file-name t)
-                      (rename-buffer haskellized-name)
-                      (set-visited-file-name haskellized-file-name)
-                      (set-buffer-modified-p nil)
-                      (message "Buffer %s is now haskellized" haskellized-name))))))))
+            (defun fn/haskellize-buffer-file (&optional buffer)
+              "Renames an BUFFER with a .hs extension if it doesn't have one."
+              (interactive)
+              (with-current-buffer (or buffer (current-buffer))
+                (save-buffer)
+                (let ((name (buffer-name))
+                              (file-name (buffer-file-name)))
+                  (if (not (and file-name (file-exists-p file-name)))
+                      (error "Buffer '%s' has no backing file" name)
+                    (let ((haskellized-name (fn/add-haskell-file-extension name))
+                                  (haskellized-file-name (fn/add-haskell-file-extension file-name)))
+                      (cond
+                       ((get-buffer haskellized-name)
+                        (error "A buffer named '%s' already exists" haskellized-name))
+                       ((string-equal name haskellized-name)
+                        (message "Buffer %s is already haskellized" haskellized-name))
+                       (t
+                        (rename-file file-name haskellized-file-name t)
+                        (rename-buffer haskellized-name)
+                        (set-visited-file-name haskellized-file-name)
+                        (set-buffer-modified-p nil)
+                        (message "Buffer %s is now haskellized" haskellized-name))))))))
 
-          (defun fn/org-haskell-buffer-p (&optional buffer)
-            "Check if BUFFER is an org-haskell buffer."
-            (with-current-buffer (or buffer (current-buffer))
-              (and (eq major-mode 'haskell-mode)
-                 (fboundp 'org-src-edit-buffer-p)
-                 (org-src-edit-buffer-p))))
+            (defun fn/org-haskell-buffer-p (&optional buffer)
+              "Check if BUFFER is an org-haskell buffer."
+              (with-current-buffer (or buffer (current-buffer))
+                (and (eq major-mode 'haskell-mode)
+                     (fboundp 'org-src-edit-buffer-p)
+                     (org-src-edit-buffer-p))))
 
-          (defun fn/haskellize-org-haskell-buffer (&rest _)
-            "Haskellize org haskell buffer."
-            (when (fn/org-haskell-buffer-p)
-              (fn/haskellize-buffer-file (current-buffer))
-              (run-hooks 'fn/org-haskell-mode-hook)))
+            (defun fn/haskellize-org-haskell-buffer (&rest _)
+              "Haskellize org haskell buffer."
+              (when (fn/org-haskell-buffer-p)
+                (fn/haskellize-buffer-file (current-buffer))
+                (run-hooks 'fn/org-haskell-mode-hook)))
 
-          (defun fn/save-org-haskell-buffer (&rest _)
-            "Save haskell buffer along with the edit buffer."
-            (when (fn/org-haskell-buffer-p)
-              (save-buffer)))
+            (defun fn/save-org-haskell-buffer (&rest _)
+              "Save haskell buffer along with the edit buffer."
+              (when (fn/org-haskell-buffer-p)
+                (save-buffer)))
 
-          (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
-            "Cleanup the org-haskell buffer when exiting the edit buffer."
-            (lexical-let ((org-haskell-file-name (buffer-file-name))
-                (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
-              (prog1
-                  (apply orig-fun args)
-                (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
-                  (delete-file org-haskell-file-name)))))
+            (defun fn/cleanup-org-haskell-buffer (orig-fun &rest args)
+              "Cleanup the org-haskell buffer when exiting the edit buffer."
+              (let ((org-haskell-file-name (buffer-file-name))
+                            (org-haskell-buffer-p (fn/org-haskell-buffer-p)))
+                (prog1
+                    (apply orig-fun args)
+                  (when (and (file-exists-p org-haskell-file-name) org-haskell-buffer-p)
+                    (delete-file org-haskell-file-name)))))
 
-          (defun fn/haskell-process-load-or-reload ()
-            "Invoke reload process without switching buffers"
-            (save-window-excursion
-              (haskell-process-load-or-reload))
+            (defun fn/haskell-process-load-or-reload ()
+              "Invoke reload process without switching buffers"
+              (save-window-excursion
+                (haskell-process-load-or-reload))
 
-          (defun fn/haskell-reload-on-save ()
-            "Reload interactive haskell process on save."
-            (add-hook 'after-save-hook 'fn/haskell-process-load-or-reload t t)))
-
-          ;; (add-hook 'org-src-mode-hook #'fn/haskellize-org-haskell-buffer t)
-
-          ;; (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-process-load-or-reload)
-          ;; (add-hook 'fn/org-haskell-mode-hook 'fn/haskell-reload-on-save)
-
-          ;; (advice-add 'org-edit-src-save :before #'fn/save-org-haskell-buffer)
-          ;; (advice-add 'org-edit-src-exit :around #'fn/cleanup-org-haskell-buffer)
-
-          (fn/use-feature literate-haskell-hindent
-            (haskell-mode hindent)
-            ;; (add-hook 'fn/org-haskell-mode-hook 'fn/hindent-before-save)
-            )))
+              (defun fn/haskell-reload-on-save ()
+                "Reload interactive haskell process on save."
+                (add-hook 'after-save-hook 'fn/haskell-process-load-or-reload t t))))))
     #+end_src
 
 ** Erlang
@@ -4452,9 +4285,9 @@
 
     #+begin_src emacs-lisp
       (unless noninteractive
-        (fn/use-feature company-robe
-          (robe company)
-          (add-to-list 'company-backends 'company-robe)))
+        (with-eval-after-load 'robe
+          (with-eval-after-load 'company
+            (add-to-list 'company-backends 'company-robe))))
     #+end_src
 
 *** Linter
@@ -4552,9 +4385,9 @@
     Something similar but for spelling
 
     #+begin_src emacs-lisp
-      (fn/use-feature flyspell-auctex
-        (flyspell auctex)
-        (add-hook 'latex-mode-hook #'flyspell-mode))
+      (with-eval-after-load 'auctex
+        (with-eval-after-load 'flyspell
+          (add-hook 'latex-mode-hook #'flyspell-mode)))
     #+end_src
 
 *** REPL
@@ -4643,12 +4476,12 @@
        (defun fn/w3m-ignore-search-engine-pages (url &rest args)
          "Ignore search engine pages as defined by `w3m-search-engine-alist'."
          (ignore-errors ;; Ignore special urls such as //:about or whatnot
-           (lexical-let* ((url-parts (w3m-parse-http-url url))
+           (let* ((url-parts (w3m-parse-http-url url))
                           (url-host (elt url-parts 1)))
              (cl-some
               (lambda (pair)
                 (pcase-let ((`(,name ,search-url) pair))
-                  (lexical-let* ((search-parts (w3m-parse-http-url search-url))
+                  (let* ((search-parts (w3m-parse-http-url search-url))
                                  (search-host (elt search-parts 1)))
                     (and (not (member name fn/w3m-exclude-ignore-search-engine))
                          (string= search-host url-host)))))
@@ -4726,7 +4559,7 @@
          "Ignore if url host matches and `fn/w3m-ignore-arrived-hosts'.
      Primary check comes from `w3m-parse-http-url' by direct string match."
          (condition-case ex
-             (lexical-let* ((parts (w3m-parse-http-url url))
+             (let* ((parts (w3m-parse-http-url url))
                             (host (elt parts 1)))
                (not (cl-notany
                      (lambda (check-host)
@@ -4800,8 +4633,7 @@
 
        (define-key w3m-mode-map (kbd ";") #'fn/w3m-fontify-summary)
 
-       (fn/use-feature w3m-mode--mode-icon
-         (all-the-icons)
+       (with-eval-after-load 'all-the-icons
          (fn/add-major-mode-icon
           'w3m-mode
           (list 'all-the-icons-faicon "globe" :v-adjust -0.1))))
@@ -4879,12 +4711,11 @@
 
          (advice-add 'slack-room-subscribedp :override #'fn/slack-room-all-subcribedp))
 
-       (fn/use-feature slack-message-flyspell
-         (flyspell slack)
-         (add-hook 'slack-edit-message-mode-hook #'flyspell-mode))
+       (with-eval-after-load 'slack
+         (with-eval-after-load 'flyspell
+           (add-hook 'slack-edit-message-mode-hook #'flyspell-mode)))
 
-       (fn/use-feature slack-custom-alert
-         (alert)
+       (with-eval-after-load 'alert
          (defun fn/slack-message-custom-notifier (message room team)
            "My custom notication for slack given MESSAGE, ROOM and TEAM.
      What I do is use the fringe to notify me instead of `libnotify'."
@@ -4906,8 +4737,7 @@
          (setq slack-message-custom-notifier #'fn/slack-message-custom-notifier
                slack-message-custom-delete-notifier #'fn/slack-message-custom-notifier))
 
-       (fn/use-feature slack-mode--mode-icon
-         (all-the-icons)
+       (with-eval-after-load 'all-the-icons
          (fn/add-major-mode-icon
           'slack-mode
           (list 'all-the-icons-faicon "commenting-o" :v-adjust 0.0))
@@ -5025,8 +4855,7 @@
           (add-to-list 'emms-info-functions 'emms-info-mpd)
           (add-to-list 'emms-player-list 'emms-player-mpd)
 
-          (fn/use-feature prodigy-emms-mpd
-            (prodigy emms)
+          (with-eval-after-load 'prodigy
             (defcustom fn/emms-mpd-cache-dir (expand-file-name "emms-mpd" fn/cache-dir)
               "Emms cache directory."
               :type 'directory)
@@ -5516,7 +5345,7 @@
   #+begin_src emacs-lisp
     (defun fn/trigger-key (key)
       "Returns a function that triggers the function bound by the key"
-      (lexical-let* ((key-trigger key)
+      (let* ((key-trigger key)
           (trigger
            (lambda ()
              (interactive)
