@@ -40,6 +40,8 @@
    Or with an function instead
 
    #+begin_src emacs-lisp
+     ;;; -*- lexical-binding: t -*-
+
      (progn
        (defun fn/reload-config ()
          "Reload my configuration again"
@@ -2119,23 +2121,6 @@
 * Artist
   Visual aesthetics is also a functional thing as well
 
-** Aesthetic
-   Somewhat more aesthetic than functional
-
-*** rainbow-mode
-    Just to view hex quicker.
-
-    #+begin_src emacs-lisp
-      (use-package rainbow-mode
-        :ensure t
-        :hook (prog-mode . rainbow-mode)
-        :commands (rainbow-mode)
-        :bind (:map fn-standard-prefix-map
-                    ("R" . rainbow-mode))
-        :config
-        nil)
-    #+end_src
-
 ** Screensaver
    When idle time hits
 
@@ -4187,38 +4172,12 @@
      (use-package elixir-mode
        :ensure t
        :defer t
-       :hook (elixir-mode . subword-mode)
+       :hook ((elixir-mode . subword-mode)
+              (elixir-mode . lsp))
        :config
-       (when (and (executable-find "elixir-ls")
-                  (require 'lsp nil t))
-         (setq lsp-clients-elixir-server-executable "elixir-ls")
-
-         (add-hook 'elixir-mode-hook #'lsp-deferred))
-
-       (when (and (executable-find "elixir-ls-debug")
-                  (require 'dap-mode nil t))
-         (defun dap-elixir--populate-start-file-args (conf)
-           "Populate CONF with the required arguments."
-           (-> conf
-               (dap--put-if-absent :dap-server-path '("elixir-ls-debug"))
-               (dap--put-if-absent :type "mix_task")
-               (dap--put-if-absent :name "mix test")
-               (dap--put-if-absent :request "launch")
-               (dap--put-if-absent :task "test")
-               (dap--put-if-absent :taskArgs (list "--trace"))
-               (dap--put-if-absent :projectDir (lsp-find-session-folder (lsp-session) (buffer-file-name)))
-               (dap--put-if-absent :cwd (lsp-find-session-folder (lsp-session) (buffer-file-name)))
-               (dap--put-if-absent :requireFiles (list
-                                                  "test/**/test_helper.exs"
-                                                  "test/**/*_test.exs"))))
-
-         (dap-register-debug-provider "Elixir" 'dap-elixir--populate-start-file-args)
-         (dap-register-debug-template "Elixir Run Configuration"
-                                      (list :type "Elixir"
-                                            :cwd nil
-                                            :request "launch"
-                                            :program nil
-                                            :name "Elixir::Run")))
+       (with-eval-after-load 'lsp-mode
+         (setq lsp-elixir-dialyzer-enabled nil
+               lsp-elixir-ls-download-url "https://github.com/elixir-lsp/elixir-ls/releases/download/v0.15.1/elixir-ls-v0.15.1.zip"))
 
        (with-eval-after-load 'all-the-icons
          (fn/add-major-mode-icon
