@@ -1272,7 +1272,7 @@
 
     #+begin_src emacs-lisp
       (use-package company
-        :ensure t
+        :ensure
         :unless noninteractive
         :demand t
         :diminish company-mode
@@ -4207,29 +4207,51 @@
 
    #+begin_src emacs-lisp
      (use-package rustic
-       :ensure t
+       :ensure
+       :unless noninteractive
+       :bind (:map rustic-mode-map
+                   ("M-j" . lsp-ui-imenu)
+                   ("M-?" . lsp-find-references)
+                   ("C-c C-c l" . flycheck-list-errors)
+                   ("C-c C-c a" . lsp-execute-code-action)
+                   ("C-c C-c r" . lsp-rename)
+                   ("C-c C-c q" . lsp-workspace-restart)
+                   ("C-c C-c Q" . lsp-workspace-shutdown)
+                   ("C-c C-c s" . lsp-rust-analyzer-status))
        :config
-       (setq rustic-format-on-save t
-             rustic-lsp-server 'rust-analyzer
-             rustic-lsp-setup-p nil
-             rustic-format-display-method 'ignore)
+       (setq rustic-format-display-method 'ignore
+             rustic-format-on-save nil)
 
-       (add-hook 'rustic-mode-hook #'lsp-deferred)
+       (setq rustic-lsp-client 'lsp-mode
+             rustic-lsp-setup-p nil)
+
+       (when (executable-find "rust-analyzer")
+         (setq rustic-lsp-server 'rust-analyzer)
+         (setq lsp-rust-server 'rust-analyzer))
 
        (define-key rustic-mode-map (kbd "C-c C-c r") #'rustic-cargo-test-rerun)
        (define-key rustic-cargo-test-mode-map (kbd "r") #'rustic-cargo-test-rerun)
        (define-key rustic-compilation-mode-map (kbd "r") #'rustic-cargo-test-rerun)
 
+       (add-hook 'rustic-mode-hook #'lsp-deferred)
+
        (with-eval-after-load 'lsp-mode
-         (setq rustic-format-on-save nil)
+         (setq lsp-signature-auto-activate nil
+               lsp-inlay-hint-enable nil)
 
          (setq lsp-rust-analyzer-server-args '("--parallel")
-               lsp-rust-analyzer-cargo-watch-enable t)))
+               lsp-rust-analyzer-cargo-watch-enable t
+               lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial"
+               lsp-rust-analyzer-display-chaining-hints nil
+               lsp-rust-analyzer-display-parameter-hints nil
+               lsp-rust-analyzer-display-lifetime-elision-hints-use-parameter-names nil
+               lsp-rust-analyzer-display-closure-return-type-hints nil
+               lsp-rust-analyzer-display-parameter-hints nil
+               lsp-rust-analyzer-display-reborrow-hints nil)))
 
      (use-package flycheck-rust
-       :ensure t
-       :after flycheck
-       :demand t
+       :ensure
+       :after (flycheck rustic)
        :config
        (setq rustic-flycheck-clippy-params "--message-format=json")
        (push 'rustic-clippy flycheck-checkers))
